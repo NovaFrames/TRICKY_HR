@@ -3,6 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ThemeType } from '../../theme/theme';
+
 interface IdCardProps {
     empName: string;
     designation: string;
@@ -12,7 +14,7 @@ interface IdCardProps {
     locationAddress: string | null;
     liveLocationEnabled: boolean;
     isDark: boolean;
-    theme: any;
+    theme: ThemeType;
 }
 
 export const IdCard: React.FC<IdCardProps> = ({
@@ -29,39 +31,39 @@ export const IdCard: React.FC<IdCardProps> = ({
     return (
         <View style={[styles.idCard, { shadowColor: theme.text }]}>
             <LinearGradient
-                colors={isDark ? ['#1e293b', '#0f172a'] : ['#1E293B', '#0F172A']}
+                colors={[theme.inputBg, theme.background]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.idCardGradient}
             >
                 <View style={styles.idCardTop}>
-                    <View style={styles.avatarLarge}>
-                        <Text style={styles.avatarLargeText}>{initial}</Text>
+                    <View style={[styles.avatarLarge, { backgroundColor: theme.inputBorder, borderColor: theme.inputBorder }]}>
+                        <Text style={[styles.avatarLargeText, { color: theme.text }]}>{initial}</Text>
                     </View>
                     <View style={styles.idCardInfo}>
-                        <Text style={styles.idName}>{empName}</Text>
-                        <Text style={styles.idRole}>{designation}</Text>
+                        <Text style={[styles.idName, { color: theme.text }]}>{empName}</Text>
+                        <Text style={[styles.idRole, { color: theme.icon }]}>{designation}</Text>
                         <View style={styles.idBadgeRow}>
-                            <View style={styles.idBadge}>
-                                <Text style={styles.idBadgeText}>ID: {empCode}</Text>
+                            <View style={[styles.idBadge, { backgroundColor: theme.inputBorder }]}>
+                                <Text style={[styles.idBadgeText, { color: theme.text }]}>ID: {empCode}</Text>
                             </View>
-                            <View style={[styles.idBadge, { backgroundColor: 'rgba(215,122,47,0.2)' }]}>
-                                <Text style={[styles.idBadgeText, { color: '#FB923C' }]}>{company}</Text>
+                            <View style={[styles.idBadge, { backgroundColor: theme.inputBorder }]}>
+                                <Text style={[styles.idBadgeText, { color: theme.primary }]}>{company}</Text>
                             </View>
                         </View>
                     </View>
                 </View>
 
-                <View style={styles.idCardBottom}>
+                <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
                     <View style={styles.locationContainer}>
-                        <MaterialCommunityIcons name="map-marker" size={14} color="#94A3B8" />
-                        <Text style={styles.locationText} numberOfLines={1}>
+                        <MaterialCommunityIcons name="map-marker" size={14} color={theme.icon} />
+                        <Text style={[styles.locationText, { color: theme.icon }]} numberOfLines={1}>
                             {locationAddress || 'Locating...'}
                         </Text>
                     </View>
-                    <View style={styles.liveTag}>
+                    <View style={[styles.liveTag, { backgroundColor: theme.inputBorder }]}>
                         <View style={[styles.liveDot, liveLocationEnabled ? { backgroundColor: '#10B981' } : { backgroundColor: '#EF4444' }]} />
-                        <Text style={styles.liveText}>
+                        <Text style={[styles.liveText, { color: theme.text }]}>
                             {liveLocationEnabled ? 'Live' : 'Offline'}
                         </Text>
                     </View>

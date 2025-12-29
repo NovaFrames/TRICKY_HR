@@ -97,7 +97,6 @@ export default function HomeScreen() {
                 isDark={isDark}
                 theme={theme}
                 toggleTheme={toggleTheme}
-                handleLogout={handleLogout}
             />
 
             <ScrollView

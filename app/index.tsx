@@ -185,7 +185,7 @@ export default function LoginScreen() {
                             <Animated.View style={[styles.logoContainer, logoStyle]}>
                                 {/* Using Text for Logo as per reference "Ventures Pastries" style */}
                                 <Animated.Text style={[styles.logoText, logoTextStyle]}>
-                                    NovaFrames
+                                    trickyhr
                                 </Animated.Text>
 
                                 <Text style={[styles.tagline, { color: theme.text }]}>Sign in to Continue</Text>
@@ -242,7 +242,7 @@ export default function LoginScreen() {
 
                             {/* Footer Text on top of Blob */}
                             <Animated.View style={[styles.footer, formStyle]}>
-                                <Text style={[styles.footerText, { color: theme.textLight }]}>@created by Novaframes</Text>
+                                <Text style={[styles.footerText, { color: theme.textLight }]}>@created by trickyhr</Text>
                             </Animated.View>
 
                         </SafeAreaView>

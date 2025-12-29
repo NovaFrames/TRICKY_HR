@@ -10,7 +10,6 @@ interface DashboardHeaderProps {
     isDark: boolean;
     theme: any;
     toggleTheme: () => void;
-    handleLogout: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -19,7 +18,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     isDark,
     theme,
     toggleTheme,
-    handleLogout
 }) => {
     return (
         <LinearGradient
