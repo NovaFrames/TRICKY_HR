@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps } from 'react-native';
-import { THEME } from '../theme/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface CustomButtonProps extends TouchableOpacityProps {
     title: string;
@@ -14,9 +14,22 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
     disabled,
     ...props
 }) => {
+    const { theme } = useTheme();
+
     return (
         <TouchableOpacity
-            style={[styles.button, style]}
+            style={[
+                styles.button,
+                {
+                    backgroundColor: theme.primary,
+                    ...Platform.select({
+                        default: {
+                            shadowColor: theme.primary,
+                        },
+                    }),
+                },
+                style
+            ]}
             activeOpacity={0.8}
             disabled={isLoading || disabled}
             {...props}
@@ -32,24 +45,15 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
     button: {
-        backgroundColor: THEME.primary,
         height: 50,
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 24,
-        ...Platform.select({
-            web: {
-                boxShadow: '0px 4px 8px rgba(255, 98, 0, 0.3)',
-            },
-            default: {
-                shadowColor: THEME.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 4,
-            },
-        }),
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     buttonText: {
         fontSize: 16,

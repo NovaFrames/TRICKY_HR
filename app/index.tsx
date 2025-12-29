@@ -1,3 +1,4 @@
+import { useUser } from '@/context/UserContext';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -23,8 +24,8 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomButton } from '../components/CustomButton';
 import { CustomInput } from '../components/CustomInput';
+import { useTheme } from '../context/ThemeContext';
 import { loginUser } from '../services/ApiService';
-import { THEME } from '../theme/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -36,6 +37,8 @@ export default function LoginScreen() {
     const [domainUrl, setDomainUrl] = useState('hr.trickyhr.com');
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+    const { theme } = useTheme();
 
     // Animation Values
     const animationProgress = useSharedValue(0); // 0 to 1
@@ -56,6 +59,8 @@ export default function LoginScreen() {
 
         startAnimation();
     }, []);
+
+    const { setUser } = useUser();
 
     const handleLogin = async () => {
         if (!empCode || !password || !domainId) {
@@ -79,10 +84,10 @@ export default function LoginScreen() {
                 return;
             }
 
-            router.replace({
-                pathname: '/Dashboard',
-                params: { userData: JSON.stringify(response) }
-            });
+            const userData = response.data || response;
+            await setUser(userData);
+
+            router.replace('/home');
         } catch (error: any) {
             console.error('Login error:', error);
             Alert.alert('Login Failed', error.message || 'An error occurred during login');
@@ -118,6 +123,7 @@ export default function LoginScreen() {
             left: left,
             borderRadius: radius,
             transform: [{ rotate: `${rotate}deg` }],
+            backgroundColor: theme.primary,
         };
     });
 
@@ -136,7 +142,7 @@ export default function LoginScreen() {
         const color = interpolateColor(
             animationProgress.value,
             [0, 1],
-            ['#ffffff', THEME.primary] // white → primary
+            [theme.textLight, theme.primary] // white → primary
         );
 
         return {
@@ -158,7 +164,7 @@ export default function LoginScreen() {
     });
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
 
             {/* The Blob Element */}
             <Animated.View style={[styles.blob, blobStyle]} />
@@ -182,13 +188,13 @@ export default function LoginScreen() {
                                     NovaFrames
                                 </Animated.Text>
 
-                                <Text style={styles.tagline}>Sign in to Continue</Text>
+                                <Text style={[styles.tagline, { color: theme.text }]}>Sign in to Continue</Text>
                             </Animated.View>
 
                             {/* Login Form Section */}
                             <Animated.View style={[styles.formContainer, formStyle]}>
                                 <View style={styles.welcomeContainer}>
-                                    <Text style={styles.welcomeTitle}>Welcome</Text>
+                                    <Text style={[styles.welcomeTitle, { color: theme.text }]}>Welcome</Text>
                                 </View>
 
                                 {/* EMPCODE Input */}
@@ -236,7 +242,7 @@ export default function LoginScreen() {
 
                             {/* Footer Text on top of Blob */}
                             <Animated.View style={[styles.footer, formStyle]}>
-                                <Text style={styles.footerText}>@created by Novaframes</Text>
+                                <Text style={[styles.footerText, { color: theme.textLight }]}>@created by Novaframes</Text>
                             </Animated.View>
 
                         </SafeAreaView>
@@ -250,7 +256,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: THEME.background,
     },
     safeArea: {
         flex: 1,
@@ -258,7 +263,6 @@ const styles = StyleSheet.create({
     },
     blob: {
         position: 'absolute',
-        backgroundColor: THEME.primary,
         // Initial dimensions and position handled by Animated Style
     },
     logoContainer: {
@@ -272,12 +276,10 @@ const styles = StyleSheet.create({
         fontSize: 36,
         fontWeight: '900',
         // For simplicity, let's assume the logo moves OUT of the blob to the white area.
-        color: THEME.primary,
     },
     tagline: {
         fontSize: 14,
         fontWeight: '600',
-        color: THEME.text,
         letterSpacing: 2,
         marginTop: 5,
     },
@@ -294,7 +296,6 @@ const styles = StyleSheet.create({
     welcomeTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: THEME.text,
         letterSpacing: 1,
     },
     keyboardAvoidingView: {
@@ -307,7 +308,6 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 12,
-        color: '#fff', // White text because it sits on the Green Blob
         fontWeight: '500',
     },
     signUpText: {

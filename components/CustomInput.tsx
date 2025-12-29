@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface CustomInputProps extends TextInputProps {
     icon?: keyof typeof Feather.glyphMap;
@@ -11,20 +12,23 @@ interface CustomInputProps extends TextInputProps {
 export const CustomInput: React.FC<CustomInputProps> = ({
     icon,
     onIconPress,
-    iconColor = "#94A3B8",
+    iconColor,
     style,
     ...props
 }) => {
+    const { theme } = useTheme();
+    const activeIconColor = iconColor || theme.icon;
+
     return (
-        <View style={styles.inputWrapper}>
+        <View style={[styles.inputWrapper, { backgroundColor: theme.inputBg }]}>
             <TextInput
-                style={[styles.input, style]}
-                placeholderTextColor="#94A3B8"
+                style={[styles.input, { color: theme.text }, style]}
+                placeholderTextColor={theme.placeholder}
                 {...props}
             />
             {icon && (
                 <TouchableOpacity onPress={onIconPress} style={styles.iconContainer} disabled={!onIconPress}>
-                    <Feather name={icon} size={20} color={iconColor} />
+                    <Feather name={icon} size={20} color={activeIconColor} />
                 </TouchableOpacity>
             )}
         </View>
@@ -36,7 +40,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#E2E8F0',
         borderRadius: 8,
         height: 50,
         paddingHorizontal: 16,
@@ -44,7 +47,6 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 14,
-        color: '#334155',
     },
     iconContainer: {
         padding: 4,
