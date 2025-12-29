@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "myApp",
-    "slug": "myApp",
+    "name": "NovaFrames",
+    "slug": "NovaFrames",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "novaframes",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
