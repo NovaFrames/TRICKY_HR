@@ -34,16 +34,24 @@ export default function LoginScreen() {
 
         setIsLoading(true);
         try {
-            const data = await loginUser(empCode, password, domainId);
-            console.log('Login success:', data);
+            const response = await loginUser(empCode, password, domainId);
+            console.log('Login response:', JSON.stringify(response));
 
-            // Check if we got a valid response (look for Token or TokenC based on usage)
-            // The prompt says "Look for a field named 'Token' or 'TokenC'"
-            // We'll pass the whole data object to dashboard
+            // Validate response - Check for Token or explicit Success status
+            const isValidLogin =
+                (response.Status === 'success' || response.Status === 'Success') ||
+                (response.Token) ||
+                (response.TokenC) ||
+                (response.data?.TokenC);
+
+            if (!isValidLogin) {
+                Alert.alert('Login Failed', response.Message || 'Invalid credentials. Please try again.');
+                return;
+            }
 
             router.replace({
                 pathname: '/Dashboard',
-                params: { userData: JSON.stringify(data) }
+                params: { userData: JSON.stringify(response) }
             });
         } catch (error: any) {
             console.error('Login error:', error);

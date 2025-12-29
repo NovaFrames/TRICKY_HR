@@ -1,8 +1,9 @@
 
 import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Dimensions,
     ScrollView,
     StyleSheet,
@@ -11,28 +12,23 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getProjectList } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
-const MENU_ITEMS = [
-    { id: 1, title: 'Mobile\nAtten.Report', icon: 'file-document-outline', color: '#10B981', lib: MaterialCommunityIcons },
-    { id: 2, title: 'Profile', icon: 'user-circle', color: '#0EA5E9', lib: FontAwesome5 },
-    { id: 3, title: 'Request\nStatus', icon: 'clipboard-list', color: '#10B981', lib: FontAwesome5 },
-    { id: 4, title: 'Leave Manage', icon: 'calendar-minus', color: '#F59E0B', lib: MaterialCommunityIcons }, // Yellow/Orange
-    { id: 5, title: 'Time Manage', icon: 'clock-time-four-outline', color: '#F97316', lib: MaterialCommunityIcons }, // Orange
-    { id: 6, title: 'Uploaded\nDocument', icon: 'file-upload-outline', color: '#06B6D4', lib: MaterialCommunityIcons }, // Cyan
-    { id: 7, title: 'Office\nDocument', icon: 'file-certificate-outline', color: '#EC4899', lib: MaterialCommunityIcons }, // Pink
-    { id: 8, title: 'PaySlip', icon: 'cash-multiple', color: '#EC4899', lib: MaterialCommunityIcons }, // Pink
-    { id: 9, title: 'Holiday', icon: 'umbrella-beach', color: '#A855F7', lib: FontAwesome5 }, // Purple
-    { id: 10, title: 'Upcoming\nCelebration', icon: 'birthday-cake', color: '#84CC16', lib: FontAwesome5 }, // Lime
-    { id: 11, title: 'Calender', icon: 'calendar-alt', color: '#3B82F6', lib: FontAwesome5 }, // Blue
-    { id: 12, title: 'Employee List', icon: 'users', color: '#3B82F6', lib: FontAwesome5 }, // Blue
-    { id: 13, title: 'Employee\nAttendance', icon: 'clipboard-check', color: '#10B981', lib: FontAwesome5 }, // Green
-    { id: 14, title: 'Claim &\nExpense', icon: 'hand-holding-usd', color: '#3B82F6', lib: FontAwesome5 }, // Blue
-    { id: 15, title: 'Emp Mobile\nAtten.Rpt', icon: 'file-alt', color: '#EC4899', lib: FontAwesome5 }, // Pink
-    { id: 16, title: 'Service Report', icon: 'file-invoice', color: '#14B8A6', lib: FontAwesome5 }, // Teal
-    { id: 17, title: 'Pending\nApproval', icon: 'user-clock', color: '#06B6D4', lib: FontAwesome5 }, // Cyan
-    { id: 18, title: 'Other Pending\nApproval', icon: 'file-contract', color: '#06B6D4', lib: FontAwesome5 }, // Cyan
+interface Project {
+    Id?: number;
+    ProjectId?: number;
+    ProjectName?: string;
+    Name?: string;
+}
+
+// Fallback menu items if API doesn't return any
+const STATIC_MENU_ITEMS = [
+    { MenuNameC: 'Mobile Attendance', IconcolorC: '#10B981' },
+    { MenuNameC: 'Profile', IconcolorC: '#0EA5E9' },
+    { MenuNameC: 'Request Status', IconcolorC: '#10B981' },
+    { MenuNameC: 'Leave Manage', IconcolorC: '#F59E0B' },
 ];
 
 export default function DashboardScreen() {
@@ -40,104 +36,224 @@ export default function DashboardScreen() {
     const params = useLocalSearchParams();
     const userDataParam = params.userData as string;
 
-    let user: any = null;
-    try {
-        if (userDataParam) {
-            user = JSON.parse(userDataParam);
-        }
-    } catch (e) {
-        console.log('Error parsing user data', e);
-    }
+    const [user, setUser] = useState<any>(null);
+    const [locationAddress, setLocationAddress] = useState<string | null>(null);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [loadingProjects, setLoadingProjects] = useState(false);
 
-    const empName = user?.EmpName || user?.Name || 'DR.Baiju';
-    const empCode = user?.EmpCode || '10005';
-    const designation = user?.Designation || user?.Role || 'Senior Executive';
-    const company = user?.DomainId || 'TRICKY HR - DEMO';
+    useEffect(() => {
+        if (userDataParam) {
+            try {
+                const parsed = JSON.parse(userDataParam);
+                setUser(parsed);
+                console.log('Parsed User Data:', parsed);
+            } catch (e) {
+                console.log('Error parsing user data', e);
+            }
+        }
+    }, [userDataParam]);
+
+    // Data Mappings based on Ionic App
+    // Ionic: const loginData = user?.loginResponse?.data || {};
+    // Here 'user' is likely that data object already due to how our api.ts works
+    const loginData = user || {};
+
+    const empName = loginData.EmpNameC || loginData.EmpName || loginData.Name || 'Employee';
+    const empCode = loginData.EmpCodeC || loginData.EmpCode || '-';
+    const designation = loginData.DesigNameC || loginData.Designation || '-';
+    const company = loginData.CompNameC || loginData.DomainId || '-';
+    const liveLocationEnabled = loginData.IsLiveLocN === 1;
+    const token = loginData.Token || loginData.TokenC || loginData.data?.TokenC;
+
+    // Dynamic Menu Items
+    const menuItems = (Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0)
+        ? loginData.EmpMenu
+        : STATIC_MENU_ITEMS;
+
+    // Reverse Geocoding Effect (Simulated from Ionic logic)
+    useEffect(() => {
+        // In a real native app, you'd use expo-location to get current coords.
+        // Here we simulate or use what's in the user object if it existed.
+        const userLoc = loginData.location || { lat: 11.44, lng: 77.67 }; // Default/Mock
+
+        if (userLoc) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLoc.lat}&lon=${userLoc.lng}`)
+                .then(res => res.json())
+                .then(data => {
+                    const addr = data.address;
+                    if (addr) {
+                        const city = addr.city || addr.town || addr.village || addr.county;
+                        const state = addr.state || addr.country;
+                        setLocationAddress(`${city}, ${state}`);
+                    }
+                })
+                .catch(() => setLocationAddress(`${userLoc.lat.toFixed(4)}, ${userLoc.lng.toFixed(4)}`));
+        }
+    }, [user]);
+
+    // Fetch Active Projects
+    useEffect(() => {
+        const fetchProjects = async () => {
+            if (!token) return;
+
+            setLoadingProjects(true);
+            try {
+                const data = await getProjectList(token);
+                if (Array.isArray(data)) {
+                    setProjects(data);
+                } else if (data && Array.isArray(data.data)) {
+                    setProjects(data.data);
+                } else if (data && Array.isArray(data.Table)) {
+                    setProjects(data.Table);
+                }
+            } catch (error) {
+                console.error("Failed to fetch projects", error);
+            } finally {
+                setLoadingProjects(false);
+            }
+        };
+
+        fetchProjects();
+    }, [token]);
 
     const handleLogout = () => {
         router.replace('/');
     };
+
+    // Helper to resolve icons based on name
+    const getMenuIcon = (name: string) => {
+        const key = name.toLowerCase();
+        if (key.includes('attendance')) return { lib: FontAwesome5, name: 'clipboard-check' };
+        if (key.includes('report')) return { lib: FontAwesome5, name: 'file-alt' };
+        if (key.includes('profile')) return { lib: FontAwesome5, name: 'user-circle' };
+        if (key.includes('request')) return { lib: FontAwesome5, name: 'clipboard-list' };
+        if (key.includes('leave')) return { lib: MaterialCommunityIcons, name: 'calendar-minus' };
+        if (key.includes('time')) return { lib: Feather, name: 'clock' };
+        if (key.includes('holiday')) return { lib: FontAwesome5, name: 'umbrella-beach' };
+        if (key.includes('document')) return { lib: MaterialCommunityIcons, name: 'file-document-outline' };
+        if (key.includes('payslip')) return { lib: MaterialCommunityIcons, name: 'cash-multiple' };
+
+        return { lib: Feather, name: 'grid' };
+    };
+
+    const initial = empName.charAt(0);
 
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <View style={styles.logoIcon}>
-                            <MaterialCommunityIcons name="fingerprint" size={24} color="#fff" />
-                        </View>
-                        <View>
-                            <Text style={styles.logoText}>NovaFrames</Text>
-                            <Text style={styles.tagline}>AI SECURITY & SMART SYSTEMS</Text>
-                        </View>
+                        {/* Show initials or logo */}
+                        <Text style={styles.headerTitle}>Home</Text>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity style={styles.iconButton}>
+                            <Feather name="bell" size={20} color="#64748B" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                            <Feather name="log-out" size={16} color="#E11D48" style={{ marginRight: 4 }} />
+                            <Text style={styles.logoutText}>Termination</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-                    {/* Welcome Section */}
+                    {/* Welcome Msg */}
                     <View style={styles.welcomeSection}>
-                        <Text style={styles.sectionTitle}>Home</Text>
                         <Text style={styles.welcomeText}>
-                            Welcome back, <Text style={styles.userName}>{empName} .</Text>
+                            Welcome back, <Text style={styles.userName}>{empName}</Text>.
                         </Text>
-
-                        <View style={styles.locationBadge}>
-                            <MaterialCommunityIcons name="map-marker-radius" size={16} color="#065F46" />
-                            <Text style={styles.locationText}>VERIFIED AT: BHAVANI, TAMIL NADU</Text>
-                        </View>
-
-                        <View style={styles.actionRow}>
-                            <TouchableOpacity style={styles.bellButton}>
-                                <Feather name="bell" size={20} color="#64748B" />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.terminationButton} onPress={handleLogout}>
-                                <Feather name="log-out" size={18} color="#BE123C" style={{ marginRight: 8 }} />
-                                <Text style={styles.terminationText}>Termination Session</Text>
-                            </TouchableOpacity>
+                        <View style={styles.verifiedBadge}>
+                            <MaterialCommunityIcons name="map-marker-radius" size={12} color="#065F46" />
+                            <Text style={styles.verifiedText}>
+                                Verified At: {locationAddress || 'Locating...'}
+                            </Text>
                         </View>
                     </View>
 
                     {/* Profile Card */}
                     <View style={styles.card}>
-                        <View style={styles.avatarContainer}>
-                            <Text style={styles.avatarText}>{empName.charAt(0)}</Text>
+                        <View style={styles.avatarCircle}>
+                            <Text style={styles.avatarText}>{initial}</Text>
                         </View>
                         <Text style={styles.profileName}>{empName} - {empCode}</Text>
-                        <View style={styles.roleContainer}>
-                            <MaterialCommunityIcons name="briefcase-outline" size={16} color="#64748B" />
-                            <Text style={styles.roleText}>{designation}</Text>
+                        <View style={styles.row}>
+                            <Feather name="briefcase" size={14} color="#64748B" />
+                            <Text style={styles.profileDetail}>{designation}</Text>
                         </View>
-
-                        <View style={styles.companyBadge}>
-                            <MaterialCommunityIcons name="domain" size={18} color="#9A3412" />
+                        <View style={styles.companyPill}>
+                            <FontAwesome5 name="building" size={12} color="#9A3412" />
                             <Text style={styles.companyText}>{company}</Text>
                         </View>
-
-                        <Text style={styles.liveLocationText}>Live Location is Activated</Text>
+                        <Text style={styles.liveStatus}>
+                            {liveLocationEnabled ? 'Live Location is Activated' : 'Live Location is Disabled'}
+                        </Text>
                     </View>
 
-                    {/* Mobile Attendance Button */}
-                    <TouchableOpacity style={styles.attendanceCard}>
-                        <View style={styles.attendanceIconContainer}>
-                            <MaterialCommunityIcons name="clipboard-text-outline" size={32} color="#fff" />
+                    {/* Live Tracking Toggle Section */}
+                    <View style={styles.trackingCard}>
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <View style={styles.trackingIconBox}>
+                                <Feather name="navigation" size={18} color="#475569" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.cardTitle}>Live Tracking</Text>
+                                <Text style={styles.cardSub}>Enable live tracking to monitor your location.</Text>
+                            </View>
                         </View>
-                        <Text style={styles.attendanceText}>Mobile Attendance</Text>
-                    </TouchableOpacity>
+                        {/* Simulated Toggle Visual */}
+                        <View style={[styles.toggleTrack, liveLocationEnabled ? { backgroundColor: '#D1FAE5' } : { backgroundColor: '#F1F5F9' }]}>
+                            <View style={[styles.toggleThumb, liveLocationEnabled ? { backgroundColor: '#10B981', transform: [{ translateX: 18 }] } : { backgroundColor: '#94A3B8' }]} />
+                        </View>
+                    </View>
 
-                    {/* Grid Menu */}
+                    {/* Dynamic Menu Grid */}
                     <View style={styles.gridContainer}>
-                        {MENU_ITEMS.map((item) => {
-                            const IconLib = item.lib;
+                        {menuItems.map((item: any, index: number) => {
+                            const { lib: IconLib, name: iconName } = getMenuIcon(item.MenuNameC);
+                            const isAttendance = index === 0 || item.MenuNameC?.toLowerCase().includes('mobile attendance');
+                            const itemColor = item.IconcolorC || '#d77a2f'; // Default accent
+
+                            // Attendance usually spans full width in the ionic app design logic provided
+                            const styleItems = isAttendance ? styles.gridItemFull : styles.gridItem;
+
                             return (
-                                <TouchableOpacity key={item.id} style={styles.gridItem}>
-                                    <View style={[styles.gridIconContainer, { backgroundColor: item.color }]}>
-                                        <IconLib name={item.icon as any} size={24} color="#fff" />
+                                <TouchableOpacity key={index} style={styleItems}>
+                                    <View style={[styles.gridIconBox, { backgroundColor: itemColor }]}>
+                                        <IconLib name={iconName as any} size={20} color="#fff" />
                                     </View>
-                                    <Text style={styles.gridTitle}>{item.title}</Text>
+                                    <Text style={styles.gridLabel}>{item.MenuNameC}</Text>
                                 </TouchableOpacity>
                             );
                         })}
+                    </View>
+
+                    {/* Active Projects Section */}
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionTitle}>Active Projects</Text>
+                        {loadingProjects ? (
+                            <ActivityIndicator size="small" color="#3B82F6" style={{ marginTop: 20 }} />
+                        ) : (
+                            <View style={styles.projectsList}>
+                                {projects.map((project, index) => (
+                                    <View key={index} style={styles.projectCard}>
+                                        <View style={styles.projectHeader}>
+                                            <MaterialCommunityIcons name="folder-outline" size={20} color="#3B82F6" />
+                                            <Text style={styles.projectTitle}>
+                                                {project.ProjectName || project.Name || 'Unnamed Project'}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.projectId}>
+                                            ID: {project.Id || project.ProjectId || 'N/A'}
+                                        </Text>
+                                    </View>
+                                ))}
+                                {projects.length === 0 && (
+                                    <Text style={styles.noDataText}>No projects found.</Text>
+                                )}
+                            </View>
+                        )}
                     </View>
 
                 </ScrollView>
@@ -154,107 +270,86 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
     },
-    scrollContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-    },
     header: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 10,
         paddingBottom: 15,
         backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#F1F5F9',
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#0F172A',
     },
     logoContainer: {
+        justifyContent: 'center',
+    },
+    headerActions: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 12,
     },
-    logoIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: '#F97316', // Orange
+    iconButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 10,
+        backgroundColor: '#fff',
     },
-    logoText: {
-        fontSize: 18,
+    logoutButton: {
+        flexDirection: 'row',
+        paddingHorizontal: 12,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#FFF1F2',
+        borderWidth: 1,
+        borderColor: '#FECDD3',
+        alignItems: 'center',
+    },
+    logoutText: {
+        fontSize: 12,
         fontWeight: '700',
-        color: '#EA580C', // Darker Orange
+        color: '#E11D48',
     },
-    tagline: {
-        fontSize: 8,
-        color: '#C2410C',
-        fontWeight: '600',
-        letterSpacing: 0.5,
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 40,
     },
     welcomeSection: {
-        marginTop: 20,
-    },
-    sectionTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#0F172A',
-        marginBottom: 5,
+        marginVertical: 20,
     },
     welcomeText: {
         fontSize: 14,
         color: '#64748B',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     userName: {
         fontWeight: '700',
-        color: '#D97706', // Amber
+        color: '#d77a2f',
     },
-    locationBadge: {
+    verifiedBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#D1FAE5', // Light Green
-        paddingVertical: 6,
-        paddingHorizontal: 12,
+        backgroundColor: '#D1FAE5',
+        paddingVertical: 4,
+        paddingHorizontal: 10,
         borderRadius: 20,
         alignSelf: 'flex-start',
-        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
     },
-    locationText: {
+    verifiedText: {
         fontSize: 10,
         fontWeight: '700',
         color: '#065F46',
-        marginLeft: 6,
-    },
-    actionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    bellButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-    },
-    terminationButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#FFF1F2', // Light Pink
-        height: 44,
-        borderRadius: 12,
-    },
-    terminationText: {
-        color: '#BE123C',
-        fontWeight: '600',
-        fontSize: 14,
+        marginLeft: 4,
+        textTransform: 'uppercase',
     },
     card: {
         backgroundColor: '#fff',
@@ -262,27 +357,29 @@ const styles = StyleSheet.create({
         padding: 24,
         alignItems: 'center',
         marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
+        shadowOpacity: 0.03,
+        shadowRadius: 8,
         elevation: 2,
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
     },
-    avatarContainer: {
+    avatarCircle: {
         width: 80,
         height: 80,
         borderRadius: 40,
         backgroundColor: '#F1F5F9',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
     },
     avatarText: {
-        fontSize: 32,
-        fontWeight: '600',
-        color: '#1E293B',
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#334155',
     },
     profileName: {
         fontSize: 18,
@@ -290,106 +387,156 @@ const styles = StyleSheet.create({
         color: '#0F172A',
         marginBottom: 4,
     },
-    roleContainer: {
+    row: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
+        gap: 6,
+        marginBottom: 12,
     },
-    roleText: {
+    profileDetail: {
         fontSize: 14,
         color: '#64748B',
-        marginLeft: 6,
     },
-    companyBadge: {
+    companyPill: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFEDD5', // Light Orange
-        paddingVertical: 10,
-        paddingHorizontal: 24,
+        gap: 6,
+        backgroundColor: 'rgba(215,122,47,0.14)',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
         borderRadius: 12,
-        width: '100%',
-        justifyContent: 'center',
-        marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#FED7AA',
+        borderColor: 'rgba(215,122,47,0.35)',
+        marginBottom: 10,
     },
     companyText: {
         fontSize: 14,
-        fontWeight: '700',
-        color: '#9A3412',
-        marginLeft: 8,
+        fontWeight: '600',
+        color: '#8a4b18',
     },
-    liveLocationText: {
+    liveStatus: {
         fontSize: 12,
-        color: '#64748B',
         fontStyle: 'italic',
+        color: '#94A3B8',
     },
-    attendanceCard: {
+    trackingCard: {
         backgroundColor: '#fff',
         borderRadius: 24,
         padding: 20,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
     },
-    attendanceIconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
-        backgroundColor: '#EC4899', // Pink
+    trackingIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(215,122,47,0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
-        shadowColor: '#EC4899',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
     },
-    attendanceText: {
+    cardTitle: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#1F2937',
+        fontWeight: '700',
+        color: '#0F172A',
+    },
+    cardSub: {
+        fontSize: 12,
+        color: '#64748B',
+        marginTop: 2,
+    },
+    toggleTrack: {
+        width: 44,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        paddingHorizontal: 2,
+    },
+    toggleThumb: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#fff',
     },
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
+        gap: 12,
     },
     gridItem: {
-        width: '31%', // 3 columns
-        aspectRatio: 0.85,
+        width: (width - 64) / 3, // 3 columns accounting for padding and gap
         backgroundColor: '#fff',
         borderRadius: 16,
-        padding: 10,
+        padding: 16,
         alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: '#E2E8F0',
     },
-    gridIconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
+    gridItemFull: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginBottom: 12,
+    },
+    gridIconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
-    gridTitle: {
-        fontSize: 11,
+    gridLabel: {
+        fontSize: 12,
         fontWeight: '600',
-        color: '#334155',
+        color: '#0F172A',
         textAlign: 'center',
-        lineHeight: 14, // Handle multi-line
     },
+    sectionContainer: {
+        marginTop: 24,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 12,
+        color: '#0F172A',
+    },
+    projectsList: {},
+    projectCard: {
+        backgroundColor: '#fff',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    projectHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    projectTitle: {
+        marginLeft: 8,
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#1E293B',
+    },
+    projectId: {
+        fontSize: 12,
+        color: '#64748B',
+        marginLeft: 28,
+    },
+    noDataText: {
+        textAlign: 'center',
+        color: '#94A3B8',
+        fontStyle: 'italic',
+        marginTop: 10,
+    }
 });
