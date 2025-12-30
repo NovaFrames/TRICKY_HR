@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface DashboardHeaderProps {
@@ -26,14 +26,30 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         >
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.header}>
-                    <View>
-                        <Text style={[styles.greeting, { color: theme.placeholder }]}>Welcome Back,</Text>
-                        <Text style={[styles.headerTitle, { color: theme.text }]}>{empName.split(' ')[0]}</Text>
+                    <View style={{ flexDirection: 'column', alignItems: 'center' }}>
+                        {/* Logo */}
+                        <Image
+                            source={require('../../assets/images/trickyhr.png')}
+                            style={{
+                                marginTop: 20,
+                                width: 120,
+                                height: 20,
+                                marginRight: 10,
+                                resizeMode: 'contain',
+                            }}
+                        />
+
+                        {/* Text */}
+                        <View>
+                            <Text style={[styles.greeting, { color: theme.placeholder }]}>
+                                trickyhr
+                            </Text>
+                        </View>
                     </View>
                     <View style={styles.headerRight}>
                         {/* Theme Toggle Button */}
                         <TouchableOpacity onPress={toggleTheme} style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
-                            <Feather name={isDark ? "sun" : "moon"} size={24} color={isDark ? "#fff" : theme.text} />
+                            <Feather name={isDark ? "sun" : "moon"} size={24} color={isDark ? theme.textLight : theme.text} />
                         </TouchableOpacity>
                         <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
                             <Feather name="bell" size={22} color={theme.text} />
@@ -63,7 +79,7 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     safeArea: {
-        marginBottom: 10,
+        marginBottom: 0,
     },
     header: {
         flexDirection: 'row',

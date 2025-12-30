@@ -1,11 +1,11 @@
 import { useUser } from '@/context/UserContext';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function LeavesScreen() {
+export default function SettingsScreen() {
     const { theme, isDark, toggleTheme } = useTheme();
     const { user, logout } = useUser();
     const router = useRouter();
@@ -27,10 +27,12 @@ export default function LeavesScreen() {
                 isDark={isDark}
                 theme={theme}
                 toggleTheme={toggleTheme}
-                handleLogout={handleLogout}
             />
             <View style={styles.content}>
-                <Text style={[styles.text, { color: theme.text }]}>Leaves Screen</Text>
+                <Text style={[styles.text, { color: theme.text }]}>Settings Screen</Text>
+                <TouchableOpacity style={styles.button} onPress={handleLogout}>
+                    <Text style={[styles.buttonText]}>Logout</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -47,6 +49,18 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 20,
+        fontWeight: 'bold',
+    },
+    button: {
+        backgroundColor: '#f81100ff',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 24,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
         fontWeight: 'bold',
     },
 });

@@ -1,13 +1,15 @@
+import DashboardCards from '@/components/dashboard/DashboardCards';
 import { useUser } from '@/context/UserContext';
 import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     ScrollView,
     StyleSheet,
+    Text,
     View
 } from 'react-native';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { MenuGrid } from '../../components/dashboard/MenuGrid';
+import { IdCard } from '../../components/dashboard/IdCard';
 import { useTheme } from '../../context/ThemeContext';
 
 // Fallback menu items if API doesn't return any
@@ -92,12 +94,22 @@ export default function HomeScreen() {
                 showsVerticalScrollIndicator={false}
                 style={styles.scrollView}
             >
-                <MenuGrid
-                    menuItems={menuItems}
+
+                <IdCard
+                    empName={empName}
+                    designation={designation}
+                    empCode={empCode}
+                    company={company}
+                    initial={initial}
+                    locationAddress={locationAddress}
+                    liveLocationEnabled={liveLocationEnabled}
+                    isDark={isDark}
                     theme={theme}
-                    getMenuIcon={getMenuIcon}
-                    type='home'
                 />
+
+                <Text style={[styles.sectionHeader, { color: theme.text }]}>Quick Actions</Text>
+
+                <DashboardCards />
 
             </ScrollView>
         </View>

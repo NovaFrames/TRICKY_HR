@@ -1,5 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -26,49 +25,41 @@ export const IdCard: React.FC<IdCardProps> = ({
     locationAddress,
     liveLocationEnabled,
     isDark,
-    theme
+    theme,
 }) => {
     return (
-        <View style={[styles.idCard, { shadowColor: theme.text }]}>
-            <LinearGradient
-                colors={[theme.inputBg, theme.background]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.idCardGradient}
-            >
+        <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.background }]}>
+            <View style={styles.idCardGradient}>
                 <View style={styles.idCardTop}>
-                    <View style={[styles.avatarLarge, { backgroundColor: theme.inputBorder, borderColor: theme.inputBorder }]}>
-                        <Text style={[styles.avatarLargeText, { color: theme.text }]}>{initial}</Text>
+                    <View style={[styles.avatarLarge, { backgroundColor: '#D1FAE5', borderColor: '#fff' }]}>
+                        <Text style={[styles.avatarLargeText, { color: '#065F46' }]}>{initial}</Text>
                     </View>
                     <View style={styles.idCardInfo}>
                         <Text style={[styles.idName, { color: theme.text }]}>{empName}</Text>
-                        <Text style={[styles.idRole, { color: theme.icon }]}>{designation}</Text>
-                        <View style={styles.idBadgeRow}>
-                            <View style={[styles.idBadge, { backgroundColor: theme.inputBorder }]}>
-                                <Text style={[styles.idBadgeText, { color: theme.text }]}>ID: {empCode}</Text>
-                            </View>
-                            <View style={[styles.idBadge, { backgroundColor: theme.inputBorder }]}>
-                                <Text style={[styles.idBadgeText, { color: theme.primary }]}>{company}</Text>
+                        <Text style={[styles.idRole, { color: theme.text }]}>{designation} • ID {empCode}</Text>
+                        <View style={{ marginTop: 8 }}>
+                            <View style={[styles.idBadge, { backgroundColor: '#FFEDD5' }]}>
+                                <Text style={[styles.idBadgeText, { color: '#C2410C' }]}>{company} - DEMO</Text>
                             </View>
                         </View>
                     </View>
                 </View>
 
                 <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
-                    <View style={styles.locationContainer}>
-                        <MaterialCommunityIcons name="map-marker" size={14} color={theme.icon} />
-                        <Text style={[styles.locationText, { color: theme.icon }]} numberOfLines={1}>
-                            {locationAddress || 'Locating...'}
-                        </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#0F766E', justifyContent: 'center', alignItems: 'center' }}>
+                            <Feather name="map-pin" size={14} color="#fff" />
+                        </View>
+                        <View>
+                            <Text style={[styles.trackingTitle, { color: theme.text, fontSize: 14 }]}>Live Tracking: <Text style={{ color: '#059669' }}>ON</Text></Text>
+                            <Text style={[styles.trackingSub, { color: theme.text, fontSize: 11 }]}>Your location is shared during work hours</Text>
+                        </View>
                     </View>
-                    <View style={[styles.liveTag, { backgroundColor: theme.inputBorder }]}>
-                        <View style={[styles.liveDot, liveLocationEnabled ? { backgroundColor: '#10B981' } : { backgroundColor: '#EF4444' }]} />
-                        <Text style={[styles.liveText, { color: theme.text }]}>
-                            {liveLocationEnabled ? 'Live' : 'Offline'}
-                        </Text>
+                    <View style={[styles.toggleTrack, { backgroundColor: '#D1FAE5' }]}>
+                        <View style={[styles.toggleThumb, { backgroundColor: '#059669', transform: [{ translateX: 20 }] }]} />
                     </View>
                 </View>
-            </LinearGradient>
+            </View>
         </View>
     );
 };
@@ -130,6 +121,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         backgroundColor: 'rgba(255,255,255,0.1)',
         borderRadius: 8,
+        alignSelf: 'flex-start',
     },
     idBadgeText: {
         fontSize: 11,
@@ -174,5 +166,29 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#fff',
         textTransform: 'uppercase',
+    },
+    trackingTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    trackingSub: {
+        fontSize: 12,
+    },
+    toggleTrack: {
+        width: 48,
+        height: 28,
+        borderRadius: 14,
+        padding: 2,
+        justifyContent: 'center',
+    },
+    toggleThumb: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 2,
     },
 });

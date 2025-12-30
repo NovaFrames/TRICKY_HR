@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "trickyhr",
+    "name": "Tricky HR",
     "slug": "trickyhr",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -48,8 +48,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a6b52246-5fe0-4efd-9ef8-1c8a19c2970c"
+        "projectId": "22f358a6-06e9-4577-bfc6-497c55078a62"
       }
-    }
+    },
+    "owner": "novaframes01"
   }
 }

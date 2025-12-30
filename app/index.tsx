@@ -31,8 +31,8 @@ const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
     const router = useRouter();
-    const [empCode, setEmpCode] = useState('');
-    const [password, setPassword] = useState('');
+    const [empCode, setEmpCode] = useState('10005');
+    const [password, setPassword] = useState('10005');
     const [domainId, setDomainId] = useState('trickyhr');
     const [domainUrl, setDomainUrl] = useState('hr.trickyhr.com');
     const [isLoading, setIsLoading] = useState(false);
