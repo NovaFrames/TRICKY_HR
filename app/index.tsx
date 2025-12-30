@@ -87,7 +87,7 @@ export default function LoginScreen() {
             const userData = response.data || response;
             await setUser(userData);
 
-            router.replace('/home');
+            router.replace('/dashboard');
         } catch (error: any) {
             console.error('Login error:', error);
             Alert.alert('Login Failed', error.message || 'An error occurred during login');
