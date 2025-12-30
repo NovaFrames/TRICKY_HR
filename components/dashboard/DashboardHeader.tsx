@@ -51,10 +51,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         <TouchableOpacity onPress={toggleTheme} style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
                             <Feather name={isDark ? "sun" : "moon"} size={24} color={isDark ? theme.textLight : theme.text} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
+                        {/* <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
                             <Feather name="bell" size={22} color={theme.text} />
                             <View style={styles.notificationDot} />
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                         <TouchableOpacity style={styles.profileButton}>
                             <View style={[styles.headerAvatar, { backgroundColor: theme.primary }]}>
                                 <Text style={styles.headerAvatarText}>{initial}</Text>

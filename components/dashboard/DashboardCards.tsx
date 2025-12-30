@@ -1,59 +1,107 @@
-// components/DashboardCards.tsx
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useUser } from '@/context/UserContext';
+import { FontAwesome } from '@expo/vector-icons';
+import { Href, router } from 'expo-router';
 import React from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    Dimensions,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
+/* -------------------- FALLBACK MENU -------------------- */
+const STATIC_MENU_ITEMS = [
+    { MenuNameC: 'Mobile Attendance', IconcolorC: '#10B981', ActionC: 'employee/Attendance', IconC: 'fa fa-th-large' },
+    { MenuNameC: 'Profile', IconcolorC: '#0EA5E9', ActionC: 'employee/profileupdate', IconC: 'fa fa-user' },
+    { MenuNameC: 'Request Status', IconcolorC: '#10B981', ActionC: 'employee/empRequest', IconC: 'fa fa-bar-chart' },
+    { MenuNameC: 'Leave Manage', IconcolorC: '#F59E0B', ActionC: 'employee/leavemanage', IconC: 'fa fa-plane' },
+];
+
+/* -------------------- DASHBOARD ALLOWED ACTIONS -------------------- */
+const DASHBOARD_MENU_ACTIONS = [
+    'employee/Attendance',
+    'employee/leavemanage',
+    'employee/empRequest',
+    'employee/timemanage',
+];
+
+/* -------------------- LAYOUT -------------------- */
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 64) / 2; // (Window - 48px parent padding - 16px gap) / 2
+const CARD_WIDTH = (width - 64) / 2;
+
+/* -------------------- ICON PARSER -------------------- */
+const getFontAwesomeIcon = (
+    iconClass?: string
+): keyof typeof FontAwesome.glyphMap => {
+    if (!iconClass) return 'question-circle';
+
+    return iconClass
+        .replace('fa ', '')
+        .replace('fa-', '') as keyof typeof FontAwesome.glyphMap;
+};
 
 export default function DashboardCards() {
-    const { theme, isDark, toggleTheme } = useTheme();
-    const router = useRouter();
+    const { theme } = useTheme();
+    const { user } = useUser();
+
+    const loginData = user || {};
+
+    const menuItems =
+        Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0
+            ? loginData.EmpMenu
+            : STATIC_MENU_ITEMS;
+
+    const filteredMenuItems = menuItems.filter((item: any) =>
+        DASHBOARD_MENU_ACTIONS.includes(item.ActionC)
+    );
+
+    /* -------------------- NAVIGATION -------------------- */
+    const goToAction = (action: string) => {
+        router.push(`/(tabs)/${action}` as Href);
+    };
+
     return (
         <View style={styles.container}>
+            {filteredMenuItems.map((item: any, index: number) => (
+                <TouchableOpacity
+                    key={index}
+                    style={[
+                        styles.card,
+                        {
+                            backgroundColor:
+                                item.ActionC === 'employee/Attendance'
+                                    ? '#f6ad55'
+                                    : theme.background,
+                        },
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => goToAction(item.ActionC)}
+                >
+                    <View style={styles.iconBox}>
+                        <FontAwesome
+                            name={getFontAwesomeIcon(item.IconC)}
+                            size={22}
+                            color={item.IconcolorC || theme.text}
+                        />
 
-            {/* Check In / Out */}
-            <TouchableOpacity style={[styles.card, styles.orange]}>
-                <View style={styles.iconBox}>
-                    <Feather name="check-square" size={22} color="#fff" />
-                </View>
-                <Text style={[styles.title, { color: theme.text }]}>Check In / Out</Text>
-                <Text style={[styles.subtitle, { color: theme.text }]}>Tap to check in or out</Text>
-            </TouchableOpacity>
+                    </View>
 
-            {/* Leave Request */}
-            <TouchableOpacity style={[styles.card, { backgroundColor: theme.background }]} onPress={() => router.push('/leavemanagement')}>
-                <View style={styles.iconBox}>
-                    <Feather name="calendar" size={22} color="#2f855a" />
-                </View>
-                <Text style={[styles.title, { color: theme.text }]}>Leave Request</Text>
-                <Text style={[styles.subtitle, { color: theme.text }]}>Apply for leave</Text>
-            </TouchableOpacity>
+                    <Text style={[styles.title, { color: theme.text }]}>
+                        {item.MenuNameC}
+                    </Text>
 
-            {/* Request Status */}
-            <TouchableOpacity style={[styles.card, { backgroundColor: theme.background }]}>
-                <View style={styles.iconBox}>
-                    <MaterialCommunityIcons name="clipboard-text-outline" size={22} color="#4a5568" />
-                </View>
-                <Text style={[styles.title, { color: theme.text }]}>Request Status</Text>
-                <Text style={[styles.subtitle, { color: theme.text }]}>View request progress</Text>
-            </TouchableOpacity>
-
-            {/* Time Sheet */}
-            <TouchableOpacity style={[styles.card, { backgroundColor: theme.background }]}>
-                <View style={styles.iconBox}>
-                    <Feather name="clock" size={22} color="#ed8936" />
-                </View>
-                <Text style={[styles.title, { color: theme.text }]}>Time Sheet</Text>
-                <Text style={[styles.subtitle, { color: theme.text }]}>Manage your time logs</Text>
-            </TouchableOpacity>
-
+                    <Text style={[styles.subtitle, { color: theme.placeholder }]}>
+                        {item.MenuNameC}
+                    </Text>
+                </TouchableOpacity>
+            ))}
         </View>
     );
 }
 
+/* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
@@ -68,14 +116,6 @@ const styles = StyleSheet.create({
         padding: 16,
         marginBottom: 16,
         elevation: 3,
-        shadowColor: '#aa9191ff',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-    },
-
-    orange: {
-        backgroundColor: '#f6ad55',
     },
 
     iconBox: {

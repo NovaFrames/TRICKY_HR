@@ -1,6 +1,6 @@
 import { useUser } from '@/context/UserContext';
 import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
     ScrollView,
     StyleSheet,
@@ -22,15 +22,9 @@ export default function HomeScreen() {
     const { theme, isDark, toggleTheme } = useTheme();
     const { user } = useUser();
 
-    const [locationAddress, setLocationAddress] = useState<string | null>(null);
-
     const loginData = user || {};
 
     const empName = loginData.EmpNameC || loginData.EmpName || loginData.Name || '-';
-    const empCode = loginData.EmpCodeC || loginData.EmpCode || '-';
-    const designation = loginData.DesigNameC || loginData.Designation || '-';
-    const company = loginData.CompNameC || loginData.DomainId || '-';
-    const liveLocationEnabled = loginData.IsLiveLocN === 1;
 
     // Critical: Token extraction
     const token = loginData.Token || loginData.TokenC;
@@ -41,24 +35,6 @@ export default function HomeScreen() {
     const menuItems = (Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0)
         ? loginData.EmpMenu
         : STATIC_MENU_ITEMS;
-
-    useEffect(() => {
-        const userLoc = loginData.location || { lat: 11.44, lng: 77.67 };
-
-        if (userLoc) {
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLoc.lat}&lon=${userLoc.lng}`)
-                .then(res => res.json())
-                .then(data => {
-                    const addr = data.address;
-                    if (addr) {
-                        const city = addr.city || addr.town || addr.village || addr.county;
-                        const state = addr.state || addr.country;
-                        setLocationAddress(`${city}, ${state}`);
-                    }
-                })
-                .catch(() => setLocationAddress(`${userLoc.lat.toFixed(4)}, ${userLoc.lng.toFixed(4)}`));
-        }
-    }, [user]);
 
     const getMenuIcon = (name: string) => {
         const key = name.toLowerCase();

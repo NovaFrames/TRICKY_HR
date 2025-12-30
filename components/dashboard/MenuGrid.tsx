@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React from 'react';
 import {
     Dimensions,
@@ -96,6 +97,11 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                                 marginBottom: 16
                             },
                         ]}
+                        onPress={() => {
+                            if (item.ActionC) {
+                                router.push(item.ActionC);
+                            }
+                        }}
                     >
                         <View style={{ flexDirection: isDashboard ? 'row' : 'column', alignItems: isDashboard ? 'flex-start' : 'center', justifyContent: isDashboard ? 'flex-start' : 'center' }}>
                             <View

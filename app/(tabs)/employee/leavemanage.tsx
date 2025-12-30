@@ -13,9 +13,9 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ApplyLeaveModal from '../../components/LeaveApply/ApplyLeaveModal';
-import SurrenderLeaveModal from '../../components/LeaveApply/SurrenderLeaveModal';
-import ApiService, { AvailableLeaveType, LeaveBalanceResponse, LeaveType } from '../../services/ApiService';
+import ApplyLeaveModal from '../../../components/LeaveApply/ApplyLeaveModal';
+import SurrenderLeaveModal from '../../../components/LeaveApply/SurrenderLeaveModal';
+import ApiService, { AvailableLeaveType, LeaveBalanceResponse, LeaveType } from '../../../services/ApiService';
 
 interface FormattedLeaveType extends LeaveType {
     formattedBalance: string;
