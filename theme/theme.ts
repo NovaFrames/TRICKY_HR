@@ -10,19 +10,21 @@ export const lightTheme = {
     inputBorder: '#CCFBF1',
     placeholder: '#94A3B8',
     icon: '#94A3B8',
+    backgroundCard: '#F0FDFA',
 };
 
 export const darkTheme = {
     mode: 'dark',
     primary: '#e46a23',
     secondary: '#ccfbf1',
-    background: '#0f172a',
+    background: '#130b1dff',
     text: '#f0fdfa',
     textLight: '#94a3b8',
     inputBg: '#1e293b',
     inputBorder: '#334155',
     placeholder: '#64748b',
     icon: '#64748b',
+    backgroundCard: '#0f172a',
 };
 
 export type ThemeType = typeof lightTheme;

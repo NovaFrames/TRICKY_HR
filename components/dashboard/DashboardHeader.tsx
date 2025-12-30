@@ -5,7 +5,6 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface DashboardHeaderProps {
-    empName: string;
     initial: string;
     isDark: boolean;
     theme: any;
@@ -13,7 +12,6 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-    empName,
     initial,
     isDark,
     theme,

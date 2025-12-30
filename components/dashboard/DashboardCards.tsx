@@ -70,10 +70,7 @@ export default function DashboardCards() {
                     style={[
                         styles.card,
                         {
-                            backgroundColor:
-                                item.ActionC === 'employee/Attendance'
-                                    ? '#f6ad55'
-                                    : theme.background,
+                            backgroundColor: theme.backgroundCard,
                         },
                     ]}
                     activeOpacity={0.8}

@@ -56,7 +56,6 @@ export default function HomeScreen() {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <DashboardHeader
-                empName={empName}
                 initial={initial}
                 isDark={isDark}
                 theme={theme}

@@ -10,9 +10,6 @@ interface IdCardProps {
     empCode: string;
     company: string;
     initial: string;
-    locationAddress: string | null;
-    liveLocationEnabled: boolean;
-    isDark: boolean;
     theme: ThemeType;
 }
 
@@ -22,13 +19,10 @@ export const IdCard: React.FC<IdCardProps> = ({
     empCode,
     company,
     initial,
-    locationAddress,
-    liveLocationEnabled,
-    isDark,
     theme,
 }) => {
     return (
-        <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.background }]}>
+        <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.backgroundCard }]}>
             <View style={styles.idCardGradient}>
                 <View style={styles.idCardTop}>
                     <View style={[styles.avatarLarge, { backgroundColor: '#D1FAE5', borderColor: '#fff' }]}>
