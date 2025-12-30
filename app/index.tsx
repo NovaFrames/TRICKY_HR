@@ -1,4 +1,5 @@
 import { useUser } from '@/context/UserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -82,6 +83,17 @@ export default function LoginScreen() {
             if (!isValidLogin) {
                 Alert.alert('Login Failed', response.Message || 'Invalid credentials. Please try again.');
                 return;
+            }
+
+            // Save Token and EmpId manually to AsyncStorage for ApiService to use
+            const token = response.TokenC || response.data?.TokenC;
+            const empId = response.data?.EmpIdN || response.EmpIdN;
+
+            if (token) {
+                await AsyncStorage.setItem('auth_token', token);
+            }
+            if (empId) {
+                await AsyncStorage.setItem('emp_id', empId.toString());
             }
 
             const userData = response.data || response;

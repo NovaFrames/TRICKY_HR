@@ -190,20 +190,25 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         try {
             setLoading(true);
 
+            const isHourly = selectedLeaveType.ReaTypeN === 4 || selectedLeaveType.ReaGrpIdN === 8; // Type 4 or ONDUTY
+
             const leaveData: LeaveApplicationData = {
                 AppEmpIdN: ApiService.getCurrentUser().empId!,
                 LIdN: selectedLeaveType.ReaIdN,
                 LFromDateD: formatDateForAPI(fromDate),
                 LToDateD: formatDateForAPI(toDate),
-                FHN: parseFloat(fromTime) || 0,
-                THN: parseFloat(toTime) || 0,
-                THrsN: parseFloat(totalTime) || 0,
-                UnitN: selectedLeaveType.ReaTypeN === 4 ? 0 :
-                    selectedLeaveType.ReaTypeN === 2 || selectedLeaveType.ReaTypeN === 3 ? 0.5 : 1,
+                FHN: isHourly ? (parseFloat(fromTime) || 0) : 0,
+                THN: isHourly ? (parseFloat(toTime) || 0) : 0,
+                THrsN: isHourly ? (parseFloat(totalTime) || 0) : 0,
+                UnitN: selectedLeaveType.ReaTypeN === 1 ? 1 :
+                    selectedLeaveType.ReaTypeN === 4 ? 0 :
+                        selectedLeaveType.ReaTypeN === 2 || selectedLeaveType.ReaTypeN === 3 ? 0.5 : 1,
                 MLClaimAmtN: parseFloat(claimAmount) || 0,
                 LVRemarksC: remarks.trim(),
                 PastLeaveN: pastLeaveYes ? 1 : 0,
             };
+
+            console.log('Final Payload:', JSON.stringify(leaveData));
 
             const result = await ApiService.applyLeave(leaveData);
 
@@ -222,10 +227,10 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                     );
                 }
             } else {
-                Alert.alert('Error', result.error || 'Failed to apply leave');
+                Alert.alert('Error', result.error || 'Leave Already Applied or Failed to Apply Leave');
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to apply leave');
+            Alert.alert('Error', 'Leave Already Applied or Failed to Apply Leave');
         } finally {
             setLoading(false);
         }

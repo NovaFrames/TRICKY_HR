@@ -268,9 +268,17 @@ class ApiService {
                 await this.loadCredentials();
             }
 
+            console.log('getLeaveDetails Request Payload:', {
+                TokenC: this.token,
+                EmpIdN: this.empId
+            });
+
             const response = await axios.post(
                 BASE_URL + API_ENDPOINTS.GET_LEAVE_DETAILS,
-                { TokenC: this.token },
+                {
+                    TokenC: this.token,
+                    EmpIdN: this.empId
+                },
                 { headers: this.getHeaders() }
             );
 
@@ -328,6 +336,15 @@ class ApiService {
 
     async applyLeave(leaveData: LeaveApplicationData): Promise<{ success: boolean, data?: LeaveApplicationResponse, error?: string }> {
         try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            // Ensure AppEmpIdN is set if missing
+            if (!leaveData.AppEmpIdN && this.empId) {
+                leaveData.AppEmpIdN = this.empId;
+            }
+
             const response = await axios.post(
                 BASE_URL + API_ENDPOINTS.APPLY_LEAVE,
                 {
@@ -336,25 +353,39 @@ class ApiService {
                 },
                 { headers: this.getHeaders() }
             );
-
+            console.log(this.token);
+            console.log(this.empId);
+            console.log(leaveData);
             return {
                 success: response.data.Status === 'success',
                 data: response.data,
                 error: response.data.Status === 'error' ? response.data.Error : undefined
             };
         } catch (error: any) {
+            console.log('Apply Leave API Error:', error);
+            if (error.response) {
+                console.log('Error Data:', JSON.stringify(error.response.data));
+                console.log('Error Status:', error.response.status);
+            }
             return {
                 success: false,
-                error: error.response?.data?.Error || 'Network error'
+                error: error.response?.data?.Error || error.message || 'Network error'
             };
         }
     }
 
     async getSurrenderBalance(): Promise<{ success: boolean, eligLeave?: number, error?: string }> {
         try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
             const response = await axios.post(
                 BASE_URL + API_ENDPOINTS.GET_SURRENDER_BALANCE,
-                { TokenC: this.token },
+                {
+                    TokenC: this.token,
+                    EmpIdN: this.empId
+                },
                 { headers: this.getHeaders() }
             );
 
@@ -373,6 +404,15 @@ class ApiService {
 
     async submitSurrender(surrenderData: SurrenderData): Promise<{ success: boolean, data?: LeaveApplicationResponse, error?: string }> {
         try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            // Ensure EmpIdN is set if missing
+            if (!surrenderData.EmpIdN && this.empId) {
+                surrenderData.EmpIdN = this.empId;
+            }
+
             const response = await axios.post(
                 BASE_URL + API_ENDPOINTS.SUBMIT_SURRENDER,
                 {
@@ -397,6 +437,10 @@ class ApiService {
 
     async getSurrenderDetails(surrenderId: number) {
         try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
             const response = await axios.post(
                 BASE_URL + API_ENDPOINTS.GET_SURRENDER_DETAILS,
                 {

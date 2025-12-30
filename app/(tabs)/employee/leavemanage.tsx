@@ -143,50 +143,65 @@ const LeaveApply: React.FC = () => {
     };
 
     const renderLeaveCard = (leave: FormattedLeaveType) => (
-        <View key={leave.ReaGrpNameC} style={styles.leaveBlock}>
+        <View key={leave.ReaGrpNameC} style={styles.card}>
             {/* Header: Leave Name + Balance */}
-            <View style={styles.blockHeader}>
-                <Text style={styles.leaveTitle}>{leave.ReaGrpNameC}</Text>
-                <Text style={styles.leaveBalanceText}>Balance : {leave.formattedBalance}</Text>
-            </View>
-
-            {/* Grid Row 1 */}
-            <View style={styles.gridRow}>
-                <View style={styles.gridCell}>
-                    <Text style={styles.gridLabel}>Elig.. :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedEligible}</Text>
+            <View style={styles.cardHeader}>
+                <View style={styles.headerLeft}>
+                    <Icon name="event-note" size={20} color="#005662" />
+                    <Text style={styles.cardTitle}>{leave.ReaGrpNameC}</Text>
                 </View>
-                <View style={styles.gridCell}>
-                    <Text style={styles.gridLabel}>Credit :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedCredit}</Text>
-                </View>
-                <View style={styles.gridCell}>
-                    <Text style={styles.gridLabel}>Surre.. :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedSurrender}</Text>
-                </View>
-                <View style={[styles.gridCell, styles.lastCell]}>
-                    <Text style={styles.gridLabel}>B/F :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedBF}</Text>
+                <View style={styles.balanceBadge}>
+                    <Text style={styles.balanceLabel}>BAL</Text>
+                    <Text style={styles.balanceValue}>{leave.formattedBalance}</Text>
                 </View>
             </View>
 
-            {/* Grid Row 2 */}
-            <View style={[styles.gridRow, styles.lastRow]}>
-                <View style={styles.gridCell}>
-                    <Text style={styles.gridLabel}>Earn :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedEarn}</Text>
+            <View style={styles.divider} />
+
+            {/* Grid Stats */}
+            <View style={styles.statsContainer}>
+                {/* Column 1 */}
+                <View style={styles.statsColumn}>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>Eligible</Text>
+                        <Text style={styles.statValue}>{leave.formattedEligible}</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>Credit</Text>
+                        <Text style={styles.statValue}>{leave.formattedCredit}</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>Surrendered</Text>
+                        <Text style={styles.statValue}>{leave.formattedSurrender}</Text>
+                    </View>
                 </View>
-                <View style={styles.gridCell}>
-                    <Text style={styles.gridLabel}>Total :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedTotal}</Text>
+
+                {/* Column 2 */}
+                <View style={styles.statsColumn}>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>B/F</Text>
+                        <Text style={styles.statValue}>{leave.formattedBF}</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>Earned</Text>
+                        <Text style={styles.statValue}>{leave.formattedEarn}</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>Total</Text>
+                        <Text style={styles.statValue}>{leave.formattedTotal}</Text>
+                    </View>
                 </View>
-                <View style={styles.gridCell}>
-                    <Text style={styles.gridLabel}>Request :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedRequest}</Text>
-                </View>
-                <View style={[styles.gridCell, styles.lastCell]}>
-                    <Text style={styles.gridLabel}>Taken :</Text>
-                    <Text style={styles.gridValue}>{leave.formattedTaken}</Text>
+
+                {/* Column 3 */}
+                <View style={styles.statsColumn}>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>Requested</Text>
+                        <Text style={styles.statValue}>{leave.formattedRequest}</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statLabel}>Taken</Text>
+                        <Text style={styles.statValue}>{leave.formattedTaken}</Text>
+                    </View>
                 </View>
             </View>
         </View>
@@ -195,7 +210,7 @@ const LeaveApply: React.FC = () => {
     if (loading) {
         return (
             <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color="#007AFF" />
+                <ActivityIndicator size="large" color="#00838F" />
                 <Text style={styles.loadingText}>Loading leave data...</Text>
             </View>
         );
@@ -203,46 +218,49 @@ const LeaveApply: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#0091EA" />
+            <StatusBar barStyle="light-content" backgroundColor="#00838F" />
 
-            {/* Header */}
+            {/* Modern Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Icon name="arrow-back" size={24} color="#fff" />
+                    <Icon name="arrow-back-ios" size={20} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Leave Manage</Text>
+                <Text style={styles.headerTitle}>Leave Management</Text>
                 <View style={styles.headerRight}>
-                    <View style={styles.headerIcons}>
-                        <Icon name="phone" size={20} color="#fff" style={{ marginRight: 15 }} />
-                        <Icon name="signal-cellular-alt" size={20} color="#fff" />
-                    </View>
+                    {/* Placeholder for future actions */}
                 </View>
             </View>
 
             {/* Leave List */}
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
                 {formattedLeaves.map(renderLeaveCard)}
-
-                <View style={{ height: 20 }} />
+                <View style={styles.bottomSpacer} />
             </ScrollView>
 
-            {/* Action Buttons */}
-            <View style={styles.actionContainer}>
-                {/* Always show both buttons as per image, handle disabled state if needed */}
+            {/* Floating Action Bar */}
+            <View style={styles.floatingActionBar}>
                 <TouchableOpacity
-                    style={[styles.actionButton, styles.surrenderButton]}
+                    style={[styles.fabButton, styles.fabSurrender, !canSurrender && styles.disabledButton]}
                     onPress={() => canSurrender && setShowSurrenderModal(true)}
                     activeOpacity={0.8}
+                    disabled={!canSurrender}
                 >
-                    <Text style={styles.actionButtonText}>Leave Surrender</Text>
+                    <Icon name="history" size={20} color={canSurrender ? "#00838F" : "#999"} />
+                    <Text style={[styles.fabText, !canSurrender && styles.disabledText]}>Surrender</Text>
                 </TouchableOpacity>
 
+                <View style={styles.fabDivider} />
+
                 <TouchableOpacity
-                    style={[styles.actionButton, styles.applyButton]}
+                    style={[styles.fabButton, styles.fabApply]}
                     onPress={() => setShowApplyModal(true)}
-                    activeOpacity={0.8}
                 >
-                    <Text style={styles.actionButtonText}>Leave Request</Text>
+                    <Icon name="add-circle-outline" size={20} color="#fff" />
+                    <Text style={[styles.fabText, styles.fabTextPrimary]}>Apply Leave</Text>
                 </TouchableOpacity>
             </View>
 
@@ -271,130 +289,185 @@ const LeaveApply: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#F5F7FA', // Light Gray-Blue Background
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#F5F7FA',
     },
     loadingText: {
-        marginTop: 10,
+        marginTop: 12,
         fontSize: 16,
-        color: '#666',
+        color: '#546E7A',
+        fontWeight: '500',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 15,
-        backgroundColor: '#0091EA', // Light Blue Header
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: '#00838F', // Teal 800
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
     backButton: {
-        padding: 4,
+        padding: 8,
     },
     headerTitle: {
         fontSize: 20,
-        fontWeight: '500',
+        fontWeight: '600',
         color: '#fff',
-        marginLeft: 16,
-        flex: 1,
+        letterSpacing: 0.5,
     },
     headerRight: {
-        // width: 32,
-    },
-    headerIcons: {
-        flexDirection: 'row',
+        width: 40,
     },
     scrollView: {
         flex: 1,
-        backgroundColor: '#fff',
     },
-    leaveBlock: {
-        marginBottom: 0,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+    scrollContent: {
+        padding: 16,
+        paddingBottom: 100, // Space for FAB
     },
-    blockHeader: {
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        marginBottom: 16,
+        padding: 16,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.02)',
+    },
+    cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#F5FCFF', // Very light blue/white bg for header
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        marginBottom: 12,
     },
-    leaveTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#00796B', // Teal color
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#37474F', // Blue Grey 800
+        marginLeft: 8,
         textTransform: 'uppercase',
-    },
-    leaveBalanceText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#0277BD', // Blue color
-    },
-    gridRow: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    lastRow: {
-        borderBottomWidth: 0,
-    },
-    gridCell: {
         flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 4,
-        alignItems: 'center', // Center content horizontally? Image looks like Row: "Label : Value"
-        justifyContent: 'center',
-        borderRightWidth: 1,
-        borderRightColor: '#f0f0f0',
-        flexDirection: 'row', // Label and Value in one line
-        flexWrap: 'wrap',
     },
-    lastCell: {
-        borderRightWidth: 0,
+    balanceBadge: {
+        backgroundColor: '#E0F7FA', // Cyan 50
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#B2EBF2',
     },
-    gridLabel: {
-        fontSize: 11,
-        color: '#333',
+    balanceLabel: {
+        fontSize: 10,
         fontWeight: '600',
+        color: '#006064', // Cyan 900
         marginRight: 4,
+        opacity: 0.7,
     },
-    gridValue: {
-        fontSize: 11,
-        color: '#666',
+    balanceValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#00838F',
     },
-    actionContainer: {
+    divider: {
+        height: 1,
+        backgroundColor: '#ECEFF1',
+        marginBottom: 12,
+    },
+    statsContainer: {
         flexDirection: 'row',
-        padding: 0,
-        backgroundColor: '#fff',
+        justifyContent: 'space-between',
     },
-    actionButton: {
+    statsColumn: {
         flex: 1,
+    },
+    statItem: {
+        marginBottom: 8,
+    },
+    statLabel: {
+        fontSize: 11,
+        color: '#90A4AE', // Blue Grey 300
+        marginBottom: 2,
+        fontWeight: '500',
+    },
+    statValue: {
+        fontSize: 13,
+        color: '#455A64', // Blue Grey 700
+        fontWeight: '600',
+    },
+    bottomSpacer: {
+        height: 20,
+    },
+    floatingActionBar: {
+        position: 'absolute',
+        bottom: 24,
+        left: 20,
+        right: 20,
+        backgroundColor: '#fff',
+        borderRadius: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 6,
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+    },
+    fabButton: {
+        flex: 1,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 16,
-        backgroundColor: '#008CBA', // Blue Button
+        paddingVertical: 12,
+        borderRadius: 24,
     },
-    surrenderButton: {
-        backgroundColor: '#008CBA',
-        borderRightWidth: 1,
-        borderRightColor: '#fff', // Separator if needed
+    fabSurrender: {
+        backgroundColor: 'transparent',
     },
-    applyButton: {
-        backgroundColor: '#008CBA',
+    fabApply: {
+        backgroundColor: '#00838F',
     },
-    actionButtonText: {
+    fabDivider: {
+        width: 1,
+        height: 24,
+        backgroundColor: '#ECEFF1',
+        marginHorizontal: 4,
+    },
+    fabText: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 6,
+        color: '#00838F',
+    },
+    fabTextPrimary: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: '500',
+    },
+    disabledButton: {
+        opacity: 0.6,
+    },
+    disabledText: {
+        color: '#CFD8DC',
     },
 });
 
