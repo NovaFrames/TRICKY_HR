@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { ThemeType } from '../../theme/theme';
 
@@ -21,12 +21,19 @@ export const IdCard: React.FC<IdCardProps> = ({
     initial,
     theme,
 }) => {
+    const [isTracking, setIsTracking] = React.useState(true);
+
+    const toggleTracking = () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setIsTracking(!isTracking);
+    };
+
     return (
         <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.backgroundCard }]}>
             <View style={styles.idCardGradient}>
                 <View style={styles.idCardTop}>
-                    <View style={[styles.avatarLarge, { backgroundColor: '#D1FAE5', borderColor: '#fff' }]}>
-                        <Text style={[styles.avatarLargeText, { color: '#065F46' }]}>{initial}</Text>
+                    <View style={[styles.avatarLarge, { backgroundColor: '#e46a23', borderColor: '#fff' }]}>
+                        <Text style={[styles.avatarLargeText, { color: '#ffffffff' }]}>{initial}</Text>
                     </View>
                     <View style={styles.idCardInfo}>
                         <Text style={[styles.idName, { color: theme.text }]}>{empName}</Text>
@@ -41,17 +48,31 @@ export const IdCard: React.FC<IdCardProps> = ({
 
                 <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#0F766E', justifyContent: 'center', alignItems: 'center' }}>
-                            <Feather name="map-pin" size={14} color="#fff" />
+                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: isTracking ? '#76630fff' : '#8b7564ff', justifyContent: 'center', alignItems: 'center' }}>
+                            <Feather name={isTracking ? "map-pin" : "map-pin"} size={14} color="#fff" />
                         </View>
                         <View>
-                            <Text style={[styles.trackingTitle, { color: theme.text, fontSize: 14 }]}>Live Tracking: <Text style={{ color: '#059669' }}>ON</Text></Text>
-                            <Text style={[styles.trackingSub, { color: theme.text, fontSize: 11 }]}>Your location is shared during work hours</Text>
+                            <Text style={[styles.trackingTitle, { color: theme.text, fontSize: 14 }]}>
+                                Live Tracking: <Text style={{ color: isTracking ? '#059669' : '#64748B' }}>{isTracking ? 'ON' : 'OFF'}</Text>
+                            </Text>
+                            <Text style={[styles.trackingSub, { color: theme.text, fontSize: 11 }]}>
+                                {isTracking ? 'Your location is shared during work hours' : 'Location sharing is paused'}
+                            </Text>
                         </View>
                     </View>
-                    <View style={[styles.toggleTrack, { backgroundColor: '#D1FAE5' }]}>
-                        <View style={[styles.toggleThumb, { backgroundColor: '#059669', transform: [{ translateX: 20 }] }]} />
-                    </View>
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={toggleTracking}
+                        style={[
+                            styles.toggleTrack,
+                            {
+                                backgroundColor: isTracking ? 'rgba(250, 225, 209, 1)' : '#f0e8e2ff',
+                                alignItems: isTracking ? 'flex-end' : 'flex-start'
+                            }
+                        ]}
+                    >
+                        <View style={[styles.toggleThumb, { backgroundColor: isTracking ? '#e46a23' : '#b8ab94ff' }]} />
+                    </TouchableOpacity>
                 </View>
             </View>
         </View>
