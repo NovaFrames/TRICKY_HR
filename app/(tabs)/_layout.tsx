@@ -4,8 +4,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { Tabs, usePathname } from 'expo-router';
 import { View } from 'react-native';
 
-const TAB_BAR_HEIGHT = 70;
-
 export default function TabsLayout() {
     const pathname = usePathname();
     const hideTabs =
@@ -18,9 +16,7 @@ export default function TabsLayout() {
         <View
             style={{
                 flex: 1,
-                backgroundColor: isDark
-                    ? theme.background
-                    : '#f3f4f6', // 👈 MUST match header bottom color
+                backgroundColor: theme.background, // 👈 MUST match header bottom color
             }}
         >
             <DashboardHeader

@@ -6,11 +6,10 @@ import {
     ActivityIndicator,
     Alert,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ApplyLeaveModal from '../../../components/LeaveApply/ApplyLeaveModal';
@@ -217,8 +216,7 @@ const LeaveApply: React.FC = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#00838F" />
+        <SafeAreaView style={styles.container} edges={['bottom']}>
 
             {/* Modern Header */}
             <View style={styles.header}>
@@ -289,7 +287,7 @@ const LeaveApply: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F7FA', // Light Gray-Blue Background
+        backgroundColor: '#ffffffff', // Light Gray-Blue Background
     },
     centerContainer: {
         flex: 1,
