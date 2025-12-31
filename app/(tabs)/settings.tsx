@@ -1,4 +1,5 @@
 import { useUser } from '@/context/UserContext';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -22,7 +23,6 @@ export default function SettingsScreen() {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <DashboardHeader
-                empName={empName}
                 initial={initial}
                 isDark={isDark}
                 theme={theme}
@@ -30,9 +30,14 @@ export default function SettingsScreen() {
             />
             <View style={styles.content}>
                 <Text style={[styles.text, { color: theme.text }]}>Settings Screen</Text>
-                <TouchableOpacity style={styles.button} onPress={handleLogout}>
-                    <Text style={[styles.buttonText]}>Logout</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.button} onPress={handleLogout}>
+                        <Text style={[styles.buttonText]}>Logout</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={toggleTheme} style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
+                        <Feather name={isDark ? "sun" : "moon"} size={24} color={isDark ? theme.textLight : theme.text} />
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
@@ -51,16 +56,28 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
     },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 16,
+    },
     button: {
         backgroundColor: '#f81100ff',
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
-        marginTop: 24,
     },
     buttonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    iconButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

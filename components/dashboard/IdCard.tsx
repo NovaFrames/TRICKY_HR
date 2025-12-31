@@ -1,7 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
-import { LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { useUser } from '@/context/UserContext';
+import { useProfileImage } from '@/hooks/useCompanyLogo';
 import { ThemeType } from '../../theme/theme';
 
 interface IdCardProps {
@@ -28,12 +30,26 @@ export const IdCard: React.FC<IdCardProps> = ({
         setIsTracking(!isTracking);
     };
 
+    const { user } = useUser();
+
+    const [logoError, setLogoError] = React.useState(false);
+
+    const logoUrl = useProfileImage(user?.CustomerIdC, user?.CompIdN, user?.EmpIdN);
+
     return (
         <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.backgroundCard }]}>
             <View style={styles.idCardGradient}>
                 <View style={styles.idCardTop}>
-                    <View style={[styles.avatarLarge, { backgroundColor: '#e46a23', borderColor: '#fff' }]}>
-                        <Text style={[styles.avatarLargeText, { color: '#ffffffff' }]}>{initial}</Text>
+                    <View style={[styles.avatarLarge]}>
+                        <Image
+                            source={
+                                !logoError && logoUrl
+                                    ? { uri: logoUrl }
+                                    : require('@/assets/images/trickyhr.png')
+                            }
+                            onError={() => setLogoError(true)}
+                            style={styles.avatarImage}
+                        />
                     </View>
                     <View style={styles.idCardInfo}>
                         <Text style={[styles.idName, { color: theme.text }]}>{empName}</Text>
@@ -98,8 +114,8 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     avatarLarge: {
-        width: 64,
-        height: 64,
+        width: 80,
+        height: 80,
         borderRadius: 20,
         backgroundColor: 'rgba(255,255,255,0.1)',
         justifyContent: 'center',
@@ -107,7 +123,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
         marginRight: 16,
+        overflow: 'hidden', // 🔑 important
     },
+
+    avatarImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 20,
+        resizeMode: 'cover',
+    },
+
     avatarLargeText: {
         fontSize: 28,
         fontWeight: '700',

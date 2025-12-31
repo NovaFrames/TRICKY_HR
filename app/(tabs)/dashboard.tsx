@@ -1,4 +1,5 @@
 import DashboardCards from '@/components/dashboard/DashboardCards';
+import { TeamLeaders } from '@/components/dashboard/TeamLeaders';
 import { useUser } from '@/context/UserContext';
 import React from 'react';
 import {
@@ -46,6 +47,13 @@ export default function HomeScreen() {
                     company={company}
                     initial={initial}
                     theme={theme}
+                />
+
+                <TeamLeaders
+                    initial={initial}
+                    isDark={isDark}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
                 />
 
                 <Text style={[styles.sectionHeader, { color: theme.text }]}>Quick Actions</Text>

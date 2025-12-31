@@ -1,7 +1,8 @@
-import { Feather } from '@expo/vector-icons';
+import { useUser } from '@/context/UserContext';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface DashboardHeaderProps {
@@ -9,6 +10,7 @@ interface DashboardHeaderProps {
     isDark: boolean;
     theme: any;
     toggleTheme: () => void;
+
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -17,6 +19,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     theme,
     toggleTheme,
 }) => {
+
+    const { user } = useUser();
+    const [logoError, setLogoError] = React.useState(false);
+
+    const logoUrl = useCompanyLogo(user.CustomerIdC, user.CompIdN);
+
+
     return (
         <LinearGradient
             colors={isDark ? [theme.background, theme.inputBg] : ['#fff', '#f3f4f6']}
@@ -27,37 +36,25 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     <View style={{ flexDirection: 'column', alignItems: 'center' }}>
                         {/* Logo */}
                         <Image
-                            source={require('../../assets/images/trickyhr.png')}
+                            source={
+                                !logoError && logoUrl
+                                    ? { uri: logoUrl }
+                                    : require('@/assets/images/trickyhr.png')
+                            }
+                            onError={() => setLogoError(true)}
                             style={{
                                 marginTop: 20,
-                                width: 120,
-                                height: 20,
-                                marginRight: 10,
+                                width: 180,
+                                height: 30,
                                 resizeMode: 'contain',
                             }}
                         />
-
                         {/* Text */}
                         <View>
                             <Text style={[styles.greeting, { color: theme.placeholder }]}>
                                 trickyhr
                             </Text>
                         </View>
-                    </View>
-                    <View style={styles.headerRight}>
-                        {/* Theme Toggle Button */}
-                        <TouchableOpacity onPress={toggleTheme} style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
-                            <Feather name={isDark ? "sun" : "moon"} size={24} color={isDark ? theme.textLight : theme.text} />
-                        </TouchableOpacity>
-                        {/* <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.inputBg }]}>
-                            <Feather name="bell" size={22} color={theme.text} />
-                            <View style={styles.notificationDot} />
-                        </TouchableOpacity> */}
-                        <TouchableOpacity style={styles.profileButton}>
-                            <View style={[styles.headerAvatar, { backgroundColor: theme.primary }]}>
-                                <Text style={styles.headerAvatarText}>{initial}</Text>
-                            </View>
-                        </TouchableOpacity>
                     </View>
                 </View>
             </SafeAreaView>
@@ -81,56 +78,11 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 24,
+        justifyContent: 'center',
         paddingTop: 10,
     },
     greeting: {
         fontSize: 14,
         fontWeight: '500',
-    },
-    headerTitle: {
-        fontSize: 26,
-        fontWeight: '800',
-        letterSpacing: -0.5,
-    },
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    iconButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    notificationDot: {
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#EF4444',
-        borderWidth: 1.5,
-        borderColor: '#F1F5F9',
-    },
-    profileButton: {
-        // Shadow handled by headerAvatar
-    },
-    headerAvatar: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerAvatarText: {
-        color: '#fff',
-        fontWeight: '700',
-        fontSize: 18,
     },
 });
