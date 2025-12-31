@@ -3,10 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface TeamLeadersProps {
-    initial: string;
-    isDark: boolean;
     theme: any;
-    toggleTheme: () => void;
 }
 
 /* 🔹 Sample Team Leads Data */
@@ -29,10 +26,7 @@ const TEAM_LEADS = [
 ];
 
 export const TeamLeaders: React.FC<TeamLeadersProps> = ({
-    initial,
-    isDark,
     theme,
-    toggleTheme,
 }) => {
 
     return (
@@ -74,6 +68,7 @@ const styles = StyleSheet.create({
         elevation: 5,
         zIndex: 10,
         marginBottom: 24,
+        padding: 12,
     },
     header: {
         alignItems: 'center',

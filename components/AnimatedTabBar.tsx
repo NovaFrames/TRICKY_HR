@@ -17,8 +17,8 @@ const TAB_COUNT = 3;
 const TAB_WIDTH = width / TAB_COUNT;
 
 const TAB_BAR_HEIGHT = 64;
-const CURVE_WIDTH = 120;
-const CURVE_HEIGHT = 38;
+const CURVE_WIDTH = 140;
+const CURVE_HEIGHT = 50;
 
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     },
     circle: {
         position: 'absolute',
-        bottom: 30,
+        bottom: 15,
         left: TAB_WIDTH / 2 - 30,
         width: 60,
         height: 60,

@@ -8,12 +8,11 @@ import {
     Text,
     View
 } from 'react-native';
-import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { IdCard } from '../../components/dashboard/IdCard';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function HomeScreen() {
-    const { theme, isDark, toggleTheme } = useTheme();
+    const { theme, isDark } = useTheme();
     const { user } = useUser();
 
     const loginData = user || {};
@@ -27,12 +26,6 @@ export default function HomeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <DashboardHeader
-                initial={initial}
-                isDark={isDark}
-                theme={theme}
-                toggleTheme={toggleTheme}
-            />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -50,10 +43,7 @@ export default function HomeScreen() {
                 />
 
                 <TeamLeaders
-                    initial={initial}
-                    isDark={isDark}
                     theme={theme}
-                    toggleTheme={toggleTheme}
                 />
 
                 <Text style={[styles.sectionHeader, { color: theme.text }]}>Quick Actions</Text>
@@ -68,6 +58,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingBottom: 10,
     },
     scrollView: {
         flex: 1,

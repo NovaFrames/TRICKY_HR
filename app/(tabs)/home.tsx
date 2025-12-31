@@ -6,7 +6,6 @@ import {
     StyleSheet,
     View
 } from 'react-native';
-import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { MenuGrid } from '../../components/dashboard/MenuGrid';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -19,12 +18,10 @@ const STATIC_MENU_ITEMS = [
 ];
 
 export default function HomeScreen() {
-    const { theme, isDark, toggleTheme } = useTheme();
+    const { theme } = useTheme();
     const { user } = useUser();
 
     const loginData = user || {};
-
-    const empName = loginData.EmpNameC || loginData.EmpName || loginData.Name || '-';
 
     // Critical: Token extraction
     const token = loginData.Token || loginData.TokenC;
@@ -51,16 +48,8 @@ export default function HomeScreen() {
         return { lib: Feather, name: 'grid' };
     };
 
-    const initial = empName.charAt(0);
-
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <DashboardHeader
-                initial={initial}
-                isDark={isDark}
-                theme={theme}
-                toggleTheme={toggleTheme}
-            />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -82,6 +71,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingBottom: 40,
     },
     scrollView: {
         flex: 1,

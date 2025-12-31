@@ -59,7 +59,7 @@ export default function DashboardCards() {
 
     /* -------------------- NAVIGATION -------------------- */
     const goToAction = (action: string) => {
-        router.push(`/(tabs)/${action}` as Href);
+        router.push(`/${action}` as Href);
     };
 
     return (

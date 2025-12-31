@@ -1,15 +1,45 @@
 import { AnimatedTabBar } from '@/components/AnimatedTabBar';
-import { Tabs } from 'expo-router';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { useTheme } from '@/context/ThemeContext';
+import { Tabs, usePathname } from 'expo-router';
+import { View } from 'react-native';
+
+const TAB_BAR_HEIGHT = 70;
 
 export default function TabsLayout() {
+    const pathname = usePathname();
+    const hideTabs =
+        pathname.startsWith('/employee') ||
+        pathname.startsWith('/officer');
+
+    const { theme, isDark } = useTheme();
+
     return (
-        <Tabs
-            screenOptions={{ headerShown: false }}
-            tabBar={(props) => <AnimatedTabBar {...props} />}
+        <View
+            style={{
+                flex: 1,
+                backgroundColor: isDark
+                    ? theme.background
+                    : '#f3f4f6', // 👈 MUST match header bottom color
+            }}
         >
-            <Tabs.Screen name="dashboard" />
-            <Tabs.Screen name="home" />
-            <Tabs.Screen name="settings" />
-        </Tabs>
+            <DashboardHeader
+                isDark={isDark}
+                theme={theme}
+            />
+
+            <Tabs
+                screenOptions={{
+                    headerShown: false,
+                }}
+                tabBar={(props) =>
+                    hideTabs ? null : <AnimatedTabBar {...props} />
+                }
+            >
+                <Tabs.Screen name="dashboard" />
+                <Tabs.Screen name="home" />
+                <Tabs.Screen name="settings" />
+            </Tabs>
+        </View>
     );
 }
