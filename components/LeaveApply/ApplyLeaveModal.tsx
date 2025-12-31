@@ -350,22 +350,6 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                             </View>
                         </View>
 
-                        {/* Availability Check */}
-                        <TouchableOpacity
-                            style={styles.checkButton}
-                            onPress={checkAvailability}
-                            disabled={checkingAvailability}
-                        >
-                            {checkingAvailability ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                            ) : (
-                                <>
-                                    <Icon name="check-circle" size={20} color="#fff" />
-                                    <Text style={styles.checkButtonText}>Check Availability</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-
                         {availableDays > 0 && (
                             <View style={styles.availabilityBadge}>
                                 <Text style={styles.availabilityText}>
@@ -439,33 +423,6 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                                     <Text style={styles.timeLabel}>Total Hours:</Text>
                                     <Text style={styles.totalTimeValue}>{totalTime}</Text>
                                 </View>
-                            </View>
-                        )}
-
-                        {/* Medical Claim Section */}
-                        {showMedicalSection && leaveData && (
-                            <View style={styles.formGroup}>
-                                <Text style={styles.label}>Medical Claim</Text>
-
-                                <View style={styles.claimInfo}>
-                                    <Text style={styles.claimText}>
-                                        Limit: ₹{leaveData.MLClaimLimitN.toFixed(2)}
-                                    </Text>
-                                    <Text style={styles.claimText}>
-                                        Available: ₹{leaveData.MLClaimAvailN.toFixed(2)}
-                                    </Text>
-                                    <Text style={styles.claimText}>
-                                        Per Visit Max: ₹{leaveData.MLPerVisitMaxN.toFixed(2)}
-                                    </Text>
-                                </View>
-
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Claim Amount (₹)"
-                                    keyboardType="decimal-pad"
-                                    value={claimAmount}
-                                    onChangeText={setClaimAmount}
-                                />
                             </View>
                         )}
 
