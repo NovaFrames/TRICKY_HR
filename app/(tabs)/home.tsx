@@ -60,7 +60,6 @@ export default function HomeScreen() {
                     menuItems={menuItems}
                     theme={theme}
                     getMenuIcon={getMenuIcon}
-                    type='home'
                 />
 
             </ScrollView>
