@@ -121,6 +121,7 @@ export const API_ENDPOINTS = {
     // Employee Info
     GET_PROFILE: '/GetEmpProfile',
     GET_PENDING_LIST: '/GetPendingApprove_YourList',
+    GET_EMP_REQUEST_STATUS: '/GetEmpRequestStatus',
 };
 
 // Types
@@ -356,10 +357,13 @@ class ApiService {
             console.log(this.token);
             console.log(this.empId);
             console.log(leaveData);
+            const status = response.data.Status ? response.data.Status.toLowerCase() : '';
+            const success = status === 'success';
+
             return {
-                success: response.data.Status === 'success',
+                success: success,
                 data: response.data,
-                error: response.data.Status === 'error' ? response.data.Error : undefined
+                error: !success ? (response.data.Error || 'Unknown Error') : undefined
             };
         } catch (error: any) {
             console.log('Apply Leave API Error:', error);
@@ -462,6 +466,36 @@ class ApiService {
             };
         }
     }
+
+    // Request Status
+    async getEmpRequestStatus(): Promise<{ success: boolean, data?: any[], error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_EMP_REQUEST_STATUS,
+                {
+                    TokenC: this.token,
+                    EmpIdN: this.empId
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.xx ? response.data.xx[0] : null };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
 
     // Logout
     async logout() {

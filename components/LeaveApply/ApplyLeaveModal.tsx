@@ -512,6 +512,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
             </View>
 
             {/* Date Pickers */}
+            {/* Date Pickers */}
             {renderDatePicker(
                 showFromDatePicker,
                 fromDate,
@@ -530,6 +531,112 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                     if (date) setToDate(date);
                 },
                 () => setShowToDatePicker(false)
+            )}
+
+            {/* Time Pickers - Using the same renderDatePicker but reusing it for time if we modify it or creating a simple time handler. 
+               Since renderDatePicker uses DateTimePicker, we can pass mode='time'. 
+               But renderDatePicker hardcodes mode='date'. Let's create a specific TimePicker renderer within the JSX or modify renderDatePicker.
+               Given the structure, it's safer to create a parallel renderTimePicker or inline it.
+            */}
+
+            {showFromTimePicker && (
+                Platform.OS === 'ios' ? (
+                    <Modal transparent={true} visible={true} onRequestClose={() => setShowFromTimePicker(false)}>
+                        <View style={styles.pickerContainer}>
+                            <View style={styles.pickerHeader}>
+                                <TouchableOpacity onPress={() => setShowFromTimePicker(false)}>
+                                    <Text style={styles.pickerButton}>Done</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <DateTimePicker
+                                value={(() => {
+                                    const [h, m] = fromTime.split('.').map(Number);
+                                    const d = new Date();
+                                    d.setHours(h || 9, m || 0);
+                                    return d;
+                                })()}
+                                mode="time"
+                                display="spinner"
+                                onChange={(event, date) => {
+                                    if (date) {
+                                        const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
+                                        handleFromTimeChange(timeStr);
+                                    }
+                                }}
+                                style={styles.datePicker}
+                            />
+                        </View>
+                    </Modal>
+                ) : (
+                    <DateTimePicker
+                        value={(() => {
+                            const [h, m] = fromTime.split('.').map(Number);
+                            const d = new Date();
+                            d.setHours(h || 9, m || 0);
+                            return d;
+                        })()}
+                        mode="time"
+                        is24Hour={true}
+                        display="default"
+                        onChange={(event, date) => {
+                            setShowFromTimePicker(false);
+                            if (event.type === 'set' && date) {
+                                const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
+                                handleFromTimeChange(timeStr);
+                            }
+                        }}
+                    />
+                )
+            )}
+
+            {showToTimePicker && (
+                Platform.OS === 'ios' ? (
+                    <Modal transparent={true} visible={true} onRequestClose={() => setShowToTimePicker(false)}>
+                        <View style={styles.pickerContainer}>
+                            <View style={styles.pickerHeader}>
+                                <TouchableOpacity onPress={() => setShowToTimePicker(false)}>
+                                    <Text style={styles.pickerButton}>Done</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <DateTimePicker
+                                value={(() => {
+                                    const [h, m] = toTime.split('.').map(Number);
+                                    const d = new Date();
+                                    d.setHours(h || 17, m || 0);
+                                    return d;
+                                })()}
+                                mode="time"
+                                display="spinner"
+                                onChange={(event, date) => {
+                                    if (date) {
+                                        const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
+                                        handleToTimeChange(timeStr);
+                                    }
+                                }}
+                                style={styles.datePicker}
+                            />
+                        </View>
+                    </Modal>
+                ) : (
+                    <DateTimePicker
+                        value={(() => {
+                            const [h, m] = toTime.split('.').map(Number);
+                            const d = new Date();
+                            d.setHours(h || 17, m || 0);
+                            return d;
+                        })()}
+                        mode="time"
+                        is24Hour={true}
+                        display="default"
+                        onChange={(event, date) => {
+                            setShowToTimePicker(false);
+                            if (event.type === 'set' && date) {
+                                const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
+                                handleToTimeChange(timeStr);
+                            }
+                        }}
+                    />
+                )
             )}
         </Modal>
     );
