@@ -4,9 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import RequestModal from '../../../components/RequestPage/RequestModal';
 import RequestStatusItem from '../../../components/RequestPage/RequestStatusItem';
+import { useTheme } from '../../../context/ThemeContext';
 import ApiService from '../../../services/ApiService';
 
 export default function EmpRequestPage() {
+    const { theme } = useTheme();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [requests, setRequests] = useState<any>(null); // Store the full object
@@ -72,11 +74,11 @@ export default function EmpRequestPage() {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <Stack.Screen
                 options={{
                     title: 'Request Status',
-                    headerStyle: { backgroundColor: '#03A9F4' }, // Match standard blue
+                    headerStyle: { backgroundColor: theme.primary },
                     headerTintColor: '#fff',
                     headerTitleStyle: { fontWeight: 'bold' },
                     headerLeft: () => (
@@ -87,7 +89,7 @@ export default function EmpRequestPage() {
                 }}
             />
 
-            <View style={styles.tabContainer}>
+            <View style={[styles.tabContainer, { backgroundColor: theme.primary }]}>
                 {renderTab('Waiting')}
                 {renderTab('Approved')}
                 {renderTab('Rejected')}
@@ -95,7 +97,7 @@ export default function EmpRequestPage() {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#03A9F4" />
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -110,17 +112,19 @@ export default function EmpRequestPage() {
                     contentContainerStyle={styles.listContent}
                     ListEmptyComponent={
                         <View style={styles.center}>
-                            <Text style={styles.emptyText}>No requests found.</Text>
+                            <Text style={[styles.emptyText, { color: theme.placeholder }]}>No requests found.</Text>
                         </View>
                     }
                 />
             )}
 
-            <RequestModal
-                visible={modalVisible}
-                item={selectedItem}
-                onClose={() => setModalVisible(false)}
-            />
+            {modalVisible && (
+                <RequestModal
+                    visible={modalVisible}
+                    item={selectedItem}
+                    onClose={() => setModalVisible(false)}
+                />
+            )}
         </View>
     );
 }
@@ -128,11 +132,9 @@ export default function EmpRequestPage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f2f2f2',
     },
     tabContainer: {
         flexDirection: 'row',
-        backgroundColor: '#03A9F4',
         elevation: 4,
     },
     tab: {
@@ -164,6 +166,5 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 16,
-        color: '#999',
     },
 });

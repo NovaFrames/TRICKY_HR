@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ApplyLeaveModal from '../../../components/LeaveApply/ApplyLeaveModal';
 import SurrenderLeaveModal from '../../../components/LeaveApply/SurrenderLeaveModal';
+import { useTheme } from '../../../context/ThemeContext';
 import ApiService, { AvailableLeaveType, LeaveBalanceResponse, LeaveType } from '../../../services/ApiService';
 
 interface FormattedLeaveType extends LeaveType {
@@ -29,6 +30,7 @@ interface FormattedLeaveType extends LeaveType {
 }
 
 const LeaveApply: React.FC = () => {
+    const { theme } = useTheme();
     const navigation = useNavigation();
     const [loading, setLoading] = useState(true);
     const [leaveData, setLeaveData] = useState<LeaveBalanceResponse | null>(null);
@@ -141,65 +143,70 @@ const LeaveApply: React.FC = () => {
         loadLeaveData(); // Refresh data
     };
 
+    // Style Refs
+    const cardStyle = [styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }];
+    const labelStyle = [styles.statLabel, { color: theme.placeholder }];
+    const valueStyle = [styles.statValue, { color: theme.text }];
+
     const renderLeaveCard = (leave: FormattedLeaveType) => (
-        <View key={leave.ReaGrpNameC} style={styles.card}>
+        <View key={leave.ReaGrpNameC} style={cardStyle}>
             {/* Header: Leave Name + Balance */}
             <View style={styles.cardHeader}>
                 <View style={styles.headerLeft}>
-                    <Icon name="event-note" size={20} color="#005662" />
-                    <Text style={styles.cardTitle}>{leave.ReaGrpNameC}</Text>
+                    <Icon name="event-note" size={20} color={theme.primary} />
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>{leave.ReaGrpNameC}</Text>
                 </View>
-                <View style={styles.balanceBadge}>
-                    <Text style={styles.balanceLabel}>BAL</Text>
-                    <Text style={styles.balanceValue}>{leave.formattedBalance}</Text>
+                <View style={[styles.balanceBadge, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
+                    <Text style={[styles.balanceLabel, { color: theme.secondary }]}>BAL</Text>
+                    <Text style={[styles.balanceValue, { color: theme.primary }]}>{leave.formattedBalance}</Text>
                 </View>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />
 
             {/* Grid Stats */}
             <View style={styles.statsContainer}>
                 {/* Column 1 */}
                 <View style={styles.statsColumn}>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Eligible</Text>
-                        <Text style={styles.statValue}>{leave.formattedEligible}</Text>
+                        <Text style={labelStyle}>Eligible</Text>
+                        <Text style={valueStyle}>{leave.formattedEligible}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Credit</Text>
-                        <Text style={styles.statValue}>{leave.formattedCredit}</Text>
+                        <Text style={labelStyle}>Credit</Text>
+                        <Text style={valueStyle}>{leave.formattedCredit}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Surrendered</Text>
-                        <Text style={styles.statValue}>{leave.formattedSurrender}</Text>
+                        <Text style={labelStyle}>Surrendered</Text>
+                        <Text style={valueStyle}>{leave.formattedSurrender}</Text>
                     </View>
                 </View>
 
                 {/* Column 2 */}
                 <View style={styles.statsColumn}>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>B/F</Text>
-                        <Text style={styles.statValue}>{leave.formattedBF}</Text>
+                        <Text style={labelStyle}>B/F</Text>
+                        <Text style={valueStyle}>{leave.formattedBF}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Earned</Text>
-                        <Text style={styles.statValue}>{leave.formattedEarn}</Text>
+                        <Text style={labelStyle}>Earned</Text>
+                        <Text style={valueStyle}>{leave.formattedEarn}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Total</Text>
-                        <Text style={styles.statValue}>{leave.formattedTotal}</Text>
+                        <Text style={labelStyle}>Total</Text>
+                        <Text style={valueStyle}>{leave.formattedTotal}</Text>
                     </View>
                 </View>
 
                 {/* Column 3 */}
                 <View style={styles.statsColumn}>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Requested</Text>
-                        <Text style={styles.statValue}>{leave.formattedRequest}</Text>
+                        <Text style={labelStyle}>Requested</Text>
+                        <Text style={valueStyle}>{leave.formattedRequest}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Taken</Text>
-                        <Text style={styles.statValue}>{leave.formattedTaken}</Text>
+                        <Text style={labelStyle}>Taken</Text>
+                        <Text style={valueStyle}>{leave.formattedTaken}</Text>
                     </View>
                 </View>
             </View>
@@ -208,18 +215,18 @@ const LeaveApply: React.FC = () => {
 
     if (loading) {
         return (
-            <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color="#00838F" />
-                <Text style={styles.loadingText}>Loading leave data...</Text>
+            <View style={[styles.centerContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.text }]}>Loading leave data...</Text>
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['bottom']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
 
             {/* Modern Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { backgroundColor: theme.primary }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Icon name="arrow-back-ios" size={20} color="#fff" />
                 </TouchableOpacity>
@@ -240,21 +247,21 @@ const LeaveApply: React.FC = () => {
             </ScrollView>
 
             {/* Floating Action Bar */}
-            <View style={styles.floatingActionBar}>
+            <View style={[styles.floatingActionBar, { backgroundColor: theme.cardBackground }]}>
                 <TouchableOpacity
                     style={[styles.fabButton, styles.fabSurrender, !canSurrender && styles.disabledButton]}
                     onPress={() => canSurrender && setShowSurrenderModal(true)}
                     activeOpacity={0.8}
                     disabled={!canSurrender}
                 >
-                    <Icon name="history" size={20} color={canSurrender ? "#00838F" : "#999"} />
-                    <Text style={[styles.fabText, !canSurrender && styles.disabledText]}>Surrender</Text>
+                    <Icon name="history" size={20} color={canSurrender ? theme.primary : theme.icon} />
+                    <Text style={[styles.fabText, !canSurrender && styles.disabledText, { color: canSurrender ? theme.primary : theme.icon }]}>Surrender</Text>
                 </TouchableOpacity>
 
-                <View style={styles.fabDivider} />
+                <View style={[styles.fabDivider, { backgroundColor: theme.inputBorder }]} />
 
                 <TouchableOpacity
-                    style={[styles.fabButton, styles.fabApply]}
+                    style={[styles.fabButton, styles.fabApply, { backgroundColor: theme.primary }]}
                     onPress={() => setShowApplyModal(true)}
                 >
                     <Icon name="add-circle-outline" size={20} color="#fff" />
@@ -287,18 +294,15 @@ const LeaveApply: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#ffffffff', // Light Gray-Blue Background
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5F7FA',
     },
     loadingText: {
         marginTop: 12,
         fontSize: 16,
-        color: '#546E7A',
         fontWeight: '500',
     },
     header: {
@@ -307,7 +311,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 16,
-        backgroundColor: '#00838F', // Teal 800
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -334,7 +337,6 @@ const styles = StyleSheet.create({
         paddingBottom: 100, // Space for FAB
     },
     card: {
-        backgroundColor: '#fff',
         borderRadius: 16,
         marginBottom: 16,
         padding: 16,
@@ -344,7 +346,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.02)',
     },
     cardHeader: {
         flexDirection: 'row',
@@ -360,36 +361,30 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#37474F', // Blue Grey 800
         marginLeft: 8,
         textTransform: 'uppercase',
         flex: 1,
     },
     balanceBadge: {
-        backgroundColor: '#E0F7FA', // Cyan 50
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#B2EBF2',
     },
     balanceLabel: {
         fontSize: 10,
         fontWeight: '600',
-        color: '#006064', // Cyan 900
         marginRight: 4,
         opacity: 0.7,
     },
     balanceValue: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#00838F',
     },
     divider: {
         height: 1,
-        backgroundColor: '#ECEFF1',
         marginBottom: 12,
     },
     statsContainer: {
@@ -404,13 +399,11 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         fontSize: 11,
-        color: '#90A4AE', // Blue Grey 300
         marginBottom: 2,
         fontWeight: '500',
     },
     statValue: {
         fontSize: 13,
-        color: '#455A64', // Blue Grey 700
         fontWeight: '600',
     },
     bottomSpacer: {
@@ -421,7 +414,6 @@ const styles = StyleSheet.create({
         bottom: 24,
         left: 20,
         right: 20,
-        backgroundColor: '#fff',
         borderRadius: 30,
         flexDirection: 'row',
         alignItems: 'center',
@@ -444,19 +436,17 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     fabApply: {
-        backgroundColor: '#00838F',
+        // backgroundColor: set via theme.primary
     },
     fabDivider: {
         width: 1,
         height: 24,
-        backgroundColor: '#ECEFF1',
         marginHorizontal: 4,
     },
     fabText: {
         fontSize: 14,
         fontWeight: '600',
         marginLeft: 6,
-        color: '#00838F',
     },
     fabTextPrimary: {
         color: '#fff',
@@ -465,7 +455,7 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     disabledText: {
-        color: '#CFD8DC',
+        // color handled via prop
     },
 });
 

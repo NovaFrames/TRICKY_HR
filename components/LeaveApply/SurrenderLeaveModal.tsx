@@ -14,6 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import ApiService, { SurrenderData } from '../../services/ApiService';
 
 interface SurrenderLeaveModalProps {
@@ -27,6 +28,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
     onClose,
     onSuccess,
 }) => {
+    const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [checkingEligibility, setCheckingEligibility] = useState(false);
     const [eligibleDays, setEligibleDays] = useState<number>(10);
@@ -47,6 +49,8 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
             const result = await ApiService.getSurrenderBalance();
 
             if (result.success && result.eligLeave !== undefined) {
+                // Logic to set eligible days if backend returns valid number
+                setEligibleDays(result.eligLeave || 10);
             } else {
                 Alert.alert('Error', result.error || 'Failed to check surrender eligibility');
             }
@@ -122,6 +126,20 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
     };
 
     const renderDatePicker = () => {
+        const pickerContent = (
+            <DateTimePicker
+                value={payoutDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? "spinner" : "default"}
+                minimumDate={new Date()}
+                onChange={(event: any, date?: Date) => {
+                    setShowDatePicker(false);
+                    if (date) setPayoutDate(date);
+                }}
+                style={Platform.OS === 'ios' ? styles.datePicker : undefined}
+            />
+        );
+
         if (Platform.OS === 'ios') {
             return (
                 <Modal
@@ -131,42 +149,27 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
                     onRequestClose={() => setShowDatePicker(false)}
                 >
                     <View style={styles.pickerContainer}>
-                        <View style={styles.pickerHeader}>
+                        <View style={[styles.pickerHeader, { backgroundColor: theme.cardBackground, borderBottomColor: theme.inputBorder }]}>
                             <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                <Text style={styles.pickerButton}>Cancel</Text>
+                                <Text style={[styles.pickerButton, { color: theme.primary }]}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                <Text style={[styles.pickerButton, styles.pickerConfirm]}>Done</Text>
+                                <Text style={[styles.pickerButton, styles.pickerConfirm, { color: theme.primary }]}>Done</Text>
                             </TouchableOpacity>
                         </View>
-                        <DateTimePicker
-                            value={payoutDate}
-                            mode="date"
-                            display="spinner"
-                            minimumDate={new Date()}
-                            onChange={(event: any, date?: Date) => {
-                                if (date) setPayoutDate(date);
-                            }}
-                            style={styles.datePicker}
-                        />
+                        {pickerContent}
                     </View>
                 </Modal>
             );
         }
 
-        return showDatePicker ? (
-            <DateTimePicker
-                value={payoutDate}
-                mode="date"
-                display="default"
-                minimumDate={new Date()}
-                onChange={(event: any, date?: Date) => {
-                    setShowDatePicker(false);
-                    if (date) setPayoutDate(date);
-                }}
-            />
-        ) : null;
+        return showDatePicker ? pickerContent : null;
     };
+
+    // Shared Styles
+    const labelStyle = [styles.label, { color: theme.text }];
+    const inputStyle = [styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }];
+    const dateInputStyle = [styles.dateInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }];
 
     return (
         <Modal
@@ -176,36 +179,36 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
             onRequestClose={onClose}
         >
             <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
+                <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
                     {/* Header */}
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Leave Surrender</Text>
+                    <View style={[styles.modalHeader, { borderBottomColor: theme.inputBorder }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>Leave Surrender</Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Icon name="close" size={24} color="#333" />
+                            <Icon name="close" size={24} color={theme.icon} />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
                         {/* Eligibility Section */}
-                        <View style={styles.eligibilityCard}>
+                        <View style={[styles.eligibilityCard, { backgroundColor: theme.inputBg }]}>
                             <View style={styles.eligibilityHeader}>
-                                <Icon name="info" size={20} color="#1976d2" />
-                                <Text style={styles.eligibilityTitle}>Eligibility Information</Text>
+                                <Icon name="info" size={20} color={theme.primary} />
+                                <Text style={[styles.eligibilityTitle, { color: theme.primary }]}>Eligibility Information</Text>
                             </View>
 
                             {checkingEligibility ? (
-                                <ActivityIndicator size="small" color="#1976d2" style={styles.loader} />
+                                <ActivityIndicator size="small" color={theme.primary} style={styles.loader} />
                             ) : (
                                 <>
                                     <View style={styles.eligibilityRow}>
-                                        <Text style={styles.eligibilityLabel}>Eligible Leave Surrender:</Text>
-                                        <Text style={styles.eligibilityValue}>
+                                        <Text style={[styles.eligibilityLabel, { color: theme.secondary }]}>Eligible Leave Surrender:</Text>
+                                        <Text style={[styles.eligibilityValue, { color: theme.primary }]}>
                                             {eligibleDays.toFixed(2)} days
                                         </Text>
                                     </View>
 
-                                    <View style={styles.note}>
-                                        <Text style={styles.noteText}>
+                                    <View style={[styles.note, { backgroundColor: theme.cardBackground }]}>
+                                        <Text style={[styles.noteText, { color: theme.placeholder }]}>
                                             Note: You can surrender up to {eligibleDays.toFixed(2)} days of eligible leave.
                                         </Text>
                                     </View>
@@ -215,70 +218,72 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
 
                         {/* Surrender Days */}
                         <View style={styles.formGroup}>
-                            <Text style={styles.label}>Surrender Leave (Days)</Text>
+                            <Text style={labelStyle}>Surrender Leave (Days)</Text>
                             <TextInput
-                                style={styles.input}
+                                style={inputStyle}
                                 placeholder={`Enter days (max: ${eligibleDays.toFixed(2)})`}
+                                placeholderTextColor={theme.placeholder}
                                 keyboardType="decimal-pad"
                                 value={surrenderDays}
                                 onChangeText={setSurrenderDays}
                             />
-                            <Text style={styles.hint}>
+                            <Text style={[styles.hint, { color: theme.placeholder }]}>
                                 Maximum: {eligibleDays.toFixed(2)} days
                             </Text>
                         </View>
 
                         {/* Payout Date */}
                         <View style={styles.formGroup}>
-                            <Text style={styles.label}>Payout Date</Text>
+                            <Text style={labelStyle}>Payout Date</Text>
                             <TouchableOpacity
-                                style={styles.dateInput}
+                                style={dateInputStyle}
                                 onPress={() => setShowDatePicker(true)}
                             >
-                                <Text>{payoutDate.toDateString()}</Text>
-                                <Icon name="calendar-today" size={20} color="#666" />
+                                <Text style={{ color: theme.text }}>{payoutDate.toDateString()}</Text>
+                                <Icon name="calendar-today" size={20} color={theme.icon} />
                             </TouchableOpacity>
-                            <Text style={styles.hint}>
+                            <Text style={[styles.hint, { color: theme.placeholder }]}>
                                 Date when surrender amount will be paid
                             </Text>
                         </View>
 
                         {/* Remarks */}
                         <View style={styles.formGroup}>
-                            <Text style={styles.label}>Remarks (Min. 10 characters)</Text>
+                            <Text style={labelStyle}>Remarks (Min. 10 characters)</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea]}
+                                style={[inputStyle, styles.textArea]}
                                 placeholder="Enter reason for surrender"
+                                placeholderTextColor={theme.placeholder}
                                 multiline
                                 numberOfLines={4}
                                 value={remarks}
                                 onChangeText={setRemarks}
                             />
-                            <Text style={[styles.hint, { color: remarks.length < 10 ? '#FF3B30' : '#666' }]}>
+                            <Text style={[styles.hint, { color: remarks.length < 10 ? '#FF3B30' : theme.placeholder }]}>
                                 Characters: {remarks.length}/10
                             </Text>
                         </View>
 
                         {/* Validation Summary */}
-                        <View style={styles.validationCard}>
-                            <Text style={styles.validationTitle}>Summary</Text>
+                        <View style={[styles.validationCard, { backgroundColor: theme.background }]}>
+                            <Text style={[styles.validationTitle, { color: theme.text }]}>Summary</Text>
 
                             <View style={styles.validationRow}>
-                                <Text style={styles.validationLabel}>Surrender Days:</Text>
-                                <Text style={styles.validationValue}>
+                                <Text style={[styles.validationLabel, { color: theme.placeholder }]}>Surrender Days:</Text>
+                                <Text style={[styles.validationValue, { color: theme.text }]}>
                                     {surrenderDays || '0'} days
                                 </Text>
                             </View>
 
                             <View style={styles.validationRow}>
-                                <Text style={styles.validationLabel}>Payout Date:</Text>
-                                <Text style={styles.validationValue}>
+                                <Text style={[styles.validationLabel, { color: theme.placeholder }]}>Payout Date:</Text>
+                                <Text style={[styles.validationValue, { color: theme.text }]}>
                                     {payoutDate.toDateString()}
                                 </Text>
                             </View>
 
                             <View style={styles.validationRow}>
-                                <Text style={styles.validationLabel}>Remarks Length:</Text>
+                                <Text style={[styles.validationLabel, { color: theme.placeholder }]}>Remarks Length:</Text>
                                 <Text style={[
                                     styles.validationValue,
                                     { color: remarks.length >= 10 ? '#34C759' : '#FF3B30' }
@@ -290,17 +295,17 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
                     </ScrollView>
 
                     {/* Footer Buttons */}
-                    <View style={styles.modalFooter}>
+                    <View style={[styles.modalFooter, { borderTopColor: theme.inputBorder }]}>
                         <TouchableOpacity
-                            style={[styles.footerButton, styles.cancelButton]}
+                            style={[styles.footerButton, styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
                             onPress={onClose}
                             disabled={loading}
                         >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                            <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.footerButton, styles.submitButton]}
+                            style={[styles.footerButton, styles.submitButton, { backgroundColor: theme.primary }]}
                             onPress={handleSubmit}
                             disabled={loading || checkingEligibility}
                         >
@@ -330,7 +335,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#fff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         maxHeight: '90%',
@@ -341,18 +345,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#333',
     },
     scrollContent: {
         padding: 16,
     },
     eligibilityCard: {
-        backgroundColor: '#e3f2fd',
         borderRadius: 12,
         padding: 16,
         marginBottom: 20,
@@ -365,7 +366,6 @@ const styles = StyleSheet.create({
     eligibilityTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1976d2',
         marginLeft: 8,
     },
     loader: {
@@ -380,22 +380,18 @@ const styles = StyleSheet.create({
     },
     eligibilityLabel: {
         fontSize: 14,
-        color: '#1976d2',
     },
     eligibilityValue: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#1976d2',
     },
     note: {
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
         padding: 8,
         borderRadius: 6,
         marginTop: 8,
     },
     noteText: {
         fontSize: 12,
-        color: '#1976d2',
         fontStyle: 'italic',
     },
     formGroup: {
@@ -404,22 +400,17 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#333',
         marginBottom: 8,
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 12,
         fontSize: 14,
-        color: '#333',
-        backgroundColor: '#fff',
     },
     hint: {
         fontSize: 12,
-        color: '#666',
         marginTop: 4,
         fontStyle: 'italic',
     },
@@ -428,18 +419,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 14,
-        backgroundColor: '#fff',
     },
     textArea: {
         minHeight: 80,
         textAlignVertical: 'top',
     },
     validationCard: {
-        backgroundColor: '#f8f9fa',
         borderRadius: 12,
         padding: 16,
         marginTop: 8,
@@ -448,7 +436,6 @@ const styles = StyleSheet.create({
     validationTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#333',
         marginBottom: 12,
     },
     validationRow: {
@@ -459,18 +446,15 @@ const styles = StyleSheet.create({
     },
     validationLabel: {
         fontSize: 14,
-        color: '#666',
     },
     validationValue: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#333',
     },
     modalFooter: {
         flexDirection: 'row',
         padding: 16,
         borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
     },
     footerButton: {
         flex: 1,
@@ -482,17 +466,14 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     cancelButton: {
-        backgroundColor: '#f8f9fa',
         borderWidth: 1,
-        borderColor: '#ddd',
     },
     cancelButtonText: {
-        color: '#666',
         fontSize: 16,
         fontWeight: '600',
     },
     submitButton: {
-        backgroundColor: '#FF3B30',
+        // bg set via theme
     },
     submitButtonText: {
         color: '#fff',

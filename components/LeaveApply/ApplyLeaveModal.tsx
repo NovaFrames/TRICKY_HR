@@ -15,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import ApiService, {
     AvailableLeaveType,
     LeaveApplicationData,
@@ -36,6 +37,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     availableLeaves,
     leaveData,
 }) => {
+    const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [checkingAvailability, setCheckingAvailability] = useState(false);
     const [selectedLeaveType, setSelectedLeaveType] = useState<AvailableLeaveType | null>(null);
@@ -242,6 +244,16 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         onChange: (event: any, selectedDate?: Date) => void,
         onClose: () => void
     ) => {
+        const pickerContent = (
+            <DateTimePicker
+                value={date}
+                mode="date"
+                display={Platform.OS === 'ios' ? "spinner" : "default"}
+                onChange={onChange}
+                style={Platform.OS === 'ios' ? styles.datePicker : undefined}
+            />
+        );
+
         if (Platform.OS === 'ios') {
             return (
                 <Modal
@@ -251,35 +263,28 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                     onRequestClose={onClose}
                 >
                     <View style={styles.pickerContainer}>
-                        <View style={styles.pickerHeader}>
+                        <View style={[styles.pickerHeader, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
                             <TouchableOpacity onPress={onClose}>
-                                <Text style={styles.pickerButton}>Cancel</Text>
+                                <Text style={[styles.pickerButton, { color: theme.primary }]}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={onClose}>
-                                <Text style={[styles.pickerButton, styles.pickerConfirm]}>Done</Text>
+                                <Text style={[styles.pickerButton, styles.pickerConfirm, { color: theme.primary }]}>Done</Text>
                             </TouchableOpacity>
                         </View>
-                        <DateTimePicker
-                            value={date}
-                            mode="date"
-                            display="spinner"
-                            onChange={onChange}
-                            style={styles.datePicker}
-                        />
+                        {pickerContent}
                     </View>
                 </Modal>
             );
         }
 
-        return show ? (
-            <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                onChange={onChange}
-            />
-        ) : null;
+        return show ? pickerContent : null;
     };
+
+    // Shared styles
+    const labelStyle = [styles.label, { color: theme.text }];
+    const inputStyle = [styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }];
+    const dateInputStyle = [styles.dateInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }];
+    const pickerStyle = [styles.pickerContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }];
 
     return (
         <Modal
@@ -289,20 +294,20 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
             onRequestClose={onClose}
         >
             <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
+                <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
                     {/* Header */}
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Apply Leave</Text>
+                    <View style={[styles.modalHeader, { borderColor: theme.inputBorder }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>Apply Leave</Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Icon name="close" size={24} color="#333" />
+                            <Icon name="close" size={24} color={theme.icon} />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
                         {/* Leave Type */}
                         <View style={styles.formGroup}>
-                            <Text style={styles.label}>Leave Type</Text>
-                            <View style={styles.pickerContainer}>
+                            <Text style={labelStyle}>Leave Type</Text>
+                            <View style={pickerStyle}>
                                 <Picker
                                     selectedValue={selectedLeaveType?.ReaIdN}
                                     onValueChange={(itemValue: number) => {
@@ -312,13 +317,16 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                                             checkLeaveTypeChange(selected);
                                         }
                                     }}
-                                    style={styles.picker}
+                                    style={[styles.picker, { color: theme.text }]}
+                                    dropdownIconColor={theme.icon}
+                                    itemStyle={{ color: theme.text }}
                                 >
                                     {availableLeaves.map((leave) => (
                                         <Picker.Item
                                             key={leave.ReaIdN}
                                             label={leave.ReaNameC}
                                             value={leave.ReaIdN}
+                                            color={theme.text}
                                         />
                                     ))}
                                 </Picker>
@@ -328,31 +336,31 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                         {/* Dates */}
                         <View style={styles.dateRow}>
                             <View style={styles.dateGroup}>
-                                <Text style={styles.label}>From Date</Text>
+                                <Text style={labelStyle}>From Date</Text>
                                 <TouchableOpacity
-                                    style={styles.dateInput}
+                                    style={dateInputStyle}
                                     onPress={() => setShowFromDatePicker(true)}
                                 >
-                                    <Text>{fromDate.toDateString()}</Text>
-                                    <Icon name="calendar-today" size={20} color="#666" />
+                                    <Text style={{ color: theme.text }}>{fromDate.toDateString()}</Text>
+                                    <Icon name="calendar-today" size={20} color={theme.icon} />
                                 </TouchableOpacity>
                             </View>
 
                             <View style={styles.dateGroup}>
-                                <Text style={styles.label}>To Date</Text>
+                                <Text style={labelStyle}>To Date</Text>
                                 <TouchableOpacity
-                                    style={styles.dateInput}
+                                    style={dateInputStyle}
                                     onPress={() => setShowToDatePicker(true)}
                                 >
-                                    <Text>{toDate.toDateString()}</Text>
-                                    <Icon name="calendar-today" size={20} color="#666" />
+                                    <Text style={{ color: theme.text }}>{toDate.toDateString()}</Text>
+                                    <Icon name="calendar-today" size={20} color={theme.icon} />
                                 </TouchableOpacity>
                             </View>
                         </View>
 
                         {availableDays > 0 && (
-                            <View style={styles.availabilityBadge}>
-                                <Text style={styles.availabilityText}>
+                            <View style={[styles.availabilityBadge, { backgroundColor: theme.inputBg }]}>
+                                <Text style={[styles.availabilityText, { color: theme.primary }]}>
                                     Available: {availableDays} day(s)
                                 </Text>
                             </View>
@@ -360,7 +368,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
                         {/* Past Leave */}
                         <View style={styles.formGroup}>
-                            <Text style={styles.label}>Past Leave</Text>
+                            <Text style={labelStyle}>Past Leave</Text>
                             <View style={styles.radioGroup}>
                                 <TouchableOpacity
                                     style={styles.radioOption}
@@ -369,10 +377,10 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                                         setPastLeaveNo(false);
                                     }}
                                 >
-                                    <View style={styles.radioCircle}>
-                                        {pastLeaveYes && <View style={styles.radioSelected} />}
+                                    <View style={[styles.radioCircle, { borderColor: theme.primary }]}>
+                                        {pastLeaveYes && <View style={[styles.radioSelected, { backgroundColor: theme.primary }]} />}
                                     </View>
-                                    <Text style={styles.radioLabel}>Yes</Text>
+                                    <Text style={[styles.radioLabel, { color: theme.text }]}>Yes</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
@@ -382,10 +390,10 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                                         setPastLeaveNo(true);
                                     }}
                                 >
-                                    <View style={styles.radioCircle}>
-                                        {pastLeaveNo && <View style={styles.radioSelected} />}
+                                    <View style={[styles.radioCircle, { borderColor: theme.primary }]}>
+                                        {pastLeaveNo && <View style={[styles.radioSelected, { backgroundColor: theme.primary }]} />}
                                     </View>
-                                    <Text style={styles.radioLabel}>No</Text>
+                                    <Text style={[styles.radioLabel, { color: theme.text }]}>No</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -393,45 +401,46 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                         {/* Time Section (for hourly leaves) */}
                         {showTimeSection && (
                             <View style={styles.formGroup}>
-                                <Text style={styles.label}>Time Details</Text>
+                                <Text style={labelStyle}>Time Details</Text>
 
                                 <View style={styles.timeRow}>
                                     <View style={styles.timeGroup}>
-                                        <Text style={styles.timeLabel}>From Time</Text>
+                                        <Text style={[styles.timeLabel, { color: theme.placeholder }]}>From Time</Text>
                                         <TouchableOpacity
-                                            style={styles.timeInput}
+                                            style={dateInputStyle}
                                             onPress={() => setShowFromTimePicker(true)}
                                         >
-                                            <Text>{fromTime}</Text>
-                                            <Icon name="access-time" size={20} color="#666" />
+                                            <Text style={{ color: theme.text }}>{fromTime}</Text>
+                                            <Icon name="access-time" size={20} color={theme.icon} />
                                         </TouchableOpacity>
                                     </View>
 
                                     <View style={styles.timeGroup}>
-                                        <Text style={styles.timeLabel}>To Time</Text>
+                                        <Text style={[styles.timeLabel, { color: theme.placeholder }]}>To Time</Text>
                                         <TouchableOpacity
-                                            style={styles.timeInput}
+                                            style={dateInputStyle}
                                             onPress={() => setShowToTimePicker(true)}
                                         >
-                                            <Text>{toTime}</Text>
-                                            <Icon name="access-time" size={20} color="#666" />
+                                            <Text style={{ color: theme.text }}>{toTime}</Text>
+                                            <Icon name="access-time" size={20} color={theme.icon} />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
 
-                                <View style={styles.totalTime}>
-                                    <Text style={styles.timeLabel}>Total Hours:</Text>
-                                    <Text style={styles.totalTimeValue}>{totalTime}</Text>
+                                <View style={[styles.totalTime, { backgroundColor: theme.inputBg }]}>
+                                    <Text style={[styles.timeLabel, { color: theme.text }]}>Total Hours:</Text>
+                                    <Text style={[styles.totalTimeValue, { color: theme.primary }]}>{totalTime}</Text>
                                 </View>
                             </View>
                         )}
 
                         {/* Remarks */}
                         <View style={styles.formGroup}>
-                            <Text style={styles.label}>Remarks</Text>
+                            <Text style={labelStyle}>Remarks</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea]}
+                                style={[inputStyle, styles.textArea]}
                                 placeholder="Enter remarks (min. 10 characters)"
+                                placeholderTextColor={theme.placeholder}
                                 multiline
                                 numberOfLines={4}
                                 value={remarks}
@@ -441,17 +450,17 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                     </ScrollView>
 
                     {/* Footer Buttons */}
-                    <View style={styles.modalFooter}>
+                    <View style={[styles.modalFooter, { borderTopColor: theme.inputBorder }]}>
                         <TouchableOpacity
-                            style={[styles.footerButton, styles.cancelButton]}
+                            style={[styles.footerButton, styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
                             onPress={onClose}
                             disabled={loading}
                         >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                            <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.footerButton, styles.submitButton]}
+                            style={[styles.footerButton, styles.submitButton, { backgroundColor: theme.primary }]}
                             onPress={handleSubmit}
                             disabled={loading}
                         >
@@ -468,7 +477,6 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                 </View>
             </View>
 
-            {/* Date Pickers */}
             {/* Date Pickers */}
             {renderDatePicker(
                 showFromDatePicker,
@@ -490,110 +498,47 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                 () => setShowToDatePicker(false)
             )}
 
-            {/* Time Pickers - Using the same renderDatePicker but reusing it for time if we modify it or creating a simple time handler. 
-               Since renderDatePicker uses DateTimePicker, we can pass mode='time'. 
-               But renderDatePicker hardcodes mode='date'. Let's create a specific TimePicker renderer within the JSX or modify renderDatePicker.
-               Given the structure, it's safer to create a parallel renderTimePicker or inline it.
-            */}
-
+            {/* Time Pickers (Simplified to Native or basic handling logic as above) */}
             {showFromTimePicker && (
-                Platform.OS === 'ios' ? (
-                    <Modal transparent={true} visible={true} onRequestClose={() => setShowFromTimePicker(false)}>
-                        <View style={styles.pickerContainer}>
-                            <View style={styles.pickerHeader}>
-                                <TouchableOpacity onPress={() => setShowFromTimePicker(false)}>
-                                    <Text style={styles.pickerButton}>Done</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <DateTimePicker
-                                value={(() => {
-                                    const [h, m] = fromTime.split('.').map(Number);
-                                    const d = new Date();
-                                    d.setHours(h || 9, m || 0);
-                                    return d;
-                                })()}
-                                mode="time"
-                                display="spinner"
-                                onChange={(event, date) => {
-                                    if (date) {
-                                        const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
-                                        handleFromTimeChange(timeStr);
-                                    }
-                                }}
-                                style={styles.datePicker}
-                            />
-                        </View>
-                    </Modal>
-                ) : (
-                    <DateTimePicker
-                        value={(() => {
-                            const [h, m] = fromTime.split('.').map(Number);
-                            const d = new Date();
-                            d.setHours(h || 9, m || 0);
-                            return d;
-                        })()}
-                        mode="time"
-                        is24Hour={true}
-                        display="default"
-                        onChange={(event, date) => {
-                            setShowFromTimePicker(false);
-                            if (event.type === 'set' && date) {
-                                const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
-                                handleFromTimeChange(timeStr);
-                            }
-                        }}
-                    />
-                )
+                <DateTimePicker
+                    value={(() => {
+                        const [h, m] = fromTime.split('.').map(Number);
+                        const d = new Date();
+                        d.setHours(h || 9, m || 0);
+                        return d;
+                    })()}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={(event, date) => {
+                        setShowFromTimePicker(false);
+                        if (event.type === 'set' && date) {
+                            const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
+                            handleFromTimeChange(timeStr);
+                        }
+                    }}
+                />
             )}
 
             {showToTimePicker && (
-                Platform.OS === 'ios' ? (
-                    <Modal transparent={true} visible={true} onRequestClose={() => setShowToTimePicker(false)}>
-                        <View style={styles.pickerContainer}>
-                            <View style={styles.pickerHeader}>
-                                <TouchableOpacity onPress={() => setShowToTimePicker(false)}>
-                                    <Text style={styles.pickerButton}>Done</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <DateTimePicker
-                                value={(() => {
-                                    const [h, m] = toTime.split('.').map(Number);
-                                    const d = new Date();
-                                    d.setHours(h || 17, m || 0);
-                                    return d;
-                                })()}
-                                mode="time"
-                                display="spinner"
-                                onChange={(event, date) => {
-                                    if (date) {
-                                        const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
-                                        handleToTimeChange(timeStr);
-                                    }
-                                }}
-                                style={styles.datePicker}
-                            />
-                        </View>
-                    </Modal>
-                ) : (
-                    <DateTimePicker
-                        value={(() => {
-                            const [h, m] = toTime.split('.').map(Number);
-                            const d = new Date();
-                            d.setHours(h || 17, m || 0);
-                            return d;
-                        })()}
-                        mode="time"
-                        is24Hour={true}
-                        display="default"
-                        onChange={(event, date) => {
-                            setShowToTimePicker(false);
-                            if (event.type === 'set' && date) {
-                                const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
-                                handleToTimeChange(timeStr);
-                            }
-                        }}
-                    />
-                )
+                <DateTimePicker
+                    value={(() => {
+                        const [h, m] = toTime.split('.').map(Number);
+                        const d = new Date();
+                        d.setHours(h || 17, m || 0);
+                        return d;
+                    })()}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={(event, date) => {
+                        setShowToTimePicker(false);
+                        if (event.type === 'set' && date) {
+                            const timeStr = `${date.getHours()}.${date.getMinutes().toString().padStart(2, '0')}`;
+                            handleToTimeChange(timeStr);
+                        }
+                    }}
+                />
             )}
         </Modal>
     );
@@ -606,7 +551,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#fff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         maxHeight: '90%',
@@ -617,12 +561,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#333',
     },
     scrollContent: {
         padding: 16,
@@ -633,12 +575,10 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#333',
         marginBottom: 8,
     },
     pickerContainer: {
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         overflow: 'hidden',
     },
@@ -659,36 +599,17 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 14,
-        backgroundColor: '#fff',
-    },
-    checkButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#34C759',
-        borderRadius: 8,
-        paddingVertical: 12,
-        marginBottom: 16,
-    },
-    checkButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
     },
     availabilityBadge: {
-        backgroundColor: '#D4EDDA',
         padding: 8,
         borderRadius: 6,
         marginBottom: 16,
         alignItems: 'center',
     },
     availabilityText: {
-        color: '#155724',
         fontSize: 14,
         fontWeight: '500',
     },
@@ -705,7 +626,6 @@ const styles = StyleSheet.create({
         height: 20,
         borderRadius: 10,
         borderWidth: 2,
-        borderColor: '#007AFF',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 8,
@@ -714,11 +634,9 @@ const styles = StyleSheet.create({
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: '#007AFF',
     },
     radioLabel: {
         fontSize: 14,
-        color: '#333',
     },
     timeRow: {
         flexDirection: 'row',
@@ -731,53 +649,25 @@ const styles = StyleSheet.create({
     },
     timeLabel: {
         fontSize: 12,
-        color: '#666',
         marginBottom: 4,
-    },
-    timeInput: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        backgroundColor: '#fff',
     },
     totalTime: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#f8f9fa',
         padding: 12,
         borderRadius: 8,
     },
     totalTimeValue: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#007AFF',
-    },
-    claimInfo: {
-        backgroundColor: '#e3f2fd',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 12,
-    },
-    claimText: {
-        fontSize: 12,
-        color: '#1976d2',
-        marginBottom: 2,
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 12,
         fontSize: 14,
-        color: '#333',
-        backgroundColor: '#fff',
     },
     textArea: {
         minHeight: 80,
@@ -787,7 +677,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         padding: 16,
         borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
     },
     footerButton: {
         flex: 1,
@@ -799,17 +688,14 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     cancelButton: {
-        backgroundColor: '#f8f9fa',
         borderWidth: 1,
-        borderColor: '#ddd',
     },
     cancelButtonText: {
-        color: '#666',
         fontSize: 16,
         fontWeight: '600',
     },
     submitButton: {
-        backgroundColor: '#007AFF',
+        // backgroundColor set via theme
     },
     submitButtonText: {
         color: '#fff',
@@ -821,20 +707,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         padding: 16,
-        backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
     },
     pickerButton: {
         fontSize: 16,
-        color: '#007AFF',
     },
     pickerConfirm: {
         fontWeight: '600',
     },
     datePicker: {
         width: '100%',
-        backgroundColor: '#fff',
     },
 });
 

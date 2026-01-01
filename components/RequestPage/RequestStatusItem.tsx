@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 interface RequestStatusItemProps {
     item: any;
@@ -8,6 +9,8 @@ interface RequestStatusItemProps {
 }
 
 const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) => {
+    const { theme } = useTheme();
+
     // Helper to format ASP.NET JSON Date /Date(1234567890)/
     const formatDate = (dateString: string) => {
         try {
@@ -57,39 +60,38 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
         } else if (s.includes('reject')) {
             return { color: '#F44336', icon: 'close-circle', label: 'Rejected' };
         }
-        return { color: '#9E9E9E', icon: 'help-circle', label: status };
+        return { color: theme.icon, icon: 'help-circle', label: status };
     };
 
     // Mappings based on user response
-    // Response example: {"IdN":26,"YearN":0,"applyDateD":"/Date(1767092399847)/","DescC":"LEAVE","StatusC":"Waiting ","LvDescC":"From : 20 Jan 2024, To : 20 Jan 2024"}
-
-    // StatusC can be "Waiting ". Trim it.
     const rawStatus = item.StatusC || item.StatusResult || item.Status || 'Waiting';
     const statusInfo = getStatusInfo(rawStatus.trim());
 
     const requestDate = item.applyDateD || item.RequestDate || item.CreatedDate;
     const description = item.DescC || item.LeaveName || item.Description || 'LEAVE';
-    // Valid for LEAVE, string contains "From : ..., To : ..."
-    // Valid for Leave Surrender, empty string usually
     const rangeDescription = item.LvDescC || '';
 
-    // If LvDescC is empty, we don't show the range footer part or show simpler one
+    // Styles Refs
+    const containerStyle = [styles.container, { backgroundColor: theme.cardBackground, borderBottomColor: theme.inputBorder }];
+    const headerStyle = [styles.header, { backgroundColor: theme.inputBg }];
+    const textMainStyle = { color: theme.text };
+    const textSubStyle = { color: theme.placeholder };
 
     return (
-        <TouchableOpacity style={styles.container} onPress={onPress}>
-            <View style={styles.header}>
-                <Text style={styles.headerLabel}>Request Date</Text>
-                <Text style={styles.headerDate}>{formatDate(requestDate)}</Text>
+        <TouchableOpacity style={containerStyle} onPress={onPress}>
+            <View style={headerStyle}>
+                <Text style={[styles.headerLabel, textMainStyle]}>Request Date</Text>
+                <Text style={[styles.headerDate, textMainStyle]}>{formatDate(requestDate)}</Text>
             </View>
             <View style={styles.content}>
                 <View style={styles.iconContainer}>
-                    <View style={styles.circleIcon}>
+                    <View style={[styles.circleIcon, { backgroundColor: theme.primary }]}>
                         <Ionicons name="create-outline" size={24} color="#FFF" />
                     </View>
                 </View>
                 <View style={styles.detailsContainer}>
-                    <Text style={styles.description}>Description</Text>
-                    <Text style={styles.subDescription}>{description}</Text>
+                    <Text style={[styles.description, textMainStyle]}>Description</Text>
+                    <Text style={[styles.subDescription, textSubStyle]}>{description}</Text>
                 </View>
             </View>
 
@@ -97,13 +99,13 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
                 <View style={styles.footer}>
                     <View style={styles.dateRangeContainer}>
                         <Ionicons name="arrow-up" size={16} color="#4CAF50" />
-                        <Text style={styles.dateRange}>
+                        <Text style={[styles.dateRange, textSubStyle]}>
                             {rangeDescription}
                         </Text>
                     </View>
 
                     <View style={styles.statusContainer}>
-                        <Text style={styles.statusText}>{statusInfo.label}</Text>
+                        <Text style={[styles.statusText, textMainStyle]}>{statusInfo.label}</Text>
                         <Ionicons name={statusInfo.icon as any} size={24} color={statusInfo.color} style={{ marginLeft: 5 }} />
                     </View>
                 </View>
@@ -111,7 +113,7 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
                 <View style={styles.footer}>
                     <View style={{ flex: 1 }} />
                     <View style={styles.statusContainer}>
-                        <Text style={styles.statusText}>{statusInfo.label}</Text>
+                        <Text style={[styles.statusText, textMainStyle]}>{statusInfo.label}</Text>
                         <Ionicons name={statusInfo.icon as any} size={24} color={statusInfo.color} style={{ marginLeft: 5 }} />
                     </View>
                 </View>
@@ -122,10 +124,8 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#fff',
         marginBottom: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
         paddingBottom: 10,
     },
     header: {
@@ -133,17 +133,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 15,
         paddingVertical: 10,
-        backgroundColor: '#f9f9f9',
     },
     headerLabel: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#333',
     },
     headerDate: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#333',
     },
     content: {
         flexDirection: 'row',
@@ -158,7 +155,6 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: '#03A9F4', // Blue color from screenshot
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -168,16 +164,10 @@ const styles = StyleSheet.create({
     },
     description: {
         fontSize: 16,
-        color: '#333',
     },
     subDescription: {
         fontSize: 16,
-        color: '#777',
         marginTop: 2,
-    },
-    leaveType: {
-        fontSize: 14,
-        color: '#777',
     },
     footer: {
         flexDirection: 'row',
@@ -192,7 +182,6 @@ const styles = StyleSheet.create({
     },
     dateRange: {
         fontSize: 12,
-        color: '#777',
         marginLeft: 5,
     },
     statusContainer: {
@@ -201,7 +190,6 @@ const styles = StyleSheet.create({
     },
     statusText: {
         fontSize: 14,
-        color: '#333',
         marginRight: 5,
     },
 });

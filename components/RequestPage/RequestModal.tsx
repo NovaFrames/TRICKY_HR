@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import ApiService from '../../services/ApiService';
 
 interface RequestModalProps {
@@ -10,6 +11,7 @@ interface RequestModalProps {
 }
 
 const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) => {
+    const { theme } = useTheme();
     const [scaleValue] = useState(new Animated.Value(0));
     const [loading, setLoading] = useState(false);
 
@@ -79,7 +81,6 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
     // Status Logic for Color
     let statusColor = '#FFC107'; // Waiting
     if (status.toLowerCase().includes('approv')) statusColor = '#4CAF50';
-    if (status.toLowerCase().includes('approv')) statusColor = '#4CAF50';
     if (status.toLowerCase().includes('reject')) statusColor = '#F44336';
     if (status.toLowerCase().includes('cancel')) statusColor = '#F44336';
 
@@ -139,6 +140,13 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
         );
     };
 
+    // Style Refs
+    const modalContentStyle = [styles.modalContent, { backgroundColor: theme.cardBackground, transform: [{ scale: scaleValue }] }];
+    const headerStyle = [styles.modalHeader, { borderBottomColor: theme.inputBorder }];
+    const titleStyle = [styles.modalTitle, { color: theme.text }];
+    const labelStyle = [styles.detailLabel, { color: theme.placeholder }];
+    const valueStyle = [styles.detailValue, { color: theme.text }];
+    const footerStyle = [styles.modalFooter, { borderTopColor: theme.inputBorder }];
 
     return (
         <Modal
@@ -148,11 +156,11 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <Animated.View style={[styles.modalContent, { transform: [{ scale: scaleValue }] }]}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Request Details</Text>
+                <Animated.View style={modalContentStyle}>
+                    <View style={headerStyle}>
+                        <Text style={titleStyle}>Request Details</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <Ionicons name="close" size={24} color="#555" />
+                            <Ionicons name="close" size={24} color={theme.icon} />
                         </TouchableOpacity>
                     </View>
 
@@ -165,33 +173,33 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
                         </View>
 
                         <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Description</Text>
-                            <Text style={styles.detailValue}>{description}</Text>
+                            <Text style={labelStyle}>Description</Text>
+                            <Text style={valueStyle}>{description}</Text>
                         </View>
 
                         <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Request Date</Text>
-                            <Text style={styles.detailValue}>{formatDate(requestDate)}</Text>
+                            <Text style={labelStyle}>Request Date</Text>
+                            <Text style={valueStyle}>{formatDate(requestDate)}</Text>
                         </View>
 
                         {rangeDescription ? (
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Details</Text>
-                                <Text style={styles.detailValue}>{rangeDescription}</Text>
+                                <Text style={labelStyle}>Details</Text>
+                                <Text style={valueStyle}>{rangeDescription}</Text>
                             </View>
                         ) : null}
 
                         <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Reference ID</Text>
-                            <Text style={styles.detailValue}>{item.IdN}</Text>
+                            <Text style={labelStyle}>Reference ID</Text>
+                            <Text style={valueStyle}>{item.IdN}</Text>
                         </View>
                         <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Remarks</Text>
-                            <Text style={styles.detailValue}>{item.LVRemarksC}</Text>
+                            <Text style={labelStyle}>Remarks</Text>
+                            <Text style={valueStyle}>{item.LVRemarksC}</Text>
                         </View>
                     </ScrollView>
 
-                    <View style={styles.modalFooter}>
+                    <View style={footerStyle}>
                         {(status.toLowerCase().includes('waiting') || status.toLowerCase().includes('pending')) && (
                             <TouchableOpacity
                                 style={[styles.cancelButton, loading && styles.disabledButton]}
@@ -205,7 +213,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
                                 )}
                             </TouchableOpacity>
                         )}
-                        <TouchableOpacity style={styles.closeButtonFull} onPress={onClose}>
+                        <TouchableOpacity style={[styles.closeButtonFull, { backgroundColor: theme.primary }]} onPress={onClose}>
                             <Text style={styles.closeButtonText}>Close</Text>
                         </TouchableOpacity>
                     </View>
@@ -225,7 +233,6 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         width: '90%',
-        backgroundColor: '#fff',
         borderRadius: 15,
         elevation: 5,
         maxHeight: '80%',
@@ -236,12 +243,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#333',
     },
     closeButton: {
         padding: 5,
@@ -268,22 +273,18 @@ const styles = StyleSheet.create({
     },
     detailLabel: {
         fontSize: 12,
-        color: '#888',
         marginBottom: 5,
         textTransform: 'uppercase',
     },
     detailValue: {
         fontSize: 16,
-        color: '#333',
         fontWeight: '500',
     },
     modalFooter: {
         padding: 15,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
     },
     closeButtonFull: {
-        backgroundColor: '#03A9F4',
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
@@ -307,7 +308,7 @@ const styles = StyleSheet.create({
     },
     disabledButton: {
         opacity: 0.7,
-    }
+    },
 });
 
 export default RequestModal;
