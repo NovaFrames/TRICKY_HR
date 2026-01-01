@@ -1,0 +1,614 @@
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Stack, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
+import ApiService from '../../../services/ApiService';
+
+import { useTheme } from '../../../context/ThemeContext';
+
+export default function TimeManage() {
+    const { theme } = useTheme();
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState('SHIFT TIME');
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [timeData, setTimeData] = useState<any[]>([]);
+
+    // Dates for filter
+    // Dates for filter
+    const [fromDate, setFromDate] = useState(new Date('2025-12-02'));
+    const [toDate, setToDate] = useState(new Date('2026-01-01'));
+    const [showFromPicker, setShowFromPicker] = useState(false);
+    const [showToPicker, setShowToPicker] = useState(false);
+
+    // Helper to format Date for API "MM/dd/yyyy" usually, or whatever the API expects.
+    // User example: "01/01/2024"
+    // User example: "01/01/2024"
+    const formatDateForApi = (d: Date) => {
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${month}/${day}/${year}`;
+    };
+
+    // Helper to view format
+    // Helper to view format
+    const formatDisplayDate = (dateVal: string | Date | null) => {
+        if (!dateVal) return '';
+
+        let d: Date;
+        if (typeof dateVal === 'string') {
+            // Handle ASP.NET format /Date(123456789)/
+            if (dateVal.includes('/Date(')) {
+                const timestamp = parseInt(dateVal.replace(/\/Date\((-?\d+)\)\//, '$1'));
+                if (!isNaN(timestamp)) {
+                    d = new Date(timestamp);
+                } else {
+                    return dateVal;
+                }
+            } else {
+                d = new Date(dateVal);
+            }
+        } else {
+            d = dateVal;
+        }
+
+        if (isNaN(d.getTime())) return String(dateVal);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')} ${d.getFullYear()}`;
+    };
+
+    // Helper for time format
+    const formatTime = (timeString: any) => {
+        if (!timeString || timeString === '0.00' || timeString === 0) return '00.00';
+
+        if (typeof timeString === 'number') {
+            const hours = Math.floor(timeString);
+            const minutes = Math.round((timeString - hours) * 100);
+            return `${String(hours).padStart(2, '0')}.${String(minutes).padStart(2, '0')}`;
+        }
+        return timeString;
+    };
+
+
+
+    const onChangeFrom = (event: any, selectedDate?: Date) => {
+        setShowFromPicker(false);
+        if (selectedDate) {
+            setFromDate(selectedDate);
+        }
+    };
+
+    const onChangeTo = (event: any, selectedDate?: Date) => {
+        setShowToPicker(false);
+        if (selectedDate) {
+            setToDate(selectedDate);
+        }
+    };
+
+    const fetchTimeData = async () => {
+        setLoading(true);
+        try {
+            // Use current dates or defaults
+            // For now using hardcoded defaults or you can add a picker
+            // Sending in US format based on request snippet "01/01/2024"
+            const fDate = formatDateForApi(fromDate);
+            const tDate = formatDateForApi(toDate);
+
+            const result = await ApiService.getTimeManageList(fDate, tDate);
+            if (result.success && result.data) {
+                setTimeData(result.data);
+            } else {
+                // Alert.alert("Error", result.error || "Failed to fetch data");
+                console.log("Failed to fetch time data", result.error);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        fetchTimeData();
+    }, [activeTab, fromDate, toDate]); // Refresh on tab or date change
+
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownloadedFile = async (url: string) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+            } else {
+                Alert.alert('Error', 'Cannot open this URL: ' + url);
+            }
+        } catch (error) {
+            console.log('Error opening URL:', error);
+            Alert.alert('Error', 'Could not open the downloaded file link.');
+        }
+    };
+
+    const handleDownload = async () => {
+        // 1. Validate dates
+        if (toDate < fromDate) {
+            Alert.alert('Error', 'To date must be greater than From date');
+            return;
+        }
+
+        // 2. Calculate days difference (max 31 days)
+        const diffTime = Math.abs(toDate.getTime() - fromDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 31) {
+            Alert.alert('Error', 'Total days must be less than 31 days');
+            return;
+        }
+
+        setDownloading(true);
+
+        try {
+            const fromDateStr = formatDateForApi(fromDate);
+            const toDateStr = formatDateForApi(toDate);
+
+            console.log('Downloading report:', { fromDateStr, toDateStr });
+
+            // 4. Call ApiService
+            const result = await ApiService.downloadTimeReport(fromDateStr, toDateStr);
+
+            if (result.success && result.url) {
+                // 5. Handle the downloaded URL
+                await handleDownloadedFile(result.url);
+            } else {
+                Alert.alert('Download Failed', result.error || 'Failed to download report');
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+            Alert.alert('Error', 'Download failed. Please try again.');
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const renderHeader = () => (
+        <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <View style={styles.navBar}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.navTitle}>Time Management</Text>
+                <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={downloading}>
+                    {downloading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                        <Ionicons name="download-outline" size={24} color="#fff" />
+                    )}
+                </TouchableOpacity>
+            </View>
+
+            {/* Date Picker Card */}
+            <View style={[styles.dateCard, { backgroundColor: theme.cardBackground }]}>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
+                    <Text style={[styles.dateLabel, { color: theme.text }]}>From Date</Text>
+                    <View style={styles.dateRow}>
+                        <Ionicons name="calendar-outline" size={18} color={theme.primary} />
+                        <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(fromDate)}</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <View style={[styles.dateDivider, { backgroundColor: theme.inputBorder }]} />
+
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowToPicker(true)}>
+                    <Text style={[styles.dateLabel, { color: theme.text }]}>To Date</Text>
+                    <View style={styles.dateRow}>
+                        <Ionicons name="calendar-outline" size={18} color={theme.primary} />
+                        <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(toDate)}</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+
+            {showFromPicker && (
+                <DateTimePicker
+                    value={fromDate}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeFrom}
+                />
+            )}
+            {showToPicker && (
+                <DateTimePicker
+                    value={toDate}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeTo}
+                />
+            )}
+        </View>
+    );
+
+    const renderTabs = () => (
+        <View style={[styles.tabsContainer, { backgroundColor: theme.cardBackground }]}>
+            {['SHIFT TIME', 'OTHERS', 'OT HRS'].map((tab) => (
+                <TouchableOpacity
+                    key={tab}
+                    style={[styles.tabItem, activeTab === tab && { backgroundColor: theme.primary }]}
+                    onPress={() => setActiveTab(tab)}
+                >
+                    <Text style={[styles.tabText, activeTab === tab ? styles.activeTabText : { color: theme.text }]}>{tab}</Text>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
+
+
+    const renderListItem = ({ item, index }: { item: any, index: number }) => {
+        const dateDisplay = item.DateD ? formatDisplayDate(item.DateD) : formatDisplayDate(new Date()); // Fallback
+        const safeNum = (val: any) => val ? parseFloat(val).toFixed(2) : '0.00';
+
+        let rowContent = null;
+        const cellTextStyle = [styles.cellText, { color: theme.text }];
+        const cellBoldStyle = [styles.cellTextBold, { color: theme.text }];
+
+        if (activeTab === 'SHIFT TIME') {
+            const shiftCode = item.ShiftCodeC || item.ShiftCode || '-';
+            const inTime = safeNum(item.TInN !== undefined ? item.TInN : item.InTimeN);
+            const outTime = safeNum(item.TOutN !== undefined ? item.TOutN : item.OutTimeN);
+            const reason = item.ReaCodeC || item.TMSRemarksC || item.Reason || item.ABS || '-';
+
+            rowContent = (
+                <>
+                    <View style={[styles.cell, { flex: 1.2 }]}>
+                        <Text style={cellBoldStyle}>{dateDisplay}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 1 }]}>
+                        <Text style={cellTextStyle}>{shiftCode}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{inTime}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{outTime}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 1 }]}>
+                        <Text style={cellTextStyle} numberOfLines={1}>{reason}</Text>
+                    </View>
+                </>
+            );
+        } else if (activeTab === 'OTHERS') {
+            const actual = safeNum(item.ActN || item.Actual || item.ActHrs);
+            const nrm = safeNum(item.NRMN || item.NRM || item.NrmHrs);
+            const late = safeNum(item.LateN || item.Late);
+            const under = safeNum(item.UnderN || item.Under);
+
+            rowContent = (
+                <>
+                    <View style={[styles.cell, { flex: 1.2 }]}>
+                        <Text style={cellBoldStyle}>{dateDisplay}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 1 }]}>
+                        <Text style={cellTextStyle}>{actual}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 1 }]}>
+                        <Text style={cellTextStyle}>{nrm}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 1 }]}>
+                        <Text style={cellTextStyle}>{late}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 1 }]}>
+                        <Text style={cellTextStyle}>{under}</Text>
+                    </View>
+                </>
+            );
+        } else /* OT HRS */ {
+            const ot1 = safeNum(item.OTH1N || item.OT1N || item.OT1);
+            const ot2 = safeNum(item.OTH2N || item.OT2N || item.OT2);
+            const ot3 = safeNum(item.OTH3N || item.OT3N || item.OT3);
+            const ot4 = safeNum(item.OTH4N || item.OT4N || item.OT4);
+
+            rowContent = (
+                <>
+                    <View style={[styles.cell, { flex: 1.2 }]}>
+                        <Text style={cellBoldStyle}>{dateDisplay}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{ot1}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{ot2}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{ot3}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{ot4}</Text>
+                    </View>
+                </>
+            );
+        }
+
+        return (
+            <View style={[styles.row, { borderColor: theme.inputBorder }, index % 2 === 0 ? { backgroundColor: theme.cardBackground } : { backgroundColor: theme.background }]}>
+                {rowContent}
+            </View>
+        );
+    };
+
+    const renderListHeader = () => {
+        const renderHeaderCell = (label: string, flexCb: number) => (
+            <Text style={[styles.headerCell, { flex: flexCb, color: theme.secondary }]}>{label}</Text>
+        );
+
+        let headers = null;
+        if (activeTab === 'SHIFT TIME') {
+            headers = (
+                <>
+                    {renderHeaderCell('Date', 1.2)}
+                    {renderHeaderCell('Shift', 1)}
+                    {renderHeaderCell('In', 0.8)}
+                    {renderHeaderCell('Out', 0.8)}
+                    {renderHeaderCell('Reason', 1)}
+                </>
+            );
+        } else if (activeTab === 'OTHERS') {
+            headers = (
+                <>
+                    {renderHeaderCell('Date', 1.2)}
+                    {renderHeaderCell('Actual', 1)}
+                    {renderHeaderCell('NRM', 1)}
+                    {renderHeaderCell('Late', 1)}
+                    {renderHeaderCell('Under', 1)}
+                </>
+            );
+        } else {
+            headers = (
+                <>
+                    {renderHeaderCell('Date', 1.2)}
+                    {renderHeaderCell('OT1', 0.8)}
+                    {renderHeaderCell('OT2', 0.8)}
+                    {renderHeaderCell('OT3', 0.8)}
+                    {renderHeaderCell('OT4', 0.8)}
+                </>
+            );
+        }
+
+        return <View style={[styles.listHeader, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>{headers}</View>;
+    };
+
+    return (
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom']}>
+            {renderHeader()}
+            {renderTabs()}
+
+            <View style={[styles.listContainer, { backgroundColor: theme.cardBackground }]}>
+                {renderListHeader()}
+                <FlatList
+                    data={timeData}
+                    renderItem={renderListItem}
+                    keyExtractor={(item, index) => index.toString()}
+                    contentContainerStyle={styles.listContent}
+                    refreshing={loading}
+                    onRefresh={fetchTimeData}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                            <Ionicons name="document-text-outline" size={64} color={theme.icon} />
+                            <Text style={[styles.emptyText, { color: theme.placeholder }]}>No records found</Text>
+                        </View>
+                    }
+                />
+            </View>
+
+            {/* Floating Action Button (FAB) for Requests */}
+            <TouchableOpacity
+                style={[styles.fab, { backgroundColor: theme.primary }]}
+                onPress={() => setShowRequestModal(true)}
+                activeOpacity={0.8}
+            >
+                <Ionicons name="add" size={30} color="#fff" />
+            </TouchableOpacity>
+
+            <TimeRequestModal
+                visible={showRequestModal}
+                onClose={() => setShowRequestModal(false)}
+                onSuccess={() => {
+                    setShowRequestModal(false);
+                    fetchTimeData();
+                    Alert.alert('Request Sent', 'Your time request has been sent successfully.');
+                }}
+            />
+
+            {/* Date Pickers */}
+            {showFromPicker && (
+                <DateTimePicker
+                    value={fromDate}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeFrom}
+                />
+            )}
+            {showToPicker && (
+                <DateTimePicker
+                    value={toDate}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeTo}
+                />
+            )}
+        </SafeAreaView>
+    );
+}
+
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+    },
+    headerContainer: {
+        paddingTop: 10,
+        paddingBottom: 40,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        elevation: 4,
+        zIndex: 1
+    },
+    navBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    navTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    iconButton: {
+        padding: 8,
+    },
+    dateCard: {
+        flexDirection: 'row',
+        marginHorizontal: 16,
+        marginTop: 10,
+        borderRadius: 12,
+        padding: 4,
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        alignItems: 'center',
+    },
+    dateInput: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        alignItems: 'center',
+    },
+    dateLabel: {
+        fontSize: 12,
+        marginBottom: 4,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6
+    },
+    dateValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    dateDivider: {
+        width: 1,
+        height: '60%',
+    },
+    tabsContainer: {
+        flexDirection: 'row',
+        marginTop: 20, // Overlapping nicely if needed, but here simple flow
+        marginHorizontal: 16,
+        borderRadius: 10,
+        padding: 4,
+        // elevation: 2,
+    },
+    tabItem: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 8,
+    },
+    activeTabItem: {
+        // backgroundColor: '#00838F', // Handled by theme.primary
+    },
+    tabText: {
+        fontSize: 13,
+        fontWeight: '600',
+        // color: '#757575', // Handled by theme.textLight
+    },
+    activeTabText: {
+        color: '#fff',
+    },
+    listContainer: {
+        flex: 1,
+        marginTop: 15,
+        marginHorizontal: 16,
+        marginBottom: 0,
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+        elevation: 2,
+        overflow: 'hidden'
+    },
+    listHeader: {
+        flexDirection: 'row',
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderBottomWidth: 1,
+        // backgroundColor: '#E0F7FA', // Light Teal - Handled by theme.inputBg
+        // borderBottomColor: '#B2EBF2', // Handled by theme.inputBorder
+    },
+    headerCell: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        // color: '#006064', // Handled by theme.secondary
+        textAlign: 'center',
+    },
+    listContent: {
+        paddingBottom: 80, // Space for FAB
+    },
+    row: {
+        flexDirection: 'row',
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderBottomWidth: 1,
+        // borderColor: '#F1F1F1', // Handled by theme.inputBorder
+        alignItems: 'center',
+    },
+    rowEven: {
+        // backgroundColor: '#fff', // Handled by theme.cardBackground
+    },
+    rowOdd: {
+        // backgroundColor: '#FAFAFA', // Handled by theme.background
+    },
+    cell: {
+        justifyContent: 'center',
+        alignItems: 'center', // Center align commonly better for data tables
+    },
+    cellText: {
+        fontSize: 12,
+        // color: '#424242', // Handled by theme.text
+        textAlign: 'center'
+    },
+    cellTextBold: {
+        fontSize: 12,
+        fontWeight: '600',
+        // color: '#333', // Handled by theme.text
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingTop: 50,
+        opacity: 0.6
+    },
+    emptyText: {
+        marginTop: 10,
+        fontSize: 16,
+        // color: '#888' // Handled by theme.placeholder
+    },
+    fab: {
+        position: 'absolute',
+        bottom: 24,
+        right: 24,
+        // backgroundColor: '#00838F', // Handled by theme.primary
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.27,
+        shadowRadius: 4.65,
+    }
+});

@@ -25,18 +25,7 @@ export const loginUser = async (empCode: string, password: string, domainId: str
     }
 };
 
-export const getProjectList = async (token: string) => {
-    try {
-        const response = await api.get('/GetProjectList/', {
-            params: {
-                TokenC: token
-            }
-        });
-        return response?.data ?? null;
-    } catch (error) {
-        throw error;
-    }
-}
+// function moved to class
 
 // Adapted for React Native FormData
 export const faceRegApi = async ({ image, imageFile, userToken, empId }: any) => {
@@ -122,6 +111,12 @@ export const API_ENDPOINTS = {
     GET_PROFILE: '/GetEmpProfile',
     GET_PENDING_LIST: '/GetPendingApprove_YourList',
     GET_EMP_REQUEST_STATUS: '/GetEmpRequestStatus',
+
+    // Time Management
+    GET_TIME_MANAGE_LIST: '/GetEmpTimeManage', // Added based on request
+    GET_PROJECT_LIST: '/GetProjectList',
+    UPDATE_TIME: '/UpdateEmpTimeManage',
+    DOWNLOAD_REPORT: '/PrintMonthlyReport',
 };
 
 // Types
@@ -169,6 +164,19 @@ export interface SurrenderData {
     SurrenderN: number;
     PayoutDateD: string;
     RemarksC: string;
+}
+
+
+export interface TimeRequestPayload {
+    TokenC: string;
+    model: {
+        EmpIdN: number;
+        DateD: string;
+        InTimeN: string;
+        OutTimeN: string;
+        ProjectIdN: number;
+        TMSRemarksC: string;
+    }
 }
 
 export interface LeaveBalanceResponse {
@@ -263,6 +271,21 @@ class ApiService {
     }
 
     // Leave Management APIs
+    async getProjectList(token: string) {
+        try {
+            const response = await api.get('/GetProjectList/', {
+                params: {
+                    TokenC: token
+                }
+            });
+            // Handle both direct array or wrapped data { Status: 'success', data: [...] }
+            return response?.data?.data || response?.data || [];
+        } catch (error) {
+            // Fallback or rethrow
+            throw error;
+        }
+    }
+
     async getLeaveDetails(): Promise<{ success: boolean, data?: LeaveBalanceResponse, error?: string }> {
         try {
             if (!this.token) {
@@ -467,6 +490,42 @@ class ApiService {
         }
     }
 
+    async cancelLeave(payload: any): Promise<{ success: boolean, data?: any, error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const requestPayload = {
+                ...payload,
+                TokenC: this.token,
+                Tokenc: this.token, // Add lowercase Key as requested
+            };
+
+            console.log('Cancel Leave Request Payload:', JSON.stringify(requestPayload));
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.SAVE_APPROVAL,
+                requestPayload,
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Cancel Leave Response:', JSON.stringify(response.data));
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            console.log('Cancel Leave API Error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
     // Request Status
     async getEmpRequestStatus(): Promise<{ success: boolean, data?: any[], error?: string }> {
         try {
@@ -515,6 +574,132 @@ class ApiService {
             token: this.token,
             empId: this.empId,
         };
+    }
+    // Time Management
+    async submitTimeRequest(payload: TimeRequestPayload): Promise<{ success: boolean, data?: any, error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            // Ensure TokenC is correct
+            payload.TokenC = this.token || '';
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.UPDATE_TIME,
+                payload,
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
+
+
+    async getTimeManageList(fromDate: string, toDate: string): Promise<{ success: boolean, data?: any[], error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const payload = {
+                TokenC: this.token,
+                Id: this.empId,
+                FDate: fromDate,
+                TDate: toDate
+            };
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_TIME_MANAGE_LIST,
+                payload,
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.data || response.data.xx || [] }; // Adjust based on actual response
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
+    async downloadTimeReport(fromDate: string, toDate: string): Promise<{ success: boolean, url?: string, error?: string; data?: any }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            if (!this.token || !this.empId) {
+                return { success: false, error: 'Authentication details missing' };
+            }
+
+            // Build payload exactly as requested
+            const payload = {
+                TokenC: this.token,
+                FromDate: fromDate,  // Expects "MM/dd/yyyy" format
+                ToDate: toDate,      // Expects "MM/dd/yyyy" format
+                Where: `A.EmpIdN IN(${this.empId})`,
+                Group: "Employee",
+                OrderBy: 1
+            };
+
+            console.log('Download Report Payload:', payload);
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.DOWNLOAD_REPORT,
+                payload,
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Download Report Full Response:', JSON.stringify(response.data));
+
+            if (response.data.Status === 'success') {
+                const url = response.data.StrUrl || response.data.Url || response.data.FileUrl || response.data.data;
+
+                if (url && typeof url === 'string' && (url.startsWith('http') || url.startsWith('/'))) {
+                    return {
+                        success: true,
+                        url: url,
+                        data: response.data
+                    };
+                }
+
+                return { success: false, error: 'Report generated successfully but no download URL found in response.' };
+            } else {
+                return {
+                    success: false,
+                    error: response.data.Error || 'Download failed'
+                };
+            }
+        } catch (error: any) {
+            console.error('Download Report Error:', error);
+
+            let errorMessage = 'Network error';
+            if (error.response) {
+                errorMessage = error.response.data?.Error ||
+                    error.response.data?.message ||
+                    `Server error: ${error.response.status}`;
+            } else if (error.request) {
+                errorMessage = 'No response from server';
+            }
+
+            return { success: false, error: errorMessage };
+        }
     }
 }
 

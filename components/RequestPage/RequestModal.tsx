@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ApiService from '../../services/ApiService';
 
 interface RequestModalProps {
     visible: boolean;
@@ -10,6 +11,7 @@ interface RequestModalProps {
 
 const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) => {
     const [scaleValue] = useState(new Animated.Value(0));
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (visible) {
@@ -77,7 +79,65 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
     // Status Logic for Color
     let statusColor = '#FFC107'; // Waiting
     if (status.toLowerCase().includes('approv')) statusColor = '#4CAF50';
+    if (status.toLowerCase().includes('approv')) statusColor = '#4CAF50';
     if (status.toLowerCase().includes('reject')) statusColor = '#F44336';
+    if (status.toLowerCase().includes('cancel')) statusColor = '#F44336';
+
+    const handleCancelLeave = async () => {
+        Alert.alert(
+            "Cancel Leave",
+            "Are you sure you want to cancel this leave request?",
+            [
+                { text: "No", style: "cancel" },
+                {
+                    text: "Yes",
+                    onPress: async () => {
+                        setLoading(true);
+                        try {
+                            const { empId, token } = ApiService.getCurrentUser();
+                            if (!empId) {
+                                Alert.alert("Error", "User details not found.");
+                                setLoading(false);
+                                return;
+                            }
+
+                            const payload = {
+                                Flag: "CancelLeave",
+                                Tokenc: token || '', // User requested Tokenc
+                                EmpId: empId,
+                                Id: item.IdN || item.Id,
+                                Approval: 2,
+                                YearN: 0,
+                                Remarks: "Cancellation requested",
+                                title: "",
+                                DocName: "",
+                                ReceiveYearN: 0,
+                                ReceiveMonthN: 0,
+                                ApproveAmtN: 0,
+                                PayTypeN: 0,
+                                // Adding dates to prevent SQL overflow if backend checks them
+                                LFromDateD: item.LFromDateD ? item.LFromDateD.split('T')[0] : new Date().toISOString().split('T')[0],
+                                LToDateD: item.LToDateD ? item.LToDateD.split('T')[0] : new Date().toISOString().split('T')[0],
+                            };
+
+                            console.log('Sending Cancel Payload:', JSON.stringify(payload));
+                            const result = await ApiService.cancelLeave(payload);
+                            if (result.success) {
+                                Alert.alert("Success", "Leave cancelled successfully");
+                                onClose();
+                            } else {
+                                Alert.alert("Error", result.error || "Failed to cancel leave");
+                            }
+                        } catch (error) {
+                            Alert.alert("Error", "An unexpected error occurred");
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
 
     return (
@@ -132,6 +192,19 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
                     </ScrollView>
 
                     <View style={styles.modalFooter}>
+                        {(status.toLowerCase().includes('waiting') || status.toLowerCase().includes('pending')) && (
+                            <TouchableOpacity
+                                style={[styles.cancelButton, loading && styles.disabledButton]}
+                                onPress={handleCancelLeave}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.cancelButtonText}>Cancel Leave</Text>
+                                )}
+                            </TouchableOpacity>
+                        )}
                         <TouchableOpacity style={styles.closeButtonFull} onPress={onClose}>
                             <Text style={styles.closeButtonText}>Close</Text>
                         </TouchableOpacity>
@@ -219,6 +292,21 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    cancelButton: {
+        backgroundColor: '#F44336', // Red
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    cancelButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    disabledButton: {
+        opacity: 0.7,
     }
 });
 
