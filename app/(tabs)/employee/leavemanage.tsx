@@ -1,4 +1,6 @@
 // LeaveApply.tsx
+import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
@@ -43,6 +45,12 @@ const LeaveApply: React.FC = () => {
     useEffect(() => {
         loadLeaveData();
     }, []);
+
+    useProtectedBack({
+        home: '/home',
+        settings: '/settings',
+        dashboard: '/dashboard',
+    });
 
     const loadLeaveData = async () => {
         try {
@@ -226,15 +234,7 @@ const LeaveApply: React.FC = () => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
 
             {/* Modern Header */}
-            <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
-                <View style={styles.navBar}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-                        <Icon name="arrow-back" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.navTitle}>Leave Management</Text>
-                    <View style={styles.headerRight} />
-                </View>
-            </View>
+            <Header title="Leave Management" />
 
             {/* Leave List */}
             <ScrollView
@@ -304,14 +304,6 @@ const styles = StyleSheet.create({
         marginTop: 12,
         fontSize: 16,
         fontWeight: '500',
-    },
-    headerContainer: {
-        paddingTop: 10,
-        paddingBottom: 15, // Reduced from 40
-        borderBottomLeftRadius: 16, // Reduced from 24
-        borderBottomRightRadius: 16, // Reduced from 24
-        elevation: 4,
-        zIndex: 1,
     },
     navBar: {
         flexDirection: 'row',

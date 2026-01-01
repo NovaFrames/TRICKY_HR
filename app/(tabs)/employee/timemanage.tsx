@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
 import ApiService from '../../../services/ApiService';
 
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { useTheme } from '../../../context/ThemeContext';
 
 export default function TimeManage() {
@@ -33,6 +34,12 @@ export default function TimeManage() {
         const year = d.getFullYear();
         return `${month}/${day}/${year}`;
     };
+
+    useProtectedBack({
+        home: '/home',
+        settings: '/settings',
+        dashboard: '/dashboard',
+    });
 
     // Helper to view format
     // Helper to view format

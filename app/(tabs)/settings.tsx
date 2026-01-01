@@ -78,10 +78,17 @@ export default function SettingsScreen() {
                     onPress: () => { },
                 },
                 {
-                    label: 'Security',
-                    description: 'Change password and security settings',
-                    icon: <MaterialIcons name="lock" />,
+                    label: 'Address',
+                    description: 'Update your address information',
+                    icon: <MaterialIcons name="home" />,
                     color: '#ec4899',
+                    onPress: () => { },
+                },
+                {
+                    label: 'Security',
+                    description: 'Update your security information',
+                    icon: <MaterialIcons name="lock" />,
+                    color: '#f59e0b',
                     onPress: () => { },
                 },
             ],
@@ -103,41 +110,30 @@ export default function SettingsScreen() {
                     color: '#f59e0b',
                     onPress: () => { },
                 },
-                {
-                    label: 'Notifications',
-                    description: 'Manage notification preferences',
-                    icon: <Ionicons name="notifications" />,
-                    color: '#8b5cf6',
-                    onPress: () => { },
-                },
             ],
         },
         {
-            title: 'Support & Legal',
+            title: 'Others',
             items: [
                 {
-                    label: 'Terms & Conditions',
+                    label: 'Passport Details',
+                    description: 'Update your passport details',
                     icon: <Ionicons name="document-text-outline" />,
                     color: '#64748b',
                     onPress: () => { },
                 },
                 {
-                    label: 'Privacy Policy',
+                    label: 'Child Details',
+                    description: 'Update your child details',
                     icon: <MaterialIcons name="privacy-tip" />,
                     color: '#8b5cf6',
                     onPress: () => { },
                 },
                 {
-                    label: 'Help & Support',
+                    label: 'Education Details',
+                    description: 'Update your education details',
                     icon: <Ionicons name="help-circle" />,
                     color: '#3b82f6',
-                    onPress: () => { },
-                },
-                {
-                    label: 'About App',
-                    description: 'Version 1.0.0',
-                    icon: <Ionicons name="information-circle" />,
-                    color: '#10b981',
                     onPress: () => { },
                 },
             ],
@@ -324,7 +320,7 @@ export default function SettingsScreen() {
 
 /* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
-    container: { flex: 1 },
+    container: { flex: 1, paddingBottom: 60 },
     headerContainer: { padding: 12 }, // Reduced from 20
     screenTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8 }, // Smaller title
     profileCard: { borderRadius: 16, padding: 12, elevation: 2 }, // Compact card

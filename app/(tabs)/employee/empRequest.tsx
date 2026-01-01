@@ -1,3 +1,5 @@
+import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -17,6 +19,12 @@ export default function EmpRequestPage() {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>(null);
+
+    useProtectedBack({
+        home: '/home',
+        settings: '/settings',
+        dashboard: '/dashboard',
+    });
 
     const fetchRequests = async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
@@ -68,18 +76,7 @@ export default function EmpRequestPage() {
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* Modern Header - Matching Leave Management */}
-            <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
-                <View style={styles.navBar}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        style={styles.iconButton}
-                    >
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.navTitle}>Request Status</Text>
-                    <View style={styles.headerRight} />
-                </View>
-            </View>
+            <Header title="Request Status" />
 
             {/* Modern Capsule Tab Selector */}
             <View style={styles.tabSection}>
@@ -162,18 +159,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    headerContainer: {
-        paddingTop: 50,
-        paddingBottom: 15,
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        zIndex: 1,
-    },
     navBar: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -192,9 +177,6 @@ const styles = StyleSheet.create({
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    headerRight: {
-        width: 40,
     },
     tabSection: {
         paddingHorizontal: 20,
