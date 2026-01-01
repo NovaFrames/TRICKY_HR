@@ -1,3 +1,4 @@
+import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProfileImage } from '@/hooks/useCompanyLogo';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -14,10 +15,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
 
 /* -------------------- TYPES -------------------- */
-type SettingItemType = 'navigation' | 'switch' | 'action';
 
 type IconProps = {
     color?: string;
@@ -191,7 +190,7 @@ export default function SettingsScreen() {
                     value={isDark}
                 />
             ) : (
-                <Feather name="chevron-right" size={20} color={theme.textLight} />
+                <Feather name="chevron-right" size={20} color={`${theme.text}80`} />
             );
 
         return (

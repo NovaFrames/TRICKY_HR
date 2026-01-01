@@ -10,17 +10,17 @@ const TEAM_LEADS = [
     {
         id: 1,
         name: 'Alex',
-        image: 'https://randomuser.me/api/portraits/men/32.jpg',
+        image: 'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
     },
     {
         id: 2,
         name: 'Priya',
-        image: 'https://randomuser.me/api/portraits/women/44.jpg',
+        image: 'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
     },
     {
         id: 3,
         name: 'Rahul',
-        image: 'https://randomuser.me/api/portraits/men/65.jpg',
+        image: 'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
     },
 ];
 

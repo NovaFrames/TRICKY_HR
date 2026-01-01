@@ -166,27 +166,27 @@ export default function ProfileUpdate() {
                 >
                     <DetailRow
                         label="Employee ID"
-                        value={user.EmpCodeC}
+                        value={user?.EmpCodeC}
                         icon={<Ionicons name="id-card" size={18} color={theme.primary} />}
                     />
                     <DetailRow
                         label="Full Name"
-                        value={user.EmpNameC}
+                        value={user?.EmpNameC}
                         icon={<Ionicons name="person" size={18} color={theme.primary} />}
                     />
                     <DetailRow
                         label="Designation"
-                        value={user.DesigNameC}
+                        value={user?.DesigNameC}
                         icon={<MaterialIcons name="work" size={18} color={theme.primary} />}
                     />
                     <DetailRow
                         label="Company"
-                        value={user.CompNameC}
+                        value={user?.CompNameC}
                         icon={<Ionicons name="business" size={18} color={theme.primary} />}
                     />
                     <DetailRow
                         label="Employee Number"
-                        value={user.EmpIdN}
+                        value={user?.EmpIdN}
                         icon={<Feather name="hash" size={18} color={theme.primary} />}
                         withDivider={false}
                     />
@@ -211,7 +211,7 @@ export default function ProfileUpdate() {
                                 </Text>
                             </View>
                         </View>
-                        <StatusBadge status={user.IsLiveLocN === 1 ? 'Enabled' : 'Disabled'} />
+                        <StatusBadge status={user?.IsLiveLocN === 1 ? 'Enabled' : 'Disabled'} />
                     </View>
                     <View style={[styles.divider, { backgroundColor: `${theme.textLight}20` }]} />
 
@@ -229,7 +229,7 @@ export default function ProfileUpdate() {
                                 </Text>
                             </View>
                         </View>
-                        <StatusBadge status={`${user.LiveDurN} min`} />
+                        <StatusBadge status={`${user?.LiveDurN} min`} />
                     </View>
                     <View style={[styles.divider, { backgroundColor: `${theme.textLight}20` }]} />
 
@@ -247,7 +247,7 @@ export default function ProfileUpdate() {
                                 </Text>
                             </View>
                         </View>
-                        <StatusBadge status={user.FaceVerN === 1 ? 'Enabled' : 'Disabled'} />
+                        <StatusBadge status={user?.FaceVerN === 1 ? 'Enabled' : 'Disabled'} />
                     </View>
                     <View style={[styles.divider, { backgroundColor: `${theme.textLight}20` }]} />
 
@@ -265,7 +265,7 @@ export default function ProfileUpdate() {
                                 </Text>
                             </View>
                         </View>
-                        <StatusBadge status={user.EnableMidMonthN === 1 ? 'Yes' : 'No'} />
+                        <StatusBadge status={user?.EnableMidMonthN === 1 ? 'Yes' : 'No'} />
                     </View>
                 </DetailCard>
 
@@ -275,10 +275,10 @@ export default function ProfileUpdate() {
                     icon={<Ionicons name="business-outline" size={20} color={theme.primary} />}
                 >
                     <View style={styles.companyGrid}>
-                        <InfoItem label="Customer ID" value={user.CustomerIdC} />
-                        <InfoItem label="Company ID" value={user.CompIdN} />
-                        <InfoItem label="Country ID" value={user.CountryIdN} />
-                        <InfoItem label="Website" value={user.WebsiteC || 'Not set'} />
+                        <InfoItem label="Customer ID" value={user?.CustomerIdC} />
+                        <InfoItem label="Company ID" value={user?.CompIdN} />
+                        <InfoItem label="Country ID" value={user?.CountryIdN} />
+                        <InfoItem label="Website" value={user?.WebsiteC || 'Not set'} />
                     </View>
                 </DetailCard>
 
