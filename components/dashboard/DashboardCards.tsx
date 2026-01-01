@@ -1,6 +1,6 @@
 import { useUser } from '@/context/UserContext';
 import { FontAwesome } from '@expo/vector-icons';
-import { Href, router } from 'expo-router';
+import { router } from 'expo-router';
 import React from 'react';
 import {
     Dimensions,
@@ -57,11 +57,6 @@ export default function DashboardCards() {
         DASHBOARD_MENU_ACTIONS.includes(item.ActionC)
     );
 
-    /* -------------------- NAVIGATION -------------------- */
-    const goToAction = (action: string) => {
-        router.push(`/${action}` as Href);
-    };
-
     return (
         <View style={styles.container}>
             {filteredMenuItems.map((item: any, index: number) => (
@@ -74,7 +69,7 @@ export default function DashboardCards() {
                         },
                     ]}
                     activeOpacity={0.8}
-                    onPress={() => goToAction(item.ActionC)}
+                    onPress={() => router.push({ pathname: item.ActionC, params: { from: 'dashboard' } })}
                 >
                     <View style={styles.iconBox}>
                         <FontAwesome

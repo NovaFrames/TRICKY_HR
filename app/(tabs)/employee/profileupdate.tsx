@@ -27,6 +27,7 @@ export default function ProfileUpdate() {
     useProtectedBack({
         home: '/home',
         settings: '/settings',
+        dashboard: '/dashboard',
     });
 
     // ✅ Fallback UI (prevents crash)
