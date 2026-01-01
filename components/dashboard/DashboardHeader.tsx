@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
         overflow: 'hidden', // ✅ clips gradient correctly
     },
     headerBackground: {
-        paddingBottom: 20,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
         shadowOffset: { width: 0, height: 4 },
@@ -91,7 +90,6 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'center',
-        paddingTop: 10,
     },
     greeting: {
         fontSize: 14,
