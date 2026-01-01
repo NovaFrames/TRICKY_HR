@@ -10,7 +10,7 @@ export const lightTheme = {
     inputBorder: '#CCFBF1',
     placeholder: '#94A3B8',
     icon: '#94A3B8',
-    backgroundCard: '#F0FDFA',
+    cardBackground: '#F0FDFA',
 };
 
 export const darkTheme = {
@@ -24,7 +24,7 @@ export const darkTheme = {
     inputBorder: '#334155',
     placeholder: '#64748b',
     icon: '#64748b',
-    backgroundCard: '#0f172a',
+    cardBackground: '#0f172a',
 };
 
 export type ThemeType = typeof lightTheme;

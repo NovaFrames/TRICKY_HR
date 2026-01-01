@@ -52,7 +52,7 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                         ]}
                         onPress={() => {
                             if (item.ActionC) {
-                                router.push(item.ActionC);
+                                router.push({ pathname: item.ActionC, params: { from: 'home' } });
                             }
                         }}
                     >

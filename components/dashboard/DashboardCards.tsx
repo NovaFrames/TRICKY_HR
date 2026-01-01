@@ -70,7 +70,7 @@ export default function DashboardCards() {
                     style={[
                         styles.card,
                         {
-                            backgroundColor: theme.backgroundCard,
+                            backgroundColor: theme.cardBackground,
                         },
                     ]}
                     activeOpacity={0.8}

@@ -37,7 +37,7 @@ export const IdCard: React.FC<IdCardProps> = ({
     const logoUrl = useProfileImage(user?.CustomerIdC, user?.CompIdN, user?.EmpIdN);
 
     return (
-        <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.backgroundCard }]}>
+        <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.cardBackground }]}>
             <View style={styles.idCardGradient}>
                 <View style={styles.idCardTop}>
                     <View style={[styles.avatarLarge]}>

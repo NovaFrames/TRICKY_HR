@@ -31,7 +31,7 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
 
     return (
         <View
-            style={[styles.headerBackground, { backgroundColor: theme.backgroundCard }]}
+            style={[styles.headerBackground, { backgroundColor: theme.cardBackground }]}
         >
             <SafeAreaView>
                 <View style={styles.header}>
