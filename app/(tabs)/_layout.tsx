@@ -10,19 +10,24 @@ export default function TabsLayout() {
         pathname.startsWith('/employee') ||
         pathname.startsWith('/officer');
 
+    // Header should also hide on these routes
+    const hideHeader = hideTabs;
+
     const { theme, isDark } = useTheme();
 
     return (
         <View
             style={{
                 flex: 1,
-                backgroundColor: theme.background, // 👈 MUST match header bottom color
+                backgroundColor: isDark ? theme.background : '#FFFFFF', // 👈 Force white in light mode
             }}
         >
-            <DashboardHeader
-                isDark={isDark}
-                theme={theme}
-            />
+            {!hideHeader && (
+                <DashboardHeader
+                    isDark={isDark}
+                    theme={theme}
+                />
+            )}
 
             <Tabs
                 screenOptions={{

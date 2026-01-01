@@ -29,8 +29,8 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
     };
 
     const numColumns = getColumns();
-    const gap = 16;
-    const padding = 48;
+    const gap = 14;
+    const padding = 40;
     const itemWidth =
         (width - padding - gap * (numColumns - 1)) / numColumns;
 
@@ -47,9 +47,12 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                             styles.gridItem,
                             {
                                 width: itemWidth,
-                                borderColor: theme.inputBg,
+                                backgroundColor: '#FFFFFF',
+                                borderColor: '#F1F5F9',
+                                borderWidth: 1,
                             },
                         ]}
+                        activeOpacity={0.7}
                         onPress={() => {
                             if (item.ActionC) {
                                 router.push({ pathname: item.ActionC, params: { from: 'home' } });
@@ -61,13 +64,13 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                                 styles.gridIconBox,
                                 {
                                     backgroundColor:
-                                        theme.primary + '15',
+                                        (item.IconcolorC || theme.primary) + '12',
                                 },
                             ]}
                         >
                             <IconLib
                                 name={iconName as any}
-                                size={20}
+                                size={18}
                                 color={item.IconcolorC || theme.primary}
                             />
                         </View>
@@ -75,9 +78,9 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                         <Text
                             style={[
                                 styles.gridLabel,
-                                { color: theme.text },
+                                { color: '#1E293B' },
                             ]}
-                            numberOfLines={2}
+                            numberOfLines={1}
                         >
                             {item.MenuNameC}
                         </Text>
@@ -92,28 +95,34 @@ const styles = StyleSheet.create({
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        justifyContent: 'flex-start',
     },
 
     gridItem: {
         alignItems: 'center',
-        marginBottom: 16,
-        borderWidth: 1,
-        borderRadius: 12,
-        padding: 12,
+        marginBottom: 14,
+        borderRadius: 20,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        elevation: 2,
     },
 
     gridIconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
+        width: 44,
+        height: 44,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 12,
     },
 
     gridLabel: {
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 11,
+        fontWeight: '800',
         textAlign: 'center',
+        letterSpacing: -0.2,
     },
 });

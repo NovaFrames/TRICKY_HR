@@ -37,10 +37,18 @@ export const IdCard: React.FC<IdCardProps> = ({
     const logoUrl = useProfileImage(user?.CustomerIdC, user?.CompIdN, user?.EmpIdN);
 
     return (
-        <View style={[styles.idCard, { shadowColor: theme.text, backgroundColor: theme.cardBackground }]}>
+        <View style={[styles.idCard, {
+            shadowColor: '#000', // Neutral shadow
+            backgroundColor: theme.cardBackground,
+            borderColor: theme.inputBorder,
+            borderWidth: 1,
+        }]}>
             <View style={styles.idCardGradient}>
                 <View style={styles.idCardTop}>
-                    <View style={[styles.avatarLarge]}>
+                    <View style={[styles.avatarLarge, {
+                        backgroundColor: theme.primary + '10', // Light orange tint
+                        borderColor: theme.primary + '20'
+                    }]}>
                         <Image
                             source={
                                 !logoError && logoUrl
@@ -53,10 +61,10 @@ export const IdCard: React.FC<IdCardProps> = ({
                     </View>
                     <View style={styles.idCardInfo}>
                         <Text style={[styles.idName, { color: theme.text }]}>{empName}</Text>
-                        <Text style={[styles.idRole, { color: theme.text }]}>{designation} • ID {empCode}</Text>
+                        <Text style={[styles.idRole, { color: theme.placeholder }]}>{designation} • ID {empCode}</Text>
                         <View style={{ marginTop: 8 }}>
-                            <View style={[styles.idBadge, { backgroundColor: '#FFEDD5' }]}>
-                                <Text style={[styles.idBadgeText, { color: '#C2410C' }]}>{company} - DEMO</Text>
+                            <View style={[styles.idBadge, { backgroundColor: theme.primary + '15' }]}>
+                                <Text style={[styles.idBadgeText, { color: theme.primary }]}>{company} - DEMO</Text>
                             </View>
                         </View>
                     </View>
@@ -64,15 +72,12 @@ export const IdCard: React.FC<IdCardProps> = ({
 
                 <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: isTracking ? '#76630fff' : '#8b7564ff', justifyContent: 'center', alignItems: 'center' }}>
-                            <Feather name={isTracking ? "map-pin" : "map-pin"} size={14} color="#fff" />
+                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: isTracking ? '#10B981' : '#CBD5E1', justifyContent: 'center', alignItems: 'center' }}>
+                            <Feather name="map-pin" size={12} color="#fff" />
                         </View>
                         <View>
-                            <Text style={[styles.trackingTitle, { color: theme.text, fontSize: 14 }]}>
-                                Live Tracking: <Text style={{ color: isTracking ? '#059669' : '#64748B' }}>{isTracking ? 'ON' : 'OFF'}</Text>
-                            </Text>
-                            <Text style={[styles.trackingSub, { color: theme.text, fontSize: 11 }]}>
-                                {isTracking ? 'Your location is shared during work hours' : 'Location sharing is paused'}
+                            <Text style={[styles.trackingTitle, { color: theme.text, fontSize: 13, fontWeight: '600' }]}>
+                                Live Tracking: <Text style={{ color: isTracking ? '#10B981' : '#64748B' }}>{isTracking ? 'ON' : 'OFF'}</Text>
                             </Text>
                         </View>
                     </View>
@@ -82,12 +87,12 @@ export const IdCard: React.FC<IdCardProps> = ({
                         style={[
                             styles.toggleTrack,
                             {
-                                backgroundColor: isTracking ? 'rgba(250, 225, 209, 1)' : '#f0e8e2ff',
+                                backgroundColor: isTracking ? theme.primary + '20' : '#F1F5F9',
                                 alignItems: isTracking ? 'flex-end' : 'flex-start'
                             }
                         ]}
                     >
-                        <View style={[styles.toggleThumb, { backgroundColor: isTracking ? '#e46a23' : '#b8ab94ff' }]} />
+                        <View style={[styles.toggleThumb, { backgroundColor: isTracking ? theme.primary : '#94A3B8' }]} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -99,10 +104,10 @@ const styles = StyleSheet.create({
     idCard: {
         borderRadius: 24,
         marginBottom: 24,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
     },
     idCardGradient: {
         borderRadius: 24,

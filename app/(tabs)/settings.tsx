@@ -42,7 +42,7 @@ interface SettingSection {
 
 /* -------------------- SCREEN -------------------- */
 export default function SettingsScreen() {
-    const { theme, isDark, toggleTheme } = useTheme();
+    const { theme, isDark, toggleTheme, setPrimaryColor } = useTheme();
     const { logout, user } = useUser();
     const router = useRouter();
 
@@ -167,6 +167,12 @@ export default function SettingsScreen() {
         </View>
     );
 
+    const THEME_COLORS = [
+        { label: 'Orange', value: '#e46a23' },
+        { label: 'Indigo', value: '#6366F1' },
+        { label: 'Emerald', value: '#10B981' },
+    ];
+
     const SettingsItem = ({
         item,
         isLast,
@@ -174,6 +180,8 @@ export default function SettingsScreen() {
         item: SettingItem;
         isLast: boolean;
     }) => {
+        const { setPrimaryColor } = useTheme();
+
         const rightElement =
             item.type === 'switch' ? (
                 <Switch
@@ -277,12 +285,37 @@ export default function SettingsScreen() {
                                 isLast={index === section.items.length - 1}
                             />
                         ))}
+
+                        {/* Theme Customization Section Integration */}
+                        {section.title === 'App Preferences' && (
+                            <View style={styles.themeBadgeSection}>
+                                <Text style={[styles.inlineLabel, { color: theme.text }]}>Accent Color</Text>
+                                <View style={styles.inlineColorRow}>
+                                    {THEME_COLORS.map((color) => {
+                                        const isSelected = theme.primary === color.value;
+                                        return (
+                                            <TouchableOpacity
+                                                key={color.value}
+                                                style={[
+                                                    styles.inlineColorCircle,
+                                                    { backgroundColor: color.value },
+                                                    isSelected && styles.inlineSelectedCircle
+                                                ]}
+                                                onPress={() => setPrimaryColor(color.value)}
+                                            >
+                                                {isSelected && <Feather name="check" size={14} color="#FFF" />}
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                            </View>
+                        )}
                     </View>
                 ))}
 
                 <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: theme.textLight }]}>
-                        Version 1.0.0 • © 2024 Your App Name
+                        Version 1.0.0 • © 2026 Novaframes
                     </Text>
                 </View>
             </ScrollView>
@@ -293,14 +326,14 @@ export default function SettingsScreen() {
 /* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    headerContainer: { padding: 20 },
-    screenTitle: { fontSize: 28, fontWeight: '700', marginBottom: 16 },
-    profileCard: { borderRadius: 16, padding: 20, elevation: 3 },
+    headerContainer: { padding: 12 }, // Reduced from 20
+    screenTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8 }, // Smaller title
+    profileCard: { borderRadius: 16, padding: 12, elevation: 2 }, // Compact card
     profileContent: { flexDirection: 'row', alignItems: 'center' },
-    avatar: { width: 70, height: 70, borderRadius: 35, marginRight: 16 },
+    avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 }, // Smaller avatar
     userInfo: { flex: 1 },
-    userName: { fontSize: 20, fontWeight: '600' },
-    userId: { fontSize: 14, marginTop: 4 },
+    userName: { fontSize: 18, fontWeight: '600' },
+    userId: { fontSize: 13, marginTop: 2 },
 
     section: { marginHorizontal: 20, marginBottom: 16 },
     sectionHeader: { paddingVertical: 12 },
@@ -332,4 +365,38 @@ const styles = StyleSheet.create({
 
     footer: { paddingVertical: 24, alignItems: 'center' },
     footerText: { fontSize: 12, opacity: 0.6 },
+
+    themeBadgeSection: {
+        marginTop: 12,
+        paddingHorizontal: 8,
+    },
+    inlineLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        marginBottom: 12,
+        opacity: 0.7,
+        textTransform: 'uppercase',
+    },
+    inlineColorRow: {
+        flexDirection: 'row',
+        gap: 16,
+        paddingBottom: 8,
+    },
+    inlineColorCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    inlineSelectedCircle: {
+        borderWidth: 3,
+        borderColor: '#FFF',
+        transform: [{ scale: 1.1 }],
+    },
 });

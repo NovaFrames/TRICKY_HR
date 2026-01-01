@@ -25,7 +25,7 @@ export default function HomeScreen() {
     const initial = empName.charAt(0);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.container, { backgroundColor: isDark ? theme.background : '#FFFFFF' }]}>
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}

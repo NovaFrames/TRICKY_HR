@@ -1,6 +1,5 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface TeamLeadersProps {
     theme: any;
@@ -31,64 +30,63 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
 
     return (
         <View
-            style={[styles.headerBackground, { backgroundColor: theme.cardBackground }]}
+            style={styles.container}
         >
-            <SafeAreaView>
-                <View style={styles.header}>
+            <View style={styles.header}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Supervisors</Text>
 
-                    {/* 🔹 Team Leaders (Instagram Style) */}
-                    <View style={styles.teamRow}>
-                        {TEAM_LEADS.map(member => (
-                            <View key={member.id} style={styles.profileWrapper}>
+                {/* 🔹 Team Leaders (Instagram Style) */}
+                <View style={styles.teamRow}>
+                    {TEAM_LEADS.map(member => (
+                        <View key={member.id} style={styles.profileWrapper}>
 
-                                <Image
-                                    source={{ uri: member.image }}
-                                    style={styles.profileImage}
-                                />
+                            <Image
+                                source={{ uri: member.image }}
+                                style={styles.profileImage}
+                            />
 
-                                <Text style={[styles.profileName, { color: theme.text }]}>
-                                    {member.name}
-                                </Text>
-                            </View>
-                        ))}
-                    </View>
-
+                            <Text style={[styles.profileName, { color: theme.text }]}>
+                                {member.name}
+                            </Text>
+                        </View>
+                    ))}
                 </View>
-            </SafeAreaView>
+
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    headerBackground: {
-        borderRadius: 30,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 5,
-        zIndex: 10,
+    container: {
         marginBottom: 24,
-        padding: 12,
     },
     header: {
-        alignItems: 'center',
+        alignItems: 'flex-start', // Left-aligned
+    },
+
+    sectionTitle: {
+        fontSize: 18, // Matched with Quick Actions
+        fontWeight: '700', // Matched with Quick Actions
+        marginBottom: 16, // Matched with Quick Actions
     },
 
     /* 🔹 Team leaders styles */
     teamRow: {
         flexDirection: 'row',
+        justifyContent: 'flex-start', // Left-aligned
     },
     profileWrapper: {
         alignItems: 'center',
-        marginHorizontal: 12,
+        marginRight: 24, // Added margin right for spacing between items instead of marginHorizontal
     },
 
     profileImage: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         borderWidth: 2,
-        borderColor: '#fff',
+        borderColor: '#F3F4F6', // Light gray border for better definition on white
     },
     profileName: {
         fontSize: 12,

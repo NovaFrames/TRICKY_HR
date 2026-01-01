@@ -3,14 +3,14 @@ export const lightTheme = {
     mode: 'light',
     primary: '#e46a23',
     secondary: '#115E59',
-    background: '#F0FDFA',
-    text: '#134E4A',
-    textLight: '#ffffffff',
-    inputBg: '#E0F2F1',
-    inputBorder: '#CCFBF1',
-    placeholder: '#94A3B8',
-    icon: '#94A3B8',
-    cardBackground: '#F0FDFA',
+    background: '#FFFFFF',
+    text: '#1F2937', // Slightly softer black
+    textLight: '#6B7280',
+    inputBg: '#F3F4F6', // Light gray for inputs
+    inputBorder: '#E5E7EB',
+    placeholder: '#9CA3AF',
+    icon: '#6B7280',
+    cardBackground: '#FFFFFF',
 };
 
 export const darkTheme = {

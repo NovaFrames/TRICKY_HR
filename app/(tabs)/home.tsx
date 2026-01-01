@@ -4,6 +4,7 @@ import React from 'react';
 import {
     ScrollView,
     StyleSheet,
+    Text,
     View
 } from 'react-native';
 import { MenuGrid } from '../../components/dashboard/MenuGrid';
@@ -22,6 +23,7 @@ export default function HomeScreen() {
     const { user } = useUser();
 
     const loginData = user || {};
+    const empName = loginData.EmpNameC || loginData.EmpName || loginData.Name || 'User';
 
     // Critical: Token extraction
     const token = loginData.Token || loginData.TokenC;
@@ -32,6 +34,13 @@ export default function HomeScreen() {
     const menuItems = (Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0)
         ? loginData.EmpMenu
         : STATIC_MENU_ITEMS;
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good Morning';
+        if (hour < 17) return 'Good Afternoon';
+        return 'Good Evening';
+    };
 
     const getMenuIcon = (name: string) => {
         const key = name.toLowerCase();
@@ -49,21 +58,35 @@ export default function HomeScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-
+        <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 style={styles.scrollView}
             >
-                <MenuGrid
-                    menuItems={menuItems}
-                    theme={theme}
-                    getMenuIcon={getMenuIcon}
-                />
+                {/* Dynamic Greeting Section */}
+                <View style={styles.greetingSection}>
+                    <View>
+                        <Text style={[styles.greetingLabel, { color: theme.text }]}>
+                            {getGreeting()},
+                        </Text>
+                        <Text style={[styles.userName, { color: theme.text }]}>
+                            {empName}
+                        </Text>
+                    </View>
+                </View>
 
-            </ScrollView>
-        </View>
+                <View style={styles.menuContainer}>
+                    <Text style={[styles.sectionHeader, { color: theme.text, marginBottom: 16 }]}>Quick Access</Text>
+                    <MenuGrid
+                        menuItems={menuItems}
+                        theme={theme}
+                        getMenuIcon={getMenuIcon}
+                    />
+                </View>
+
+            </ScrollView >
+        </View >
     );
 }
 
@@ -76,27 +99,33 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingTop: 24,
-        paddingHorizontal: 24,
+        paddingTop: 32,
+        paddingHorizontal: 20,
         paddingBottom: 40,
     },
-    sectionHeader: {
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 16,
-    },
-    logoutRow: {
+    greetingSection: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 16,
-        marginTop: 10,
-        marginBottom: 30,
-        gap: 8,
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 24,
+        paddingHorizontal: 4,
     },
-    logoutText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#EF4444',
-    }
+    greetingLabel: {
+        fontSize: 16,
+        fontWeight: '500',
+        opacity: 0.6,
+    },
+    userName: {
+        fontSize: 28,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+    },
+    menuContainer: {
+        marginTop: 8,
+    },
+    sectionHeader: {
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: -0.3,
+    },
 });

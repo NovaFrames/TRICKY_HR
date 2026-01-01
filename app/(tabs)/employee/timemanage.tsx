@@ -448,9 +448,9 @@ const styles = StyleSheet.create({
     },
     headerContainer: {
         paddingTop: 10,
-        paddingBottom: 40,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
+        paddingBottom: 15, // Reduced from 40
+        borderBottomLeftRadius: 16, // Reduced from 20
+        borderBottomRightRadius: 16, // Reduced from 20
         elevation: 4,
         zIndex: 1
     },

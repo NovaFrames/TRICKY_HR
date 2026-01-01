@@ -75,24 +75,22 @@ export default function EmpRequestPage() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Stack.Screen
-                options={{
-                    title: 'Request Status',
-                    headerStyle: { backgroundColor: theme.primary },
-                    headerTintColor: '#fff',
-                    headerTitleStyle: { fontWeight: 'bold' },
-                    headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
-                            <Ionicons name="arrow-back" size={24} color="#FFF" />
-                        </TouchableOpacity>
-                    ),
-                }}
-            />
+            <Stack.Screen options={{ headerShown: false }} />
 
-            <View style={[styles.tabContainer, { backgroundColor: theme.primary }]}>
-                {renderTab('Waiting')}
-                {renderTab('Approved')}
-                {renderTab('Rejected')}
+            <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
+                <View style={styles.navBar}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.navTitle}>Request Status</Text>
+                    <View style={styles.headerRight} />
+                </View>
+
+                <View style={styles.tabContainer}>
+                    {renderTab('Waiting')}
+                    {renderTab('Approved')}
+                    {renderTab('Rejected')}
+                </View>
             </View>
 
             {loading ? (
@@ -133,9 +131,35 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    headerContainer: {
+        paddingTop: 10,
+        paddingBottom: 0,
+        borderBottomLeftRadius: 16, // Reduced from 24
+        borderBottomRightRadius: 16, // Reduced from 24
+        elevation: 4,
+        zIndex: 1,
+    },
+    navBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    navTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    iconButton: {
+        padding: 8,
+    },
+    headerRight: {
+        width: 40,
+    },
     tabContainer: {
         flexDirection: 'row',
-        elevation: 4,
+        marginTop: 10,
     },
     tab: {
         flex: 1,

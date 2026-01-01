@@ -226,13 +226,13 @@ const LeaveApply: React.FC = () => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
 
             {/* Modern Header */}
-            <View style={[styles.header, { backgroundColor: theme.primary }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Icon name="arrow-back-ios" size={20} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Leave Management</Text>
-                <View style={styles.headerRight}>
-                    {/* Placeholder for future actions */}
+            <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
+                <View style={styles.navBar}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+                        <Icon name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.navTitle}>Leave Management</Text>
+                    <View style={styles.headerRight} />
                 </View>
             </View>
 
@@ -305,26 +305,28 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
     },
-    header: {
+    headerContainer: {
+        paddingTop: 10,
+        paddingBottom: 15, // Reduced from 40
+        borderBottomLeftRadius: 16, // Reduced from 24
+        borderBottomRightRadius: 16, // Reduced from 24
+        elevation: 4,
+        zIndex: 1,
+    },
+    navBar: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
     },
-    backButton: {
-        padding: 8,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: '600',
+    navTitle: {
         color: '#fff',
-        letterSpacing: 0.5,
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    iconButton: {
+        padding: 8,
     },
     headerRight: {
         width: 40,

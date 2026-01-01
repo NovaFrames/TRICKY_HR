@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import ApiService from '../../services/ApiService';
+import BottomSelection from '../common/BottomSelection';
 
 interface TimeRequestModalProps {
     visible: boolean;
@@ -22,6 +22,8 @@ const RequestTypes = [
 const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, onSuccess }) => {
     const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
+    const [showProjectSelector, setShowProjectSelector] = useState(false);
+    const [showRequestTypeSelector, setShowRequestTypeSelector] = useState(false);
     const [projects, setProjects] = useState<{ label: string; value: number }[]>([]);
     const [showInTimePicker, setShowInTimePicker] = useState(false);
     const [showOutTimePicker, setShowOutTimePicker] = useState(false);
@@ -218,38 +220,29 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                         {/* Project Dropdown */}
                         <View style={styles.field}>
                             <Text style={labelStyle}>Project</Text>
-                            <View style={pickerStyle}>
-                                <Picker
-                                    selectedValue={formData.projectId}
-                                    onValueChange={(itemValue) => setFormData(prev => ({ ...prev, projectId: itemValue }))}
-                                    style={[styles.picker, { color: theme.text }]}
-                                    dropdownIconColor={theme.icon}
-                                    itemStyle={{ color: theme.text }}
-                                >
-                                    <Picker.Item label="--Select--" value={0} color={theme.text} />
-                                    {projects.map((p) => (
-                                        <Picker.Item key={p.value} label={p.label} value={p.value} color={theme.text} />
-                                    ))}
-                                </Picker>
-                            </View>
+                            <TouchableOpacity
+                                style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                                onPress={() => setShowProjectSelector(true)}
+                            >
+                                <Text style={[styles.selectorText, { color: formData.projectId ? theme.text : theme.placeholder }]}>
+                                    {formData.projectId ? projects.find(p => p.value === formData.projectId)?.label : '--Select--'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={24} color={theme.icon} />
+                            </TouchableOpacity>
                         </View>
 
                         {/* Request Type */}
                         <View style={styles.field}>
                             <Text style={labelStyle}>Request Type</Text>
-                            <View style={pickerStyle}>
-                                <Picker
-                                    selectedValue={formData.requestType}
-                                    onValueChange={(itemValue) => setFormData(prev => ({ ...prev, requestType: itemValue }))}
-                                    style={[styles.picker, { color: theme.text }]}
-                                    dropdownIconColor={theme.icon}
-                                    itemStyle={{ color: theme.text }}
-                                >
-                                    {RequestTypes.map((t) => (
-                                        <Picker.Item key={t.value} label={t.label} value={t.value} color={theme.text} />
-                                    ))}
-                                </Picker>
-                            </View>
+                            <TouchableOpacity
+                                style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                                onPress={() => setShowRequestTypeSelector(true)}
+                            >
+                                <Text style={[styles.selectorText, { color: theme.text }]}>
+                                    {formData.requestType}
+                                </Text>
+                                <Ionicons name="chevron-down" size={24} color={theme.icon} />
+                            </TouchableOpacity>
                         </View>
 
                         {/* In Time / Out Time Inputs */}
@@ -339,6 +332,25 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                     </View>
                 </View>
             </View>
+
+            {/* Bottom Selectors */}
+            <BottomSelection
+                visible={showProjectSelector}
+                onClose={() => setShowProjectSelector(false)}
+                title="Select Project"
+                options={projects}
+                selectedValue={formData.projectId}
+                onSelect={(val) => setFormData(prev => ({ ...prev, projectId: val }))}
+            />
+
+            <BottomSelection
+                visible={showRequestTypeSelector}
+                onClose={() => setShowRequestTypeSelector(false)}
+                title="Select Request Type"
+                options={RequestTypes}
+                selectedValue={formData.requestType}
+                onSelect={(val) => setFormData(prev => ({ ...prev, requestType: val }))}
+            />
         </Modal>
     );
 };
@@ -393,6 +405,18 @@ const styles = StyleSheet.create({
     },
     inputText: {
         flex: 1,
+        fontSize: 14,
+    },
+    selectorContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    selectorText: {
         fontSize: 14,
     },
     pickerContainer: {

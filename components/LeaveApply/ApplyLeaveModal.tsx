@@ -1,7 +1,6 @@
 // ApplyLeaveModal.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -21,6 +20,7 @@ import ApiService, {
     LeaveApplicationData,
     LeaveBalanceResponse
 } from '../../services/ApiService';
+import BottomSelection from '../common/BottomSelection';
 
 interface ApplyLeaveModalProps {
     visible: boolean;
@@ -40,6 +40,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [checkingAvailability, setCheckingAvailability] = useState(false);
+    const [showLeaveTypeSelector, setShowLeaveTypeSelector] = useState(false);
     const [selectedLeaveType, setSelectedLeaveType] = useState<AvailableLeaveType | null>(null);
     const [fromDate, setFromDate] = useState<Date>(new Date());
     const [toDate, setToDate] = useState<Date>(new Date());
@@ -307,30 +308,15 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                         {/* Leave Type */}
                         <View style={styles.formGroup}>
                             <Text style={labelStyle}>Leave Type</Text>
-                            <View style={pickerStyle}>
-                                <Picker
-                                    selectedValue={selectedLeaveType?.ReaIdN}
-                                    onValueChange={(itemValue: number) => {
-                                        const selected = availableLeaves.find(l => l.ReaIdN === itemValue);
-                                        if (selected) {
-                                            setSelectedLeaveType(selected);
-                                            checkLeaveTypeChange(selected);
-                                        }
-                                    }}
-                                    style={[styles.picker, { color: theme.text }]}
-                                    dropdownIconColor={theme.icon}
-                                    itemStyle={{ color: theme.text }}
-                                >
-                                    {availableLeaves.map((leave) => (
-                                        <Picker.Item
-                                            key={leave.ReaIdN}
-                                            label={leave.ReaNameC}
-                                            value={leave.ReaIdN}
-                                            color={theme.text}
-                                        />
-                                    ))}
-                                </Picker>
-                            </View>
+                            <TouchableOpacity
+                                style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                                onPress={() => setShowLeaveTypeSelector(true)}
+                            >
+                                <Text style={[styles.selectorText, { color: selectedLeaveType ? theme.text : theme.placeholder }]}>
+                                    {selectedLeaveType ? selectedLeaveType.ReaNameC : 'Select Leave Type'}
+                                </Text>
+                                <Icon name="keyboard-arrow-down" size={24} color={theme.icon} />
+                            </TouchableOpacity>
                         </View>
 
                         {/* Dates */}
@@ -540,6 +526,21 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                     }}
                 />
             )}
+            {/* Bottom Selectors */}
+            <BottomSelection
+                visible={showLeaveTypeSelector}
+                onClose={() => setShowLeaveTypeSelector(false)}
+                title="Select Leave Type"
+                options={availableLeaves.map(l => ({ label: l.ReaNameC, value: l.ReaIdN }))}
+                selectedValue={selectedLeaveType?.ReaIdN}
+                onSelect={(val) => {
+                    const selected = availableLeaves.find(l => l.ReaIdN === val);
+                    if (selected) {
+                        setSelectedLeaveType(selected);
+                        checkLeaveTypeChange(selected);
+                    }
+                }}
+            />
         </Modal>
     );
 };
@@ -576,6 +577,19 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         marginBottom: 8,
+    },
+    selectorContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    selectorText: {
+        fontSize: 15,
+        fontWeight: '500',
     },
     pickerContainer: {
         borderWidth: 1,

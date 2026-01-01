@@ -66,16 +66,18 @@ export default function DashboardCards() {
                         styles.card,
                         {
                             backgroundColor: theme.cardBackground,
+                            borderColor: theme.inputBorder,
+                            borderWidth: 1,
                         },
                     ]}
-                    activeOpacity={0.8}
+                    activeOpacity={0.7}
                     onPress={() => router.push({ pathname: item.ActionC, params: { from: 'dashboard' } })}
                 >
-                    <View style={styles.iconBox}>
+                    <View style={[styles.iconBox, { backgroundColor: theme.primary + '15' }]}>
                         <FontAwesome
                             name={getFontAwesomeIcon(item.IconC)}
-                            size={22}
-                            color={item.IconcolorC || theme.text}
+                            size={20}
+                            color={theme.primary}
                         />
 
                     </View>
@@ -85,7 +87,7 @@ export default function DashboardCards() {
                     </Text>
 
                     <Text style={[styles.subtitle, { color: theme.placeholder }]}>
-                        {item.MenuNameC}
+                        Access your {item.MenuNameC.toLowerCase()}
                     </Text>
                 </TouchableOpacity>
             ))}
@@ -104,29 +106,33 @@ const styles = StyleSheet.create({
 
     card: {
         width: CARD_WIDTH,
-        borderRadius: 16,
+        borderRadius: 24,
         padding: 16,
         marginBottom: 16,
-        elevation: 3,
+        shadowColor: '#000', // Neutral shadow
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
     },
 
     iconBox: {
-        width: 40,
-        height: 40,
-        borderRadius: 10,
-        backgroundColor: 'rgba(0,0,0,0.08)',
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
 
     title: {
-        fontSize: 14,
-        fontWeight: '600',
+        fontSize: 16,
+        fontWeight: '700',
+        marginBottom: 4,
     },
 
     subtitle: {
         fontSize: 12,
-        marginTop: 4,
+        fontWeight: '500',
     },
 });

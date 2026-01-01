@@ -2,7 +2,7 @@ import { useUser } from '@/context/UserContext';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface DashboardHeaderProps {
@@ -24,8 +24,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     return (
         <View style={[styles.shadowWrapper, { shadowColor: theme.text }]}>
             <LinearGradient
-                colors={isDark ? [theme.background, theme.inputBg] : ['#fff', '#f3f4f6']}
-                style={[styles.headerBackground, { shadowColor: theme.text }]}
+                colors={isDark ? [theme.background, theme.inputBg] : ['#FFFFFF', '#FFFFFF']}
+                style={[styles.headerBackground]}
             >
                 <SafeAreaView style={styles.safeArea}>
                     <View style={styles.header}>
@@ -39,18 +39,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                 }
                                 onError={() => setLogoError(true)}
                                 style={{
-                                    marginTop: 20,
-                                    width: 180,
-                                    height: 30,
+                                    marginTop: 0,
+                                    width: 130, // Reduced from 140
+                                    height: 30, // Reduced from 35
                                     resizeMode: 'contain',
                                 }}
                             />
-                            {/* Text */}
-                            <View>
-                                <Text style={[styles.greeting, { color: theme.placeholder }]}>
-                                    trickyhr
-                                </Text>
-                            </View>
                         </View>
                     </View>
                 </SafeAreaView>
@@ -61,28 +55,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
 const styles = StyleSheet.create({
     shadowWrapper: {
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 5,
+        shadowRadius: 2,
+        elevation: 2,
         zIndex: 10,
-        overflow: 'hidden'
-    },
-    gradient: {
-        paddingBottom: 20,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        overflow: 'hidden', // ✅ clips gradient correctly
+        overflow: 'hidden',
+        paddingBottom: 2,
     },
     headerBackground: {
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 5,
-        zIndex: 10,
-        overflow: 'hidden'
+        paddingTop: 0,
+        paddingBottom: 6, // Reduced from 12
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
     },
     safeArea: {
         marginBottom: 0,
@@ -90,9 +75,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'center',
-    },
-    greeting: {
-        fontSize: 14,
-        fontWeight: '500',
+        alignItems: 'center',
+        marginTop: 0, // Removed margin
     },
 });
