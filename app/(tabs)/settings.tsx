@@ -1,3 +1,4 @@
+import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProfileImage } from '@/hooks/useCompanyLogo';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -14,10 +15,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
 
 /* -------------------- TYPES -------------------- */
-type SettingItemType = 'navigation' | 'switch' | 'action';
 
 type IconProps = {
     color?: string;
@@ -41,7 +40,7 @@ interface SettingSection {
 }
 
 /* -------------------- SCREEN -------------------- */
-export default function SettingsScreen() {
+export default function settings() {
     const { theme, isDark, toggleTheme } = useTheme();
     const { logout, user } = useUser();
     const router = useRouter();
@@ -183,7 +182,7 @@ export default function SettingsScreen() {
                     value={isDark}
                 />
             ) : (
-                <Feather name="chevron-right" size={20} color={theme.textLight} />
+                <Feather name="chevron-right" size={20} color={`${theme.text}80`} />
             );
 
         return (
@@ -281,7 +280,7 @@ export default function SettingsScreen() {
                 ))}
 
                 <View style={styles.footer}>
-                    <Text style={[styles.footerText, { color: theme.textLight }]}>
+                    <Text style={[styles.footerText, { color: theme.text }]}>
                         Version 1.0.0 • © 2024 Your App Name
                     </Text>
                 </View>
@@ -292,7 +291,7 @@ export default function SettingsScreen() {
 
 /* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
-    container: { flex: 1 },
+    container: { flex: 1, paddingBottom: 60 },
     headerContainer: { padding: 20 },
     screenTitle: { fontSize: 28, fontWeight: '700', marginBottom: 16 },
     profileCard: { borderRadius: 16, padding: 20, elevation: 3 },

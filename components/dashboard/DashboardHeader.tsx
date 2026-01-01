@@ -18,7 +18,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     const { user } = useUser();
     const [logoError, setLogoError] = React.useState(false);
 
-    const logoUrl = useCompanyLogo(user.CustomerIdC, user.CompIdN);
+    const logoUrl = useCompanyLogo(user?.CustomerIdC, user?.CompIdN);
 
 
     return (

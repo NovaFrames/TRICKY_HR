@@ -56,7 +56,7 @@ export const IdCard: React.FC<IdCardProps> = ({
                         <Text style={[styles.idRole, { color: theme.text }]}>{designation} • ID {empCode}</Text>
                         <View style={{ marginTop: 8 }}>
                             <View style={[styles.idBadge, { backgroundColor: '#FFEDD5' }]}>
-                                <Text style={[styles.idBadgeText, { color: '#C2410C' }]}>{company} - DEMO</Text>
+                                <Text style={[styles.idBadgeText, { color: theme.primary }]}>{company}</Text>
                             </View>
                         </View>
                     </View>
