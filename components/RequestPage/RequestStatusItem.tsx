@@ -9,7 +9,7 @@ interface RequestStatusItemProps {
 }
 
 const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) => {
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
 
     // Helper to format ASP.NET JSON Date /Date(1234567890)/
     const formatDate = (dateString: string) => {
@@ -25,11 +25,8 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
                 const d = date.getDate();
                 const m = months[date.getMonth()];
                 const y = date.getFullYear();
-                const h = date.getHours().toString().padStart(2, '0');
-                const min = date.getMinutes().toString().padStart(2, '0');
-                const s = date.getSeconds().toString().padStart(2, '0');
 
-                return `${m} ${d} ${y} ${h}:${min}:${s}`;
+                return `${m} ${d}, ${y}`;
             }
 
             // Fallback for standard date strings
@@ -40,11 +37,8 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
             const d = date.getDate();
             const m = months[date.getMonth()];
             const y = date.getFullYear();
-            const h = date.getHours().toString().padStart(2, '0');
-            const min = date.getMinutes().toString().padStart(2, '0');
-            const s = date.getSeconds().toString().padStart(2, '0');
 
-            return `${m} ${d} ${y} ${h}:${min}:${s}`;
+            return `${m} ${d}, ${y}`;
         } catch (e) {
             return dateString;
         }
@@ -54,143 +48,170 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
     const getStatusInfo = (status: string) => {
         const s = status?.toLowerCase() || '';
         if (s.includes('wait') || s.includes('pend')) {
-            return { color: '#FFC107', icon: 'alert-circle', label: 'Waiting' };
+            return {
+                bg: '#FEF3C7',
+                color: '#D97706',
+                icon: 'time-outline' as const,
+                label: 'Waiting'
+            };
         } else if (s.includes('approv')) {
-            return { color: '#4CAF50', icon: 'checkmark-circle', label: 'Approved' };
+            return {
+                bg: '#DCFCE7',
+                color: '#16A34A',
+                icon: 'checkmark-circle-outline' as const,
+                label: 'Approved'
+            };
         } else if (s.includes('reject')) {
-            return { color: '#F44336', icon: 'close-circle', label: 'Rejected' };
+            return {
+                bg: '#FEE2E2',
+                color: '#DC2626',
+                icon: 'close-circle-outline' as const,
+                label: 'Rejected'
+            };
         }
-        return { color: theme.icon, icon: 'help-circle', label: status };
+        return {
+            bg: theme.inputBg,
+            color: theme.icon,
+            icon: 'help-circle-outline' as const,
+            label: status
+        };
     };
 
-    // Mappings based on user response
     const rawStatus = item.StatusC || item.StatusResult || item.Status || 'Waiting';
     const statusInfo = getStatusInfo(rawStatus.trim());
 
     const requestDate = item.applyDateD || item.RequestDate || item.CreatedDate;
-    const description = item.DescC || item.LeaveName || item.Description || 'LEAVE';
-    const rangeDescription = item.LvDescC || '';
-
-    // Styles Refs
-    const containerStyle = [styles.container, { backgroundColor: theme.cardBackground, borderBottomColor: theme.inputBorder }];
-    const headerStyle = [styles.header, { backgroundColor: theme.inputBg }];
-    const textMainStyle = { color: theme.text };
-    const textSubStyle = { color: theme.placeholder };
+    const description = item.DescC || item.LeaveName || item.Description || 'General Request';
 
     return (
-        <TouchableOpacity style={containerStyle} onPress={onPress}>
-            <View style={headerStyle}>
-                <Text style={[styles.headerLabel, textMainStyle]}>Request Date</Text>
-                <Text style={[styles.headerDate, textMainStyle]}>{formatDate(requestDate)}</Text>
-            </View>
-            <View style={styles.content}>
-                <View style={styles.iconContainer}>
-                    <View style={[styles.circleIcon, { backgroundColor: theme.primary }]}>
-                        <Ionicons name="create-outline" size={24} color="#FFF" />
-                    </View>
+        <TouchableOpacity
+            style={[
+                styles.card,
+                {
+                    backgroundColor: theme.cardBackground,
+                    borderColor: theme.inputBorder,
+                    shadowColor: isDark ? '#000' : '#E2E8F0',
+                }
+            ]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.cardHeader}>
+                <View style={[styles.iconBox, { backgroundColor: theme.primary + '10' }]}>
+                    <Ionicons name="document-text" size={20} color={theme.primary} />
                 </View>
-                <View style={styles.detailsContainer}>
-                    <Text style={[styles.description, textMainStyle]}>Description</Text>
-                    <Text style={[styles.subDescription, textSubStyle]}>{description}</Text>
+
+                <View style={styles.headerTextContainer}>
+                    <Text style={[styles.title, { color: theme.text }]}>{description}</Text>
+                    <Text style={[styles.date, { color: theme.placeholder }]}>
+                        Requested on {formatDate(requestDate)}
+                    </Text>
+                </View>
+
+                <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+                    <Ionicons name={statusInfo.icon} size={14} color={statusInfo.color} />
+                    <Text style={[styles.statusLabel, { color: statusInfo.color }]}>
+                        {statusInfo.label}
+                    </Text>
                 </View>
             </View>
 
-            {rangeDescription ? (
-                <View style={styles.footer}>
-                    <View style={styles.dateRangeContainer}>
-                        <Ionicons name="arrow-up" size={16} color="#4CAF50" />
-                        <Text style={[styles.dateRange, textSubStyle]}>
-                            {rangeDescription}
-                        </Text>
-                    </View>
+            <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />
 
-                    <View style={styles.statusContainer}>
-                        <Text style={[styles.statusText, textMainStyle]}>{statusInfo.label}</Text>
-                        <Ionicons name={statusInfo.icon as any} size={24} color={statusInfo.color} style={{ marginLeft: 5 }} />
-                    </View>
+            <View style={styles.cardFooter}>
+                <View style={styles.footerDetail}>
+                    <Ionicons name="finger-print-outline" size={14} color={theme.placeholder} />
+                    <Text style={[styles.footerText, { color: theme.placeholder }]}>
+                        Ref: {item.IdN || 'N/A'}
+                    </Text>
                 </View>
-            ) : (
-                <View style={styles.footer}>
-                    <View style={{ flex: 1 }} />
-                    <View style={styles.statusContainer}>
-                        <Text style={[styles.statusText, textMainStyle]}>{statusInfo.label}</Text>
-                        <Ionicons name={statusInfo.icon as any} size={24} color={statusInfo.color} style={{ marginLeft: 5 }} />
-                    </View>
+
+                <View style={styles.actionPrompt}>
+                    <Text style={[styles.actionText, { color: theme.primary }]}>View Details</Text>
+                    <Ionicons name="chevron-forward" size={14} color={theme.primary} />
                 </View>
-            )}
+            </View>
         </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        marginBottom: 10,
-        borderBottomWidth: 1,
-        paddingBottom: 10,
+    card: {
+        marginHorizontal: 20,
+        marginVertical: 8,
+        borderRadius: 20,
+        padding: 16,
+        borderWidth: 1,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 3,
     },
-    header: {
+    cardHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-    },
-    headerLabel: {
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    headerDate: {
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    content: {
-        flexDirection: 'row',
-        paddingHorizontal: 15,
-        paddingTop: 15,
-    },
-    iconContainer: {
-        marginRight: 15,
-        justifyContent: 'center',
-    },
-    circleIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
         alignItems: 'center',
     },
-    detailsContainer: {
+    iconBox: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    headerTextContainer: {
         flex: 1,
-        justifyContent: 'center',
     },
-    description: {
+    title: {
         fontSize: 16,
+        fontWeight: '700',
+        marginBottom: 2,
+        letterSpacing: -0.3,
     },
-    subDescription: {
-        fontSize: 16,
-        marginTop: 2,
+    date: {
+        fontSize: 12,
+        fontWeight: '500',
     },
-    footer: {
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 4,
+    },
+    statusLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+    },
+    divider: {
+        height: 1,
+        marginVertical: 14,
+        opacity: 0.5,
+    },
+    cardFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 15,
-        marginTop: 15,
     },
-    dateRangeContainer: {
+    footerDetail: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 6,
     },
-    dateRange: {
+    footerText: {
         fontSize: 12,
-        marginLeft: 5,
+        fontWeight: '500',
     },
-    statusContainer: {
+    actionPrompt: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 2,
     },
-    statusText: {
-        fontSize: 14,
-        marginRight: 5,
+    actionText: {
+        fontSize: 12,
+        fontWeight: '700',
     },
 });
 

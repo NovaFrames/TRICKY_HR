@@ -1,38 +1,39 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import RequestModal from '../../../components/RequestPage/RequestModal';
 import RequestStatusItem from '../../../components/RequestPage/RequestStatusItem';
 import { useTheme } from '../../../context/ThemeContext';
 import ApiService from '../../../services/ApiService';
 
 export default function EmpRequestPage() {
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [requests, setRequests] = useState<any>(null); // Store the full object
-    const [activeTab, setActiveTab] = useState('Waiting'); // Tabs: Waiting, Approved, Rejected
+    const [refreshing, setRefreshing] = useState(false);
+    const [requests, setRequests] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState('Waiting');
 
-    // Modal State
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>(null);
 
-    const fetchRequests = async () => {
-        setLoading(true);
+    const fetchRequests = async (isRefresh = false) => {
+        if (isRefresh) setRefreshing(true);
+        else setLoading(true);
+
         try {
             const result = await ApiService.getEmpRequestStatus();
             if (result.success && result.data) {
                 setRequests(result.data);
             } else {
                 setRequests(null);
-                // Optionally show error toast, but keep it subtle
-                console.log("Error fetching requests:", result.error);
             }
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -40,18 +41,16 @@ export default function EmpRequestPage() {
         fetchRequests();
     }, []);
 
+    const onRefresh = () => {
+        fetchRequests(true);
+    };
+
     const filterRequests = () => {
         if (!requests) return [];
-
         let data = [];
-        if (activeTab === 'Waiting') {
-            data = requests.empRequestWating || [];
-        } else if (activeTab === 'Approved') {
-            data = requests.empRequestApproved || [];
-        } else if (activeTab === 'Rejected') {
-            data = requests.empRequestRejected || [];
-        }
-
+        if (activeTab === 'Waiting') data = requests.empRequestWating || [];
+        else if (activeTab === 'Approved') data = requests.empRequestApproved || [];
+        else if (activeTab === 'Rejected') data = requests.empRequestRejected || [];
         return data;
     };
 
@@ -62,40 +61,58 @@ export default function EmpRequestPage() {
 
     const filteredRequests = filterRequests();
 
-    const renderTab = (tabName: string) => (
-        <TouchableOpacity
-            style={[styles.tab, activeTab === tabName && styles.activeTab]}
-            onPress={() => setActiveTab(tabName)}
-        >
-            <Text style={[styles.tabText, activeTab === tabName && styles.activeTabText]}>
-                {tabName.toUpperCase()}
-            </Text>
-        </TouchableOpacity>
-    );
+    const TABS = ['Waiting', 'Approved', 'Rejected'];
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
+            {/* Modern Header - Matching Leave Management */}
             <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
                 <View style={styles.navBar}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={styles.iconButton}
+                    >
                         <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.navTitle}>Request Status</Text>
                     <View style={styles.headerRight} />
                 </View>
+            </View>
 
-                <View style={styles.tabContainer}>
-                    {renderTab('Waiting')}
-                    {renderTab('Approved')}
-                    {renderTab('Rejected')}
+            {/* Modern Capsule Tab Selector */}
+            <View style={styles.tabSection}>
+                <View style={[styles.tabOuterContainer, { backgroundColor: theme.inputBg }]}>
+                    {TABS.map((tab) => {
+                        const isActive = activeTab === tab;
+                        return (
+                            <TouchableOpacity
+                                key={tab}
+                                style={[
+                                    styles.tabItem,
+                                    isActive && { backgroundColor: theme.cardBackground }
+                                ]}
+                                onPress={() => setActiveTab(tab)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.tabText,
+                                        { color: isActive ? theme.primary : theme.placeholder }
+                                    ]}
+                                >
+                                    {tab}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             </View>
 
             {loading ? (
                 <View style={styles.center}>
                     <ActivityIndicator size="large" color={theme.primary} />
+                    <Text style={[styles.loadingText, { color: theme.placeholder }]}>Loading requests...</Text>
                 </View>
             ) : (
                 <FlatList
@@ -108,9 +125,23 @@ export default function EmpRequestPage() {
                     )}
                     keyExtractor={(item, index) => index.toString()}
                     contentContainerStyle={styles.listContent}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[theme.primary]}
+                            tintColor={theme.primary}
+                        />
+                    }
                     ListEmptyComponent={
-                        <View style={styles.center}>
-                            <Text style={[styles.emptyText, { color: theme.placeholder }]}>No requests found.</Text>
+                        <View style={styles.emptyContainer}>
+                            <View style={[styles.emptyIconBox, { backgroundColor: theme.inputBg }]}>
+                                <Ionicons name="document-text-outline" size={48} color={theme.placeholder} />
+                            </View>
+                            <Text style={[styles.emptyTitle, { color: theme.text }]}>No {activeTab} Requests</Text>
+                            <Text style={[styles.emptySubtitle, { color: theme.placeholder }]}>
+                                When you have {activeTab.toLowerCase()} requests, they will appear here.
+                            </Text>
                         </View>
                     }
                 />
@@ -132,11 +163,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     headerContainer: {
-        paddingTop: 10,
-        paddingBottom: 0,
-        borderBottomLeftRadius: 16, // Reduced from 24
-        borderBottomRightRadius: 16, // Reduced from 24
+        paddingTop: 50,
+        paddingBottom: 15,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
         elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
         zIndex: 1,
     },
     navBar: {
@@ -153,42 +188,71 @@ const styles = StyleSheet.create({
     },
     iconButton: {
         padding: 8,
+        width: 44,
+        height: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     headerRight: {
         width: 40,
     },
-    tabContainer: {
-        flexDirection: 'row',
-        marginTop: 10,
-    },
-    tab: {
-        flex: 1,
+    tabSection: {
+        paddingHorizontal: 20,
         paddingVertical: 15,
-        alignItems: 'center',
-        borderBottomWidth: 3,
-        borderBottomColor: 'transparent',
     },
-    activeTab: {
-        borderBottomColor: '#fff',
+    tabOuterContainer: {
+        flexDirection: 'row',
+        padding: 5,
+        borderRadius: 16,
+    },
+    tabItem: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderRadius: 12,
     },
     tabText: {
-        color: 'rgba(255, 255, 255, 0.7)',
-        fontWeight: 'bold',
         fontSize: 14,
-    },
-    activeTabText: {
-        color: '#fff',
+        fontWeight: '700',
     },
     listContent: {
-        paddingBottom: 20,
+        paddingTop: 10,
+        paddingBottom: 40,
     },
     center: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 50,
     },
-    emptyText: {
-        fontSize: 16,
+    loadingText: {
+        marginTop: 12,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    emptyContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 100,
+        paddingHorizontal: 40,
+    },
+    emptyIconBox: {
+        width: 100,
+        height: 100,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        marginBottom: 8,
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 20,
+        fontWeight: '500',
     },
 });

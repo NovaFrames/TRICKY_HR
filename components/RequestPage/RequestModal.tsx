@@ -11,7 +11,7 @@ interface RequestModalProps {
 }
 
 const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) => {
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
     const [scaleValue] = useState(new Animated.Value(0));
     const [loading, setLoading] = useState(false);
 
@@ -20,6 +20,8 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
             Animated.spring(scaleValue, {
                 toValue: 1,
                 useNativeDriver: true,
+                tension: 65,
+                friction: 11
             }).start();
         } else {
             Animated.timing(scaleValue, {
@@ -36,37 +38,17 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
     // Helper to format ASP.NET JSON Date /Date(1234567890)/
     const formatDate = (dateString: string) => {
         try {
-            if (!dateString) return '';
+            if (!dateString) return 'N/A';
 
-            // Handle ASP.NET format
             if (typeof dateString === 'string' && dateString.includes('/Date(')) {
                 const timestamp = parseInt(dateString.replace(/\/Date\((-?\d+)\)\//, '$1'));
                 const date = new Date(timestamp);
-
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const d = date.getDate();
-                const m = months[date.getMonth()];
-                const y = date.getFullYear();
-                const h = date.getHours().toString().padStart(2, '0');
-                const min = date.getMinutes().toString().padStart(2, '0');
-                const s = date.getSeconds().toString().padStart(2, '0');
-
-                return `${m} ${d} ${y} ${h}:${min}:${s}`;
+                return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
             }
 
-            // Fallback for standard date strings
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return dateString;
-
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const d = date.getDate();
-            const m = months[date.getMonth()];
-            const y = date.getFullYear();
-            const h = date.getHours().toString().padStart(2, '0');
-            const min = date.getMinutes().toString().padStart(2, '0');
-            const s = date.getSeconds().toString().padStart(2, '0');
-
-            return `${m} ${d} ${y} ${h}:${min}:${s}`;
+            return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
         } catch (e) {
             return dateString;
         }
@@ -74,24 +56,26 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
 
     // Mapping fields
     const requestDate = item.applyDateD || item.RequestDate || item.CreatedDate;
-    const description = item.DescC || item.LeaveName || item.Description || 'LEAVE';
+    const description = item.DescC || item.LeaveName || item.Description || 'General Request';
     const rangeDescription = item.LvDescC || '';
     const status = item.StatusC || item.StatusResult || item.Status || 'Waiting';
 
     // Status Logic for Color
-    let statusColor = '#FFC107'; // Waiting
-    if (status.toLowerCase().includes('approv')) statusColor = '#4CAF50';
-    if (status.toLowerCase().includes('reject')) statusColor = '#F44336';
-    if (status.toLowerCase().includes('cancel')) statusColor = '#F44336';
+    let statusInfo = { color: '#D97706', bg: '#FEF3C7', label: 'WAITING' };
+    if (status.toLowerCase().includes('approv')) statusInfo = { color: '#16A34A', bg: '#DCFCE7', label: 'APPROVED' };
+    if (status.toLowerCase().includes('reject') || status.toLowerCase().includes('cancel')) {
+        statusInfo = { color: '#DC2626', bg: '#FEE2E2', label: status.toUpperCase() };
+    }
 
     const handleCancelLeave = async () => {
         Alert.alert(
-            "Cancel Leave",
-            "Are you sure you want to cancel this leave request?",
+            "Cancel Request",
+            "Are you sure you want to cancel this request?",
             [
                 { text: "No", style: "cancel" },
                 {
-                    text: "Yes",
+                    text: "Yes, Cancel",
+                    style: "destructive",
                     onPress: async () => {
                         setLoading(true);
                         try {
@@ -104,30 +88,28 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
 
                             const payload = {
                                 Flag: "CancelLeave",
-                                Tokenc: token || '', // User requested Tokenc
+                                Tokenc: token || '',
                                 EmpId: empId,
                                 Id: item.IdN || item.Id,
                                 Approval: 2,
                                 YearN: 0,
-                                Remarks: "Cancellation requested",
+                                Remarks: "Cancellation requested by user",
                                 title: "",
                                 DocName: "",
                                 ReceiveYearN: 0,
                                 ReceiveMonthN: 0,
                                 ApproveAmtN: 0,
                                 PayTypeN: 0,
-                                // Adding dates to prevent SQL overflow if backend checks them
                                 LFromDateD: item.LFromDateD ? item.LFromDateD.split('T')[0] : new Date().toISOString().split('T')[0],
                                 LToDateD: item.LToDateD ? item.LToDateD.split('T')[0] : new Date().toISOString().split('T')[0],
                             };
 
-                            console.log('Sending Cancel Payload:', JSON.stringify(payload));
                             const result = await ApiService.cancelLeave(payload);
                             if (result.success) {
-                                Alert.alert("Success", "Leave cancelled successfully");
+                                Alert.alert("Success", "Request cancelled successfully");
                                 onClose();
                             } else {
-                                Alert.alert("Error", result.error || "Failed to cancel leave");
+                                Alert.alert("Error", result.error || "Failed to cancel request");
                             }
                         } catch (error) {
                             Alert.alert("Error", "An unexpected error occurred");
@@ -140,81 +122,85 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
         );
     };
 
-    // Style Refs
-    const modalContentStyle = [styles.modalContent, { backgroundColor: theme.cardBackground, transform: [{ scale: scaleValue }] }];
-    const headerStyle = [styles.modalHeader, { borderBottomColor: theme.inputBorder }];
-    const titleStyle = [styles.modalTitle, { color: theme.text }];
-    const labelStyle = [styles.detailLabel, { color: theme.placeholder }];
-    const valueStyle = [styles.detailValue, { color: theme.text }];
-    const footerStyle = [styles.modalFooter, { borderTopColor: theme.inputBorder }];
+    const DetailItem = ({ label, value, icon }: { label: string, value: string, icon: any }) => (
+        <View style={styles.detailItem}>
+            <View style={[styles.detailIcon, { backgroundColor: theme.inputBg }]}>
+                <Ionicons name={icon} size={18} color={theme.primary} />
+            </View>
+            <View style={styles.detailText}>
+                <Text style={[styles.detailLabel, { color: theme.placeholder }]}>{label}</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>{value || '—'}</Text>
+            </View>
+        </View>
+    );
 
     return (
         <Modal
             visible={visible}
             transparent={true}
-            animationType="none" // We handle animation
+            animationType="fade"
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <Animated.View style={modalContentStyle}>
-                    <View style={headerStyle}>
-                        <Text style={titleStyle}>Request Details</Text>
-                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <Ionicons name="close" size={24} color={theme.icon} />
+                <Animated.View
+                    style={[
+                        styles.modalContent,
+                        {
+                            backgroundColor: theme.cardBackground,
+                            transform: [{ scale: scaleValue }]
+                        }
+                    ]}
+                >
+                    <View style={[styles.modalHeader, { borderBottomColor: theme.inputBorder }]}>
+                        <View>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>Request Details</Text>
+                            <Text style={[styles.modalSubtitle, { color: theme.placeholder }]}>Ref: #{item.IdN || 'N/A'}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={[styles.closeIcon, { backgroundColor: theme.inputBg }]}
+                        >
+                            <Ionicons name="close" size={20} color={theme.text} />
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.modalBody}>
-                        {/* Status Badge */}
-                        <View style={styles.statusBadgeContainer}>
-                            <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-                                <Text style={styles.statusBadgeText}>{status.trim().toUpperCase()}</Text>
+                    <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                        <View style={styles.badgeRow}>
+                            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+                                <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+                                <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
+                                    {statusInfo.label}
+                                </Text>
                             </View>
                         </View>
 
-                        <View style={styles.detailRow}>
-                            <Text style={labelStyle}>Description</Text>
-                            <Text style={valueStyle}>{description}</Text>
-                        </View>
-
-                        <View style={styles.detailRow}>
-                            <Text style={labelStyle}>Request Date</Text>
-                            <Text style={valueStyle}>{formatDate(requestDate)}</Text>
-                        </View>
-
+                        <DetailItem icon="document-text-outline" label="DESCRIPTION" value={description} />
+                        <DetailItem icon="calendar-outline" label="REQUEST DATE" value={formatDate(requestDate)} />
                         {rangeDescription ? (
-                            <View style={styles.detailRow}>
-                                <Text style={labelStyle}>Details</Text>
-                                <Text style={valueStyle}>{rangeDescription}</Text>
-                            </View>
+                            <DetailItem icon="time-outline" label="SCHEDULE/DURATION" value={rangeDescription} />
                         ) : null}
-
-                        <View style={styles.detailRow}>
-                            <Text style={labelStyle}>Reference ID</Text>
-                            <Text style={valueStyle}>{item.IdN}</Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                            <Text style={labelStyle}>Remarks</Text>
-                            <Text style={valueStyle}>{item.LVRemarksC}</Text>
-                        </View>
+                        <DetailItem icon="chatbubble-outline" label="REMARKS" value={item.LVRemarksC || item.RemarksC} />
                     </ScrollView>
 
-                    <View style={footerStyle}>
+                    <View style={[styles.modalFooter, { borderTopColor: theme.inputBorder }]}>
                         {(status.toLowerCase().includes('waiting') || status.toLowerCase().includes('pending')) && (
                             <TouchableOpacity
-                                style={[styles.cancelButton, loading && styles.disabledButton]}
+                                style={[styles.cancelButton]}
                                 onPress={handleCancelLeave}
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <ActivityIndicator size="small" color="#fff" />
                                 ) : (
-                                    <Text style={styles.cancelButtonText}>Cancel Leave</Text>
+                                    <Text style={styles.cancelButtonText}>Cancel Request</Text>
                                 )}
                             </TouchableOpacity>
                         )}
-                        <TouchableOpacity style={[styles.closeButtonFull, { backgroundColor: theme.primary }]} onPress={onClose}>
-                            <Text style={styles.closeButtonText}>Close</Text>
+                        <TouchableOpacity
+                            style={[styles.closeButtonFull, { backgroundColor: theme.primary }]}
+                            onPress={onClose}
+                        >
+                            <Text style={styles.closeButtonText}>Done</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
@@ -226,88 +212,123 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: 24,
     },
     modalContent: {
-        width: '90%',
-        borderRadius: 15,
-        elevation: 5,
-        maxHeight: '80%',
+        width: '100%',
+        borderRadius: 28,
+        elevation: 10,
+        maxHeight: '85%',
+        overflow: 'hidden',
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 15,
+        padding: 24,
         borderBottomWidth: 1,
     },
     modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 20,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
-    closeButton: {
-        padding: 5,
+    modalSubtitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    closeIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     modalBody: {
-        padding: 20,
+        padding: 24,
     },
-    statusBadgeContainer: {
-        alignItems: 'center',
-        marginBottom: 20,
+    badgeRow: {
+        flexDirection: 'row',
+        marginBottom: 24,
     },
     statusBadge: {
-        paddingHorizontal: 15,
-        paddingVertical: 5,
-        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 6,
     },
-    statusBadgeText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 14,
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
     },
-    detailRow: {
-        marginBottom: 15,
+    statusLabelText: {
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    detailItem: {
+        flexDirection: 'row',
+        marginBottom: 24,
+        alignItems: 'flex-start',
+    },
+    detailIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    detailText: {
+        flex: 1,
     },
     detailLabel: {
-        fontSize: 12,
-        marginBottom: 5,
-        textTransform: 'uppercase',
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 1,
+        marginBottom: 4,
     },
     detailValue: {
-        fontSize: 16,
-        fontWeight: '500',
+        fontSize: 15,
+        fontWeight: '600',
+        lineHeight: 22,
     },
     modalFooter: {
-        padding: 15,
+        padding: 24,
         borderTopWidth: 1,
+        gap: 12,
     },
     closeButtonFull: {
-        padding: 12,
-        borderRadius: 8,
+        height: 56,
+        borderRadius: 16,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     closeButtonText: {
         color: '#fff',
-        fontWeight: 'bold',
+        fontWeight: '700',
         fontSize: 16,
     },
     cancelButton: {
-        backgroundColor: '#F44336', // Red
-        padding: 12,
-        borderRadius: 8,
+        height: 56,
+        borderRadius: 16,
         alignItems: 'center',
-        marginBottom: 10,
+        justifyContent: 'center',
+        backgroundColor: '#FEE2E2', // Soft red
+        borderWidth: 1,
+        borderColor: '#FECACA',
     },
     cancelButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: '#DC2626',
+        fontWeight: '700',
         fontSize: 16,
-    },
-    disabledButton: {
-        opacity: 0.7,
     },
 });
 

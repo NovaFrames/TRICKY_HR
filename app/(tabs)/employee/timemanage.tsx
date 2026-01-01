@@ -174,41 +174,45 @@ export default function TimeManage() {
     };
 
     const renderHeader = () => (
-        <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.navBar}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.navTitle}>Time Management</Text>
-                <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={downloading}>
-                    {downloading ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                    ) : (
-                        <Ionicons name="download-outline" size={24} color="#fff" />
-                    )}
-                </TouchableOpacity>
+        <View style={styles.headerWrapper}>
+            <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View style={styles.navBar}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.navTitle}>Time Management</Text>
+                    <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={downloading}>
+                        {downloading ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                            <Ionicons name="download-outline" size={24} color="#fff" />
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            {/* Date Picker Card */}
-            <View style={[styles.dateCard, { backgroundColor: theme.cardBackground }]}>
-                <TouchableOpacity style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
-                    <Text style={[styles.dateLabel, { color: theme.text }]}>From Date</Text>
-                    <View style={styles.dateRow}>
-                        <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                        <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(fromDate)}</Text>
-                    </View>
-                </TouchableOpacity>
+            {/* Date Picker Card - Now outside the colored header */}
+            <View style={styles.datePickerSection}>
+                <View style={[styles.dateCard, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
+                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
+                        <Text style={[styles.dateLabel, { color: theme.placeholder }]}>From Date</Text>
+                        <View style={styles.dateRow}>
+                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
+                            <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(fromDate)}</Text>
+                        </View>
+                    </TouchableOpacity>
 
-                <View style={[styles.dateDivider, { backgroundColor: theme.inputBorder }]} />
+                    <View style={[styles.dateDivider, { backgroundColor: theme.inputBorder }]} />
 
-                <TouchableOpacity style={styles.dateInput} onPress={() => setShowToPicker(true)}>
-                    <Text style={[styles.dateLabel, { color: theme.text }]}>To Date</Text>
-                    <View style={styles.dateRow}>
-                        <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                        <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(toDate)}</Text>
-                    </View>
-                </TouchableOpacity>
+                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowToPicker(true)}>
+                        <Text style={[styles.dateLabel, { color: theme.placeholder }]}>To Date</Text>
+                        <View style={styles.dateRow}>
+                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
+                            <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(toDate)}</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {showFromPicker && (
@@ -446,13 +450,20 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
     },
+    headerWrapper: {
+        backgroundColor: 'transparent',
+    },
     headerContainer: {
-        paddingTop: 10,
-        paddingBottom: 15, // Reduced from 40
-        borderBottomLeftRadius: 16, // Reduced from 20
-        borderBottomRightRadius: 16, // Reduced from 20
+        paddingTop: 50,
+        paddingBottom: 15,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
         elevation: 4,
-        zIndex: 1
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        zIndex: 1,
     },
     navBar: {
         flexDirection: 'row',
@@ -468,19 +479,26 @@ const styles = StyleSheet.create({
     },
     iconButton: {
         padding: 8,
+        width: 44,
+        height: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    datePickerSection: {
+        paddingHorizontal: 16,
+        paddingVertical: 15,
     },
     dateCard: {
         flexDirection: 'row',
-        marginHorizontal: 16,
-        marginTop: 10,
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 4,
-        elevation: 6,
+        elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 8,
         alignItems: 'center',
+        borderWidth: 1,
     },
     dateInput: {
         flex: 1,
@@ -490,6 +508,7 @@ const styles = StyleSheet.create({
     },
     dateLabel: {
         fontSize: 12,
+        fontWeight: '600',
         marginBottom: 4,
     },
     dateRow: {
@@ -499,11 +518,11 @@ const styles = StyleSheet.create({
     },
     dateValue: {
         fontSize: 14,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
     dateDivider: {
         width: 1,
-        height: '60%',
+        height: '50%',
     },
     tabsContainer: {
         flexDirection: 'row',

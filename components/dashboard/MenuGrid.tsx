@@ -47,8 +47,8 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                             styles.gridItem,
                             {
                                 width: itemWidth,
-                                backgroundColor: '#FFFFFF',
-                                borderColor: '#F1F5F9',
+                                backgroundColor: theme.cardBackground,
+                                borderColor: theme.inputBorder,
                                 borderWidth: 1,
                             },
                         ]}
@@ -70,7 +70,7 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                         >
                             <IconLib
                                 name={iconName as any}
-                                size={18}
+                                size={24}
                                 color={item.IconcolorC || theme.primary}
                             />
                         </View>
@@ -78,7 +78,7 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                         <Text
                             style={[
                                 styles.gridLabel,
-                                { color: '#1E293B' },
+                                { color: theme.text },
                             ]}
                             numberOfLines={1}
                         >
@@ -111,9 +111,9 @@ const styles = StyleSheet.create({
     },
 
     gridIconBox: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
+        width: 54,
+        height: 54,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
