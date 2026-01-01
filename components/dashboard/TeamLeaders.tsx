@@ -9,18 +9,18 @@ interface TeamLeadersProps {
 const TEAM_LEADS = [
     {
         id: 1,
-        name: 'Alex',
-        image: 'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
+        name: 'Alex Johnson',
+        image: 'https://randomuser.me/api/portraits/men/32.jpg',
     },
     {
         id: 2,
-        name: 'Priya',
-        image: 'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
+        name: 'Sarah Chen',
+        image: 'https://randomuser.me/api/portraits/women/44.jpg',
     },
     {
         id: 3,
-        name: 'Rahul',
-        image: 'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
+        name: 'Michael Ross',
+        image: 'https://randomuser.me/api/portraits/men/65.jpg',
     },
 ];
 

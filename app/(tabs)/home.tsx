@@ -77,7 +77,7 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.menuContainer}>
-                    <Text style={[styles.sectionHeader, { color: theme.text, marginBottom: 16 }]}>Quick Access</Text>
+                    {/* <Text style={[styles.sectionHeader, { color: theme.text, marginBottom: 16 }]}>Quick Access</Text> */}
                     <MenuGrid
                         menuItems={menuItems}
                         theme={theme}
