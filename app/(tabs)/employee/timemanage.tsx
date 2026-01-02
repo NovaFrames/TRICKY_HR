@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Stack, useRouter } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
 import ApiService from '../../../services/ApiService';
@@ -127,15 +129,30 @@ export default function TimeManage() {
 
     const handleDownloadedFile = async (url: string) => {
         try {
-            const supported = await Linking.canOpenURL(url);
-            if (supported) {
-                await Linking.openURL(url);
+            const fileName = `TimeReport_${new Date().getTime()}.pdf`;
+            const fileUri = FileSystem.documentDirectory + fileName;
+
+            console.log('Starting download to:', fileUri);
+
+            const downloadRes = await FileSystem.downloadAsync(url, fileUri);
+
+            if (downloadRes.status === 200) {
+                console.log('Download complete:', downloadRes.uri);
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(downloadRes.uri, {
+                        mimeType: 'application/pdf',
+                        dialogTitle: 'Download Time Report',
+                        UTI: 'com.adobe.pdf' // for iOS
+                    });
+                } else {
+                    Alert.alert('Success', 'File downloaded to: ' + downloadRes.uri);
+                }
             } else {
-                Alert.alert('Error', 'Cannot open this URL: ' + url);
+                Alert.alert('Error', 'Failed to download file. Status: ' + downloadRes.status);
             }
         } catch (error) {
-            console.log('Error opening URL:', error);
-            Alert.alert('Error', 'Could not open the downloaded file link.');
+            console.log('Error downloading file:', error);
+            Alert.alert('Error', 'Could not download the file.');
         }
     };
 

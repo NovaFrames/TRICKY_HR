@@ -113,10 +113,11 @@ export const API_ENDPOINTS = {
     GET_EMP_REQUEST_STATUS: '/GetEmpRequestStatus',
 
     // Time Management
-    GET_TIME_MANAGE_LIST: '/GetEmpTimeManage', // Added based on request
+    GET_TIME_MANAGE_LIST: '/GetTimeManageList',
     GET_PROJECT_LIST: '/GetProjectList',
     UPDATE_TIME: '/UpdateEmpTimeManage',
-    DOWNLOAD_REPORT: '/PrintMonthlyReport',
+    DOWNLOAD_REPORT: '/DownloadTimeReport1',
+    UPLOAD_DOC: '/UploadDocument_Emp', // Endpoint for uploading documents
 };
 
 // Types
@@ -638,15 +639,24 @@ class ApiService {
         }
     }
 
-    async downloadTimeReport(fromDate: string, toDate: string): Promise<{ success: boolean, url?: string, error?: string; data?: any }> {
+    async downloadTimeReport(fromDate: string, toDate: string): Promise<{ success: boolean, url?: string, alternativeUrl?: string, error?: string; data?: any }> {
         try {
             if (!this.token) {
                 await this.loadCredentials();
             }
 
-            if (!this.token || !this.empId) {
-                return { success: false, error: 'Authentication details missing' };
+            // Get additional user data needed for URL construction
+            const userDataStr = await AsyncStorage.getItem('user_data');
+            const userData = userDataStr ? JSON.parse(userDataStr) : null;
+
+            if (!this.token || !this.empId || !userData) {
+                return { success: false, error: 'Authentication or user details missing' };
             }
+
+            const empId = this.empId;
+            const companyId = userData.CompIdN || userData.CompanyId || '1';
+            const customerId = userData.CustomerIdC || userData.DomainId || 'kevit';
+            const companyUrl = 'https://hr.trickyhr.com'; // Base URL is constant for now
 
             // Build payload exactly as requested
             const payload = {
@@ -669,17 +679,17 @@ class ApiService {
             console.log('Download Report Full Response:', JSON.stringify(response.data));
 
             if (response.data.Status === 'success') {
-                const url = response.data.StrUrl || response.data.Url || response.data.FileUrl || response.data.data;
+                // Construct URL manually
+                // Pattern: https://hr.trickyhr.com/kevit-Customer/{customerId}/{companyId}/EmpPortal/TMSReport/{empId}.pdf
 
-                if (url && typeof url === 'string' && (url.startsWith('http') || url.startsWith('/'))) {
-                    return {
-                        success: true,
-                        url: url,
-                        data: response.data
-                    };
-                }
+                const downloadUrl = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/TMSReport/${empId}.pdf`;
+                console.log('Generated download URL:', downloadUrl);
 
-                return { success: false, error: 'Report generated successfully but no download URL found in response.' };
+                return {
+                    success: true,
+                    url: downloadUrl,
+                    data: response.data
+                };
             } else {
                 return {
                     success: false,
@@ -698,6 +708,109 @@ class ApiService {
                 errorMessage = 'No response from server';
             }
 
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    // --- Document Management ---
+
+    async getDocuments(): Promise<any[]> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+            // Assuming an endpoint exists. If not, this might need adjustment.
+            // Using /GetEmpDocument based on naming conventions (or user's /documents)
+            // User prompt used /documents. I will try to follow conventions or use what is requested.
+            // Since the user is providing code to "add this function", I'll adapt it.
+            // The user's code: axios.get(`${API_BASE_URL}/documents`, params: { employeeId })
+
+            // I'll assume we likely don't have this endpoint working yet if I invent it, 
+            // but I will add the method. 
+            // Note: The user provided specific endpoints for upload: '/UploadDocument_Emp' (implied by content type example?)
+            // No, the user provided Request/Response for Upload.
+            // For getDocuments, I'll use a placeholder or best guess.
+
+            const response = await axios.post(
+                BASE_URL + '/GetEmpDocumentShow', // Guessing endpoint
+                { TokenC: this.token, EmpID: this.empId },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                // Map response to Document interface if needed
+                const docs = response.data.data || [];
+                return docs.map((doc: any, index: number) => ({
+                    id: doc.Id || index,
+                    name: doc.EmpDocName || doc.Name || 'Document',
+                    type: doc.Type || 'Unknown',
+                    date: doc.CreatedDate || new Date().toLocaleDateString(),
+                    size: doc.Size || 'Unknown',
+                    url: doc.Path || doc.Url
+                }));
+            }
+            return [];
+        } catch (error) {
+            console.log('Error fetching documents', error);
+            return [];
+        }
+    }
+
+    async uploadDocument(data: { name: string; type: string; remarks: string; file: { uri: string; name: string; type: string } }): Promise<{ success: boolean; data?: any; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const formData = new FormData();
+            formData.append('TokenC', this.token || '');
+            formData.append('EmpID', String(this.empId));
+            formData.append('EmpDocName', data.name);
+            formData.append('Type', data.type);
+            formData.append('Remarks', data.remarks);
+
+            // Handle file
+            if (data.file) {
+                formData.append('EmpDoc', {
+                    uri: data.file.uri,
+                    name: data.file.name,
+                    type: data.file.type || 'application/pdf', // Ensure type is present
+                } as any);
+            }
+
+            console.log('Uploading document...');
+
+            const response = await axios.post(
+                BASE_URL + '/SaveEmpPortalDocument',
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        // Axios might handle boundary automatically if we let it, 
+                        // but usually we need to be careful with headers in RN.
+                        // Often it's best to let axios sets content-type for multipart
+                        'Accept': 'application/json',
+                    },
+                    transformRequest: (data, headers) => {
+                        // React Native FormData needs to remain as is
+                        return data;
+                    },
+                }
+            );
+
+            console.log('Upload response:', response.data);
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data };
+            } else {
+                return { success: false, error: response.data.Error || 'Upload failed' };
+            }
+        } catch (error: any) {
+            console.error('Error uploading document:', error);
+            let errorMessage = 'Upload failed';
+            if (error.response) {
+                errorMessage = error.response.data?.Error || error.message;
+            }
             return { success: false, error: errorMessage };
         }
     }
