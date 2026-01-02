@@ -1,6 +1,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const BASE_URL = 'https://hr.trickyhr.com/WebApi';
 
@@ -113,11 +114,18 @@ export const API_ENDPOINTS = {
     GET_EMP_REQUEST_STATUS: '/GetEmpRequestStatus',
 
     // Time Management
-    GET_TIME_MANAGE_LIST: '/GetTimeManageList',
+    GET_TIME_MANAGE_LIST: '/GetEmpTimeManage',
     GET_PROJECT_LIST: '/GetProjectList',
     UPDATE_TIME: '/UpdateEmpTimeManage',
-    DOWNLOAD_REPORT: '/DownloadTimeReport1',
-    UPLOAD_DOC: '/UploadDocument_Emp', // Endpoint for uploading documents
+    DOWNLOAD_REPORT: '/PrintMonthlyReport',
+
+    // Uploaded Documents
+    GET_UPLOADED_DOCUMENTS: '/GetEmpDocumentShow',
+    UPLOAD_DOCUMENT: '/SaveEmpPortalDocument',
+
+    // Office Documents
+    GET_OFFICE_DOCUMENTS: '/GetEmpDocumentsGridList',
+
 };
 
 // Types
@@ -732,7 +740,7 @@ class ApiService {
             // For getDocuments, I'll use a placeholder or best guess.
 
             const response = await axios.post(
-                BASE_URL + '/GetEmpDocumentShow', // Guessing endpoint
+                BASE_URL + API_ENDPOINTS.GET_UPLOADED_DOCUMENTS, // Guessing endpoint
                 { TokenC: this.token, EmpID: this.empId },
                 { headers: this.getHeaders() }
             );
@@ -781,7 +789,7 @@ class ApiService {
             console.log('Uploading document...');
 
             const response = await axios.post(
-                BASE_URL + '/SaveEmpPortalDocument',
+                BASE_URL + API_ENDPOINTS.UPLOAD_DOCUMENT,
                 formData,
                 {
                     headers: {
@@ -812,6 +820,69 @@ class ApiService {
                 errorMessage = error.response.data?.Error || error.message;
             }
             return { success: false, error: errorMessage };
+        }
+    }
+
+    // --- Office Documents ---
+    async getOfficeDocuments(folderName: string = 'OfficeDoc'): Promise<{ success: boolean; data?: any[]; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
+                {
+                    TokenC: this.token,
+                    Id: this.empId,
+                    FolderName: folderName
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.data };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            console.log('Error fetching office documents', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || error.message || 'Network error'
+            };
+        }
+    }
+
+    async downloadFile(url: string, fileName: string): Promise<string | null> {
+        try {
+            const fs = FileSystem as any;
+            const downloadDir = fs.documentDirectory + 'OfficeDoc/';
+            const dirInfo = await fs.getInfoAsync(downloadDir);
+
+            if (!dirInfo.exists) {
+                await fs.makeDirectoryAsync(downloadDir, { intermediates: true });
+            }
+
+            const fileUri = downloadDir + fileName;
+
+            const downloadObject = fs.createDownloadResumable(
+                url,
+                fileUri,
+                {
+                    headers: { 'Token': this.token || '' }
+                }
+            );
+
+            const result = await downloadObject.downloadAsync();
+
+            if (result && result.uri && result.status === 200) {
+                return result.uri;
+            }
+            return null;
+        } catch (error) {
+            console.error('Download error:', error);
+            return null;
         }
     }
 }
