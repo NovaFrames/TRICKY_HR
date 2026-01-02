@@ -75,7 +75,7 @@ export default function SettingsScreen() {
                     description: 'Manage your personal details',
                     icon: <Ionicons name="document-text" />,
                     color: '#10b981',
-                    onPress: () => { },
+                    onPress: () => { router.push({ pathname: '/settings/PersonalInformation', params: { from: 'settings' } }); },
                 },
                 {
                     label: 'Address',
