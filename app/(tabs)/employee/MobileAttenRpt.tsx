@@ -1,15 +1,12 @@
 import Header from '@/components/Header';
-import { API_ENDPOINTS } from '@/constants/api';
-import { useTheme } from '@/context/ThemeContext';
-import { useUser } from '@/context/UserContext';
-import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     Platform,
     SafeAreaView,
@@ -18,617 +15,441 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { API_ENDPOINTS } from '../../../constants/api';
+import { useUser } from '../../../context/UserContext';
 
-// Types for Attendance Data
-interface AttendanceShift {
+interface AttendanceRecord {
+    EmpIdN: number;
     EmpCodeC: string;
     EmpNameC: string;
-    ShiftInN: number;
-    ShiftOutN: number;
     ShiftCodeC: string;
-    ReaCodeC: string;
-    AttC: string;
+    DeptNameC: string | null;
+    ProjectCodeC: string | null;
+    ProjectNameC: string;
+    AddressC: string;
+    PunchLocC: string;
+    ModeN: number;
     DateD: string;
-    DateDisplay: string;
-    DateObj: Date;
-}
-
-interface AttendanceOther {
-    EmpCodeC: string;
-    ActN: number;
-    NRMN: number;
-    LateN: number;
-    UnderN: number;
-    TInN: number;
-    TOutN: number;
-    DateD: string;
-    DateDisplay: string;
-    DateObj: Date;
+    DateC: string;
+    PunchTimeC: string;
+    RemarkC: string;
+    Group1C: string | null;
+    InOutC: string | null;
 }
 
 export default function MobileAttenRpt() {
-    const { theme } = useTheme();
     const { user } = useUser();
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'SHIFT' | 'OTHERS'>('SHIFT');
-    const [fromDate, setFromDate] = useState<Date>(() => {
-        const date = new Date();
-        date.setDate(date.getDate() - 7); // Default to last 7 days
-        return date;
-    });
-    const [toDate, setToDate] = useState<Date>(new Date());
-    const [showFromDatePicker, setShowFromDatePicker] = useState(false);
-    const [showToDatePicker, setShowToDatePicker] = useState(false);
+    const [fromDate, setFromDate] = useState(new Date());
+    const [toDate, setToDate] = useState(new Date());
+    const [showFromPicker, setShowFromPicker] = useState(false);
+    const [showToPicker, setShowToPicker] = useState(false);
+    const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(false);
-    const [shiftData, setShiftData] = useState<AttendanceShift[]>([]);
-    const [othersData, setOthersData] = useState<AttendanceOther[]>([]);
-    const [filteredShiftData, setFilteredShiftData] = useState<AttendanceShift[]>([]);
-    const [filteredOthersData, setFilteredOthersData] = useState<AttendanceOther[]>([]);
-    const [showFilterControls, setShowFilterControls] = useState(false);
 
-    const loginData = user || {};
-    const token = loginData.Token || loginData.TokenC;
-    const companyUrl = API_ENDPOINTS.CompanyUrl;
-
-    useEffect(() => {
-        fetchAttendance();
-    }, [fromDate, toDate]);
-
-    useEffect(() => {
-        filterDataByDateRange();
-    }, [shiftData, othersData, fromDate, toDate]);
-
-    // Function to parse /Date(timestamp)/ format
-    const parseDateFromApi = (dateString: string): Date => {
-        if (!dateString || dateString === '/Date(-62135596800000)/') {
-            return new Date(0);
-        }
-
-        try {
-            const timestampMatch = dateString.match(/\/Date\((-?\d+)\)\//);
-            if (timestampMatch && timestampMatch[1]) {
-                const timestamp = parseInt(timestampMatch[1], 10);
-                return new Date(timestamp);
-            }
-        } catch (error) {
-            console.error('Error parsing date:', error);
-        }
-        return new Date(0);
+    // Format date for API (dd/MM/yyyy)
+    const formatDateForApi = (date: Date) => {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
     };
 
-    // Format date for display
-    const formatDateDisplay = (date: Date): string => {
-        return date.toLocaleDateString('en-IN', {
+    // Format date for Display (DD MMM YYYY)
+    const formatDateForDisplay = (date: Date) => {
+        return date.toLocaleDateString('en-GB', {
             day: '2-digit',
             month: 'short',
-            year: 'numeric'
+            year: 'numeric',
         });
     };
 
-    // Format date for API - MM/DD/YYYY format
-    const formatDateForApi = (date: Date): string => {
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${month}/${day}/${year}`;
-    };
+    // Parse DateC from the API (format: YYMMDDHHmmss)
+    const parseDateFromApi = (dateC: string) => {
+        try {
+            if (!dateC || dateC.length < 6) return new Date();
 
-    // Filter data based on date range
-    const filterDataByDateRange = () => {
-        // Reset times to start of day for fromDate and end of day for toDate
-        const fromDateStart = new Date(fromDate);
-        fromDateStart.setHours(0, 0, 0, 0);
+            // Extract date parts from the string
+            // Assuming format: YYMMDDHHmmss
+            const year = parseInt(dateC.substring(0, 2)) + 2000; // Assuming 2000s
+            const month = parseInt(dateC.substring(2, 4)) - 1; // JS months are 0-indexed
+            const day = parseInt(dateC.substring(4, 6));
+            const hours = dateC.length >= 8 ? parseInt(dateC.substring(6, 8)) : 0;
+            const minutes = dateC.length >= 10 ? parseInt(dateC.substring(8, 10)) : 0;
+            const seconds = dateC.length >= 12 ? parseInt(dateC.substring(10, 12)) : 0;
 
-        const toDateEnd = new Date(toDate);
-        toDateEnd.setHours(23, 59, 59, 999);
-
-        if (shiftData.length > 0) {
-            const filtered = shiftData.filter(item => {
-                return item.DateObj >= fromDateStart && item.DateObj <= toDateEnd;
-            });
-            setFilteredShiftData(filtered);
-        }
-
-        if (othersData.length > 0) {
-            const filtered = othersData.filter(item => {
-                return item.DateObj >= fromDateStart && item.DateObj <= toDateEnd;
-            });
-            setFilteredOthersData(filtered);
+            return new Date(year, month, day, hours, minutes, seconds);
+        } catch (error) {
+            console.error('Error parsing date:', error);
+            return new Date();
         }
     };
 
-    // Set date range to Today
-    const setTodayRange = () => {
-        const today = new Date();
-        setFromDate(today);
-        setToDate(today);
+    // Format the date from API for display
+    const formatApiDateForDisplay = (dateC: string) => {
+        const date = parseDateFromApi(dateC);
+        return date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
     };
 
-    // Set date range to Yesterday
-    const setYesterdayRange = () => {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        setFromDate(yesterday);
-        setToDate(yesterday);
+    // Format the time from API
+    const formatApiTimeForDisplay = (dateC: string, punchTimeC: string) => {
+        // If punchTimeC has time, use it, otherwise extract from dateC
+        if (punchTimeC && punchTimeC.includes(':')) {
+            return punchTimeC;
+        }
+
+        try {
+            const date = parseDateFromApi(dateC);
+            return date.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            });
+        } catch (error) {
+            return 'N/A';
+        }
     };
 
-    // Set date range to Last 7 Days
-    const setLast7DaysRange = () => {
-        const today = new Date();
-        const lastWeek = new Date();
-        lastWeek.setDate(today.getDate() - 6); // Last 7 days inclusive
-        setFromDate(lastWeek);
-        setToDate(today);
+    // Check if record date is within selected range
+    const isRecordInDateRange = (recordDateC: string, from: Date, to: Date) => {
+        const recordDate = parseDateFromApi(recordDateC);
+        recordDate.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(from);
+        startDate.setHours(0, 0, 0, 0);
+
+        const endDate = new Date(to);
+        endDate.setHours(23, 59, 59, 999);
+
+        return recordDate >= startDate && recordDate <= endDate;
     };
 
-    // Set date range to This Month
-    const setThisMonthRange = () => {
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-        setFromDate(firstDay);
-        setToDate(today);
-    };
+    const fetchAttendanceReport = async () => {
+        if (!user?.TokenC) {
+            Alert.alert('Error', 'User token not found. Please login again.');
+            return;
+        }
 
-    // Set date range to Last Month
-    const setLastMonthRange = () => {
-        const today = new Date();
-        const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lastDayLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-        setFromDate(firstDayLastMonth);
-        setToDate(lastDayLastMonth);
-    };
-
-    useProtectedBack({
-        home: '/home',
-        dashboard: '/dashboard',
-    });
-
-    const fetchAttendance = async () => {
-        if (!token || !companyUrl) {
-            console.log('Missing token or company URL', { token, companyUrl });
+        // Validate date range
+        if (fromDate > toDate) {
+            Alert.alert('Invalid Date Range', 'From date cannot be greater than To date.');
             return;
         }
 
         setLoading(true);
+        setAttendanceData([]);
+
         try {
-            const url = `${companyUrl}${API_ENDPOINTS.ATTENDANCE_LIST}`;
             const payload = {
-                TokenC: token,
-                FDate: formatDateForApi(fromDate),
-                TDate: formatDateForApi(toDate)
+                TokenC: user.TokenC,
+                FromDate: formatDateForApi(fromDate),
+                ToDate: formatDateForApi(toDate),
+                Type: 0,
             };
 
-            console.log('Fetching Attendance:', url, payload);
+            console.log('API Payload:', payload);
+            console.log('API URL:', `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`);
 
-            const response = await axios.post(url, payload);
+            const response = await axios.post(
+                `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`,
+                payload
+            );
 
-            console.log('Attendance Response:', response.data);
+            console.log('API Response Status:', response.data.Status);
+            console.log('API Response Data:', JSON.stringify(response.data, null, 2));
 
-            if (response.data.Status === 'success') {
-                const list = response.data.data || [];
+            if (response.data.Status === 'success' && Array.isArray(response.data.data)) {
+                // Filter data based on actual date range (server might return extra data)
+                const filteredData = response.data.data.filter((record: AttendanceRecord) =>
+                    isRecordInDateRange(record.DateC, fromDate, toDate)
+                );
 
-                const shiftItems: AttendanceShift[] = list.map((i: any) => {
-                    const dateObj = parseDateFromApi(i.DateD);
-                    return {
-                        EmpCodeC: i.EmpCodeC,
-                        EmpNameC: i.EmpNameC,
-                        ShiftInN: i.ShiftInN,
-                        ShiftOutN: i.ShiftOutN,
-                        ShiftCodeC: i.ShiftCodeC,
-                        ReaCodeC: i.ReaCodeC,
-                        AttC: i.AttC,
-                        DateD: i.DateD,
-                        DateDisplay: formatDateDisplay(dateObj),
-                        DateObj: dateObj
-                    };
-                });
+                setAttendanceData(filteredData);
 
-                const otherItems: AttendanceOther[] = list.map((i: any) => {
-                    const dateObj = parseDateFromApi(i.DateD);
-                    return {
-                        EmpCodeC: i.EmpCodeC,
-                        ActN: i.ActN,
-                        NRMN: i.NRMN,
-                        LateN: i.LateN,
-                        UnderN: i.UnderN,
-                        TInN: i.TInN,
-                        TOutN: i.TOutN,
-                        DateD: i.DateD,
-                        DateDisplay: formatDateDisplay(dateObj),
-                        DateObj: dateObj
-                    };
-                });
-
-                setShiftData(shiftItems);
-                setOthersData(otherItems);
+                if (filteredData.length === 0) {
+                    Alert.alert(
+                        'No Records Found',
+                        'No attendance records found for the selected date range.',
+                        [{ text: 'OK' }]
+                    );
+                }
             } else {
-                setShiftData([]);
-                setOthersData([]);
-                setFilteredShiftData([]);
-                setFilteredOthersData([]);
+                Alert.alert(
+                    'Info',
+                    response.data.Error || 'No attendance records found.',
+                    [{ text: 'OK' }]
+                );
             }
-        } catch (error) {
-            console.error('Fetch Attendance Error:', error);
-            setShiftData([]);
-            setOthersData([]);
-            setFilteredShiftData([]);
-            setFilteredOthersData([]);
+        } catch (error: any) {
+            console.error('API Error Details:', error);
+            Alert.alert(
+                'Error',
+                error.message || 'Failed to fetch attendance report. Please try again.',
+                [{ text: 'OK' }]
+            );
         } finally {
             setLoading(false);
         }
     };
 
     const onFromDateChange = (event: any, selectedDate?: Date) => {
-        setShowFromDatePicker(Platform.OS === 'ios');
+        setShowFromPicker(Platform.OS === 'ios');
         if (selectedDate) {
             setFromDate(selectedDate);
+            // If fromDate is after toDate, adjust toDate
+            if (selectedDate > toDate) {
+                setToDate(selectedDate);
+            }
         }
     };
 
     const onToDateChange = (event: any, selectedDate?: Date) => {
-        setShowToDatePicker(Platform.OS === 'ios');
+        setShowToPicker(Platform.OS === 'ios');
         if (selectedDate) {
+            // Ensure toDate is not before fromDate
+            if (selectedDate < fromDate) {
+                Alert.alert('Invalid Date', 'To date cannot be earlier than From date.');
+                return;
+            }
             setToDate(selectedDate);
         }
     };
 
-    const renderShiftItem = ({ item, index }: { item: AttendanceShift; index: number }) => (
-        <View style={[styles.card, {
-            backgroundColor: theme.cardBackground,
-            borderColor: theme.inputBorder,
-            shadowColor: theme.mode === 'dark' ? '#000' : '#000',
-        }]}>
-            {/* Date Header */}
-            <View style={[styles.dateHeader, { backgroundColor: theme.primary + '20' }]}>
-                <Text style={[styles.dateHeaderText, { color: theme.primary }]}>
-                    {item.DateDisplay}
-                </Text>
-            </View>
+    const renderItem = ({ item }: { item: AttendanceRecord }) => {
+        const displayDate = formatApiDateForDisplay(item.DateC);
+        const displayTime = formatApiTimeForDisplay(item.DateC, item.PunchTimeC);
 
-            <View style={styles.row}>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Emp Code</Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{item.EmpCodeC}</Text>
-                </View>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Name</Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{item.EmpNameC}</Text>
-                </View>
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />
-
-            <View style={styles.row}>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Shift In</Text>
-                    <Text style={[styles.value, { color: '#10B981' }]}>
-                        {item.ShiftInN ? item.ShiftInN.toFixed(2) : '-'}
-                    </Text>
-                </View>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Shift Out</Text>
-                    <Text style={[styles.value, { color: '#EF4444' }]}>
-                        {item.ShiftOutN ? item.ShiftOutN.toFixed(2) : '-'}
-                    </Text>
-                </View>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Shift</Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{item.ShiftCodeC}</Text>
-                </View>
-            </View>
-
-            {/* Status Badge */}
-            <View style={styles.statusRow}>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Status</Text>
-                    <View style={[
-                        styles.statusBadge,
-                        {
-                            backgroundColor: item.AttC === 'P' ? '#10B98120' :
-                                item.AttC === 'A' ? '#EF444420' : '#F59E0B20'
-                        }
-                    ]}>
-                        <Text style={[
-                            styles.statusText,
-                            {
-                                color: item.AttC === 'P' ? '#10B981' :
-                                    item.AttC === 'A' ? '#EF4444' : '#F59E0B'
-                            }
-                        ]}>
-                            {item.AttC === 'P' ? 'Present' :
-                                item.AttC === 'A' ? 'Absent' :
-                                    item.AttC}
+        return (
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <View style={styles.empInfoContainer}>
+                        <Text style={styles.empName}>{item.EmpNameC}</Text>
+                        <Text style={styles.empCode}>{item.EmpCodeC}</Text>
+                        <View style={styles.dateContainer}>
+                            <Ionicons name="calendar-outline" size={12} color="#666" />
+                            <Text style={styles.dateText}>{displayDate}</Text>
+                        </View>
+                    </View>
+                    <View style={[styles.timeBadge, {
+                        backgroundColor: item.ModeN === 0 ? '#E8F5E9' : '#FFF3E0',
+                        borderColor: item.ModeN === 0 ? '#2E7D32' : '#EF6C00'
+                    }]}>
+                        <Ionicons
+                            name={item.ModeN === 0 ? "enter-outline" : "exit-outline"}
+                            size={14}
+                            color={item.ModeN === 0 ? '#2E7D32' : '#EF6C00'}
+                        />
+                        <Text style={[styles.timeText, { color: item.ModeN === 0 ? '#2E7D32' : '#EF6C00' }]}>
+                            {displayTime}
                         </Text>
                     </View>
                 </View>
-            </View>
 
-            {item.ReaCodeC?.trim() && (
-                <View style={[styles.reasonContainer, { borderTopColor: theme.inputBorder }]}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Reason: </Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{item.ReaCodeC}</Text>
-                </View>
-            )}
-        </View>
-    );
+                <View style={styles.divider} />
 
-    const renderOtherItem = ({ item, index }: { item: AttendanceOther; index: number }) => (
-        <View style={[styles.card, {
-            backgroundColor: theme.cardBackground,
-            borderColor: theme.inputBorder,
-            shadowColor: theme.mode === 'dark' ? '#000' : '#000',
-        }]}>
-            {/* Date Header */}
-            <View style={[styles.dateHeader, { backgroundColor: theme.primary + '20' }]}>
-                <Text style={[styles.dateHeaderText, { color: theme.primary }]}>
-                    {item.DateDisplay}
-                </Text>
-            </View>
-
-            <View style={styles.row}>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Emp Code</Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{item.EmpCodeC}</Text>
-                </View>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Actual</Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{item.ActN?.toFixed(2) || '-'}</Text>
-                </View>
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />
-
-            <View style={styles.row}>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>NRM</Text>
-                    <Text style={[styles.value, { color: theme.text }]}>{item.NRMN?.toFixed(2) || '-'}</Text>
-                </View>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Late</Text>
-                    <Text style={[styles.value, { color: '#EF4444' }]}>{item.LateN?.toFixed(2) || '-'}</Text>
-                </View>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Under</Text>
-                    <Text style={[styles.value, { color: '#F59E0B' }]}>{item.UnderN?.toFixed(2) || '-'}</Text>
-                </View>
-            </View>
-
-            <View style={[styles.row, { marginTop: 8 }]}>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Time In</Text>
-                    <Text style={[styles.value, { color: '#10B981' }]}>{item.TInN?.toFixed(2) || '-'}</Text>
-                </View>
-                <View style={styles.column}>
-                    <Text style={[styles.label, { color: theme.textLight }]}>Time Out</Text>
-                    <Text style={[styles.value, { color: '#EF4444' }]}>{item.TOutN?.toFixed(2) || '-'}</Text>
-                </View>
-            </View>
-        </View>
-    );
-
-    return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            {/* Header */}
-            <Header title="Attendance List" />
-
-            {/* Filter Toggle Button */}
-            <TouchableOpacity
-                style={[styles.filterToggleButton, { backgroundColor: theme.primary }]}
-                onPress={() => setShowFilterControls(!showFilterControls)}
-            >
-                <Ionicons name="filter" size={16} color="#FFFFFF" />
-                <Text style={styles.filterToggleText}>
-                    {showFilterControls ? 'Hide Filters' : 'Show Filters'}
-                </Text>
-            </TouchableOpacity>
-
-            {/* Date Range Filters */}
-            {showFilterControls && (
-                <>
-                    <View style={[styles.filterContainer, { backgroundColor: theme.cardBackground }]}>
-                        {/* Quick Date Presets */}
-                        <View style={styles.datePresetsContainer}>
-                            <TouchableOpacity
-                                style={[styles.datePresetButton, { backgroundColor: theme.primary + '20' }]}
-                                onPress={setTodayRange}
-                            >
-                                <Text style={[styles.datePresetText, { color: theme.primary }]}>Today</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.datePresetButton, { backgroundColor: theme.primary + '20' }]}
-                                onPress={setYesterdayRange}
-                            >
-                                <Text style={[styles.datePresetText, { color: theme.primary }]}>Yesterday</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.datePresetButton, { backgroundColor: theme.primary + '20' }]}
-                                onPress={setLast7DaysRange}
-                            >
-                                <Text style={[styles.datePresetText, { color: theme.primary }]}>Last 7 Days</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.datePresetButton, { backgroundColor: theme.primary + '20' }]}
-                                onPress={setThisMonthRange}
-                            >
-                                <Text style={[styles.datePresetText, { color: theme.primary }]}>This Month</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.datePresetButton, { backgroundColor: theme.primary + '20' }]}
-                                onPress={setLastMonthRange}
-                            >
-                                <Text style={[styles.datePresetText, { color: theme.primary }]}>Last Month</Text>
-                            </TouchableOpacity>
+                <View style={styles.cardBody}>
+                    <View style={styles.infoGrid}>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>Shift</Text>
+                            <Text style={styles.infoValue}>{item.ShiftCodeC || 'N/A'}</Text>
                         </View>
 
-                        {/* From Date */}
-                        <View style={styles.dateInputContainer}>
-                            <Text style={[styles.dateLabel, { color: theme.text }]}>From Date</Text>
-                            <TouchableOpacity
-                                style={[styles.dateInput, { borderColor: theme.inputBorder }]}
-                                onPress={() => setShowFromDatePicker(true)}
-                            >
-                                <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                                <Text style={[styles.dateInputText, { color: theme.text }]}>
-                                    {formatDateDisplay(fromDate)}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* To Date */}
-                        <View style={styles.dateInputContainer}>
-                            <Text style={[styles.dateLabel, { color: theme.text }]}>To Date</Text>
-                            <TouchableOpacity
-                                style={[styles.dateInput, { borderColor: theme.inputBorder }]}
-                                onPress={() => setShowToDatePicker(true)}
-                            >
-                                <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                                <Text style={[styles.dateInputText, { color: theme.text }]}>
-                                    {formatDateDisplay(toDate)}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Selected Range Display */}
-                        <View style={[styles.rangeDisplay, { borderColor: theme.inputBorder }]}>
-                            <Ionicons name="calendar-outline" size={16} color={theme.primary} />
-                            <Text style={[styles.rangeDisplayText, { color: theme.text }]}>
-                                Showing data from {formatDateDisplay(fromDate)} to {formatDateDisplay(toDate)}
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>Mode</Text>
+                            <Text style={[styles.infoValue, {
+                                color: item.ModeN === 0 ? '#2E7D32' : '#EF6C00',
+                                fontWeight: '700'
+                            }]}>
+                                {item.ModeN === 0 ? 'IN' : 'OUT'}
                             </Text>
                         </View>
                     </View>
 
-                    {/* Apply Filters Button */}
-                    <TouchableOpacity
-                        style={[styles.applyFilterButton, { backgroundColor: theme.primary }]}
-                        onPress={fetchAttendance}
-                    >
-                        <Text style={styles.applyFilterText}>Apply Filters</Text>
-                    </TouchableOpacity>
-                </>
-            )}
+                    <View style={styles.projectContainer}>
+                        <Text style={styles.infoLabel}>Project</Text>
+                        <Text style={styles.projectValue}>
+                            {item.ProjectNameC || 'N/A'}
+                            {item.ProjectCodeC && ` (${item.ProjectCodeC})`}
+                        </Text>
+                    </View>
 
-            {/* Tabs */}
-            <View style={[styles.tabContainer, { backgroundColor: theme.cardBackground }]}>
-                <TouchableOpacity
-                    style={[
-                        styles.tab,
-                        activeTab === 'SHIFT' && {
-                            borderBottomColor: theme.primary,
-                            borderBottomWidth: 2
-                        }
-                    ]}
-                    onPress={() => setActiveTab('SHIFT')}
-                >
-                    <Text style={[
-                        styles.tabText,
-                        {
-                            color: activeTab === 'SHIFT' ? theme.primary : theme.secondary
-                        }
-                    ]}>
-                        SHIFT TIME
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.tab,
-                        activeTab === 'OTHERS' && {
-                            borderBottomColor: theme.primary,
-                            borderBottomWidth: 2
-                        }
-                    ]}
-                    onPress={() => setActiveTab('OTHERS')}
-                >
-                    <Text style={[
-                        styles.tabText,
-                        {
-                            color: activeTab === 'OTHERS' ? theme.primary : theme.secondary
-                        }
-                    ]}>
-                        OTHERS
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Results Summary */}
-            <View style={[styles.resultsSummary, { backgroundColor: theme.cardBackground }]}>
-                <Text style={[styles.resultsText, { color: theme.textLight }]}>
-                    Showing {activeTab === 'SHIFT' ? filteredShiftData.length : filteredOthersData.length} records
-                </Text>
-                <Text style={[styles.dateRangeText, { color: theme.primary }]}>
-                    {formatDateDisplay(fromDate)} - {formatDateDisplay(toDate)}
-                </Text>
-            </View>
-
-            {/* Loading State */}
-            {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                    <Text style={[styles.loadingText, { color: theme.textLight }]}>
-                        Loading attendance data...
-                    </Text>
-                </View>
-            ) : (
-                <>
-                    {/* Content */}
-                    {activeTab === 'SHIFT' ? (
-                        <FlatList<AttendanceShift>
-                            data={filteredShiftData}
-                            renderItem={renderShiftItem}
-                            keyExtractor={(item, index) => `${item.EmpCodeC}-${item.DateD}-${index}`}
-                            contentContainerStyle={styles.listContent}
-                            ListEmptyComponent={
-                                <View style={styles.center}>
-                                    <Ionicons name="filter" size={48} color={theme.textLight} />
-                                    <Text style={[styles.emptyText, { color: theme.textLight }]}>
-                                        No shift data available
-                                    </Text>
-                                    <Text style={[styles.emptySubText, { color: theme.textLight }]}>
-                                        for {formatDateDisplay(fromDate)} to {formatDateDisplay(toDate)}
-                                    </Text>
-                                </View>
-                            }
-                        />
-                    ) : (
-                        <FlatList<AttendanceOther>
-                            data={filteredOthersData}
-                            renderItem={renderOtherItem}
-                            keyExtractor={(item, index) => `${item.EmpCodeC}-${item.DateD}-${index}`}
-                            contentContainerStyle={styles.listContent}
-                            ListEmptyComponent={
-                                <View style={styles.center}>
-                                    <Ionicons name="filter" size={48} color={theme.textLight} />
-                                    <Text style={[styles.emptyText, { color: theme.textLight }]}>
-                                        No other data available
-                                    </Text>
-                                    <Text style={[styles.emptySubText, { color: theme.textLight }]}>
-                                        for {formatDateDisplay(fromDate)} to {formatDateDisplay(toDate)}
-                                    </Text>
-                                </View>
-                            }
-                        />
+                    {item.DeptNameC && (
+                        <View style={styles.departmentContainer}>
+                            <Text style={styles.infoLabel}>Department</Text>
+                            <Text style={styles.departmentValue}>{item.DeptNameC}</Text>
+                        </View>
                     )}
-                </>
-            )}
 
-            {/* Date Pickers */}
-            {showFromDatePicker && (
+                    <View style={styles.locationContainer}>
+                        <View style={styles.locationHeader}>
+                            <Ionicons name="location" size={14} color="#4A90E2" />
+                            <Text style={styles.locationTitle}>Punch Location</Text>
+                        </View>
+                        <Text style={styles.locationText}>{item.PunchLocC || 'N/A'}</Text>
+                    </View>
+
+                    <View style={styles.locationContainer}>
+                        <View style={styles.locationHeader}>
+                            <Ionicons name="business" size={14} color="#666" />
+                            <Text style={styles.locationTitle}>Address</Text>
+                        </View>
+                        <Text style={styles.locationText}>{item.AddressC || 'N/A'}</Text>
+                    </View>
+
+                    {item.RemarkC && item.RemarkC.trim() !== '' ? (
+                        <View style={styles.remarkContainer}>
+                            <View style={styles.remarkHeader}>
+                                <Ionicons name="document-text" size={14} color="#888" />
+                                <Text style={styles.remarkLabel}>Remark</Text>
+                            </View>
+                            <Text style={styles.remarkText}>{item.RemarkC}</Text>
+                        </View>
+                    ) : null}
+
+                    {(item.Group1C || item.InOutC) && (
+                        <View style={styles.extraInfo}>
+                            {item.Group1C && (
+                                <View style={styles.extraItem}>
+                                    <Ionicons name="people" size={12} color="#999" />
+                                    <Text style={styles.extraText}>{item.Group1C}</Text>
+                                </View>
+                            )}
+                            {item.InOutC && (
+                                <View style={styles.extraItem}>
+                                    <Ionicons name="swap-horizontal" size={12} color="#999" />
+                                    <Text style={styles.extraText}>{item.InOutC}</Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+                </View>
+            </View>
+        );
+    };
+
+    const getTotalRecordsText = () => {
+        if (attendanceData.length === 0) return '';
+        return `${attendanceData.length} record${attendanceData.length > 1 ? 's' : ''} found`;
+    };
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <Header title="Attendance Report" />
+
+            <View style={styles.filterContainer}>
+                <View style={styles.dateRow}>
+                    <View style={styles.dateInputContainer}>
+                        <Text style={styles.dateLabel}>From Date</Text>
+                        <TouchableOpacity
+                            style={styles.dateButton}
+                            onPress={() => setShowFromPicker(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="calendar" size={18} color="#4A90E2" />
+                            <Text style={styles.dateButtonText}>{formatDateForDisplay(fromDate)}</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.dateSeparator}>
+                        <Ionicons name="arrow-forward" size={16} color="#888" />
+                    </View>
+
+                    <View style={styles.dateInputContainer}>
+                        <Text style={styles.dateLabel}>To Date</Text>
+                        <TouchableOpacity
+                            style={styles.dateButton}
+                            onPress={() => setShowToPicker(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="calendar" size={18} color="#4A90E2" />
+                            <Text style={styles.dateButtonText}>{formatDateForDisplay(toDate)}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.searchButton}
+                    onPress={fetchAttendanceReport}
+                    activeOpacity={0.8}
+                    disabled={loading}
+                >
+                    <LinearGradient
+                        colors={fromDate.toDateString() === toDate.toDateString() ? ['#6C63FF', '#5A52D3'] : ['#4A90E2', '#357ABD']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.gradientButton}
+                    >
+                        {loading ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                            <>
+                                <Ionicons name="search" size={20} color="#FFF" />
+                                <Text style={styles.searchButtonText}>
+                                    {fromDate.toDateString() === toDate.toDateString() ? 'Search Today' : 'Search Range'}
+                                </Text>
+                            </>
+                        )}
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
+
+            {showFromPicker && (
                 <DateTimePicker
                     value={fromDate}
                     mode="date"
                     display="default"
                     onChange={onFromDateChange}
-                    themeVariant={theme.mode === 'dark' ? 'dark' : 'light'}
-                    maximumDate={toDate} // Can't select from date after to date
+                    maximumDate={new Date()}
                 />
             )}
-            {showToDatePicker && (
+
+            {showToPicker && (
                 <DateTimePicker
                     value={toDate}
                     mode="date"
                     display="default"
                     onChange={onToDateChange}
-                    themeVariant={theme.mode === 'dark' ? 'dark' : 'light'}
-                    minimumDate={fromDate} // Can't select to date before from date
+                    maximumDate={new Date()}
+                    minimumDate={fromDate}
+                />
+            )}
+
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4A90E2" />
+                    <Text style={styles.loadingText}>Fetching attendance records...</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={attendanceData}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => `${item.EmpIdN}-${item.DateC}-${index}`}
+                    contentContainerStyle={styles.listContent}
+                    ListHeaderComponent={
+                        attendanceData.length > 0 ? (
+                            <View style={styles.resultsHeader}>
+                                <Text style={styles.resultsTitle}>Attendance Records</Text>
+                                <Text style={styles.resultsCount}>{getTotalRecordsText()}</Text>
+                            </View>
+                        ) : null
+                    }
+                    ListEmptyComponent={
+                        !loading && (
+                            <View style={styles.emptyContainer}>
+                                <View style={styles.emptyIconContainer}>
+                                    <Ionicons name="calendar-outline" size={80} color="#E0E0E0" />
+                                </View>
+                                <Text style={styles.emptyText}>No attendance records</Text>
+                                <Text style={styles.emptySubText}>
+                                    Select a date range and tap 'Search Records' to view attendance history
+                                </Text>
+                            </View>
+                        )
+                    }
+                    showsVerticalScrollIndicator={false}
                 />
             )}
         </SafeAreaView>
@@ -638,224 +459,324 @@ export default function MobileAttenRpt() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    filterToggleButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        marginHorizontal: 16,
-        marginTop: 12,
-        paddingVertical: 12,
-        borderRadius: 8,
-    },
-    filterToggleText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '600',
+        backgroundColor: '#F5F7FA',
     },
     filterContainer: {
-        marginHorizontal: 16,
-        marginTop: 12,
-        padding: 16,
-        borderRadius: 12,
+        backgroundColor: '#FFF',
+        margin: 16,
+        padding: 20,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.1)',
+        borderColor: '#F0F0F0',
     },
-    datePresetsContainer: {
+    dateRow: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 16,
-    },
-    datePresetButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 6,
-    },
-    datePresetText: {
-        fontSize: 12,
-        fontWeight: '500',
+        alignItems: 'center',
+        marginBottom: 20,
     },
     dateInputContainer: {
-        marginBottom: 12,
+        flex: 1,
     },
     dateLabel: {
         fontSize: 12,
-        fontWeight: '500',
-        marginBottom: 4,
-    },
-    dateInput: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 8,
-        borderWidth: 1,
-    },
-    dateInputText: {
-        fontSize: 14,
+        color: '#666',
         fontWeight: '600',
+        marginBottom: 6,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
-    rangeDisplay: {
+    dateButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        padding: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        marginTop: 8,
-    },
-    rangeDisplayText: {
-        fontSize: 12,
-        fontWeight: '500',
-        flex: 1,
-    },
-    applyFilterButton: {
-        marginHorizontal: 16,
-        marginTop: 8,
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    applyFilterText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        marginHorizontal: 16,
-        marginTop: 16,
-        marginBottom: 8,
+        backgroundColor: '#F8F9FF',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
         borderRadius: 12,
-        overflow: 'hidden',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        borderWidth: 1.5,
+        borderColor: '#E8ECFF',
+        gap: 10,
     },
-    tab: {
-        flex: 1,
-        paddingVertical: 16,
-        alignItems: 'center',
-    },
-    tabText: {
+    dateButtonText: {
+        fontSize: 15,
+        color: '#333',
         fontWeight: '600',
-        fontSize: 14,
+        flex: 1,
     },
-    resultsSummary: {
+    dateSeparator: {
+        marginHorizontal: 12,
+        padding: 8,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 8,
+    },
+    searchButton: {
+        borderRadius: 14,
+        overflow: 'hidden',
+        shadowColor: '#4A90E2',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    gradientButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        gap: 10,
+    },
+    searchButtonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+    },
+    resultsHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginHorizontal: 16,
-        marginBottom: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.1)',
+        marginBottom: 16,
+        paddingHorizontal: 4,
     },
-    resultsText: {
-        fontSize: 12,
-        fontWeight: '500',
+    resultsTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1A1A1A',
     },
-    dateRangeText: {
-        fontSize: 11,
+    resultsCount: {
+        fontSize: 14,
+        color: '#666',
         fontWeight: '600',
+        backgroundColor: '#F0F0F0',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
     },
     listContent: {
-        padding: 16,
-        paddingBottom: 20,
+        paddingHorizontal: 16,
+        paddingBottom: 24,
     },
     card: {
-        borderRadius: 12,
-        padding: 0,
-        marginBottom: 12,
-        borderWidth: 1,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        marginBottom: 16,
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 4,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
     },
-    dateHeader: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.1)',
-    },
-    dateHeaderText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    row: {
+    cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        alignItems: 'flex-start',
+        padding: 20,
+        paddingBottom: 16,
     },
-    statusRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-    },
-    column: {
+    empInfoContainer: {
         flex: 1,
+        marginRight: 12,
     },
-    label: {
-        fontSize: 12,
-        marginBottom: 4,
+    empName: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#1A1A1A',
+        marginBottom: 2,
+    },
+    empCode: {
+        fontSize: 13,
+        color: '#666',
         fontWeight: '500',
+        marginBottom: 8,
     },
-    value: {
-        fontSize: 14,
-        fontWeight: '600',
+    dateContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    dateText: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#666',
+    },
+    timeBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+        minWidth: 80,
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    timeText: {
+        fontSize: 13,
+        fontWeight: '700',
     },
     divider: {
         height: 1,
-        marginHorizontal: 16,
+        backgroundColor: '#F0F0F0',
+        marginHorizontal: 20,
     },
-    reasonContainer: {
-        marginTop: 12,
-        paddingTop: 12,
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-        borderTopWidth: 1,
+    cardBody: {
+        padding: 20,
+        paddingTop: 16,
+        gap: 16,
+    },
+    infoGrid: {
         flexDirection: 'row',
-        alignItems: 'center',
+        gap: 16,
     },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-        alignSelf: 'flex-start',
+    infoItem: {
+        flex: 1,
     },
-    statusText: {
-        fontSize: 12,
+    infoLabel: {
+        fontSize: 11,
+        color: '#888',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 4,
+    },
+    infoValue: {
+        fontSize: 14,
+        color: '#333',
         fontWeight: '600',
     },
-    center: {
+    projectContainer: {
+        backgroundColor: '#F0F8FF',
+        padding: 12,
+        borderRadius: 8,
+    },
+    projectValue: {
+        fontSize: 14,
+        color: '#2C5282',
+        fontWeight: '600',
+        lineHeight: 20,
+    },
+    departmentContainer: {
+        backgroundColor: '#F0FFF4',
+        padding: 12,
+        borderRadius: 8,
+    },
+    departmentValue: {
+        fontSize: 14,
+        color: '#22543D',
+        fontWeight: '600',
+    },
+    locationContainer: {
+        backgroundColor: '#F9FAFF',
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#F0F3FF',
+    },
+    locationHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    locationTitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#555',
+    },
+    locationText: {
+        fontSize: 14,
+        color: '#444',
+        lineHeight: 20,
+        paddingLeft: 6,
+    },
+    remarkContainer: {
+        backgroundColor: '#FFF8E1',
+        padding: 14,
+        borderRadius: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FFC107',
+    },
+    remarkHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    remarkLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#FF9800',
+    },
+    remarkText: {
+        fontSize: 14,
+        color: '#5D4037',
+        lineHeight: 20,
+        fontStyle: 'italic',
+    },
+    extraInfo: {
+        flexDirection: 'row',
+        gap: 16,
+        marginTop: 4,
+    },
+    extraItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: '#F5F5F5',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+    },
+    extraText: {
+        fontSize: 12,
+        color: '#666',
+        fontWeight: '500',
+    },
+    loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
-        minHeight: 200,
+        marginTop: 60,
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 14,
+        marginTop: 16,
+        fontSize: 15,
+        color: '#666',
+        fontWeight: '500',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 80,
+        paddingHorizontal: 20,
+    },
+    emptyIconContainer: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#F9F9F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 24,
     },
     emptyText: {
-        marginTop: 12,
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#B0B0B0',
+        textAlign: 'center',
+        marginBottom: 8,
     },
     emptySubText: {
-        marginTop: 4,
-        fontSize: 12,
+        fontSize: 15,
+        color: '#C0C0C0',
+        textAlign: 'center',
+        lineHeight: 22,
     },
 });
