@@ -364,11 +364,12 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     submitButton: {
-        elevation: 2,
+        elevation: 2
+        ,
     },
     submitButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '700',
         marginLeft: 8,
     },

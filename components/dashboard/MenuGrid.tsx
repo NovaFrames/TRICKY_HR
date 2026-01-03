@@ -36,18 +36,16 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
         return color; // Return as is if it's named color or rgb
     };
 
-    /* -------------------- RESPONSIVE COLUMNS -------------------- */
-    const getColumns = () => {
-        if (width >= 900) return 5;
-        if (width >= 600) return 4;
-        return 3;
-    };
+    /* -------------------- FIXED 3 COLUMNS FOR MOBILE -------------------- */
+    const numColumns = 3; // Always 3 columns on mobile
+    const gap = 12; // Reduced gap to ensure 3 columns fit
 
-    const numColumns = getColumns();
-    const gap = 16;
-    const padding = 32;
-    const itemWidth =
-        (width - padding - gap * (numColumns - 1)) / numColumns;
+    // Parent container already has paddingHorizontal: 16
+    // So we calculate based on full width minus parent padding
+    const parentPadding = 32; // 16px on each side from parent
+    const availableWidth = width - parentPadding;
+    const totalGapWidth = gap * (numColumns - 1); // 2 gaps for 3 columns
+    const itemWidth = (availableWidth - totalGapWidth) / numColumns;
 
     return (
         <View style={[styles.gridContainer, { gap }]}>
@@ -108,7 +106,7 @@ const styles = StyleSheet.create({
 
     gridItem: {
         alignItems: 'center',
-        borderRadius: 20,
+        borderRadius: 10,
         padding: 12,
         paddingVertical: 16,
         shadowColor: '#000',
