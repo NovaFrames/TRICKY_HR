@@ -8,4 +8,8 @@ export const API_ENDPOINTS = {
     GET_PROJECT_LIST: '/WebApi/GetProjectList',
 
     SERVER_TIME: '/WebApi/GetServerTime',
+
+    HOLIDAY: '/WebApi/GetHolidayList',
+
+    CELEBRATION: '/WebApi/GetTodayCelebration',
 };

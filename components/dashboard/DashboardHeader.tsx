@@ -1,5 +1,5 @@
 import { useUser } from '@/context/UserContext';
-import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useCompanyLogo } from '@/hooks/useGetImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';

@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -15,6 +16,10 @@ export default function PayslipScreen() {
     useEffect(() => {
         loadPayslips();
     }, []);
+
+    useProtectedBack({
+        home: '/home'
+    });
 
     const loadPayslips = async () => {
         try {

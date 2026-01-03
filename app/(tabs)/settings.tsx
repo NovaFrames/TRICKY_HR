@@ -1,6 +1,6 @@
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
-import { useProfileImage } from '@/hooks/useCompanyLogo';
+import { useProfileImage } from '@/hooks/useGetImage';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';

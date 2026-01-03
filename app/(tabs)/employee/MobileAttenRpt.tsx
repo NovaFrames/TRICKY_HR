@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
@@ -46,6 +47,10 @@ export default function MobileAttenRpt() {
     const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState(false);
 
+    useProtectedBack({
+        home: '/home'
+    })
+
     // Format date for API (dd/MM/yyyy)
     const formatDateForApi = (date: Date) => {
         const day = String(date.getDate()).padStart(2, '0');
@@ -64,25 +69,26 @@ export default function MobileAttenRpt() {
     };
 
     // Parse DateC from the API (format: YYMMDDHHmmss)
+    // ✅ Correct format: DDMMYYYYHHmmss
     const parseDateFromApi = (dateC: string) => {
         try {
-            if (!dateC || dateC.length < 6) return new Date();
+            if (!dateC || dateC.length < 8) return new Date();
 
-            // Extract date parts from the string
-            // Assuming format: YYMMDDHHmmss
-            const year = parseInt(dateC.substring(0, 2)) + 2000; // Assuming 2000s
-            const month = parseInt(dateC.substring(2, 4)) - 1; // JS months are 0-indexed
-            const day = parseInt(dateC.substring(4, 6));
-            const hours = dateC.length >= 8 ? parseInt(dateC.substring(6, 8)) : 0;
-            const minutes = dateC.length >= 10 ? parseInt(dateC.substring(8, 10)) : 0;
-            const seconds = dateC.length >= 12 ? parseInt(dateC.substring(10, 12)) : 0;
+            const day = parseInt(dateC.substring(0, 2));
+            const month = parseInt(dateC.substring(2, 4)) - 1; // 0-based
+            const year = parseInt(dateC.substring(4, 8));
+
+            const hours = dateC.length >= 10 ? parseInt(dateC.substring(8, 10)) : 0;
+            const minutes = dateC.length >= 12 ? parseInt(dateC.substring(10, 12)) : 0;
+            const seconds = dateC.length >= 14 ? parseInt(dateC.substring(12, 14)) : 0;
 
             return new Date(year, month, day, hours, minutes, seconds);
-        } catch (error) {
-            console.error('Error parsing date:', error);
+        } catch (e) {
+            console.error('Date parse error:', e);
             return new Date();
         }
     };
+
 
     // Format the date from API for display
     const formatApiDateForDisplay = (dateC: string) => {
@@ -143,12 +149,20 @@ export default function MobileAttenRpt() {
         setAttendanceData([]);
 
         try {
+
+            const subtractOneDay = (date: Date) => {
+                const d = new Date(date);
+                d.setDate(d.getDate() - 1);
+                return d;
+            };
+
             const payload = {
                 TokenC: user.TokenC,
-                FromDate: formatDateForApi(fromDate),
+                FromDate: formatDateForApi(subtractOneDay(fromDate)), // 🔥 KEY FIX
                 ToDate: formatDateForApi(toDate),
                 Type: 0,
             };
+
 
             console.log('API Payload:', payload);
             console.log('API URL:', `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`);

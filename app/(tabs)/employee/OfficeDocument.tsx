@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -29,6 +30,10 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [downloading, setDownloading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    useProtectedBack({
+        home: '/home'
+    });
 
     useEffect(() => {
         fetchDocuments();

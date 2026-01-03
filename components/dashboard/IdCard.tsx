@@ -3,7 +3,7 @@ import React from 'react';
 import { Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useUser } from '@/context/UserContext';
-import { useProfileImage } from '@/hooks/useCompanyLogo';
+import { useProfileImage } from '@/hooks/useGetImage';
 import { ThemeType } from '../../theme/theme';
 
 interface IdCardProps {

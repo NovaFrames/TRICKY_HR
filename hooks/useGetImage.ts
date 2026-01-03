@@ -1,4 +1,6 @@
-const BASE_URL = 'https://hr.trickyhr.com';
+import { API_ENDPOINTS } from "@/constants/api";
+
+const BASE_URL = API_ENDPOINTS.CompanyUrl;
 
 export const useCompanyLogo = (
     customerIdC?: string | null,

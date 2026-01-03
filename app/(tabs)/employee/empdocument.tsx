@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -50,6 +51,10 @@ const empdocument: React.FC = () => {
     const [uploading, setUploading] = useState(false);
 
     const flatListRefs = useRef<{ [key: string]: FlatList | null }>({});
+
+    useProtectedBack({
+        home: '/home'
+    });
 
     useEffect(() => {
         fetchDocuments();
