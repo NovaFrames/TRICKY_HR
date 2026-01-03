@@ -4,10 +4,9 @@ import { useUser } from '@/context/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     FlatList,
     Platform,
@@ -17,11 +16,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-
-// Import new components
-import AttendanceCard from '@/components/attendance/AttendanceCard';
-import AttendanceTabs from '@/components/attendance/AttendanceTabs';
-import Header from '@/components/Header';
 
 // Types for Attendance Data
 export interface AttendanceShift {
@@ -44,13 +38,17 @@ export interface AttendanceOther {
     TOutN: number;
 }
 
-export default function MobileAttenRpt() {
+export default function AttendanceList() {
     const { theme } = useTheme();
     const { user } = useUser();
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<'SHIFT' | 'OTHERS'>('SHIFT');
 
     // Date states
-    const [fromDate, setFromDate] = useState(new Date());
+    const [fromDate, setFromDate] = useState(() => {
+        const d = new Date();
+        return new Date(d.getFullYear(), d.getMonth(), 1); // 1st of current month
+    });
     const [toDate, setToDate] = useState(new Date());
     const [showFromPicker, setShowFromPicker] = useState(false);
     const [showToPicker, setShowToPicker] = useState(false);
@@ -65,7 +63,7 @@ export default function MobileAttenRpt() {
 
     useEffect(() => {
         fetchAttendance();
-    }, []);
+    }, [activeTab, fromDate, toDate]);
 
     const formatDateForApi = (d: Date) => {
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -74,18 +72,13 @@ export default function MobileAttenRpt() {
         return `${month}/${day}/${year}`;
     };
 
-    const formatDateDisplay = (d: Date) => {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
+    const formatDisplayDate = (d: Date) => {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')} ${d.getFullYear()}`;
     };
 
     const fetchAttendance = async () => {
-        if (!token || !companyUrl) {
-            console.log('Missing token or company URL', { token, companyUrl });
-            return;
-        }
+        if (!token || !companyUrl) return;
 
         if (fromDate > toDate) {
             Alert.alert('Invalid Date Range', 'From date cannot be greater than To date.');
@@ -101,8 +94,6 @@ export default function MobileAttenRpt() {
                 TDate: formatDateForApi(toDate)
             };
 
-            console.log('Fetching Attendance Range:', url, payload);
-
             const response = await axios.post(url, payload);
 
             if (response.data.Status === 'success') {
@@ -115,165 +106,193 @@ export default function MobileAttenRpt() {
             }
         } catch (error) {
             console.error('Fetch Attendance Error:', error);
-            Alert.alert('Error', 'Failed to fetch attendance records. Please try again.');
+            Alert.alert('Error', 'Failed to fetch attendance records.');
         } finally {
             setLoading(false);
         }
     };
 
-    const onFromDateChange = (event: any, selectedDate?: Date) => {
-        setShowFromPicker(Platform.OS === 'ios');
+    const onChangeFrom = (event: any, selectedDate?: Date) => {
+        setShowFromPicker(false);
         if (selectedDate) {
             setFromDate(selectedDate);
-            if (selectedDate > toDate) {
-                setToDate(selectedDate);
-            }
         }
     };
 
-    const onToDateChange = (event: any, selectedDate?: Date) => {
-        setShowToPicker(Platform.OS === 'ios');
+    const onChangeTo = (event: any, selectedDate?: Date) => {
+        setShowToPicker(false);
         if (selectedDate) {
-            if (selectedDate < fromDate) {
-                Alert.alert('Invalid Date', 'To date cannot be earlier than From date.');
-                return;
-            }
             setToDate(selectedDate);
         }
     };
 
-    const renderEmptyState = () => (
-        <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIconContainer, { backgroundColor: theme.cardBackground }]}>
-                <Ionicons name="document-text-outline" size={60} color={theme.textLight} />
+    const renderHeader = () => (
+        <View style={styles.headerWrapper}>
+            <View style={styles.headerContainer}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View style={styles.navBar}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.navTitle, { color: theme.text }]}>Attendance List</Text>
+                    <View style={styles.iconButton} />
+                </View>
             </View>
-            <Text style={[styles.emptyText, { color: theme.text }]}>No records found</Text>
-            <Text style={[styles.emptySubtext, { color: theme.textLight }]}>
-                There are no attendance records for the selected date range.
-            </Text>
+
+            {/* Date Picker Card */}
+            <View style={styles.datePickerSection}>
+                <View style={[styles.dateCard, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
+                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
+                        <Text style={[styles.dateLabel, { color: theme.textLight }]}>From Date</Text>
+                        <View style={styles.dateRow}>
+                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
+                            <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(fromDate)}</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={[styles.dateDivider, { backgroundColor: theme.inputBorder }]} />
+
+                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowToPicker(true)}>
+                        <Text style={[styles.dateLabel, { color: theme.textLight }]}>To Date</Text>
+                        <View style={styles.dateRow}>
+                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
+                            <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(toDate)}</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
         </View>
     );
 
-    return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <Header title="Attendance List" />
-
-            {/* Date Range Selector */}
-            <View style={[styles.filterCard, { backgroundColor: theme.cardBackground }]}>
-                <View style={styles.dateRow}>
-                    <View style={styles.dateInputContainer}>
-                        <Text style={[styles.dateLabel, { color: theme.textLight }]}>From Date</Text>
-                        <TouchableOpacity
-                            style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
-                            onPress={() => setShowFromPicker(true)}
-                        >
-                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                            <Text style={[styles.dateButtonText, { color: theme.text }]}>{formatDateDisplay(fromDate)}</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.dateSeparator}>
-                        <Ionicons name="arrow-forward" size={16} color={theme.textLight} />
-                    </View>
-
-                    <View style={styles.dateInputContainer}>
-                        <Text style={[styles.dateLabel, { color: theme.textLight }]}>To Date</Text>
-                        <TouchableOpacity
-                            style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
-                            onPress={() => setShowToPicker(true)}
-                        >
-                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                            <Text style={[styles.dateButtonText, { color: theme.text }]}>{formatDateDisplay(toDate)}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
+    const renderTabs = () => (
+        <View style={[styles.tabsContainer, { backgroundColor: theme.cardBackground }]}>
+            {['SHIFT', 'OTHERS'].map((tab) => (
                 <TouchableOpacity
-                    style={styles.searchButton}
-                    onPress={fetchAttendance}
-                    disabled={loading}
+                    key={tab}
+                    style={[styles.tabItem, activeTab === tab && { backgroundColor: theme.primary }]}
+                    onPress={() => setActiveTab(tab as any)}
                 >
-                    <LinearGradient
-                        colors={[theme.primary, theme.primary + 'CC']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.gradientButton}
-                    >
-                        {loading ? (
-                            <ActivityIndicator size="small" color="#FFF" />
-                        ) : (
-                            <>
-                                <Ionicons name="search" size={20} color="#FFF" />
-                                <Text style={styles.searchButtonText}>Search Records</Text>
-                            </>
-                        )}
-                    </LinearGradient>
+                    <Text style={[styles.tabText, activeTab === tab ? styles.activeTabText : { color: theme.text }]}>
+                        {tab === 'SHIFT' ? 'SHIFT TIME' : 'OTHERS'}
+                    </Text>
                 </TouchableOpacity>
-            </View>
+            ))}
+        </View>
+    );
 
-            {/* Tabs */}
-            <AttendanceTabs
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                theme={theme}
-            />
+    const renderListHeader = () => {
+        const renderHeaderCell = (label: string, flexCb: number) => (
+            <Text style={[styles.headerCell, { flex: flexCb, color: theme.secondary }]}>{label}</Text>
+        );
 
-            {/* Content */}
-            {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                    <Text style={[styles.loadingText, { color: theme.textLight }]}>Fetching records...</Text>
+        if (activeTab === 'SHIFT') {
+            return (
+                <View style={[styles.listHeader, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
+                    {renderHeaderCell('Name', 1.5)}
+                    {renderHeaderCell('Shift', 1)}
+                    {renderHeaderCell('In', 0.8)}
+                    {renderHeaderCell('Out', 0.8)}
                 </View>
-            ) : activeTab === 'SHIFT' ? (
-                <FlatList<AttendanceShift>
-                    data={shiftData}
-                    renderItem={({ item, index }) => (
-                        <AttendanceCard
-                            item={item}
-                            index={index}
-                            theme={theme}
-                            type="SHIFT"
-                        />
+            );
+        } else {
+            return (
+                <View style={[styles.listHeader, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
+                    {renderHeaderCell('Name', 1.5)}
+                    {renderHeaderCell('Act', 0.8)}
+                    {renderHeaderCell('NRM', 0.8)}
+                    {renderHeaderCell('Late', 0.8)}
+                    {renderHeaderCell('Under', 0.8)}
+                </View>
+            );
+        }
+    };
+
+    const renderListItem = ({ item, index }: { item: any, index: number }) => {
+        const cellTextStyle = [styles.cellText, { color: theme.text }];
+        const cellBoldStyle = [styles.cellTextBold, { color: theme.text }];
+
+        if (activeTab === 'SHIFT') {
+            return (
+                <View style={[styles.row, { borderColor: theme.inputBorder }, index % 2 === 0 ? { backgroundColor: theme.cardBackground } : { backgroundColor: theme.background }]}>
+                    <View style={[styles.cell, { flex: 1.5 }]}>
+                        <Text style={cellBoldStyle} numberOfLines={1}>{item.EmpNameC}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 1 }]}>
+                        <Text style={cellTextStyle}>{item.ShiftCodeC}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{item.ShiftInN?.toFixed(2) || '0.00'}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{item.ShiftOutN?.toFixed(2) || '0.00'}</Text>
+                    </View>
+                </View>
+            );
+        } else {
+            return (
+                <View style={[styles.row, { borderColor: theme.inputBorder }, index % 2 === 0 ? { backgroundColor: theme.cardBackground } : { backgroundColor: theme.background }]}>
+                    <View style={[styles.cell, { flex: 1.5 }]}>
+                        <Text style={cellBoldStyle} numberOfLines={1}>{item.EmpNameC}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{item.ActN?.toFixed(2) || '0.00'}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{item.NRMN?.toFixed(2) || '0.00'}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{item.LateN?.toFixed(2) || '0.00'}</Text>
+                    </View>
+                    <View style={[styles.cell, { flex: 0.8 }]}>
+                        <Text style={cellTextStyle}>{item.UnderN?.toFixed(2) || '0.00'}</Text>
+                    </View>
+                </View>
+            );
+        }
+    };
+
+    return (
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+            <View style={[styles.listContainer, { backgroundColor: theme.cardBackground, flex: 1 }]}>
+                <FlatList
+                    ListHeaderComponent={() => (
+                        <View>
+                            {renderHeader()}
+                            {renderTabs()}
+                            {renderListHeader()}
+                        </View>
                     )}
+                    data={activeTab === 'SHIFT' ? shiftData : othersData}
+                    renderItem={renderListItem}
                     keyExtractor={(item, index) => `${item.EmpCodeC}-${index}`}
                     contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={renderEmptyState}
+                    refreshing={loading}
+                    onRefresh={fetchAttendance}
                     showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                            <Ionicons name="document-text-outline" size={64} color={theme.textLight} />
+                            <Text style={[styles.emptyText, { color: theme.textLight }]}>No records found</Text>
+                        </View>
+                    }
                 />
-            ) : (
-                <FlatList<AttendanceOther>
-                    data={othersData}
-                    renderItem={({ item, index }) => (
-                        <AttendanceCard
-                            item={item}
-                            index={index}
-                            theme={theme}
-                            type="OTHERS"
-                        />
-                    )}
-                    keyExtractor={(item, index) => `${item.EmpCodeC}-${index}`}
-                    contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={renderEmptyState}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+            </View>
 
             {showFromPicker && (
                 <DateTimePicker
                     value={fromDate}
                     mode="date"
                     display="default"
-                    onChange={onFromDateChange}
+                    onChange={onChangeFrom}
                     maximumDate={new Date()}
                 />
             )}
-
             {showToPicker && (
                 <DateTimePicker
                     value={toDate}
                     mode="date"
                     display="default"
-                    onChange={onToDateChange}
+                    onChange={onChangeTo}
                     maximumDate={new Date()}
                     minimumDate={fromDate}
                 />
@@ -283,108 +302,143 @@ export default function MobileAttenRpt() {
 }
 
 const styles = StyleSheet.create({
-    container: {
+    safeArea: {
         flex: 1,
     },
-    filterCard: {
-        margin: 16,
-        padding: 16,
+    headerWrapper: {
+        backgroundColor: 'transparent',
+    },
+    headerContainer: {
+        paddingTop: Platform.OS === 'ios' ? 0 : 10,
+        paddingBottom: 4,
+        zIndex: 1,
+    },
+    navBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    navTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    iconButton: {
+        padding: 8,
+        width: 44,
+        height: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    datePickerSection: {
+        paddingHorizontal: 16,
+        paddingVertical: 15,
+    },
+    dateCard: {
+        flexDirection: 'row',
         borderRadius: 16,
+        padding: 4,
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    dateRow: {
-        flexDirection: 'row',
+        shadowRadius: 8,
         alignItems: 'center',
-        marginBottom: 16,
+        borderWidth: 1,
     },
-    dateInputContainer: {
+    dateInput: {
         flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        alignItems: 'center',
     },
     dateLabel: {
         fontSize: 12,
         fontWeight: '600',
-        marginBottom: 6,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        marginBottom: 4,
     },
-    dateButton: {
+    dateRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 10,
-        borderWidth: 1,
-        gap: 8,
+        gap: 6
     },
-    dateButtonText: {
+    dateValue: {
         fontSize: 14,
+        fontWeight: '700',
+    },
+    dateDivider: {
+        width: 1,
+        height: '50%',
+    },
+    tabsContainer: {
+        flexDirection: 'row',
+        marginTop: 5,
+        marginHorizontal: 16,
+        borderRadius: 10,
+        padding: 4,
+    },
+    tabItem: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 8,
+    },
+    tabText: {
+        fontSize: 13,
         fontWeight: '600',
     },
-    dateSeparator: {
-        marginHorizontal: 8,
-        paddingTop: 20,
+    activeTabText: {
+        color: '#fff',
     },
-    searchButton: {
-        borderRadius: 12,
-        overflow: 'hidden',
+    listContainer: {
+        flex: 1,
+        marginTop: 0,
+        elevation: 2,
+        overflow: 'hidden'
     },
-    gradientButton: {
+    listHeader: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
         paddingVertical: 12,
-        gap: 8,
+        paddingHorizontal: 10,
+        borderBottomWidth: 1,
+        marginTop: 15,
     },
-    searchButtonText: {
-        color: '#FFF',
-        fontSize: 16,
+    headerCell: {
+        fontSize: 12,
         fontWeight: 'bold',
+        textAlign: 'center',
     },
     listContent: {
-        padding: 16,
-        paddingBottom: 32,
+        paddingBottom: 40,
     },
-    center: {
-        flex: 1,
+    row: {
+        flexDirection: 'row',
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderBottomWidth: 1,
+        alignItems: 'center',
+    },
+    cell: {
         justifyContent: 'center',
         alignItems: 'center',
     },
-    loadingText: {
-        marginTop: 12,
-        fontSize: 14,
+    cellText: {
+        fontSize: 12,
+        textAlign: 'center'
     },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 60,
-        paddingHorizontal: 40,
+    cellTextBold: {
+        fontSize: 12,
+        fontWeight: '600',
     },
-    emptyIconContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        justifyContent: 'center',
+    emptyState: {
         alignItems: 'center',
-        marginBottom: 16,
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        paddingTop: 50,
+        opacity: 0.6
     },
     emptyText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 8,
-    },
-    emptySubtext: {
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 20,
+        marginTop: 10,
+        fontSize: 16,
     },
 });
