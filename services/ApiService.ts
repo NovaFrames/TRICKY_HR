@@ -128,7 +128,11 @@ export const API_ENDPOINTS = {
 
     // Payslip
     GET_PAYSLIP_LIST: '/GetEmpPaySalList',
-    DOWNLOAD_PAYSLIP: '/DownloadPaySlip',
+    DOWNLOAD_PAYSLIP: '/DownloadEmpPaySlip',
+
+    // Calendar
+    GET_CALENDAR_EVENTS: '/GetLeaveCalender',
+    GET_CALENDAR_DETAILS: '/GetLeaveCalenderDtl',
 
 };
 
@@ -185,6 +189,18 @@ export interface PaySlip {
     YearN: number;
     PaySalIdN: number;
     PayTypeC: string;
+}
+
+export interface CalendarEvent {
+    DescC: string;
+    LDateD: string; // Format: /Date(1518028200000)/
+}
+
+export interface CalendarLeaveDetail {
+    EmpCodeC: string;
+    DescC: string;
+    RemarksC: string;
+    LeaveTypeC: string;
 }
 
 
@@ -976,6 +992,63 @@ class ApiService {
         } catch (error) {
             console.error('Download error:', error);
             return null;
+        }
+    }
+    async getCalendarEvents(month: number, year: number): Promise<{ success: boolean; data?: CalendarEvent[]; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_CALENDAR_EVENTS,
+                {
+                    TokenC: this.token,
+                    Year: year,
+                    Month: month
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.cllist };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
+    async getCalendarDetails(dateStr: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+        // dateStr should be formatted as "MMM dd yyyy"
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_CALENDAR_DETAILS,
+                {
+                    TokenC: this.token,
+                    StartDate: dateStr
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.xx };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
         }
     }
 }
