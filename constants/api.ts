@@ -12,4 +12,6 @@ export const API_ENDPOINTS = {
     HOLIDAY: '/WebApi/GetHolidayList',
 
     CELEBRATION: '/WebApi/GetTodayCelebration',
+
+    ATTENDANCE_LIST: '/WebApi/GetEmployee_AttendanceList',
 };

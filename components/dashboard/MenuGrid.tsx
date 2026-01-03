@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React from 'react';
 import {
@@ -74,16 +73,15 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                             }
                         }}
                     >
-                        <LinearGradient
-                            colors={[safeColor(iconColor, '15'), safeColor(iconColor, '08')]}
-                            style={styles.gridIconBox}
+                        <View
+                            style={[styles.gridIconBox, { backgroundColor: iconColor + '15' }]}
                         >
                             <IconLib
                                 name={iconName as any}
                                 size={22}
                                 color={iconColor}
                             />
-                        </LinearGradient>
+                        </View>
 
                         <Text
                             style={[
@@ -123,7 +121,7 @@ const styles = StyleSheet.create({
     gridIconBox: {
         width: 50,
         height: 50,
-        borderRadius: 18,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,

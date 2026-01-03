@@ -10,6 +10,7 @@ import {
     Alert,
     FlatList,
     Platform,
+    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -349,103 +350,65 @@ export default function MobileAttenRpt() {
     };
 
     return (
-        <View style={styles.container}>
-            {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#4A90E2" />
-                    <Text style={styles.loadingText}>Fetching attendance records...</Text>
+        <SafeAreaView style={styles.container}>
+            <Header title="Attendance Report" />
+
+            <View style={styles.filterContainer}>
+                <View style={styles.dateRow}>
+                    <View style={styles.dateInputContainer}>
+                        <Text style={styles.dateLabel}>From Date</Text>
+                        <TouchableOpacity
+                            style={styles.dateButton}
+                            onPress={() => setShowFromPicker(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="calendar" size={18} color="#4A90E2" />
+                            <Text style={styles.dateButtonText}>{formatDateForDisplay(fromDate)}</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.dateSeparator}>
+                        <Ionicons name="arrow-forward" size={16} color="#888" />
+                    </View>
+
+                    <View style={styles.dateInputContainer}>
+                        <Text style={styles.dateLabel}>To Date</Text>
+                        <TouchableOpacity
+                            style={styles.dateButton}
+                            onPress={() => setShowToPicker(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="calendar" size={18} color="#4A90E2" />
+                            <Text style={styles.dateButtonText}>{formatDateForDisplay(toDate)}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            ) : (
-                <FlatList
-                    ListHeaderComponent={() => (
-                        <View>
-                            <Header title="Attendance Report" />
 
-                            <View style={styles.filterContainer}>
-                                <View style={styles.dateRow}>
-                                    <View style={styles.dateInputContainer}>
-                                        <Text style={styles.dateLabel}>From Date</Text>
-                                        <TouchableOpacity
-                                            style={styles.dateButton}
-                                            onPress={() => setShowFromPicker(true)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Ionicons name="calendar" size={18} color="#4A90E2" />
-                                            <Text style={styles.dateButtonText}>{formatDateForDisplay(fromDate)}</Text>
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    <View style={styles.dateSeparator}>
-                                        <Ionicons name="arrow-forward" size={16} color="#888" />
-                                    </View>
-
-                                    <View style={styles.dateInputContainer}>
-                                        <Text style={styles.dateLabel}>To Date</Text>
-                                        <TouchableOpacity
-                                            style={styles.dateButton}
-                                            onPress={() => setShowToPicker(true)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Ionicons name="calendar" size={18} color="#4A90E2" />
-                                            <Text style={styles.dateButtonText}>{formatDateForDisplay(toDate)}</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
-                                <TouchableOpacity
-                                    style={styles.searchButton}
-                                    onPress={fetchAttendanceReport}
-                                    activeOpacity={0.8}
-                                    disabled={loading}
-                                >
-                                    <LinearGradient
-                                        colors={fromDate.toDateString() === toDate.toDateString() ? ['#6C63FF', '#5A52D3'] : ['#4A90E2', '#357ABD']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        style={styles.gradientButton}
-                                    >
-                                        {loading ? (
-                                            <ActivityIndicator size="small" color="#FFF" />
-                                        ) : (
-                                            <>
-                                                <Ionicons name="search" size={20} color="#FFF" />
-                                                <Text style={styles.searchButtonText}>
-                                                    {fromDate.toDateString() === toDate.toDateString() ? 'Search Today' : 'Search Range'}
-                                                </Text>
-                                            </>
-                                        )}
-                                    </LinearGradient>
-                                </TouchableOpacity>
-                            </View>
-
-                            {attendanceData.length > 0 ? (
-                                <View style={styles.resultsHeader}>
-                                    <Text style={styles.resultsTitle}>Attendance Records</Text>
-                                    <Text style={styles.resultsCount}>{getTotalRecordsText()}</Text>
-                                </View>
-                            ) : null}
-                        </View>
-                    )}
-                    data={attendanceData}
-                    renderItem={renderItem}
-                    keyExtractor={(item, index) => `${item.EmpIdN}-${item.DateC}-${index}`}
-                    contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={
-                        !loading && (
-                            <View style={styles.emptyContainer}>
-                                <View style={styles.emptyIconContainer}>
-                                    <Ionicons name="calendar-outline" size={80} color="#E0E0E0" />
-                                </View>
-                                <Text style={styles.emptyText}>No attendance records</Text>
-                                <Text style={styles.emptySubText}>
-                                    Select a date range and tap 'Search Records' to view attendance history
+                <TouchableOpacity
+                    style={styles.searchButton}
+                    onPress={fetchAttendanceReport}
+                    activeOpacity={0.8}
+                    disabled={loading}
+                >
+                    <LinearGradient
+                        colors={fromDate.toDateString() === toDate.toDateString() ? ['#6C63FF', '#5A52D3'] : ['#4A90E2', '#357ABD']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.gradientButton}
+                    >
+                        {loading ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                            <>
+                                <Ionicons name="search" size={20} color="#FFF" />
+                                <Text style={styles.searchButtonText}>
+                                    {fromDate.toDateString() === toDate.toDateString() ? 'Search Today' : 'Search Range'}
                                 </Text>
-                            </View>
-                        )
-                    }
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+                            </>
+                        )}
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
 
             {showFromPicker && (
                 <DateTimePicker
@@ -467,7 +430,43 @@ export default function MobileAttenRpt() {
                     minimumDate={fromDate}
                 />
             )}
-        </View>
+
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4A90E2" />
+                    <Text style={styles.loadingText}>Fetching attendance records...</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={attendanceData}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => `${item.EmpIdN}-${item.DateC}-${index}`}
+                    contentContainerStyle={styles.listContent}
+                    ListHeaderComponent={
+                        attendanceData.length > 0 ? (
+                            <View style={styles.resultsHeader}>
+                                <Text style={styles.resultsTitle}>Attendance Records</Text>
+                                <Text style={styles.resultsCount}>{getTotalRecordsText()}</Text>
+                            </View>
+                        ) : null
+                    }
+                    ListEmptyComponent={
+                        !loading && (
+                            <View style={styles.emptyContainer}>
+                                <View style={styles.emptyIconContainer}>
+                                    <Ionicons name="calendar-outline" size={80} color="#E0E0E0" />
+                                </View>
+                                <Text style={styles.emptyText}>No attendance records</Text>
+                                <Text style={styles.emptySubText}>
+                                    Select a date range and tap 'Search Records' to view attendance history
+                                </Text>
+                            </View>
+                        )
+                    }
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
+        </SafeAreaView>
     );
 }
 
