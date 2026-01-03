@@ -241,7 +241,10 @@ export default function SettingsScreen() {
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
             {/* Settings */}
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
                 <DashboardHeader isDark={isDark} theme={theme} />
 
                 {/* Header */}
@@ -322,7 +325,8 @@ export default function SettingsScreen() {
 
 /* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
-    container: { flex: 1, paddingBottom: 120 },
+    container: { flex: 1 },
+    scrollContent: { paddingBottom: 100 },
     headerContainer: { padding: 12 }, // Reduced from 20
     screenTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8 }, // Smaller title
     profileCard: { borderRadius: 16, padding: 12, elevation: 2 }, // Compact card
