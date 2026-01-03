@@ -126,6 +126,10 @@ export const API_ENDPOINTS = {
     // Office Documents
     GET_OFFICE_DOCUMENTS: '/GetEmpDocumentsGridList',
 
+    // Payslip
+    GET_PAYSLIP_LIST: '/GetEmpPaySalList',
+    DOWNLOAD_PAYSLIP: '/DownloadPaySlip',
+
 };
 
 // Types
@@ -173,6 +177,14 @@ export interface SurrenderData {
     SurrenderN: number;
     PayoutDateD: string;
     RemarksC: string;
+}
+
+export interface PaySlip {
+    PayDateD: string;
+    MonthN: number;
+    YearN: number;
+    PaySalIdN: number;
+    PayTypeC: string;
 }
 
 
@@ -761,6 +773,87 @@ class ApiService {
         } catch (error) {
             console.log('Error fetching documents', error);
             return [];
+        }
+    }
+
+    async getPaySlipList(): Promise<{ success: boolean; data?: PaySlip[]; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_PAYSLIP_LIST,
+                {
+                    TokenC: this.token,
+                    EmpIdN: this.empId,
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.data };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error',
+            };
+        }
+    }
+
+    async downloadPaySlip(paySlip: PaySlip): Promise<{ success: boolean; url?: string; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            // Get additional user data needed for URL construction
+            const userDataStr = await AsyncStorage.getItem('user_data');
+            const userData = userDataStr ? JSON.parse(userDataStr) : null;
+
+            if (!this.token || !this.empId || !userData) {
+                return { success: false, error: 'Authentication or user details missing' };
+            }
+
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const payPeriod = `${months[paySlip.MonthN - 1]} ${paySlip.YearN}`;
+
+            // 1. Trigger the API to generate/prepare the PDF (Method 70 in Java)
+            // Even if we construct the URL manually, some backends require this trigger.
+            try {
+                await axios.post(
+                    BASE_URL + API_ENDPOINTS.DOWNLOAD_PAYSLIP,
+                    {
+                        TokenC: this.token,
+                        Month: paySlip.MonthN,
+                        Year: paySlip.YearN,
+                        PayPeriod: payPeriod,
+                        PayTypeC: paySlip.PayTypeC
+                    },
+                    { headers: this.getHeaders() }
+                );
+            } catch (e) {
+                console.log('Trigger PDF gen error (ignoring if URL works):', e);
+            }
+
+            // 2. Construct the URL
+            const companyId = userData.CompIdN || userData.CompanyId;
+            const customerId = userData.CustomerIdC || userData.DomainId;
+            const companyUrl = 'https://hr.trickyhr.com'; // Or from storage if dynamic
+
+            // Pattern from Java: company_url+"/kevit-Customer/"+customer_id+"/"+company_id+ "/EmpPortal/EmpPaySlip/"+emp_id+"/" + pay_period+".pdf"
+            const downloadUrl = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/EmpPaySlip/${this.empId}/${payPeriod}.pdf`;
+
+            return { success: true, url: downloadUrl };
+
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error',
+            };
         }
     }
 
