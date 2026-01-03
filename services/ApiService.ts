@@ -134,6 +134,9 @@ export const API_ENDPOINTS = {
     GET_CALENDAR_EVENTS: '/GetLeaveCalender',
     GET_CALENDAR_DETAILS: '/GetLeaveCalenderDtl',
 
+    // Employee List
+    GET_EMPLOYEE_LIST: '/GetSup_EmployeeList',
+
 };
 
 // Types
@@ -201,6 +204,13 @@ export interface CalendarLeaveDetail {
     DescC: string;
     RemarksC: string;
     LeaveTypeC: string;
+}
+
+export interface Employee {
+    NameC: string;
+    CodeC: string;
+    EmpIdN: number;
+    DescC: string; // Designation
 }
 
 
@@ -1041,6 +1051,33 @@ class ApiService {
 
             if (response.data.Status === 'success') {
                 return { success: true, data: response.data.xx };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
+    async getEmployeeList(): Promise<{ success: boolean; data?: Employee[]; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_EMPLOYEE_LIST,
+                {
+                    TokenC: this.token
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.data };
             } else {
                 return { success: false, error: response.data.Error };
             }
