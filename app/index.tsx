@@ -42,19 +42,24 @@ export default function LoginScreen() {
     const { theme } = useTheme();
 
     // Animation Values
-    const animationProgress = useSharedValue(0); // 0 to 1
+    const animationProgress = useSharedValue(0);
+    const formItemsProgress = useSharedValue(0);
 
     useEffect(() => {
-        // Start Animation Sequence
         const startAnimation = async () => {
             // Wait a bit for the splash feel
             await new Promise(resolve => setTimeout(resolve, 800));
 
             // Animate to Login State
-            // Using withTiming for smooth, non-bouncy transition
             animationProgress.value = withTiming(1, {
                 duration: 1200,
-                easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Ease-in-out cubic
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            }, () => {
+                // Once primary animation finishes, stagger the form items
+                formItemsProgress.value = withTiming(1, {
+                    duration: 800,
+                    easing: Easing.out(Easing.quad),
+                });
             });
         };
 
@@ -108,24 +113,15 @@ export default function LoginScreen() {
         }
     };
 
-    // --- Animated Styles ---
+    // --- Animated Styles (Blob Design) ---
 
     // 1. The Blob (Background Shape)
     const blobStyle = useAnimatedStyle(() => {
-        // Interpolate values based on progress (0 -> 1)
-
-        // Size
         const w = interpolate(animationProgress.value, [0, 1], [width * 0.8, width * 1.5]);
         const h = interpolate(animationProgress.value, [0, 1], [width * 0.8, height * 0.5]);
-
-        // Position
         const top = interpolate(animationProgress.value, [0, 1], [height / 2 - (width * 0.4), height * 0.85]);
         const left = interpolate(animationProgress.value, [0, 1], [width / 2 - (width * 0.4), -width * 0.2]);
-
-        // Border Radius
         const radius = interpolate(animationProgress.value, [0, 1], [width * 0.4, width * 0.8]);
-
-        // Rotation (optional, for organic feel)
         const rotate = interpolate(animationProgress.value, [0, 1], [0, -15]);
 
         return {
@@ -139,10 +135,10 @@ export default function LoginScreen() {
         };
     });
 
-    // 2. Logo Animation
+    // 2. Logo Animation (Center to Top)
     const logoStyle = useAnimatedStyle(() => {
-        const top = interpolate(animationProgress.value, [0, 1], [height / 2 - 50, height * 0.15]);
-        const scale = interpolate(animationProgress.value, [0, 1], [1, 0.8]);
+        const top = interpolate(animationProgress.value, [0, 1], [height / 2 - 50, height * 0.12]);
+        const scale = interpolate(animationProgress.value, [0, 1], [1.1, 0.9]);
 
         return {
             top: top,
@@ -150,34 +146,53 @@ export default function LoginScreen() {
         };
     });
 
-    const logoTextStyle = useAnimatedStyle(() => {
-        const color = interpolateColor(
+    const logoTextStyle = useAnimatedStyle(() => ({
+        color: interpolateColor(
             animationProgress.value,
             [0, 1],
-            [theme.textLight, theme.primary] // white → primary
-        );
-
-        return {
-            color,
-        };
-    });
-
+            [theme.textLight, theme.primary]
+        ),
+    }));
 
     // 3. Form Fade In
-    const formStyle = useAnimatedStyle(() => {
-        const opacity = interpolate(animationProgress.value, [0.6, 1], [0, 1]);
-        const translateY = interpolate(animationProgress.value, [0.6, 1], [50, 0]);
+    const formStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(animationProgress.value, [0.7, 1], [0, 1]),
+        transform: [{ translateY: interpolate(animationProgress.value, [0.7, 1], [20, 0]) }],
+    }));
 
-        return {
-            opacity,
-            transform: [{ translateY }],
-            zIndex: animationProgress.value > 0.5 ? 10 : -1, // Ensure form is clickable only when visible
-        };
-    });
+    // 4. Staggered Item Animations
+    const itemStyle0 = useAnimatedStyle(() => ({
+        opacity: interpolate(formItemsProgress.value, [0, 0.4], [0, 1], 'clamp'),
+        translateX: interpolate(formItemsProgress.value, [0, 0.4], [20, 0], 'clamp'),
+    }));
+
+    const itemStyle1 = useAnimatedStyle(() => ({
+        opacity: interpolate(formItemsProgress.value, [0.1, 0.5], [0, 1], 'clamp'),
+        translateX: interpolate(formItemsProgress.value, [0.1, 0.5], [20, 0], 'clamp'),
+    }));
+
+    const itemStyle2 = useAnimatedStyle(() => ({
+        opacity: interpolate(formItemsProgress.value, [0.2, 0.6], [0, 1], 'clamp'),
+        translateX: interpolate(formItemsProgress.value, [0.2, 0.6], [20, 0], 'clamp'),
+    }));
+
+    const itemStyle3 = useAnimatedStyle(() => ({
+        opacity: interpolate(formItemsProgress.value, [0.3, 0.7], [0, 1], 'clamp'),
+        translateX: interpolate(formItemsProgress.value, [0.3, 0.7], [20, 0], 'clamp'),
+    }));
+
+    const itemStyle4 = useAnimatedStyle(() => ({
+        opacity: interpolate(formItemsProgress.value, [0.4, 0.8], [0, 1], 'clamp'),
+        translateX: interpolate(formItemsProgress.value, [0.4, 0.8], [20, 0], 'clamp'),
+    }));
+
+    const itemStyle5 = useAnimatedStyle(() => ({
+        opacity: interpolate(formItemsProgress.value, [0.5, 0.9], [0, 1], 'clamp'),
+        translateX: interpolate(formItemsProgress.value, [0.5, 0.9], [20, 0], 'clamp'),
+    }));
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-
             {/* The Blob Element */}
             <Animated.View style={[styles.blob, blobStyle]} />
 
@@ -193,68 +208,77 @@ export default function LoginScreen() {
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <SafeAreaView style={styles.safeArea}>
 
-                            {/* Logo Section (Absolute to animate freely) */}
+                            {/* Logo Section (Absolute to animate) */}
                             <Animated.View style={[styles.logoContainer, logoStyle]}>
-                                {/* Using Text for Logo as per reference "Ventures Pastries" style */}
                                 <Animated.Text style={[styles.logoText, logoTextStyle]}>
                                     trickyhr
                                 </Animated.Text>
-
                                 <Text style={[styles.tagline, { color: theme.text }]}>Sign in to Continue</Text>
                             </Animated.View>
 
-                            {/* Login Form Section */}
+                            {/* Form Section */}
                             <Animated.View style={[styles.formContainer, formStyle]}>
-                                <View style={styles.welcomeContainer}>
+                                <Animated.View style={[styles.welcomeSection, itemStyle0]}>
                                     <Text style={[styles.welcomeTitle, { color: theme.text }]}>Welcome</Text>
-                                </View>
+                                    <Text style={[styles.welcomeSubtitle, { color: theme.textLight }]}>Enter your credentials</Text>
+                                </Animated.View>
 
-                                {/* EMPCODE Input */}
-                                <CustomInput
-                                    placeholder="EmpCode"
-                                    value={empCode}
-                                    onChangeText={setEmpCode}
-                                    autoCapitalize="none"
-                                />
+                                <Animated.View style={itemStyle1}>
+                                    <CustomInput
+                                        placeholder="Employee Code"
+                                        value={empCode}
+                                        onChangeText={setEmpCode}
+                                        autoCapitalize="none"
+                                        icon="user"
+                                    />
+                                </Animated.View>
 
-                                {/* PASSWORD Input */}
-                                <CustomInput
-                                    placeholder="Password"
-                                    secureTextEntry={!isPasswordVisible}
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    icon={isPasswordVisible ? "eye" : "eye-off"}
-                                    onIconPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                                />
+                                <Animated.View style={itemStyle2}>
+                                    <CustomInput
+                                        placeholder="Password"
+                                        secureTextEntry={!isPasswordVisible}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        icon={isPasswordVisible ? "eye" : "eye-off"}
+                                        onIconPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                                    />
+                                </Animated.View>
 
-                                {/* Domain Id Input */}
-                                <CustomInput
-                                    placeholder="Domain Id"
-                                    value={domainId}
-                                    onChangeText={setDomainId}
-                                    autoCapitalize="none"
-                                />
+                                <Animated.View style={itemStyle3}>
+                                    <CustomInput
+                                        placeholder="Domain ID"
+                                        value={domainId}
+                                        onChangeText={setDomainId}
+                                        autoCapitalize="none"
+                                        icon="server"
+                                    />
+                                </Animated.View>
 
-                                {/* Domain Url Input */}
-                                <CustomInput
-                                    placeholder="Domain Url"
-                                    value={domainUrl}
-                                    onChangeText={setDomainUrl}
-                                    autoCapitalize="none"
-                                />
+                                <Animated.View style={itemStyle4}>
+                                    <CustomInput
+                                        placeholder="Server URL"
+                                        value={domainUrl}
+                                        onChangeText={setDomainUrl}
+                                        autoCapitalize="none"
+                                        icon="link"
+                                    />
+                                </Animated.View>
 
-                                {/* Sign In Button */}
-                                <CustomButton
-                                    title="Log in"
-                                    onPress={handleLogin}
-                                    isLoading={isLoading}
-                                />
-
+                                <Animated.View style={itemStyle5}>
+                                    <CustomButton
+                                        title="Sign In"
+                                        onPress={handleLogin}
+                                        isLoading={isLoading}
+                                        style={styles.actionButton}
+                                    />
+                                </Animated.View>
                             </Animated.View>
 
-                            {/* Footer Text on top of Blob */}
                             <Animated.View style={[styles.footer, formStyle]}>
-                                <Text style={[styles.footerText, { color: theme.textLight }]}>@created by trickyhr</Text>
+                                <Text style={styles.footerText}>
+                                    <Text style={{ color: '#FFFFFF90' }}>@created by </Text>
+                                    <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Novaframes</Text>
+                                </Text>
                             </Animated.View>
 
                         </SafeAreaView>
@@ -275,7 +299,6 @@ const styles = StyleSheet.create({
     },
     blob: {
         position: 'absolute',
-        // Initial dimensions and position handled by Animated Style
     },
     logoContainer: {
         position: 'absolute',
@@ -285,45 +308,55 @@ const styles = StyleSheet.create({
         zIndex: 20,
     },
     logoText: {
-        fontSize: 36,
+        fontSize: 44,
         fontWeight: '900',
-        // For simplicity, let's assume the logo moves OUT of the blob to the white area.
+        letterSpacing: -2,
     },
     tagline: {
         fontSize: 14,
-        fontWeight: '600',
-        letterSpacing: 2,
-        marginTop: 5,
+        fontWeight: '700',
+        letterSpacing: 1.5,
+        marginTop: 4,
+        textTransform: 'uppercase',
     },
     formContainer: {
         width: '100%',
-        paddingHorizontal: 30,
-        marginTop: height * 0.25, // Push down to make room for logo
+        paddingHorizontal: 28,
+        marginTop: height * 0.22,
         zIndex: 10,
     },
-    welcomeContainer: {
+    welcomeSection: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 32,
     },
     welcomeTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        letterSpacing: 1,
+        fontSize: 28,
+        fontWeight: '900',
+        letterSpacing: -0.5,
     },
-    keyboardAvoidingView: {
-        width: '100%',
+    welcomeSubtitle: {
+        fontSize: 14,
+        marginTop: 4,
+        opacity: 0.6,
+    },
+    domainRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 20,
+    },
+    actionButton: {
+        marginTop: 10,
+        borderRadius: 14,
     },
     footer: {
         marginTop: 'auto',
-        paddingBottom: 30,
+        paddingVertical: 24,
         alignItems: 'center',
     },
     footerText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    signUpText: {
-        fontWeight: 'bold',
-        textDecorationLine: 'underline',
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 2,
+        textTransform: 'uppercase',
     },
 });

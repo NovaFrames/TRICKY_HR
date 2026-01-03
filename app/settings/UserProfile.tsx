@@ -146,14 +146,13 @@ export default function UserProfile() {
     /* -------------------- RENDER -------------------- */
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <Header title="Profile" />
-
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                <Header title="Profile" />
 
                 {/* Basic Information */}
                 <DetailCard
@@ -279,7 +278,7 @@ export default function UserProfile() {
                 </DetailCard>
 
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 

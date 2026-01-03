@@ -71,14 +71,9 @@ export default function EmpRequestPage() {
 
     const TABS = ['Waiting', 'Approved', 'Rejected'];
 
-    return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Stack.Screen options={{ headerShown: false }} />
-
-            {/* Modern Header - Matching Leave Management */}
+    const renderListHeader = () => (
+        <View>
             <Header title="Request Status" />
-
-            {/* Modern Capsule Tab Selector */}
             <View style={styles.tabSection}>
                 <View style={[styles.tabOuterContainer, { backgroundColor: theme.inputBg }]}>
                     {TABS.map((tab) => {
@@ -105,6 +100,12 @@ export default function EmpRequestPage() {
                     })}
                 </View>
             </View>
+        </View>
+    );
+
+    return (
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <Stack.Screen options={{ headerShown: false }} />
 
             {loading ? (
                 <View style={styles.center}>
@@ -113,6 +114,7 @@ export default function EmpRequestPage() {
                 </View>
             ) : (
                 <FlatList
+                    ListHeaderComponent={renderListHeader}
                     data={filteredRequests}
                     renderItem={({ item }) => (
                         <RequestStatusItem
@@ -199,7 +201,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingTop: 10,
-        paddingBottom: 40,
+        paddingBottom: 120,
     },
     center: {
         flex: 1,

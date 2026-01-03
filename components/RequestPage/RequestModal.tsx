@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import ApiService from '../../services/ApiService';
+import AppModal from '../common/AppModal';
 
 interface RequestModalProps {
     visible: boolean;
@@ -11,27 +12,8 @@ interface RequestModalProps {
 }
 
 const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) => {
-    const { theme, isDark } = useTheme();
-    const [scaleValue] = useState(new Animated.Value(0));
+    const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (visible) {
-            Animated.spring(scaleValue, {
-                toValue: 1,
-                useNativeDriver: true,
-                tension: 65,
-                friction: 11
-            }).start();
-        } else {
-            Animated.timing(scaleValue, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [visible]);
-
 
     if (!item) return null;
 
@@ -135,121 +117,50 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
     );
 
     return (
-        <Modal
+        <AppModal
             visible={visible}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Animated.View
-                    style={[
-                        styles.modalContent,
-                        {
-                            backgroundColor: theme.cardBackground,
-                            transform: [{ scale: scaleValue }]
-                        }
-                    ]}
+            onClose={onClose}
+            title="Request Details"
+            subtitle={`Ref: #${item.IdN || 'N/A'}`}
+            footer={(status.toLowerCase().includes('waiting') || status.toLowerCase().includes('pending')) ? (
+                <TouchableOpacity
+                    style={[styles.cancelButton]}
+                    onPress={handleCancelLeave}
+                    disabled={loading}
                 >
-                    <View style={[styles.modalHeader, { borderBottomColor: theme.inputBorder }]}>
-                        <View>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>Request Details</Text>
-                            <Text style={[styles.modalSubtitle, { color: theme.placeholder }]}>Ref: #{item.IdN || 'N/A'}</Text>
-                        </View>
-                        <TouchableOpacity
-                            onPress={onClose}
-                            style={[styles.closeIcon, { backgroundColor: theme.inputBg }]}
-                        >
-                            <Ionicons name="close" size={20} color={theme.text} />
-                        </TouchableOpacity>
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <Text style={styles.cancelButtonText}>Cancel Request</Text>
+                    )}
+                </TouchableOpacity>
+            ) : null}
+        >
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                <View style={styles.badgeRow}>
+                    <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+                        <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+                        <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
+                            {statusInfo.label}
+                        </Text>
                     </View>
+                </View>
 
-                    <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                        <View style={styles.badgeRow}>
-                            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
-                                <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
-                                <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
-                                    {statusInfo.label}
-                                </Text>
-                            </View>
-                        </View>
-
-                        <DetailItem icon="document-text-outline" label="DESCRIPTION" value={description} />
-                        <DetailItem icon="calendar-outline" label="REQUEST DATE" value={formatDate(requestDate)} />
-                        {rangeDescription ? (
-                            <DetailItem icon="time-outline" label="SCHEDULE/DURATION" value={rangeDescription} />
-                        ) : null}
-                        <DetailItem icon="chatbubble-outline" label="REMARKS" value={item.LVRemarksC || item.RemarksC} />
-                    </ScrollView>
-
-                    <View style={[styles.modalFooter, { borderTopColor: theme.inputBorder }]}>
-                        {(status.toLowerCase().includes('waiting') || status.toLowerCase().includes('pending')) && (
-                            <TouchableOpacity
-                                style={[styles.cancelButton]}
-                                onPress={handleCancelLeave}
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.cancelButtonText}>Cancel Request</Text>
-                                )}
-                            </TouchableOpacity>
-                        )}
-                        <TouchableOpacity
-                            style={[styles.closeButtonFull, { backgroundColor: theme.primary }]}
-                            onPress={onClose}
-                        >
-                            <Text style={styles.closeButtonText}>Done</Text>
-                        </TouchableOpacity>
-                    </View>
-                </Animated.View>
-            </View>
-        </Modal>
+                <DetailItem icon="document-text-outline" label="DESCRIPTION" value={description} />
+                <DetailItem icon="calendar-outline" label="REQUEST DATE" value={formatDate(requestDate)} />
+                {rangeDescription ? (
+                    <DetailItem icon="time-outline" label="SCHEDULE/DURATION" value={rangeDescription} />
+                ) : null}
+                <DetailItem icon="chatbubble-outline" label="REMARKS" value={item.LVRemarksC || item.RemarksC} />
+            </ScrollView>
+        </AppModal>
     );
 };
 
 const styles = StyleSheet.create({
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-    },
-    modalContent: {
-        width: '100%',
-        borderRadius: 28,
-        elevation: 10,
-        maxHeight: '85%',
-        overflow: 'hidden',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 24,
-        borderBottomWidth: 1,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: '800',
-        letterSpacing: -0.5,
-    },
-    modalSubtitle: {
-        fontSize: 12,
-        fontWeight: '600',
-        marginTop: 2,
-    },
-    closeIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     modalBody: {
-        padding: 24,
+        padding: 18,
+        flexShrink: 1,
     },
     badgeRow: {
         flexDirection: 'row',
@@ -299,22 +210,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         lineHeight: 22,
-    },
-    modalFooter: {
-        padding: 24,
-        borderTopWidth: 1,
-        gap: 12,
-    },
-    closeButtonFull: {
-        height: 56,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    closeButtonText: {
-        color: '#fff',
-        fontWeight: '700',
-        fontSize: 16,
     },
     cancelButton: {
         height: 56,

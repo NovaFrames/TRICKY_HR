@@ -12,7 +12,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabBar, TabView } from 'react-native-tab-view';
 import DocumentCard from '../../../components/UploadDocument/DocumentCard';
 import UploadDocumentModal from '../../../components/UploadDocument/UploadDocumentModal';
@@ -163,6 +162,7 @@ const empdocument: React.FC = () => {
                 data={filteredDocuments}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
+                ListHeaderComponent={() => <Header title="Documents" />}
                 ListEmptyComponent={renderEmpty}
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
@@ -195,10 +195,7 @@ const empdocument: React.FC = () => {
     }
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.inputBg }]} edges={['bottom']}>
-            {/* Standard Header */}
-            <Header title="Documents" />
-
+        <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
             {/* Tab View */}
             <TabView
                 navigationState={{ index, routes }}
@@ -229,7 +226,7 @@ const empdocument: React.FC = () => {
                 onUpload={handleUpload}
                 uploading={uploading}
             />
-        </SafeAreaView>
+        </View>
     );
 };
 

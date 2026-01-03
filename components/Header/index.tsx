@@ -8,21 +8,20 @@ export default function Header({ title }: { title: string }) {
     const { theme, isDark } = useTheme();
     const router = useRouter();
 
-
     return (
         <View style={[{ backgroundColor: theme.background }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            {/* Modern Header - Matching Leave Management */}
-            <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
+            {/* Simple Minimal Header */}
+            <View style={styles.headerContainer}>
                 <View style={styles.navBar}>
                     <TouchableOpacity
                         onPress={() => router.back()}
                         style={styles.iconButton}
                     >
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text style={styles.navTitle}>{title}</Text>
+                    <Text style={[styles.navTitle, { color: theme.text }]}>{title}</Text>
                     <View style={styles.headerRight} />
                 </View>
             </View>
@@ -31,39 +30,31 @@ export default function Header({ title }: { title: string }) {
 }
 
 const styles = StyleSheet.create({
-
     headerContainer: {
-        paddingTop: 30,
-        paddingBottom: 15,
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
+        paddingTop: 10,
+        paddingBottom: 4,
         zIndex: 1,
     },
     navBar: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingHorizontal: 8, // Tighter horizontal padding
+        paddingVertical: 4,
     },
     navTitle: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     iconButton: {
-        padding: 8,
-        width: 44,
-        height: 44,
+        padding: 4,
+        width: 36,
+        height: 36,
         justifyContent: 'center',
         alignItems: 'center',
     },
     headerRight: {
-        width: 40,
+        width: 36,
     },
 });

@@ -9,6 +9,7 @@ import Animated, {
     useSharedValue,
     withTiming
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
@@ -40,6 +41,7 @@ export function AnimatedTabBar({
 }: BottomTabBarProps) {
 
     const { theme, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
 
     const curveX = useSharedValue(
         state.index * TAB_WIDTH + TAB_WIDTH / 2
@@ -70,7 +72,7 @@ export function AnimatedTabBar({
          ${x + CURVE_WIDTH / 4} 0,
          ${x + CURVE_WIDTH / 2} 0
         H${width}
-        V80
+        V${TAB_BAR_HEIGHT}
         H0
         Z
       `,
@@ -91,7 +93,7 @@ export function AnimatedTabBar({
         isTabKey(activeRoute) ? iconMap[activeRoute] : 'ellipse';
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { height: TAB_BAR_HEIGHT + insets.bottom, backgroundColor: theme.background }]}>
             {/* SVG CURVE */}
             <Svg width={width} height={TAB_BAR_HEIGHT} style={styles.svg}>
                 <AnimatedPath
@@ -101,12 +103,12 @@ export function AnimatedTabBar({
             </Svg>
 
             {/* FLOATING CIRCLE */}
-            <Animated.View style={[styles.circle, circleStyle, { backgroundColor: theme.primary }]}>
+            <Animated.View style={[styles.circle, circleStyle, { backgroundColor: theme.primary, bottom: insets.bottom + 15 }]}>
                 <Ionicons name={activeIcon} size={28} color={theme.background} />
             </Animated.View>
 
             {/* TAB BUTTONS */}
-            <View style={styles.row}>
+            <View style={[styles.row, { paddingBottom: 0 }]}>
                 {state.routes.map((route, index) => {
                     if (!isTabKey(route.name)) return null;
 
@@ -138,15 +140,15 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         width,
-        height: 70,
     },
     svg: {
         position: 'absolute',
-        bottom: 0,
+        top: 0, // Align SVG to the top of the container
     },
     row: {
         flexDirection: 'row',
-        height: 60,
+        height: TAB_BAR_HEIGHT,
+        zIndex: 1,
     },
     tab: {
         width: TAB_WIDTH,
@@ -155,7 +157,6 @@ const styles = StyleSheet.create({
     },
     circle: {
         position: 'absolute',
-        bottom: 15,
         left: TAB_WIDTH / 2 - 30,
         width: 60,
         height: 60,
@@ -163,5 +164,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 6,
+        zIndex: 2,
     },
 });

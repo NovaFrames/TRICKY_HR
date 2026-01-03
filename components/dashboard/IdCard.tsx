@@ -5,6 +5,7 @@ import { Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from
 import { useUser } from '@/context/UserContext';
 import { useProfileImage } from '@/hooks/useGetImage';
 import { ThemeType } from '../../theme/theme';
+import { TeamLeaders } from './TeamLeaders';
 
 interface IdCardProps {
     empName: string;
@@ -70,6 +71,11 @@ export const IdCard: React.FC<IdCardProps> = ({
                     </View>
                 </View>
 
+                {/* Integration of Supervisors list inside IdCard */}
+                <View style={{ borderTopWidth: 1, borderTopColor: theme.inputBorder, paddingTop: 12, marginBottom: 4, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <TeamLeaders theme={theme} showHeader={false} />
+                </View>
+
                 <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: isTracking ? '#10B981' : '#CBD5E1', justifyContent: 'center', alignItems: 'center' }}>
@@ -102,21 +108,21 @@ export const IdCard: React.FC<IdCardProps> = ({
 
 const styles = StyleSheet.create({
     idCard: {
-        borderRadius: 24,
-        marginBottom: 24,
+        borderRadius: 12, // Reduced from 24
+        marginBottom: 16, // Reduced from 24
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,
         elevation: 4,
     },
     idCardGradient: {
-        borderRadius: 24,
-        padding: 24,
+        borderRadius: 20,
+        padding: 16, // Reduced from 24
     },
     idCardTop: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 12, // Reduced from 20
     },
     avatarLarge: {
         width: 80,

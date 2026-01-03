@@ -29,7 +29,8 @@ const DASHBOARD_MENU_ACTIONS = [
 
 /* -------------------- LAYOUT -------------------- */
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 64) / 2;
+const GAP = 12;
+const CARD_WIDTH = (width - 32 - GAP) / 2;
 
 /* -------------------- ICON PARSER -------------------- */
 const getFontAwesomeIcon = (
@@ -106,9 +107,9 @@ const styles = StyleSheet.create({
 
     card: {
         width: CARD_WIDTH,
-        borderRadius: 24,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: 16, // Reduced from 24
+        padding: 12, // Reduced from 16
+        marginBottom: 12, // Reduced from 16
         shadowColor: '#000', // Neutral shadow
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
@@ -117,22 +118,22 @@ const styles = StyleSheet.create({
     },
 
     iconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40, // Reduced from 48
+        height: 40, // Reduced from 48
+        borderRadius: 12, // Reduced from 24
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 8, // Reduced from 16
     },
 
     title: {
-        fontSize: 16,
+        fontSize: 14, // Reduced from 16
         fontWeight: '700',
-        marginBottom: 4,
+        marginBottom: 2, // Reduced from 4
     },
 
     subtitle: {
-        fontSize: 12,
+        fontSize: 11, // Reduced from 12
         fontWeight: '500',
     },
 });

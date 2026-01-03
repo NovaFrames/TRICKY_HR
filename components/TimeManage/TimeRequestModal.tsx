@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import ApiService from '../../services/ApiService';
+import AppModal from '../common/AppModal';
 import BottomSelection from '../common/BottomSelection';
 
 interface TimeRequestModalProps {
@@ -39,50 +40,28 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
 
     useEffect(() => {
         if (visible) {
-            getEmpId();
             fetchProjects();
-            // Reset form logic if needed, but keeping existing state is sometimes better or reset here
-            setFormData(prev => ({
-                ...prev,
+            setFormData({
                 date: new Date(),
                 projectId: 0,
                 requestType: 'In Time',
                 inTime: '00:00',
                 outTime: '00:00',
                 remarks: '',
-            }));
+            });
         }
     }, [visible]);
-
-    const getEmpId = async () => {
-        const id = await AsyncStorage.getItem('EmpId');
-        // Logic if needed
-    };
 
     const fetchProjects = async () => {
         try {
             const { token } = ApiService.getCurrentUser();
             if (!token) return;
-
             const result = await ApiService.getProjectList(token);
-            // Result is either array or { Status: 'success', data: [...] } based on ApiService
-            // ApiService.ts says: return response?.data?.data || response?.data || [];
-            // So result IS the data array (or object if structure differs).
-            // Let's assume result is the array directly or contains data.
-            // Previous code used result.success check. 
-            // If ApiService returns array directly, result.success is undefined.
-            // Let's check if array.
-
             let projectsData = [];
-            if (Array.isArray(result)) {
-                projectsData = result;
-            } else if (result && result.data && Array.isArray(result.data)) {
-                projectsData = result.data;
-            } else if (result && result.Status === 'success' && Array.isArray(result.data)) {
-                projectsData = result.data;
-            }
+            if (Array.isArray(result)) projectsData = result;
+            else if (result?.data && Array.isArray(result.data)) projectsData = result.data;
+            else if (result?.Status === 'success' && Array.isArray(result.data)) projectsData = result.data;
 
-            // Safety check
             if (projectsData.length > 0) {
                 const mapped = projectsData.map((p: any) => ({
                     label: p.ProjectNameC || p.NameC || `Project ${p.ProjectIdN || p.IdN}`,
@@ -90,7 +69,6 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                 }));
                 setProjects(mapped);
             }
-
         } catch (error) {
             console.log('Error fetching projects', error);
         }
@@ -106,37 +84,22 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
         try {
             const currentUser = ApiService.getCurrentUser();
             const empId = currentUser?.empId || await AsyncStorage.getItem('EmpId');
-
             if (!empId) {
                 Alert.alert('Error', 'User ID not found');
-                setLoading(false);
                 return;
             }
 
             const d = formData.date;
             const dateString = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-
             const requests = [];
 
             if (formData.requestType === 'In Time') {
-                requests.push({
-                    InTimeN: formData.inTime,
-                    OutTimeN: '00:00'
-                });
+                requests.push({ InTimeN: formData.inTime, OutTimeN: '00:00' });
             } else if (formData.requestType === 'Out Time') {
-                requests.push({
-                    InTimeN: '00:00',
-                    OutTimeN: formData.outTime
-                });
+                requests.push({ InTimeN: '00:00', OutTimeN: formData.outTime });
             } else if (formData.requestType === 'In & Out Time') {
-                requests.push({
-                    InTimeN: formData.inTime,
-                    OutTimeN: '00:00'
-                });
-                requests.push({
-                    InTimeN: '00:00',
-                    OutTimeN: formData.outTime
-                });
+                requests.push({ InTimeN: formData.inTime, OutTimeN: '00:00' });
+                requests.push({ InTimeN: '00:00', OutTimeN: formData.outTime });
             }
 
             let successCount = 0;
@@ -148,20 +111,15 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                     model: {
                         EmpIdN: Number(empId),
                         DateD: dateString,
-                        InTimeN: req.InTimeN.replace(':', '.'), // Send as string "HH.MM"
-                        OutTimeN: req.OutTimeN.replace(':', '.'), // Send as string "HH.MM"
+                        InTimeN: req.InTimeN.replace(':', '.'),
+                        OutTimeN: req.OutTimeN.replace(':', '.'),
                         ProjectIdN: formData.projectId,
                         TMSRemarksC: formData.remarks
                     }
                 };
-
                 const result = await ApiService.submitTimeRequest(payload);
-
-                if (result.success) {
-                    successCount++;
-                } else {
-                    errorMsg = result.error || 'Failed';
-                }
+                if (result.success) successCount++;
+                else errorMsg = result.error || 'Failed';
             }
 
             if (successCount === requests.length) {
@@ -169,171 +127,159 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                 onSuccess?.();
                 onClose();
             } else {
-                if (successCount > 0) {
-                    Alert.alert('Partial Success', 'Some requests submitted, others failed: ' + errorMsg);
-                    onSuccess?.();
-                    onClose();
-                } else {
-                    Alert.alert('Error', errorMsg || 'Failed to submit request');
-                }
+                Alert.alert(successCount > 0 ? 'Partial Success' : 'Error', errorMsg || 'Failed to submit request');
+                if (successCount > 0) { onSuccess?.(); onClose(); }
             }
         } catch (error) {
-            console.log(error);
             Alert.alert('Error', 'An unexpected error occurred');
         } finally {
             setLoading(false);
         }
     };
 
-    const formatDate = (date: Date) => {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `${months[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')} ${date.getFullYear()}`;
-    };
-
-    // Shared Styles using Theme
-    const inputStyle = [styles.inputContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }];
-    const labelStyle = [styles.label, { color: theme.textLight }];
-    const textStyle = [styles.inputText, { color: theme.text }];
-    const pickerStyle = [styles.pickerContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }];
+    const labelStyle = [styles.label, { color: theme.text }];
+    const inputStyle = [styles.inputWrapper, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }];
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.overlay}>
-                <View style={[styles.container, { backgroundColor: theme.cardBackground }]}>
-                    <View style={styles.header}>
-                        <Text style={[styles.title, { color: theme.primary }]}>Time Request</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={24} color={theme.icon} />
+        <>
+            <AppModal
+                visible={visible}
+                onClose={onClose}
+                title="Time Request"
+                footer={
+                    <View style={styles.footerRow}>
+                        <TouchableOpacity
+                            style={[styles.footerButton, styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
+                            onPress={onClose}
+                            disabled={loading}
+                        >
+                            <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.footerButton, styles.submitButton, { backgroundColor: theme.primary }]}
+                            onPress={handleSubmit}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <>
+                                    <Ionicons name="send" size={20} color="#fff" />
+                                    <Text style={styles.submitButtonText}>Submit Request</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                }
+            >
+                <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    {/* Date Field (Read-only as per policy usually, but shown as fixed) */}
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>Date</Text>
+                        <View style={inputStyle}>
+                            <Text style={{ color: theme.text }}>{formData.date.toLocaleDateString()}</Text>
+                            <Ionicons name="calendar-outline" size={20} color={theme.icon} />
+                        </View>
+                    </View>
+
+                    {/* Project Dropdown */}
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>Project</Text>
+                        <TouchableOpacity
+                            style={inputStyle}
+                            onPress={() => setShowProjectSelector(true)}
+                        >
+                            <Text style={{ color: formData.projectId ? theme.text : theme.placeholder }}>
+                                {formData.projectId ? projects.find(p => p.value === formData.projectId)?.label : 'Select Project'}
+                            </Text>
+                            <Ionicons name="chevron-down" size={24} color={theme.icon} />
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.form}>
-                        {/* Date Field */}
-                        <View style={styles.field}>
-                            <Text style={labelStyle}>Date</Text>
-                            <View style={inputStyle}>
-                                <Text style={textStyle}>{formatDate(formData.date)}</Text>
-                                <Ionicons name="calendar-outline" size={20} color={theme.icon} />
-                            </View>
-                        </View>
-
-                        {/* Project Dropdown */}
-                        <View style={styles.field}>
-                            <Text style={labelStyle}>Project</Text>
-                            <TouchableOpacity
-                                style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                                onPress={() => setShowProjectSelector(true)}
-                            >
-                                <Text style={[styles.selectorText, { color: formData.projectId ? theme.text : theme.placeholder }]}>
-                                    {formData.projectId ? projects.find(p => p.value === formData.projectId)?.label : '--Select--'}
-                                </Text>
-                                <Ionicons name="chevron-down" size={24} color={theme.icon} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Request Type */}
-                        <View style={styles.field}>
-                            <Text style={labelStyle}>Request Type</Text>
-                            <TouchableOpacity
-                                style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                                onPress={() => setShowRequestTypeSelector(true)}
-                            >
-                                <Text style={[styles.selectorText, { color: theme.text }]}>
-                                    {formData.requestType}
-                                </Text>
-                                <Ionicons name="chevron-down" size={24} color={theme.icon} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* In Time / Out Time Inputs */}
-                        <View style={styles.row}>
-                            {(formData.requestType === 'In Time' || formData.requestType === 'In & Out Time') && (
-                                <View style={[styles.field, { flex: 1 }]}>
-                                    <Text style={labelStyle}>In Time</Text>
-                                    <TouchableOpacity
-                                        style={inputStyle}
-                                        onPress={() => setShowInTimePicker(true)}
-                                    >
-                                        <Text style={textStyle}>{formData.inTime}</Text>
-                                        <Ionicons name="time-outline" size={20} color={theme.icon} />
-                                    </TouchableOpacity>
-                                    {showInTimePicker && (
-                                        <DateTimePicker
-                                            value={new Date()}
-                                            mode="time"
-                                            is24Hour={true}
-                                            display="default"
-                                            onChange={(event, selectedDate) => {
-                                                setShowInTimePicker(false);
-                                                if (selectedDate) {
-                                                    const hours = String(selectedDate.getHours()).padStart(2, '0');
-                                                    const minutes = String(selectedDate.getMinutes()).padStart(2, '0');
-                                                    setFormData(prev => ({ ...prev, inTime: `${hours}:${minutes}` }));
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                </View>
-                            )}
-
-                            {(formData.requestType === 'Out Time' || formData.requestType === 'In & Out Time') && (
-                                <View style={[styles.field, { flex: 1 }]}>
-                                    <Text style={labelStyle}>Out Time</Text>
-                                    <TouchableOpacity
-                                        style={inputStyle}
-                                        onPress={() => setShowOutTimePicker(true)}
-                                    >
-                                        <Text style={textStyle}>{formData.outTime}</Text>
-                                        <Ionicons name="time-outline" size={20} color={theme.icon} />
-                                    </TouchableOpacity>
-                                    {showOutTimePicker && (
-                                        <DateTimePicker
-                                            value={new Date()}
-                                            mode="time"
-                                            is24Hour={true}
-                                            display="default"
-                                            onChange={(event, selectedDate) => {
-                                                setShowOutTimePicker(false);
-                                                if (selectedDate) {
-                                                    const hours = String(selectedDate.getHours()).padStart(2, '0');
-                                                    const minutes = String(selectedDate.getMinutes()).padStart(2, '0');
-                                                    setFormData(prev => ({ ...prev, outTime: `${hours}:${minutes}` }));
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                </View>
-                            )}
-                        </View>
-
-                        {/* Remarks */}
-                        <View style={styles.field}>
-                            <Text style={labelStyle}>Remarks</Text>
-                            <TextInput
-                                style={[styles.inputContainer, styles.inputText, styles.textArea, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                                value={formData.remarks}
-                                onChangeText={(text) => setFormData(prev => ({ ...prev, remarks: text }))}
-                                placeholder="Enter reason"
-                                placeholderTextColor={theme.placeholder}
-                                multiline
-                                numberOfLines={3}
-                            />
-                        </View>
-
-                        {/* Buttons */}
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={[styles.button, styles.cancelButton, { borderColor: theme.inputBorder, backgroundColor: theme.background }]} onPress={onClose} disabled={loading}>
-                                <Text style={[styles.cancelButtonText, { color: theme.textLight }]}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.button, styles.submitButton, { backgroundColor: theme.primary }]} onPress={handleSubmit} disabled={loading}>
-                                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Submit</Text>}
-                            </TouchableOpacity>
-                        </View>
+                    {/* Request Type */}
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>Request Type</Text>
+                        <TouchableOpacity
+                            style={inputStyle}
+                            onPress={() => setShowRequestTypeSelector(true)}
+                        >
+                            <Text style={{ color: theme.text }}>{formData.requestType}</Text>
+                            <Ionicons name="chevron-down" size={24} color={theme.icon} />
+                        </TouchableOpacity>
                     </View>
-                </View>
-            </View>
 
-            {/* Bottom Selectors */}
+                    {/* In/Out Time */}
+                    <View style={styles.timeRow}>
+                        {(formData.requestType === 'In Time' || formData.requestType === 'In & Out Time') && (
+                            <View style={styles.timeGroup}>
+                                <Text style={labelStyle}>In Time</Text>
+                                <TouchableOpacity style={inputStyle} onPress={() => setShowInTimePicker(true)}>
+                                    <Text style={{ color: theme.text }}>{formData.inTime}</Text>
+                                    <Ionicons name="time-outline" size={20} color={theme.icon} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                        {(formData.requestType === 'Out Time' || formData.requestType === 'In & Out Time') && (
+                            <View style={styles.timeGroup}>
+                                <Text style={labelStyle}>Out Time</Text>
+                                <TouchableOpacity style={inputStyle} onPress={() => setShowOutTimePicker(true)}>
+                                    <Text style={{ color: theme.text }}>{formData.outTime}</Text>
+                                    <Ionicons name="time-outline" size={20} color={theme.icon} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>Remarks</Text>
+                        <TextInput
+                            style={[styles.input, styles.textArea, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                            value={formData.remarks}
+                            onChangeText={(text) => setFormData(prev => ({ ...prev, remarks: text }))}
+                            placeholder="Reason for request"
+                            placeholderTextColor={theme.placeholder}
+                            multiline
+                            numberOfLines={4}
+                        />
+                    </View>
+                </ScrollView>
+            </AppModal>
+
+            {/* Time Pickers */}
+            {showInTimePicker && (
+                <DateTimePicker
+                    value={new Date()}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={(event, date) => {
+                        setShowInTimePicker(false);
+                        if (date) {
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            setFormData(prev => ({ ...prev, inTime: `${hours}:${minutes}` }));
+                        }
+                    }}
+                />
+            )}
+            {showOutTimePicker && (
+                <DateTimePicker
+                    value={new Date()}
+                    mode="time"
+                    is24Hour={true}
+                    display="default"
+                    onChange={(event, date) => {
+                        setShowOutTimePicker(false);
+                        if (date) {
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            setFormData(prev => ({ ...prev, outTime: `${hours}:${minutes}` }));
+                        }
+                    }}
+                />
+            )}
+
             <BottomSelection
                 visible={showProjectSelector}
                 onClose={() => setShowProjectSelector(false)}
@@ -342,7 +288,6 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                 selectedValue={formData.projectId}
                 onSelect={(val) => setFormData(prev => ({ ...prev, projectId: val }))}
             />
-
             <BottomSelection
                 visible={showRequestTypeSelector}
                 onClose={() => setShowRequestTypeSelector(false)}
@@ -351,115 +296,82 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                 selectedValue={formData.requestType}
                 onSelect={(val) => setFormData(prev => ({ ...prev, requestType: val }))}
             />
-        </Modal>
+        </>
     );
 };
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        padding: 20,
+    scrollContent: {
+        padding: 18,
+        flexShrink: 1,
     },
-    container: {
-        borderRadius: 16,
-        padding: 24,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    form: {
-        gap: 16,
-    },
-    field: {
-        gap: 8,
-    },
-    row: {
-        flexDirection: 'row',
-        gap: 16
+    formGroup: {
+        marginBottom: 20,
     },
     label: {
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: '700',
+        marginBottom: 8,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    inputText: {
-        flex: 1,
-        fontSize: 14,
-    },
-    selectorContainer: {
+    inputWrapper: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: 14,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 14,
     },
-    selectorText: {
-        fontSize: 14,
-    },
-    pickerContainer: {
-        borderWidth: 1,
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    picker: {
-        height: 50,
-        width: '100%',
-    },
-    textArea: {
-        minHeight: 80,
-        textAlignVertical: 'top',
-        paddingTop: 12,
-    },
-    buttonContainer: {
+    timeRow: {
         flexDirection: 'row',
         gap: 12,
-        marginTop: 60,
+        marginBottom: 20,
     },
-    button: {
+    timeGroup: {
         flex: 1,
+    },
+    input: {
+        borderWidth: 1,
+        borderRadius: 14,
+        paddingHorizontal: 16,
         paddingVertical: 14,
-        borderRadius: 8,
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    textArea: {
+        minHeight: 100,
+        textAlignVertical: 'top',
+    },
+    footerRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    footerButton: {
+        flex: 1,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        height: 56,
+        borderRadius: 16,
     },
     cancelButton: {
         borderWidth: 1,
     },
-    submitButton: {
-        elevation: 2,
-    },
     cancelButtonText: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
+    },
+    submitButton: {
+        elevation: 2,
     },
     submitButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '600',
-    }
+        fontWeight: '700',
+        marginLeft: 8,
+    },
 });
 
 export default TimeRequestModal;

@@ -1,3 +1,4 @@
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProfileImage } from '@/hooks/useGetImage';
@@ -6,7 +7,6 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import {
     Image,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -16,7 +16,7 @@ import {
     View,
 } from 'react-native';
 
-/* -------------------- TYPES -------------------- */
+/* -------------------- TYPES ------------------- */
 
 type IconProps = {
     color?: string;
@@ -237,39 +237,41 @@ export default function SettingsScreen() {
 
     /* -------------------- RENDER -------------------- */
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-
-            {/* Header */}
-            <View style={styles.headerContainer}>
-                <Text style={[styles.screenTitle, { color: theme.text }]}>
-                    Settings
-                </Text>
-
-                <View style={[styles.profileCard, { backgroundColor: theme.cardBackground }]}>
-                    <View style={styles.profileContent}>
-                        <Image
-                            source={{
-                                uri:
-                                    profileImage ||
-                                    'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
-                            }}
-                            style={styles.avatar}
-                        />
-                        <View style={styles.userInfo}>
-                            <Text style={[styles.userName, { color: theme.text }]}>
-                                {user?.EmpNameC}
-                            </Text>
-                            <Text style={[styles.userId, { color: theme.secondary }]}>
-                                ID: {user?.EmpCodeC}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
 
             {/* Settings */}
             <ScrollView showsVerticalScrollIndicator={false}>
+                <DashboardHeader isDark={isDark} theme={theme} />
+
+                {/* Header */}
+                <View style={styles.headerContainer}>
+                    <Text style={[styles.screenTitle, { color: theme.text }]}>
+                        Settings
+                    </Text>
+
+                    <View style={[styles.profileCard, { backgroundColor: theme.cardBackground }]}>
+                        <View style={styles.profileContent}>
+                            <Image
+                                source={{
+                                    uri:
+                                        profileImage ||
+                                        'https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg',
+                                }}
+                                style={styles.avatar}
+                            />
+                            <View style={styles.userInfo}>
+                                <Text style={[styles.userName, { color: theme.text }]}>
+                                    {user?.EmpNameC}
+                                </Text>
+                                <Text style={[styles.userId, { color: theme.secondary }]}>
+                                    ID: {user?.EmpCodeC}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+
                 {SETTINGS_SECTIONS.map((section, sectionIndex) => (
                     <View key={section.title} style={styles.section}>
                         <SectionHeader title={section.title} />
@@ -314,13 +316,13 @@ export default function SettingsScreen() {
                     </Text>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 
 /* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
-    container: { flex: 1, paddingBottom: 60 },
+    container: { flex: 1, paddingBottom: 120 },
     headerContainer: { padding: 12 }, // Reduced from 20
     screenTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8 }, // Smaller title
     profileCard: { borderRadius: 16, padding: 12, elevation: 2 }, // Compact card

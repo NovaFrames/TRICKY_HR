@@ -5,7 +5,6 @@ import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
 import ApiService from '../../../services/ApiService';
 
@@ -21,9 +20,11 @@ export default function TimeManage() {
     const [timeData, setTimeData] = useState<any[]>([]);
 
     // Dates for filter
-    // Dates for filter
-    const [fromDate, setFromDate] = useState(new Date('2025-12-02'));
-    const [toDate, setToDate] = useState(new Date('2026-01-01'));
+    const [fromDate, setFromDate] = useState(() => {
+        const d = new Date();
+        return new Date(d.getFullYear(), d.getMonth(), 1); // 1st of current month
+    });
+    const [toDate, setToDate] = useState(new Date());
     const [showFromPicker, setShowFromPicker] = useState(false);
     const [showToPicker, setShowToPicker] = useState(false);
 
@@ -31,10 +32,10 @@ export default function TimeManage() {
     // User example: "01/01/2024"
     // User example: "01/01/2024"
     const formatDateForApi = (d: Date) => {
-        const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear();
-        return `${month}/${day}/${year}`;
+        return `${day}/${month}/${year}`;
     };
 
     useProtectedBack({
@@ -199,18 +200,18 @@ export default function TimeManage() {
 
     const renderHeader = () => (
         <View style={styles.headerWrapper}>
-            <View style={[styles.headerContainer, { backgroundColor: theme.primary }]}>
+            <View style={styles.headerContainer}>
                 <Stack.Screen options={{ headerShown: false }} />
                 <View style={styles.navBar}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text style={styles.navTitle}>Time Management</Text>
+                    <Text style={[styles.navTitle, { color: theme.text }]}>Time Management</Text>
                     <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={downloading}>
                         {downloading ? (
-                            <ActivityIndicator color="#fff" size="small" />
+                            <ActivityIndicator color={theme.text} size="small" />
                         ) : (
-                            <Ionicons name="download-outline" size={24} color="#fff" />
+                            <Ionicons name="download-outline" size={24} color={theme.text} />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -238,23 +239,6 @@ export default function TimeManage() {
                     </TouchableOpacity>
                 </View>
             </View>
-
-            {showFromPicker && (
-                <DateTimePicker
-                    value={fromDate}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeFrom}
-                />
-            )}
-            {showToPicker && (
-                <DateTimePicker
-                    value={toDate}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeTo}
-                />
-            )}
         </View>
     );
 
@@ -407,13 +391,16 @@ export default function TimeManage() {
     };
 
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom']}>
-            {renderHeader()}
-            {renderTabs()}
-
-            <View style={[styles.listContainer, { backgroundColor: theme.cardBackground }]}>
-                {renderListHeader()}
+        <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
+            <View style={[styles.listContainer, { backgroundColor: theme.cardBackground, flex: 1 }]}>
                 <FlatList
+                    ListHeaderComponent={() => (
+                        <View>
+                            {renderHeader()}
+                            {renderTabs()}
+                            {renderListHeader()}
+                        </View>
+                    )}
                     data={timeData}
                     renderItem={renderListItem}
                     keyExtractor={(item, index) => index.toString()}
@@ -466,7 +453,7 @@ export default function TimeManage() {
                     onChange={onChangeTo}
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -478,28 +465,21 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     headerContainer: {
-        paddingTop: 50,
-        paddingBottom: 15,
-        borderBottomLeftRadius: 16,
-        borderBottomRightRadius: 16,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
+        paddingTop: 10,
+        paddingBottom: 4,
         zIndex: 1,
     },
     navBar: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
     },
     navTitle: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: '700',
+        letterSpacing: -0.3,
     },
     iconButton: {
         padding: 8,
@@ -576,10 +556,10 @@ const styles = StyleSheet.create({
     listContainer: {
         flex: 1,
         marginTop: 15,
-        marginHorizontal: 16,
+        // marginHorizontal: 16,
         marginBottom: 0,
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
+        // borderTopLeftRadius: 12,
+        // borderTopRightRadius: 12,
         elevation: 2,
         overflow: 'hidden'
     },
@@ -598,7 +578,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     listContent: {
-        paddingBottom: 80, // Space for FAB
+        paddingBottom: 120, // Space for nav + FAB
     },
     row: {
         flexDirection: 'row',

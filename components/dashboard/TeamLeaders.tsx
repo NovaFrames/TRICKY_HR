@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 interface TeamLeadersProps {
     theme: any;
+    showHeader?: boolean;
 }
 
 /* 🔹 Sample Team Leads Data */
@@ -26,14 +27,15 @@ const TEAM_LEADS = [
 
 export const TeamLeaders: React.FC<TeamLeadersProps> = ({
     theme,
+    showHeader = true,
 }) => {
 
     return (
         <View
-            style={styles.container}
+            style={[styles.container, !showHeader && { marginBottom: 12 }]}
         >
             <View style={styles.header}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Supervisors</Text>
+                {showHeader && <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Supervisors</Text>}
 
                 {/* 🔹 Team Leaders (Instagram Style) */}
                 <View style={styles.teamRow}>
@@ -59,16 +61,16 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 24,
+        marginBottom: 16, // Reduced from 24
     },
     header: {
         alignItems: 'flex-start', // Left-aligned
     },
 
     sectionTitle: {
-        fontSize: 18, // Matched with Quick Actions
-        fontWeight: '700', // Matched with Quick Actions
-        marginBottom: 16, // Matched with Quick Actions
+        fontSize: 16, // Reduced from 18
+        fontWeight: '700',
+        marginBottom: 12, // Reduced from 16
     },
 
     /* 🔹 Team leaders styles */

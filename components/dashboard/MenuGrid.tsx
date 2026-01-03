@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React from 'react';
 import {
@@ -21,6 +22,21 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
     theme,
     getMenuIcon,
 }) => {
+
+    const safeColor = (color: string, alpha: string) => {
+        if (!color || typeof color !== 'string') return theme.primary + alpha;
+        if (color.startsWith('#')) {
+            if (color.length === 4) {
+                // Expand short hex #ABC to #AABBCC
+                const expanded = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+                return expanded + alpha;
+            }
+            if (color.length === 7) return color + alpha;
+            return color;
+        }
+        return color; // Return as is if it's named color or rgb
+    };
+
     /* -------------------- RESPONSIVE COLUMNS -------------------- */
     const getColumns = () => {
         if (width >= 900) return 5;
@@ -29,8 +45,8 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
     };
 
     const numColumns = getColumns();
-    const gap = 14;
-    const padding = 40;
+    const gap = 16;
+    const padding = 32;
     const itemWidth =
         (width - padding - gap * (numColumns - 1)) / numColumns;
 
@@ -39,6 +55,7 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
             {menuItems.map((item: any, index: number) => {
                 const { lib: IconLib, name: iconName } =
                     getMenuIcon(item.MenuNameC);
+                const iconColor = item.IconcolorC || theme.primary;
 
                 return (
                     <TouchableOpacity
@@ -48,8 +65,6 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                             {
                                 width: itemWidth,
                                 backgroundColor: theme.cardBackground,
-                                borderColor: theme.inputBorder,
-                                borderWidth: 1,
                             },
                         ]}
                         activeOpacity={0.7}
@@ -59,28 +74,23 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                             }
                         }}
                     >
-                        <View
-                            style={[
-                                styles.gridIconBox,
-                                {
-                                    backgroundColor:
-                                        (item.IconcolorC || theme.primary) + '12',
-                                },
-                            ]}
+                        <LinearGradient
+                            colors={[safeColor(iconColor, '15'), safeColor(iconColor, '08')]}
+                            style={styles.gridIconBox}
                         >
                             <IconLib
                                 name={iconName as any}
-                                size={24}
-                                color={item.IconcolorC || theme.primary}
+                                size={22}
+                                color={iconColor}
                             />
-                        </View>
+                        </LinearGradient>
 
                         <Text
                             style={[
                                 styles.gridLabel,
                                 { color: theme.text },
                             ]}
-                            numberOfLines={1}
+                            numberOfLines={2}
                         >
                             {item.MenuNameC}
                         </Text>
@@ -100,29 +110,31 @@ const styles = StyleSheet.create({
 
     gridItem: {
         alignItems: 'center',
-        marginBottom: 14,
         borderRadius: 20,
-        padding: 16,
+        padding: 12,
+        paddingVertical: 16,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.04,
         shadowRadius: 10,
-        elevation: 2,
+        elevation: 3,
     },
 
     gridIconBox: {
-        width: 54,
-        height: 54,
-        borderRadius: 16,
+        width: 50,
+        height: 50,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
     },
 
     gridLabel: {
-        fontSize: 11,
-        fontWeight: '800',
+        fontSize: 10.5,
+        fontWeight: '700',
         textAlign: 'center',
         letterSpacing: -0.2,
+        lineHeight: 13,
+        paddingHorizontal: 2,
     },
 });

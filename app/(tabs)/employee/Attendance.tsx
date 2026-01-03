@@ -15,13 +15,12 @@ import {
     Alert,
     Dimensions,
     Image,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -263,16 +262,56 @@ export default function Attendance() {
     };
 
     /* ---------------- UI ---------------- */
-    return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <Header title="Attendance" />
-            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-                {/* CLOCK */}
-                <View style={[styles.clockCard, { backgroundColor: theme.primary }]}>
-                    <Text style={[styles.timeText, { color: theme.inputBg }]}>
-                        {currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+    const renderSegmentedControl = () => (
+        <View style={[styles.segmentedContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
+            {['Check-in', 'Check-out'].map((type) => (
+                <TouchableOpacity
+                    key={type}
+                    activeOpacity={0.8}
+                    style={[
+                        styles.segmentButton,
+                        attendanceType === type && {
+                            backgroundColor: theme.primary,
+                            shadowColor: theme.primary,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 4,
+                            elevation: 4,
+                        },
+                    ]}
+                    onPress={() => setAttendanceType(type as any)}
+                >
+                    <Ionicons
+                        name={type === 'Check-in' ? 'log-in-outline' : 'log-out-outline'}
+                        size={18}
+                        color={attendanceType === type ? '#fff' : theme.textLight}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text
+                        style={[
+                            styles.segmentText,
+                            { color: attendanceType === type ? '#fff' : theme.textLight },
+                        ]}
+                    >
+                        {type}
                     </Text>
-                    <Text style={[styles.dateText, { color: theme.inputBg }]}>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
+
+    return (
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
+                <Header title="Mobile Attendance" />
+
+                {/* CLOCK SECTION */}
+                <View style={styles.clockHeader}>
+                    <Text style={[styles.timeText, { color: theme.text }]}>
+                        {currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        <Text style={{ fontSize: 18, fontWeight: '400' }}>:{currentTime.getSeconds().toString().padStart(2, '0')}</Text>
+                    </Text>
+                    <Text style={[styles.dateText, { color: theme.placeholder }]}>
                         {currentTime.toLocaleDateString('en-GB', {
                             weekday: 'long',
                             day: 'numeric',
@@ -281,53 +320,34 @@ export default function Attendance() {
                     </Text>
                 </View>
 
-                {/* TYPE */}
-                <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
-                    {['Check-in', 'Check-out'].map(type => (
-                        <TouchableOpacity
-                            key={type}
-                            style={[
-                                styles.toggle,
-                                {
-                                    backgroundColor: attendanceType === type ? theme.primary : theme.inputBg,
-                                    borderColor: theme.inputBorder
-                                }
-                            ]}
-                            onPress={() => setAttendanceType(type as any)}
-                        >
-                            <Text style={{
-                                color: attendanceType === type ? '#fff' : theme.text,
-                                fontWeight: '600',
-                                textAlign: 'center'
-                            }}>
-                                {type}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                {/* MODE TOGGLE */}
+                {renderSegmentedControl()}
 
-                {/* PROJECT */}
-                <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
-                    <View style={{ borderWidth: 1, borderColor: theme.inputBorder, borderRadius: 16 }}>
+                {/* FORM SECTION */}
+                <View style={[styles.formCard, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
+                    <Text style={[styles.fieldLabel, { color: theme.textLight }]}>PROJECT / SITE</Text>
+                    <View style={[styles.pickerWrapper, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
                         <Picker
                             selectedValue={selectedProject}
                             onValueChange={setSelectedProject}
-                            style={{ color: theme.text }}
-                            dropdownIconColor={theme.text}
+                            style={{ color: theme.text, height: 50 }}
+                            dropdownIconColor={theme.primary}
                         >
-                            <Picker.Item label="Select Project" value="" color={theme.textLight} />
+                            <Picker.Item label="Select Project" value="" color={theme.placeholder} />
                             {projects.map(p => (
                                 <Picker.Item key={p.IdN} label={p.NameC} value={String(p.IdN)} color={theme.text} />
                             ))}
                         </Picker>
                     </View>
 
+                    <Text style={[styles.fieldLabel, { color: theme.textLight, marginTop: 16 }]}>REMARKS</Text>
                     <TextInput
-                        placeholder="Remarks (optional)"
+                        placeholder="Add some notes..."
                         placeholderTextColor={theme.placeholder}
                         value={remarks}
                         onChangeText={setRemarks}
-                        style={[styles.input, {
+                        multiline
+                        style={[styles.remarksInput, {
                             borderColor: theme.inputBorder,
                             backgroundColor: theme.inputBg,
                             color: theme.text
@@ -335,75 +355,224 @@ export default function Attendance() {
                     />
                 </View>
 
-                {/* CAMERA */}
-                <View style={styles.cameraBox}>
-                    {capturedImage ? (
-                        <Image source={{ uri: capturedImage }} style={styles.preview} />
-                    ) : (
-                        <CameraView ref={cameraRef} facing="front" style={styles.preview} />
-                    )}
+                {/* CAMERA SECTION */}
+                <View style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}>
+                    <View style={styles.cameraFrame}>
+                        {capturedImage ? (
+                            <Image source={{ uri: capturedImage }} style={styles.preview} />
+                        ) : (
+                            <CameraView ref={cameraRef} facing="front" style={styles.preview} />
+                        )}
 
-                    {!capturedImage ? (
-                        <TouchableOpacity
-                            style={[styles.captureBtn, { backgroundColor: theme.primary }]}
-                            onPress={takePicture}
-                        >
-                            <Ionicons name="camera" size={28} color="#fff" />
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity onPress={() => setCapturedImage(null)} style={{ padding: 10 }}>
-                            <Text style={{ color: theme.primary, textAlign: 'center', fontWeight: 'bold' }}>Retake</Text>
-                        </TouchableOpacity>
-                    )}
+                        {!capturedImage && (
+                            <View style={styles.cameraOverlay}>
+                                <View style={[styles.faceGuide, { borderColor: theme.primary + '50' }]} />
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.cameraActions}>
+                        {!capturedImage ? (
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                style={[styles.captureBtnFull, { backgroundColor: theme.primary }]}
+                                onPress={takePicture}
+                            >
+                                <Ionicons name="camera" size={24} color="#fff" />
+                                <Text style={styles.captureBtnText}>Capture Identity</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={styles.retakeRow}>
+                                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                                <Text style={{ color: '#10B981', fontWeight: '600', flex: 1, marginLeft: 8 }}>Identity Verified</Text>
+                                <TouchableOpacity onPress={() => setCapturedImage(null)} style={styles.retakeBtn}>
+                                    <Text style={{ color: theme.primary, fontWeight: '700' }}>Retake</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
                 </View>
 
-                {/* SUBMIT */}
+                {/* LOCATION STATUS */}
+                {location && (
+                    <View style={styles.locationFooter}>
+                        <Ionicons name="location" size={16} color={theme.primary} />
+                        <Text style={[styles.locationText, { color: theme.placeholder }]} numberOfLines={1}>
+                            {location.address || 'Geo-Location Active'}
+                        </Text>
+                    </View>
+                )}
+
+                {/* SUBMIT BUTTON */}
                 <TouchableOpacity
+                    activeOpacity={0.9}
                     style={[
                         styles.submitBtn,
                         { backgroundColor: theme.primary },
-                        (!capturedImage || submitting) && { opacity: 0.6 }
+                        (!capturedImage || submitting) && { opacity: 0.5 }
                     ]}
                     disabled={!capturedImage || submitting}
                     onPress={handleSubmit}
                 >
-                    {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Submit Attendance</Text>}
+                    {submitting ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <>
+                            <Text style={styles.submitText}>SUBMIT ATTENDANCE</Text>
+                            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+                        </>
+                    )}
                 </TouchableOpacity>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 
 /* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    clockCard: { padding: 20, borderRadius: 16, marginBottom: 16 },
-    timeText: { fontSize: 32, color: '#fff', fontWeight: '800' },
-    dateText: { color: '#fff', marginTop: 4 },
+    clockHeader: {
+        alignItems: 'center',
+        paddingBottom: 20,
+    },
+    timeText: {
+        fontSize: 48,
+        fontWeight: '800',
+        letterSpacing: -1,
+    },
+    dateText: {
+        fontSize: 16,
+        fontWeight: '500',
+        marginTop: 4,
+    },
 
-    section: { borderRadius: 12, padding: 16, marginBottom: 16, },
-    toggle: { padding: 12, borderRadius: 8, marginBottom: 8, borderWidth: 1 },
-
-    input: { borderWidth: 1, borderRadius: 8, padding: 12, marginTop: 12 },
-
-    cameraBox: { borderRadius: 16, overflow: 'hidden', marginBottom: 20, backgroundColor: '#000' },
-    preview: { width: '100%', height: 300 },
-
-    captureBtn: {
-        position: 'absolute',
-        bottom: 16,
-        alignSelf: 'center',
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+    segmentedContainer: {
+        flexDirection: 'row',
+        padding: 6,
+        borderRadius: 14,
+        borderWidth: 1,
+        marginBottom: 24,
+    },
+    segmentButton: {
+        flex: 1,
+        flexDirection: 'row',
+        height: 44,
+        borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
     },
+    segmentText: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
 
-    submitBtn: {
-        padding: 16,
+    formCard: {
+        padding: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        marginBottom: 20,
+    },
+    fieldLabel: {
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+        marginBottom: 8,
+    },
+    pickerWrapper: {
         borderRadius: 12,
+        borderWidth: 1,
+        height: 50,
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    remarksInput: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 12,
+        height: 80,
+        textAlignVertical: 'top',
+        fontSize: 14,
+    },
+
+    cameraContainer: {
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 1,
+        backgroundColor: '#f8fafc',
+        marginBottom: 16,
+    },
+    cameraFrame: {
+        height: 280,
+        width: '100%',
+        backgroundColor: '#000',
+    },
+    preview: { width: '100%', height: '100%' },
+    cameraOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    faceGuide: {
+        width: 180,
+        height: 220,
+        borderRadius: 100,
+        borderWidth: 2,
+        borderStyle: 'dashed',
+    },
+    cameraActions: {
+        padding: 12,
+    },
+    captureBtnFull: {
+        flexDirection: 'row',
+        height: 50,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    captureBtnText: {
+        color: '#fff',
+        fontWeight: '700',
+        marginLeft: 8,
+    },
+    retakeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 4,
+    },
+    retakeBtn: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+
+    locationFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+        paddingHorizontal: 20,
+    },
+    locationText: {
+        fontSize: 12,
+        marginLeft: 6,
+        fontWeight: '500',
+    },
+
+    submitBtn: {
+        height: 60,
+        borderRadius: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    submitText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: 1,
+    },
 });

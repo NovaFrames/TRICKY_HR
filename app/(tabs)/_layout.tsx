@@ -1,5 +1,4 @@
 import { AnimatedTabBar } from '@/components/AnimatedTabBar';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { useTheme } from '@/context/ThemeContext';
 import { Tabs, usePathname } from 'expo-router';
 import { View } from 'react-native';
@@ -19,16 +18,9 @@ export default function TabsLayout() {
         <View
             style={{
                 flex: 1,
-                backgroundColor: isDark ? theme.background : '#FFFFFF', // 👈 Force white in light mode
+                backgroundColor: isDark ? theme.background : '#FFFFFF',
             }}
         >
-            {!hideHeader && (
-                <DashboardHeader
-                    isDark={isDark}
-                    theme={theme}
-                />
-            )}
-
             <Tabs
                 screenOptions={{
                     headerShown: false,

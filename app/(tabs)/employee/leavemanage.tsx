@@ -13,7 +13,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import ApplyLeaveModal from '../../../components/LeaveApply/ApplyLeaveModal';
 import SurrenderLeaveModal from '../../../components/LeaveApply/SurrenderLeaveModal';
 import { useTheme } from '../../../context/ThemeContext';
@@ -231,10 +230,7 @@ const LeaveApply: React.FC = () => {
     }
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
-
-            {/* Modern Header */}
-            <Header title="Leave Management" />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
 
             {/* Leave List */}
             <ScrollView
@@ -242,6 +238,9 @@ const LeaveApply: React.FC = () => {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                {/* Modern Header */}
+                <Header title="Leave Management" />
+
                 {formattedLeaves.map(renderLeaveCard)}
                 <View style={styles.bottomSpacer} />
             </ScrollView>
@@ -287,7 +286,7 @@ const LeaveApply: React.FC = () => {
                     onSuccess={handleSurrenderSubmitted}
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -328,7 +327,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 16,
-        paddingBottom: 100, // Space for FAB
+        paddingBottom: 120, // Space for nav + FAB
     },
     card: {
         borderRadius: 16,

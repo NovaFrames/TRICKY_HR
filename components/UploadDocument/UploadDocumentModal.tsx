@@ -1,11 +1,10 @@
+// UploadDocumentModal.tsx
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Modal,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -13,8 +12,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import RNPickerSelect from 'react-native-picker-select';
 import { useTheme } from '../../context/ThemeContext';
+import AppModal from '../common/AppModal';
+import BottomSelection from '../common/BottomSelection';
 
 interface UploadDocumentModalProps {
     visible: boolean;
@@ -50,112 +50,59 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
     const { theme } = useTheme();
     const [documentName, setDocumentName] = useState('');
     const [documentType, setDocumentType] = useState('');
+    const [showTypeSelector, setShowTypeSelector] = useState(false);
     const [remarks, setRemarks] = useState('');
     const [selectedFile, setSelectedFile] = useState<any | null>(null);
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     const validateForm = (): boolean => {
-        const newErrors: { [key: string]: string } = {};
-
-        if (!documentName.trim()) {
-            newErrors.documentName = 'Document name is required';
-        }
-
-        if (!documentType) {
-            newErrors.documentType = 'Please select a document type';
-        }
-
-        if (!remarks.trim()) {
-            newErrors.remarks = 'Remarks are required';
-        } else if (remarks.trim().length < 11) {
-            newErrors.remarks = 'Remarks should be more than 10 characters';
-        }
-
-        if (!selectedFile) {
-            newErrors.file = 'Please select a file to upload';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        if (!documentName.trim()) { Alert.alert('Error', 'Document name is required'); return false; }
+        if (!documentType) { Alert.alert('Error', 'Please select a document type'); return false; }
+        if (remarks.trim().length < 11) { Alert.alert('Error', 'Remarks should be more than 10 characters'); return false; }
+        if (!selectedFile) { Alert.alert('Error', 'Please select a file to upload'); return false; }
+        return true;
     };
 
     const pickDocument = async () => {
         try {
             const result = await DocumentPicker.getDocumentAsync({
-                type: [
-                    'application/pdf',
-                    'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'image/*'
-                ],
+                type: ['application/pdf', 'image/*'],
                 copyToCacheDirectory: true,
             });
-
-            if (result.canceled) {
-                // User cancelled
-                return;
-            }
-
-            const file = result.assets ? result.assets[0] : result; // Handle API differences if any
-
-            if (file.size && file.size > 10 * 1024 * 1024) { // 10MB limit
+            if (result.canceled) return;
+            const file = result.assets ? result.assets[0] : (result as any);
+            if (file.size && file.size > 10 * 1024 * 1024) {
                 Alert.alert('Error', 'File size should be less than 10MB');
                 return;
             }
-
-            // Map to expected structure
-            const mappedFile = {
+            setSelectedFile({
                 uri: file.uri,
                 name: file.name,
                 type: file.mimeType || 'application/octet-stream',
                 size: file.size
-            };
-
-            setSelectedFile(mappedFile as any);
-            setErrors(prev => ({ ...prev, file: '' }));
+            });
         } catch (err) {
             Alert.alert('Error', 'Failed to pick document');
         }
     };
 
     const handleSubmit = async () => {
-        if (!validateForm()) {
-            return;
-        }
-
-        // Confirmation dialog
-        Alert.alert(
-            'Confirm Upload',
-            'Are you sure you want to upload this document?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Upload',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            if (!selectedFile) return;
-
-                            const uploadData: UploadData = {
-                                name: documentName.trim(),
-                                type: documentType,
-                                remarks: remarks.trim(),
-                                file: {
-                                    uri: selectedFile.uri,
-                                    name: selectedFile.name || 'document',
-                                    type: selectedFile.type || 'application/octet-stream',
-                                },
-                            };
-
-                            await onUpload(uploadData);
-                            resetForm();
-                        } catch (error) {
-                            console.error('Upload error:', error);
-                        }
-                    },
+        if (!validateForm()) return;
+        try {
+            const uploadData: UploadData = {
+                name: documentName.trim(),
+                type: documentType,
+                remarks: remarks.trim(),
+                file: {
+                    uri: selectedFile.uri,
+                    name: selectedFile.name || 'document',
+                    type: selectedFile.type || 'application/octet-stream',
                 },
-            ]
-        );
+            };
+            await onUpload(uploadData);
+            resetForm();
+        } catch (error) {
+            console.error('Upload error:', error);
+        }
     };
 
     const resetForm = () => {
@@ -163,378 +110,223 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
         setDocumentType('');
         setRemarks('');
         setSelectedFile(null);
-        setErrors({});
     };
 
     const handleClose = () => {
         if (uploading) {
-            Alert.alert(
-                'Upload in Progress',
-                'Document upload is in progress. Are you sure you want to cancel?',
-                [
-                    { text: 'Continue Upload', style: 'cancel' },
-                    {
-                        text: 'Cancel Upload',
-                        onPress: () => {
-                            resetForm();
-                            onClose();
-                        },
-                    },
-                ]
-            );
+            Alert.alert('Upload in Progress', 'Are you sure you want to cancel?', [
+                { text: 'No', style: 'cancel' },
+                { text: 'Yes, Cancel', onPress: () => { resetForm(); onClose(); } }
+            ]);
         } else {
             resetForm();
             onClose();
         }
     };
 
-    const getFileIcon = () => {
-        if (!selectedFile) return 'insert-drive-file';
-
-        const fileName = selectedFile.name?.toLowerCase() || '';
-        if (fileName.endsWith('.pdf')) return 'picture-as-pdf';
-        if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) return 'description';
-        if (fileName.endsWith('.jpg') || fileName.endsWith('.png') || fileName.endsWith('.jpeg')) {
-            return 'image';
-        }
-        return 'insert-drive-file';
-    };
-
-    const formatFileSize = (bytes: number): string => {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    };
+    const labelStyle = [styles.label, { color: theme.text }];
+    const inputStyle = [styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }];
 
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={handleClose}
-        >
-            <View style={styles.modalOverlay}>
-                <View style={[styles.modalContainer, { backgroundColor: theme.cardBackground }]}>
-                    {/* Header */}
-                    <View style={[styles.modalHeader, { borderBottomColor: theme.inputBorder }]}>
-                        <Text style={[styles.modalTitle, { color: theme.text }]}>Upload Document</Text>
-                        <TouchableOpacity onPress={handleClose} disabled={uploading}>
-                            <Icon name="close" size={24} color={theme.text} />
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView
-                        style={styles.modalContent}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {/* Document Name */}
-                        <View style={styles.inputContainer}>
-                            <Text style={[styles.label, { color: theme.text }]}>
-                                Document Name <Text style={styles.required}>*</Text>
-                            </Text>
-                            <TextInput
-                                style={[
-                                    styles.input,
-                                    { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text },
-                                    errors.documentName && styles.inputError
-                                ]}
-                                placeholder="Enter document name"
-                                placeholderTextColor={theme.placeholder}
-                                value={documentName}
-                                onChangeText={(text) => {
-                                    setDocumentName(text);
-                                    setErrors(prev => ({ ...prev, documentName: '' }));
-                                }}
-                                editable={!uploading}
-                            />
-                            {errors.documentName ? (
-                                <Text style={styles.errorText}>{errors.documentName}</Text>
-                            ) : null}
-                        </View>
-
-                        {/* Document Type */}
-                        <View style={styles.inputContainer}>
-                            <Text style={[styles.label, { color: theme.text }]}>
-                                Document Type <Text style={styles.required}>*</Text>
-                            </Text>
-                            <View style={[
-                                styles.pickerContainer,
-                                { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
-                                errors.documentType && styles.inputError
-                            ]}>
-                                <RNPickerSelect
-                                    onValueChange={(value) => {
-                                        setDocumentType(value);
-                                        setErrors(prev => ({ ...prev, documentType: '' }));
-                                    }}
-                                    items={documentTypes}
-                                    placeholder={{ label: 'Select document type', value: null }}
-                                    value={documentType}
-                                    disabled={uploading}
-                                    style={{
-                                        inputIOS: [styles.pickerInput, { color: theme.text }],
-                                        inputAndroid: [styles.pickerInput, { color: theme.text }],
-                                        placeholder: { color: theme.placeholder },
-                                    }}
-                                    Icon={() => (
-                                        <Icon name="arrow-drop-down" size={24} color={theme.icon} />
-                                    )}
-                                />
-                            </View>
-                            {errors.documentType ? (
-                                <Text style={styles.errorText}>{errors.documentType}</Text>
-                            ) : null}
-                        </View>
-
-                        {/* Remarks */}
-                        <View style={styles.inputContainer}>
-                            <Text style={[styles.label, { color: theme.text }]}>
-                                Remarks <Text style={styles.required}>*</Text>
-                            </Text>
-                            <TextInput
-                                style={[
-                                    styles.input,
-                                    styles.multilineInput,
-                                    { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text },
-                                    errors.remarks && styles.inputError,
-                                ]}
-                                placeholder="Enter remarks (min. 11 characters)"
-                                placeholderTextColor={theme.placeholder}
-                                value={remarks}
-                                onChangeText={(text) => {
-                                    setRemarks(text);
-                                    setErrors(prev => ({ ...prev, remarks: '' }));
-                                }}
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                                editable={!uploading}
-                            />
-                            <Text style={[styles.charCount, { color: theme.textLight }]}>
-                                {remarks.length} / 11 characters minimum
-                            </Text>
-                            {errors.remarks ? (
-                                <Text style={styles.errorText}>{errors.remarks}</Text>
-                            ) : null}
-                        </View>
-
-                        {/* File Selection */}
-                        <View style={styles.inputContainer}>
-                            <Text style={[styles.label, { color: theme.text }]}>
-                                Select File <Text style={styles.required}>*</Text>
-                            </Text>
-                            <TouchableOpacity
-                                style={[
-                                    styles.filePicker,
-                                    { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
-                                    errors.file && styles.inputError
-                                ]}
-                                onPress={pickDocument}
-                                disabled={uploading}
-                            >
-                                {selectedFile ? (
-                                    <View style={styles.fileInfo}>
-                                        <Icon name={getFileIcon()} size={24} color={theme.primary} />
-                                        <View style={styles.fileDetails}>
-                                            <Text style={[styles.fileName, { color: theme.text }]} numberOfLines={1}>
-                                                {selectedFile.name}
-                                            </Text>
-                                            <Text style={[styles.fileSize, { color: theme.textLight }]}>
-                                                {selectedFile.size ? formatFileSize(selectedFile.size) : 'Unknown size'}
-                                            </Text>
-                                        </View>
-                                        <TouchableOpacity
-                                            onPress={() => setSelectedFile(null)}
-                                            disabled={uploading}
-                                        >
-                                            <Icon name="close" size={20} color="#F44336" />
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    <View style={styles.filePlaceholder}>
-                                        <Icon name="cloud-upload" size={32} color={theme.icon} />
-                                        <Text style={[styles.filePlaceholderText, { color: theme.textLight }]}>
-                                            Tap to select document
-                                        </Text>
-                                        <Text style={[styles.fileHint, { color: theme.placeholder }]}>
-                                            Supported: PDF, DOC, DOCX, Images
-                                        </Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                            {errors.file ? (
-                                <Text style={styles.errorText}>{errors.file}</Text>
-                            ) : null}
-                        </View>
-
-                        {/* Upload Button */}
+        <>
+            <AppModal
+                visible={visible}
+                onClose={handleClose}
+                title="Upload Document"
+                footer={
+                    <View style={styles.footerRow}>
                         <TouchableOpacity
-                            style={[styles.uploadButton, { backgroundColor: theme.primary }, uploading && styles.uploadButtonDisabled]}
+                            style={[styles.footerButton, styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
+                            onPress={handleClose}
+                            disabled={uploading}
+                        >
+                            <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.footerButton, styles.submitButton, { backgroundColor: theme.primary }]}
                             onPress={handleSubmit}
                             disabled={uploading}
                         >
                             {uploading ? (
-                                <>
-                                    <ActivityIndicator size="small" color="#FFFFFF" />
-                                    <Text style={styles.uploadButtonText}>Uploading...</Text>
-                                </>
+                                <ActivityIndicator size="small" color="#fff" />
                             ) : (
                                 <>
-                                    <Icon name="cloud-upload" size={20} color="#FFFFFF" />
-                                    <Text style={styles.uploadButtonText}>Upload Document</Text>
+                                    <Icon name="cloud-upload" size={20} color="#fff" />
+                                    <Text style={styles.submitButtonText}>Upload Now</Text>
                                 </>
                             )}
                         </TouchableOpacity>
+                    </View>
+                }
+            >
+                <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>Document Name</Text>
+                        <TextInput
+                            style={inputStyle}
+                            placeholder="Enter document name"
+                            placeholderTextColor={theme.placeholder}
+                            value={documentName}
+                            onChangeText={setDocumentName}
+                            editable={!uploading}
+                        />
+                    </View>
 
-                        {/* Cancel Button */}
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>Document Type</Text>
                         <TouchableOpacity
-                            style={[
-                                styles.cancelButton,
-                                { borderColor: theme.inputBorder }
-                            ]}
-                            onPress={handleClose}
+                            style={[styles.inputWrapper, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                            onPress={() => setShowTypeSelector(true)}
                             disabled={uploading}
                         >
-                            <Text style={[styles.cancelButtonText, { color: theme.textLight }]}>Cancel</Text>
+                            <Text style={{ color: documentType ? theme.text : theme.placeholder }}>
+                                {documentType ? documentTypes.find(t => t.value === documentType)?.label : 'Select Type'}
+                            </Text>
+                            <Icon name="keyboard-arrow-down" size={24} color={theme.icon} />
                         </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            </View>
-        </Modal>
+                    </View>
+
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>File Selection</Text>
+                        <TouchableOpacity
+                            style={[styles.filePicker, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                            onPress={pickDocument}
+                            disabled={uploading}
+                        >
+                            {selectedFile ? (
+                                <View style={styles.fileInfo}>
+                                    <Icon name="insert-drive-file" size={24} color={theme.primary} />
+                                    <Text style={[styles.fileName, { color: theme.text }]} numberOfLines={1}>{selectedFile.name}</Text>
+                                    <Icon name="check-circle" size={20} color="#4CAF50" />
+                                </View>
+                            ) : (
+                                <View style={styles.filePlaceholder}>
+                                    <Icon name="cloud-upload" size={32} color={theme.icon} />
+                                    <Text style={[styles.filePlaceholderText, { color: theme.textLight }]}>Tap to select document</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.formGroup}>
+                        <Text style={labelStyle}>Remarks</Text>
+                        <TextInput
+                            style={[inputStyle, styles.textArea]}
+                            placeholder="Min. 11 characters"
+                            placeholderTextColor={theme.placeholder}
+                            multiline
+                            numberOfLines={4}
+                            value={remarks}
+                            onChangeText={setRemarks}
+                            editable={!uploading}
+                        />
+                    </View>
+                </ScrollView>
+            </AppModal>
+
+            <BottomSelection
+                visible={showTypeSelector}
+                onClose={() => setShowTypeSelector(false)}
+                title="Select Document Type"
+                options={documentTypes}
+                selectedValue={documentType}
+                onSelect={(val) => {
+                    setDocumentType(val as string);
+                    setShowTypeSelector(false);
+                }}
+            />
+        </>
     );
 };
 
 const styles = StyleSheet.create({
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
+    scrollContent: {
+        padding: 18,
+        flexShrink: 1,
     },
-    modalContainer: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        maxHeight: '90%',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    modalContent: {
-        padding: 20,
-    },
-    inputContainer: {
+    formGroup: {
         marginBottom: 20,
     },
     label: {
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: '700',
         marginBottom: 8,
-    },
-    required: {
-        color: '#F44336',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     input: {
         borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-        fontSize: 16,
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 15,
+        fontWeight: '600',
     },
-    inputError: {
-        borderColor: '#F44336',
+    inputWrapper: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
     },
-    multilineInput: {
+    textArea: {
         minHeight: 100,
         textAlignVertical: 'top',
     },
-    errorText: {
-        color: '#F44336',
-        fontSize: 12,
-        marginTop: 4,
-    },
-    charCount: {
-        fontSize: 12,
-        marginTop: 4,
-        textAlign: 'right',
-    },
-    pickerContainer: {
-        borderWidth: 1,
-        borderRadius: 8,
-    },
-    pickerInput: {
-        fontSize: 16,
-        paddingHorizontal: 12,
-        paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-    },
-    pickerPlaceholder: {},
     filePicker: {
         borderWidth: 1,
-        borderRadius: 8,
-        padding: 16,
+        borderRadius: 14,
+        padding: 24,
+        borderStyle: 'dashed',
     },
     fileInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    fileDetails: {
-        flex: 1,
-        marginLeft: 12,
+        gap: 12,
     },
     fileName: {
+        flex: 1,
         fontSize: 14,
-        fontWeight: '500',
-    },
-    fileSize: {
-        fontSize: 12,
-        marginTop: 2,
+        fontWeight: '600',
     },
     filePlaceholder: {
         alignItems: 'center',
-        paddingVertical: 20,
+        gap: 8,
     },
     filePlaceholderText: {
-        fontSize: 16,
-        marginTop: 12,
-    },
-    fileHint: {
-        fontSize: 12,
-        marginTop: 4,
-    },
-    uploadButton: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 14,
-        borderRadius: 8,
-        marginTop: 10,
-        marginBottom: 16,
-    },
-    uploadButtonDisabled: {
-        opacity: 0.7,
-    },
-    uploadButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
-        marginLeft: 8,
+    },
+    footerRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    footerButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 56,
+        borderRadius: 16,
     },
     cancelButton: {
-        paddingVertical: 14,
-        borderRadius: 8,
         borderWidth: 1,
-        alignItems: 'center',
     },
     cancelButtonText: {
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '700',
+    },
+    submitButton: {
+        elevation: 2,
+    },
+    submitButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
+        marginLeft: 8,
     },
 });
 

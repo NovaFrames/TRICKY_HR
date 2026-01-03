@@ -16,15 +16,15 @@ export const lightTheme = {
 export const darkTheme = {
     mode: 'dark',
     primary: '#e46a23',
-    secondary: '#ccfbf1',
-    background: '#130b1dff',
-    text: '#f0fdfa',
-    textLight: '#94a3b8',
-    inputBg: '#1e293b',
-    inputBorder: '#334155',
-    placeholder: '#64748b',
-    icon: '#64748b',
-    cardBackground: '#0f172a',
+    secondary: '#38BDF8',
+    background: '#0B0E14',
+    text: '#F8FAFC',
+    textLight: '#94A3B8',
+    inputBg: '#1C222D',
+    inputBorder: '#2A3342',
+    placeholder: '#475569',
+    icon: '#94A3B8',
+    cardBackground: '#151921',
 };
 
 export type ThemeType = typeof lightTheme;

@@ -1,5 +1,5 @@
 import DashboardCards from '@/components/dashboard/DashboardCards';
-import { TeamLeaders } from '@/components/dashboard/TeamLeaders';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { useUser } from '@/context/UserContext';
 import React from 'react';
 import {
@@ -26,12 +26,12 @@ export default function HomeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: isDark ? theme.background : '#FFFFFF' }]}>
-
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 style={styles.scrollView}
             >
+                <DashboardHeader isDark={isDark} theme={theme} />
 
                 <IdCard
                     empName={empName}
@@ -39,10 +39,6 @@ export default function HomeScreen() {
                     empCode={empCode}
                     company={company}
                     initial={initial}
-                    theme={theme}
-                />
-
-                <TeamLeaders
                     theme={theme}
                 />
 
@@ -64,9 +60,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingTop: 24,
-        paddingHorizontal: 24,
-        paddingBottom: 40,
+        // paddingTop: 12,
+        paddingHorizontal: 16,
+        paddingBottom: 120,
     },
     sectionHeader: {
         fontSize: 18,

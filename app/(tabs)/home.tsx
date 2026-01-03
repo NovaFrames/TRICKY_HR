@@ -1,10 +1,10 @@
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { useUser } from '@/context/UserContext';
 import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
     ScrollView,
     StyleSheet,
-    Text,
     View
 } from 'react-native';
 import { MenuGrid } from '../../components/dashboard/MenuGrid';
@@ -19,7 +19,7 @@ const STATIC_MENU_ITEMS = [
 ];
 
 export default function HomeScreen() {
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
     const { user } = useUser();
 
     const loginData = user || {};
@@ -59,14 +59,14 @@ export default function HomeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 style={styles.scrollView}
             >
+                <DashboardHeader isDark={isDark} theme={theme} />
                 {/* Dynamic Greeting Section */}
-                <View style={styles.greetingSection}>
+                {/* <View style={styles.greetingSection}>
                     <View>
                         <Text style={[styles.greetingLabel, { color: theme.text }]}>
                             {getGreeting()},
@@ -75,7 +75,7 @@ export default function HomeScreen() {
                             {empName}
                         </Text>
                     </View>
-                </View>
+                </View> */}
 
                 <View style={styles.menuContainer}>
                     {/* <Text style={[styles.sectionHeader, { color: theme.text, marginBottom: 16 }]}>Quick Access</Text> */}
@@ -94,39 +94,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingBottom: 40,
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        paddingTop: 32,
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-    },
-    greetingSection: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 24,
-        paddingHorizontal: 4,
-    },
-    greetingLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-        opacity: 0.6,
-    },
-    userName: {
-        fontSize: 28,
-        fontWeight: '800',
-        letterSpacing: -0.5,
+        paddingBottom: 120,
     },
     menuContainer: {
-        marginTop: 8,
-    },
-    sectionHeader: {
-        fontSize: 16,
-        fontWeight: '800',
-        letterSpacing: -0.3,
+        marginTop: 16,
+        paddingHorizontal: 16,
     },
 });

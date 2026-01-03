@@ -165,10 +165,16 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
-            <Header title="Office Documents" />
-
-            <View style={styles.content}>
-                {loading && !documents.length ? (
+            <FlatList
+                ListHeaderComponent={() => <Header title="Office Documents" />}
+                data={documents}
+                renderItem={renderDocumentItem}
+                keyExtractor={(item, index) => `${item.NameC}-${index}`}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                refreshing={loading}
+                onRefresh={fetchDocuments}
+                ListEmptyComponent={loading && !documents.length ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color={theme.primary} />
                         <Text style={[styles.loadingText, { color: theme.textLight }]}>Loading documents...</Text>
@@ -186,18 +192,8 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
                     </View>
                 ) : documents.length === 0 ? (
                     renderEmptyState()
-                ) : (
-                    <FlatList
-                        data={documents}
-                        renderItem={renderDocumentItem}
-                        keyExtractor={(item, index) => `${item.NameC}-${index}`}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                        refreshing={loading}
-                        onRefresh={fetchDocuments}
-                    />
-                )}
-            </View>
+                ) : null}
+            />
         </View>
     );
 };
