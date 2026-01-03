@@ -17,6 +17,7 @@ import TravelExpenseModal from '@/components/claim/TravelExpenseModal';
 import TravelExpensesSection from '@/components/claim/TravelExpensesSection';
 
 import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 import {
     ActivityIndicator,
     Alert,
@@ -106,6 +107,10 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
     // Documents
     const [documents, setDocuments] = useState<DocumentItem[]>([]);
     const [showDocModal, setShowDocModal] = useState<boolean>(false);
+
+    useProtectedBack({
+        home: '/home'
+    })
 
     // Confirmation modal
     const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
