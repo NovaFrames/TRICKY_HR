@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     },
     dateCard: {
         flexDirection: 'row',
-        borderRadius: 16,
+        borderRadius: 4,
         padding: 4,
         elevation: 4,
         shadowColor: '#000',
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginTop: 20, // Overlapping nicely if needed, but here simple flow
         marginHorizontal: 16,
-        borderRadius: 10,
+        borderRadius: 4,
         padding: 4,
         // elevation: 2,
     },
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 10,
         alignItems: 'center',
-        borderRadius: 8,
+        borderRadius: 4,
     },
     activeTabItem: {
         // backgroundColor: '#00838F', // Handled by theme.primary

@@ -329,14 +329,14 @@ const styles = StyleSheet.create({
     scrollContent: { paddingBottom: 100 },
     headerContainer: { padding: 12 }, // Reduced from 20
     screenTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8 }, // Smaller title
-    profileCard: { borderRadius: 16, padding: 12, elevation: 2 }, // Compact card
+    profileCard: { borderRadius: 4, padding: 12, elevation: 2 }, // Compact card
     profileContent: { flexDirection: 'row', alignItems: 'center' },
     avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 }, // Smaller avatar
     userInfo: { flex: 1 },
     userName: { fontSize: 18, fontWeight: '600' },
     userId: { fontSize: 13, marginTop: 2 },
 
-    section: { marginHorizontal: 20, marginBottom: 16 },
+    section: { marginHorizontal: 20, marginBottom: 8 },
     sectionHeader: { paddingVertical: 12 },
     sectionTitle: {
         fontSize: 13,
@@ -349,13 +349,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 4,
     },
     itemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
     iconContainer: {
         width: 40,
         height: 40,
-        borderRadius: 10,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     inlineColorCircle: {
         width: 36,
         height: 36,
-        borderRadius: 18,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',

@@ -31,8 +31,8 @@ export default function Header({ title }: { title: string }) {
 
 const styles = StyleSheet.create({
     headerContainer: {
-        paddingTop: 10,
-        paddingBottom: 4,
+        paddingTop: 8,
+        paddingBottom: 2,
         zIndex: 1,
     },
     navBar: {
@@ -40,12 +40,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 8, // Tighter horizontal padding
-        paddingVertical: 4,
+        paddingVertical: 2,
     },
     navTitle: {
-        fontSize: 17,
+        fontSize: 19,
         fontWeight: '700',
-        letterSpacing: -0.3,
+        letterSpacing: -0.5,
     },
     iconButton: {
         padding: 4,

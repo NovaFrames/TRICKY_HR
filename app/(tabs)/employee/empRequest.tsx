@@ -187,13 +187,13 @@ const styles = StyleSheet.create({
     tabOuterContainer: {
         flexDirection: 'row',
         padding: 5,
-        borderRadius: 16,
+        borderRadius: 4,
     },
     tabItem: {
         flex: 1,
         paddingVertical: 12,
         alignItems: 'center',
-        borderRadius: 12,
+        borderRadius: 4,
     },
     tabText: {
         fontSize: 14,

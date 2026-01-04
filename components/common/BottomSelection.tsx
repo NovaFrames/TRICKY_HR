@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     sheet: {
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
+        borderTopLeftRadius: 4,
+        borderTopRightRadius: 4,
         maxHeight: '70%',
         width: '100%',
         elevation: 10,
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 18,
         paddingHorizontal: 12,
-        borderRadius: 12,
+        borderRadius: 4,
         marginVertical: 4,
     },
     optionText: {

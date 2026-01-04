@@ -365,9 +365,8 @@ const styles = StyleSheet.create({
     // Filter Styles
     filterWrapper: {
         margin: 16,
-        padding: 16,
-        borderRadius: 20,
-        elevation: 8,
+        padding: 20,
+        borderRadius: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -402,15 +401,30 @@ const styles = StyleSheet.create({
         marginBottom: 4,
         letterSpacing: 0.5,
     },
-    inputValue: {
-        fontSize: 13,
+    dateButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8F9FF',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 4,
+        borderWidth: 1.5,
+        borderColor: '#E8ECFF',
+        gap: 10,
+    },
+    dateButtonText: {
+        fontSize: 15,
+        color: '#333',
         fontWeight: '600',
     },
-    connector: {
-        paddingHorizontal: 10,
+    dateSeparator: {
+        marginHorizontal: 12,
+        padding: 8,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 4,
     },
-    searchBtnContainer: {
-        borderRadius: 14,
+    searchButton: {
+        borderRadius: 4,
         overflow: 'hidden',
     },
     searchBtn: {
@@ -424,15 +438,36 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 15,
         fontWeight: '700',
+        letterSpacing: 0.5,
     },
-
-    // List Styles
-    listContainer: {
+    resultsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingHorizontal: 4,
+    },
+    resultsTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1A1A1A',
+    },
+    resultsCount: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '600',
+        backgroundColor: '#F0F0F0',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    listContent: {
         paddingHorizontal: 16,
         paddingBottom: 40,
     },
     card: {
-        borderRadius: 20,
+        backgroundColor: '#FFF',
+        borderRadius: 4,
         marginBottom: 16,
         borderWidth: 1,
         overflow: 'hidden',
@@ -503,6 +538,9 @@ const styles = StyleSheet.create({
     mainInfoItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 4,
         gap: 6,
         flex: 1,
         justifyContent: 'center',
@@ -539,21 +577,88 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '600',
     },
-    remarkContainer: {
+    projectContainer: {
+        backgroundColor: '#F0F8FF',
+        padding: 12,
+        borderRadius: 4,
+    },
+    projectValue: {
+        fontSize: 14,
+        color: '#2C5282',
+        fontWeight: '600',
+        lineHeight: 20,
+    },
+    departmentContainer: {
+        backgroundColor: '#F0FFF4',
+        padding: 12,
+        borderRadius: 4,
+    },
+    departmentValue: {
+        fontSize: 14,
+        color: '#22543D',
+        fontWeight: '600',
+    },
+    locationContainer: {
+        backgroundColor: '#F9FAFF',
+        padding: 14,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: '#F0F3FF',
+    },
+    locationHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        padding: 10,
-        borderRadius: 12,
-        marginTop: 4,
+        marginBottom: 6,
+    },
+    locationTitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#555',
+    },
+    locationText: {
+        fontSize: 14,
+        color: '#444',
+        lineHeight: 20,
+        paddingLeft: 6,
+    },
+    remarkContainer: {
+        backgroundColor: '#FFF8E1',
+        padding: 14,
+        borderRadius: 4,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FFC107',
+    },
+    remarkHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    remarkLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#FF9800',
     },
     remarkText: {
         fontSize: 12,
         fontStyle: 'italic',
         flex: 1,
     },
-
-    // State Styles
+    extraItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: '#F5F5F5',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 4,
+    },
+    extraText: {
+        fontSize: 12,
+        color: '#666',
+        fontWeight: '500',
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',

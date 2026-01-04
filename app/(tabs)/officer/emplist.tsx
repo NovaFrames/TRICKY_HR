@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 10,
-        borderRadius: 12,
+        borderRadius: 4,
         borderWidth: 1,
     },
     searchIcon: {
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     filterChip: {
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 20,
+        borderRadius: 4,
         marginRight: 8,
         borderWidth: 1,
     },
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 14,
-        borderRadius: 16,
+        borderRadius: 4,
         marginBottom: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 8,
         paddingVertical: 3,
-        borderRadius: 6,
+        borderRadius: 4,
         gap: 4,
     },
     employeeCode: {
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     actionButton: {
         width: 36,
         height: 36,
-        borderRadius: 18,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     clearButton: {
         paddingHorizontal: 24,
         paddingVertical: 12,
-        borderRadius: 10,
+        borderRadius: 4,
     },
     clearButtonText: {
         color: '#fff',

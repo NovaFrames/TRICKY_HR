@@ -149,7 +149,7 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
 
 const styles = StyleSheet.create({
     section: {
-        borderRadius: 12,
+        borderRadius: 4,
         padding: 15,
         marginBottom: 20,
         borderWidth: 1,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     },
     pickerContainer: {
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: 4,
         overflow: 'hidden',
     },
     picker: {
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: 4,
         paddingHorizontal: 12,
         paddingVertical: 12,
     },
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     },
     textInput: {
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: 4,
         paddingHorizontal: 12,
         paddingVertical: 12,
         fontSize: 15,

@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
 
     card: {
         width: CARD_WIDTH,
-        borderRadius: 16, // Reduced from 24
+        borderRadius: 4,
         padding: 12, // Reduced from 16
         marginBottom: 12, // Reduced from 16
         shadowColor: '#000', // Neutral shadow
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     iconBox: {
         width: 40, // Reduced from 48
         height: 40, // Reduced from 48
-        borderRadius: 12, // Reduced from 24
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8, // Reduced from 16

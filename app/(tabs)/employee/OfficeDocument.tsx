@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     retryButton: {
         paddingHorizontal: 24,
         paddingVertical: 12,
-        borderRadius: 8,
+        borderRadius: 4,
     },
     retryButtonText: {
         color: '#FFFFFF',
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     documentItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 12,
+        borderRadius: 4,
         padding: 16,
         marginBottom: 12,
         shadowColor: '#000',

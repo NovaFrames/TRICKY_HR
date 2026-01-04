@@ -17,9 +17,9 @@ const { width } = Dimensions.get('window');
 const TAB_COUNT = 3;
 const TAB_WIDTH = width / TAB_COUNT;
 
-const TAB_BAR_HEIGHT = 64;
-const CURVE_WIDTH = 140;
-const CURVE_HEIGHT = 50;
+const TAB_BAR_HEIGHT = 56;
+const CURVE_WIDTH = 120;
+const CURVE_HEIGHT = 38;
 
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -157,10 +157,10 @@ const styles = StyleSheet.create({
     },
     circle: {
         position: 'absolute',
-        left: TAB_WIDTH / 2 - 30,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        left: TAB_WIDTH / 2 - 26,
+        width: 52,
+        height: 52,
+        borderRadius: 26,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 6,

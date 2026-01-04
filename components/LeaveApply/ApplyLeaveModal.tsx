@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: 4,
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
@@ -401,17 +401,24 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: 4,
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
-    radioGroup: {
+    leaveTypeGrid: {
         flexDirection: 'row',
-        gap: 24,
+        flexWrap: 'wrap',
+        gap: 10,
+        marginBottom: 20,
     },
-    radioOption: {
+    leaveTypeItem: {
+        width: '48.5%',
+        padding: 12,
+        borderRadius: 4,
+        borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
     },
     radioCircle: {
         width: 22,
@@ -421,6 +428,39 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 8,
+    },
+    radioInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    leaveTypeTextContainer: {
+        flex: 1,
+    },
+    leaveTypeName: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    leaveTypeBalance: {
+        fontSize: 11,
+        fontWeight: '500',
+        marginTop: 2,
+    },
+    errorBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 4,
+        marginBottom: 16,
+        gap: 8,
+    },
+    radioGroup: {
+        flexDirection: 'row',
+        gap: 24,
+    },
+    radioOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     radioSelected: {
         width: 12,
@@ -446,7 +486,7 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: 4,
         paddingHorizontal: 16,
         paddingVertical: 14,
         fontSize: 15,
@@ -466,7 +506,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         height: 56,
-        borderRadius: 16,
+        borderRadius: 4,
     },
     cancelButton: {
         borderWidth: 1,

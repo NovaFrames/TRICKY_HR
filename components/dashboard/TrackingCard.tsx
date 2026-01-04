@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderRadius: 20,
+        borderRadius: 4,
         padding: 16,
         marginBottom: 24,
         borderWidth: 1,
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     trackingIcon: {
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
     },

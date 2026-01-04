@@ -73,7 +73,7 @@ const TravelExpensesSection: React.FC<TravelExpensesSectionProps> = ({
 
 const styles = StyleSheet.create({
     section: {
-        borderRadius: 12,
+        borderRadius: 4,
         padding: 15,
         marginBottom: 20,
         borderWidth: 1,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     addButton: {
         width: 36,
         height: 36,
-        borderRadius: 18,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 2,

@@ -108,7 +108,7 @@ export const IdCard: React.FC<IdCardProps> = ({
 
 const styles = StyleSheet.create({
     idCard: {
-        borderRadius: 12, // Reduced from 24
+        borderRadius: 4,
         marginBottom: 16, // Reduced from 24
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     idCardGradient: {
-        borderRadius: 20,
+        borderRadius: 4,
         padding: 16, // Reduced from 24
     },
     idCardTop: {
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     avatarLarge: {
         width: 80,
         height: 80,
-        borderRadius: 20,
+        borderRadius: 4,
         backgroundColor: 'rgba(255,255,255,0.1)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     avatarImage: {
         width: 80,
         height: 80,
-        borderRadius: 20,
+        borderRadius: 4,
         resizeMode: 'cover',
     },
 
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 4,
         backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 8,
+        borderRadius: 4,
         alignSelf: 'flex-start',
     },
     idBadgeText: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.3)',
         paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 12,
+        borderRadius: 4,
     },
     liveDot: {
         width: 6,

@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
         paddingBottom: 120, // Space for nav + FAB
     },
     card: {
-        borderRadius: 16,
+        borderRadius: 4,
         marginBottom: 16,
         padding: 16,
         elevation: 3,
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     balanceBadge: {
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 20,
+        borderRadius: 4,
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
         bottom: 24,
         left: 20,
         right: 20,
-        borderRadius: 30,
+        borderRadius: 4,
         flexDirection: 'row',
         alignItems: 'center',
         padding: 6,
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 12,
-        borderRadius: 24,
+        borderRadius: 4,
     },
     fabSurrender: {
         backgroundColor: 'transparent',

@@ -307,8 +307,8 @@ const styles = StyleSheet.create({
     gradientHeader: {
         paddingTop: 60,
         paddingBottom: 30,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
+        borderBottomLeftRadius: 4,
+        borderBottomRightRadius: 4,
     },
     headerContent: {
         paddingHorizontal: 24,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
         right: 0,
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: 4,
         backgroundColor: '#3B82F6',
         justifyContent: 'center',
         alignItems: 'center',
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
 
     statsCard: {
-        borderRadius: 16,
+        borderRadius: 4,
         padding: 20,
         marginBottom: 20,
         shadowColor: '#000',
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     statIcon: {
         width: 48,
         height: 48,
-        borderRadius: 12,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     },
 
     card: {
-        borderRadius: 16,
+        borderRadius: 4,
         marginBottom: 20,
         overflow: 'hidden',
         shadowColor: '#000',
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     cardIcon: {
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     rowIconContainer: {
         width: 36,
         height: 36,
-        borderRadius: 10,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     badge: {
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 16,
+        borderRadius: 4,
         minWidth: 80,
         alignItems: 'center',
     },
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     },
 
     actionsCard: {
-        borderRadius: 16,
+        borderRadius: 4,
         padding: 20,
         marginBottom: 24,
     },
@@ -586,12 +586,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: (width - 80) / 4,
         paddingVertical: 16,
-        borderRadius: 12,
+        borderRadius: 4,
     },
     actionIcon: {
         width: 44,
         height: 44,
-        borderRadius: 12,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,

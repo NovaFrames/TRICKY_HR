@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 16,
-        borderRadius: 16,
+        borderRadius: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     calendarIconBox: {
         width: 48,
         height: 48,
-        borderRadius: 12,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     eventCard: {
         flexDirection: 'row',
         marginBottom: 12,
-        borderRadius: 16,
+        borderRadius: 4,
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -475,8 +475,8 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: 4,
+        borderTopRightRadius: 4,
         maxHeight: '85%',
         overflow: 'hidden',
     },
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginVertical: 6,
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 4,
         borderWidth: 1,
     },
     detailRow: {
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     closeButton: {
         margin: 16,
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 4,
         alignItems: 'center',
         justifyContent: 'center',
     },

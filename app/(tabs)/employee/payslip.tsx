@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     },
     loadingBox: {
         padding: 20,
-        borderRadius: 10,
+        borderRadius: 4,
         alignItems: 'center',
         shadowColor: "#000",
         shadowOffset: {

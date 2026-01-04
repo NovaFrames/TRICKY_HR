@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     card: {
         marginHorizontal: 20,
         marginVertical: 8,
-        borderRadius: 20,
+        borderRadius: 4,
         padding: 16,
         borderWidth: 1,
         shadowOffset: { width: 0, height: 4 },
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     iconBox: {
         width: 44,
         height: 44,
-        borderRadius: 14,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 12,
+        borderRadius: 4,
         gap: 4,
     },
     statusLabel: {

@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderRadius: 20,
+        borderRadius: 4,
         gap: 6,
     },
     calendarButtonText: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     },
     card: {
         flexDirection: 'row',
-        borderRadius: 12,
+        borderRadius: 4,
         padding: 12,
         alignItems: 'center',
         elevation: 2,
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 10,
-        borderRadius: 10,
+        borderRadius: 4,
         width: 60,
         height: 60,
         marginRight: 16,
@@ -266,8 +266,8 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        borderTopLeftRadius: 4,
+        borderTopRightRadius: 4,
         padding: 16,
         height: '50%',
     },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 12,
-        borderRadius: 8,
+        borderRadius: 4,
         borderWidth: 1,
     },
     gridItemText: {

@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: 4,
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: 4,
         paddingHorizontal: 16,
         paddingVertical: 14,
         fontSize: 15,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         height: 56,
-        borderRadius: 16,
+        borderRadius: 4,
     },
     cancelButton: {
         borderWidth: 1,

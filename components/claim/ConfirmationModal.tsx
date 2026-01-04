@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     modal: {
-        borderRadius: 20,
+        borderRadius: 4,
         padding: 25,
         width: '90%',
         alignItems: 'center',
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     button: {
         flex: 1,
         paddingVertical: 14,
-        borderRadius: 10,
+        borderRadius: 4,
         alignItems: 'center',
         marginHorizontal: 8,
     },

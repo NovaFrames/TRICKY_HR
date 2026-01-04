@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         width: '100%',
-        borderRadius: 24,
+        borderRadius: 4,
         elevation: 10,
         maxHeight: '90%',
         overflow: 'hidden',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     closeIcon: {
         width: 36,
         height: 36,
-        borderRadius: 18,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
     },

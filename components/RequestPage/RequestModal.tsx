@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 12,
+        borderRadius: 4,
         gap: 6,
     },
     dot: {
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     detailIcon: {
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     },
     cancelButton: {
         height: 56,
-        borderRadius: 16,
+        borderRadius: 4,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#FEE2E2', // Soft red

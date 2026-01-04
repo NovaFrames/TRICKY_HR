@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     segmentedContainer: {
         flexDirection: 'row',
         padding: 6,
-        borderRadius: 14,
+        borderRadius: 4,
         borderWidth: 1,
         marginBottom: 24,
     },
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         height: 44,
-        borderRadius: 10,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
 
     formCard: {
         padding: 20,
-        borderRadius: 20,
+        borderRadius: 4,
         borderWidth: 1,
         marginBottom: 20,
     },
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     pickerWrapper: {
-        borderRadius: 12,
+        borderRadius: 4,
         borderWidth: 1,
         height: 50,
         justifyContent: 'center',
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     },
     remarksInput: {
         borderWidth: 1,
-        borderRadius: 12,
+        borderRadius: 4,
         padding: 12,
         height: 80,
         textAlignVertical: 'top',
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     },
 
     cameraContainer: {
-        borderRadius: 24,
+        borderRadius: 4,
         overflow: 'hidden',
         borderWidth: 1,
         backgroundColor: '#f8fafc',
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     captureBtnFull: {
         flexDirection: 'row',
         height: 50,
-        borderRadius: 14,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
 
     submitBtn: {
         height: 60,
-        borderRadius: 18,
+        borderRadius: 4,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

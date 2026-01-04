@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     modal: {
-        borderRadius: 20,
+        borderRadius: 4,
         width: '100%',
         maxHeight: '85%',
         overflow: 'hidden',
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     },
     pickerContainer: {
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: 4,
         overflow: 'hidden',
     },
     picker: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     },
     textInput: {
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: 4,
         paddingHorizontal: 12,
         paddingVertical: 12,
         fontSize: 15,
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     button: {
         flex: 1,
         paddingVertical: 14,
-        borderRadius: 10,
+        borderRadius: 4,
         alignItems: 'center',
     },
     cancelButton: {

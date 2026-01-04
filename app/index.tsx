@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         marginTop: 10,
-        borderRadius: 14,
+        borderRadius: 4,
     },
     footer: {
         marginTop: 'auto',

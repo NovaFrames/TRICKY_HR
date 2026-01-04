@@ -39,8 +39,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                             onError={() => setLogoError(true)}
                             style={{
                                 marginTop: 0,
-                                width: 110,
-                                height: 42,
+                                width: 125,
+                                height: 48,
                                 resizeMode: 'contain',
                             }}
                         />
@@ -49,12 +49,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </View>
                 <Text style={{
                     color: theme.text,
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: '800',
                     textAlign: 'center',
-                    letterSpacing: 1.5,
+                    letterSpacing: 2,
                     textTransform: 'uppercase',
-                    opacity: 0.7,
+                    opacity: 0.9,
                     marginTop: 4,
                     marginBottom: 8
                 }}>
@@ -89,8 +89,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: -6, // Pulled up more
+        marginTop: 0,
     },
 });
-
-/* Line 42-45 updated logo dimensions: width: 110, height: 25 */

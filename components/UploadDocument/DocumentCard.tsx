@@ -77,7 +77,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onPress, onDownlo
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: 12,
+        borderRadius: 4,
         marginBottom: 12,
         padding: 16,
         shadowColor: '#000',

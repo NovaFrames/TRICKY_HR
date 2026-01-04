@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     modal: {
-        borderRadius: 20,
+        borderRadius: 4,
         width: '85%',
         overflow: 'hidden',
     },
