@@ -38,7 +38,7 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
 
     /* -------------------- FIXED 3 COLUMNS FOR MOBILE -------------------- */
     const numColumns = 3; // Always 3 columns on mobile
-    const gap = 12; // Reduced gap to ensure 3 columns fit
+    const gap = 4; // Reduced gap to ensure 3 columns fit
 
     // Parent container already has paddingHorizontal: 16
     // So we calculate based on full width minus parent padding

@@ -54,7 +54,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingBottom: 10,
     },
     scrollView: {
         flex: 1,
@@ -62,7 +61,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         // paddingTop: 12,
         paddingHorizontal: 16,
-        paddingBottom: 120,
+        paddingBottom: 40,
     },
     sectionHeader: {
         fontSize: 18,

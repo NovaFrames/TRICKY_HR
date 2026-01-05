@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 16,
-        paddingBottom: 120, // Space for nav + FAB
+        paddingBottom: 50, // Space for nav + FAB
     },
     card: {
         borderRadius: 4,

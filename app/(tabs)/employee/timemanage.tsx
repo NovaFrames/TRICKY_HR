@@ -404,7 +404,6 @@ React.useEffect(() => {
                     data={timeData}
                     renderItem={renderListItem}
                     keyExtractor={(item, index) => index.toString()}
-                    contentContainerStyle={styles.listContent}
                     refreshing={loading}
                     onRefresh={fetchTimeData}
                     showsVerticalScrollIndicator={false}
@@ -576,9 +575,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         // color: '#006064', // Handled by theme.secondary
         textAlign: 'center',
-    },
-    listContent: {
-        paddingBottom: 120, // Space for nav + FAB
     },
     row: {
         flexDirection: 'row',

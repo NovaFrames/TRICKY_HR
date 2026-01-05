@@ -302,7 +302,7 @@ export default function Attendance() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16 }}>
                 <Header title="Mobile Attendance" />
 
                 {/* CLOCK SECTION */}

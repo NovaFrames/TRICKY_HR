@@ -109,7 +109,6 @@ export default function PayslipScreen() {
                     data={payslips}
                     renderItem={renderItem}
                     keyExtractor={(item, index) => item.PaySalIdN ? item.PaySalIdN.toString() : index.toString()}
-                    contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                 />
             )}
@@ -134,9 +133,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    listContent: {
-        paddingBottom: 20,
     },
     itemContainer: {
         flexDirection: 'row',

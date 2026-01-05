@@ -162,7 +162,6 @@ const empdocument: React.FC = () => {
                 data={filteredDocuments}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
-                ListHeaderComponent={() => <Header title="Documents" />}
                 ListEmptyComponent={renderEmpty}
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
@@ -196,13 +195,15 @@ const empdocument: React.FC = () => {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+            <Header title="Documents" />
             {/* Tab View */}
             <TabView
+                style={{ flex: 1 }}
                 navigationState={{ index, routes }}
-                renderScene={renderTabScene}
                 onIndexChange={setIndex}
                 initialLayout={initialLayout}
                 renderTabBar={renderTabBar}
+                renderScene={renderTabScene}
                 swipeEnabled={true}
             />
 
@@ -268,7 +269,6 @@ const styles = StyleSheet.create({
     listContainer: {
         padding: 16,
         flexGrow: 1,
-        paddingBottom: 88, // Space for FAB
     },
     emptyContainer: {
         flex: 1,

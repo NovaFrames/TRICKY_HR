@@ -165,8 +165,8 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+            <Header title="Office Documents" />
             <FlatList
-                ListHeaderComponent={() => <Header title="Office Documents" />}
                 data={documents}
                 renderItem={renderDocumentItem}
                 keyExtractor={(item, index) => `${item.NameC}-${index}`}

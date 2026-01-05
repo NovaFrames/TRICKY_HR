@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 120,
+        paddingBottom: 78,
     },
     menuContainer: {
         marginTop: 16,
