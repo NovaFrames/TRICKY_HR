@@ -313,9 +313,10 @@ export default function Attendance() {
                     </Text>
                     <Text style={[styles.dateText, { color: theme.placeholder }]}>
                         {currentTime.toLocaleDateString('en-GB', {
-                            weekday: 'long',
+                            weekday: 'short',
                             day: 'numeric',
-                            month: 'long',
+                            month: 'short',
+                            year:"numeric",
                         })}
                     </Text>
                 </View>

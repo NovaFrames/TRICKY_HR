@@ -44,6 +44,16 @@ export default function TimeManage() {
         dashboard: '/dashboard',
     });
 
+React.useEffect(() => {
+    if (!fromDate) return;
+
+    const newToDate = new Date(fromDate);
+    newToDate.setDate(newToDate.getDate() + 30);
+
+    setToDate(newToDate);
+}, [fromDate]);
+
+
     // Helper to view format
     // Helper to view format
     const formatDisplayDate = (dateVal: string | Date | null) => {
@@ -225,16 +235,6 @@ export default function TimeManage() {
                         <View style={styles.dateRow}>
                             <Ionicons name="calendar-outline" size={18} color={theme.primary} />
                             <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(fromDate)}</Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    <View style={[styles.dateDivider, { backgroundColor: theme.inputBorder }]} />
-
-                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowToPicker(true)}>
-                        <Text style={[styles.dateLabel, { color: theme.placeholder }]}>To Date</Text>
-                        <View style={styles.dateRow}>
-                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                            <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(toDate)}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>

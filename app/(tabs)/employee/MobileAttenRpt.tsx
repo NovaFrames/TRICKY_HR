@@ -96,9 +96,15 @@ export default function MobileAttenRpt() {
     const [fromDate, setFromDate] = useState(new Date());
     const [toDate, setToDate] = useState(new Date());
     const [showFrom, setShowFrom] = useState(false);
-    const [showTo, setShowTo] = useState(false);
     const [loading, setLoading] = useState(false);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+
+    React.useEffect(()=>{
+        const date = new Date();
+        date.setDate(date.getDate() + 30);
+        console.log('Adjusted Date:', date);
+        setToDate(date);
+    },[fromDate]);
 
     // Fetch report on mount
     React.useEffect(() => {
@@ -259,23 +265,11 @@ export default function MobileAttenRpt() {
                         onPress={() => setShowFrom(true)}
                     >
                         <Text style={[styles.inputLabel, { color: theme.textLight }]}>From</Text>
-                        <Text style={[styles.inputValue, { color: theme.text }]}>{formatDateForDisplay(fromDate)}</Text>
-                    </TouchableOpacity>
-
-                    <View style={styles.connector}>
-                        <Ionicons name="arrow-forward" size={16} color={theme.textLight} />
-                    </View>
-
-                    <TouchableOpacity
-                        style={[styles.dateInput, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
-                        onPress={() => setShowTo(true)}
-                    >
-                        <Text style={[styles.inputLabel, { color: theme.textLight }]}>To</Text>
-                        <Text style={[styles.inputValue, { color: theme.text }]}>{formatDateForDisplay(toDate)}</Text>
+                        <Text style={[styles.inputLabel, { color: theme.text }]}>{formatDateForDisplay(fromDate)}</Text>
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={fetchReport} disabled={loading} style={styles.searchBtnContainer}>
+                <TouchableOpacity onPress={fetchReport} disabled={loading}>
                     <LinearGradient
                         colors={[theme.primary, theme.primary + 'DD']}
                         start={{ x: 0, y: 0 }}
@@ -310,26 +304,6 @@ export default function MobileAttenRpt() {
                 />
             )}
 
-            {showTo && (
-                <DateTimePicker
-                    value={toDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(_, d) => {
-                        setShowTo(false);
-                        if (d) {
-                            if (d < fromDate) {
-                                Alert.alert('Invalid Date', 'To date cannot be before From date.');
-                            } else {
-                                setToDate(d);
-                            }
-                        }
-                    }}
-                    maximumDate={new Date()}
-                    minimumDate={fromDate}
-                />
-            )}
-
             {loading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.primary} />
@@ -340,7 +314,6 @@ export default function MobileAttenRpt() {
                     data={attendance}
                     keyExtractor={(i, idx) => `${i.EmpIdN}-${idx}`}
                     renderItem={renderItem}
-                    contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
