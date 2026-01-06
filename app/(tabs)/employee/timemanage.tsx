@@ -3,37 +3,72 @@ import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
-import ApiService from '../../../services/ApiService';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    FlexAlignType,
+    ScrollView,
+    SectionList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
 import { useTheme } from '../../../context/ThemeContext';
+import ApiService from '../../../services/ApiService';
+
+/* ---------------- CONSTANTS ---------------- */
+
+const ROW_HEIGHT = 44;
+const TABLE_WIDTH = 780;
+
+/* ---------------- TYPES ---------------- */
+
+type ColumnDef = {
+    key: string;
+    label: string;
+    flex: number;
+    align: FlexAlignType;
+};
+
+/* ---------------- COLUMNS ---------------- */
+
+const SHIFT_COLUMNS: ColumnDef[] = [
+    { key: 'date', label: 'Date', flex: 2.5, align: 'flex-start' },
+    { key: 'shift', label: 'Shift', flex: 1.6, align: 'center' },
+    { key: 'in', label: 'In', flex: 1, align: 'flex-end' },
+    { key: 'out', label: 'Out', flex: 1, align: 'flex-end' },
+    { key: 'reason', label: 'Reason', flex: 1.2, align: 'flex-start' },
+    { key: 'actual', label: 'Actual', flex: 1.2, align: 'flex-end' },
+    { key: 'nrm', label: 'NRM', flex: 1, align: 'flex-end' },
+    { key: 'late', label: 'Late', flex: 1, align: 'flex-end' },
+    { key: 'under', label: 'Under', flex: 1, align: 'flex-end' },
+    { key: 'ot1', label: 'OT1', flex: 1, align: 'flex-end' },
+    { key: 'ot2', label: 'OT2', flex: 1, align: 'flex-end' },
+    { key: 'ot3', label: 'OT3', flex: 1, align: 'flex-end' },
+    { key: 'ot4', label: 'OT4', flex: 1, align: 'flex-end' },
+];
+
+/* ---------------- COMPONENT ---------------- */
 
 export default function TimeManage() {
     const { theme } = useTheme();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState('SHIFT TIME');
-    const [showRequestModal, setShowRequestModal] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [timeData, setTimeData] = useState<any[]>([]);
 
-    // Dates for filter
+    const [timeData, setTimeData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [downloading, setDownloading] = useState(false);
+
     const [fromDate, setFromDate] = useState(() => {
         const d = new Date();
-        return new Date(d.getFullYear(), d.getMonth(), 1); // 1st of current month
+        return new Date(d.getFullYear(), d.getMonth(), 1);
     });
     const [toDate, setToDate] = useState(new Date());
-    // DatePicker component handles showing native picker internally
-
-    // Helper to format Date for API "MM/dd/yyyy" format as expected by the API
-    const formatDateForApi = (d: Date) => {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${month}/${day}/${year}`; // MM/dd/yyyy format
-    };
 
     useProtectedBack({
         home: '/home',
@@ -41,89 +76,48 @@ export default function TimeManage() {
         dashboard: '/dashboard',
     });
 
-    React.useEffect(() => {
-        if (!fromDate) return;
-
-        const newToDate = new Date(fromDate);
-        newToDate.setDate(newToDate.getDate() + 30);
-
-        setToDate(newToDate);
+    useEffect(() => {
+        const d = new Date(fromDate);
+        d.setDate(d.getDate() + 30);
+        setToDate(d);
     }, [fromDate]);
 
-    // Helper to view format
-    const formatDisplayDate = (dateVal: string | Date | null) => {
-        if (!dateVal) return '';
+    /* ---------------- HELPERS ---------------- */
 
-        let d: Date;
-        if (typeof dateVal === 'string') {
-            // Handle ASP.NET format /Date(123456789)/
-            if (dateVal.includes('/Date(')) {
-                const timestamp = parseInt(dateVal.replace(/\/Date\((-?\d+)\)\//, '$1'));
-                if (!isNaN(timestamp)) {
-                    d = new Date(timestamp);
-                } else {
-                    return dateVal;
-                }
-            } else {
-                d = new Date(dateVal);
-            }
-        } else {
-            d = dateVal;
+    const formatDateForApi = (d: Date) =>
+        `${String(d.getMonth() + 1).padStart(2, '0')}/${String(
+            d.getDate(),
+        ).padStart(2, '0')}/${d.getFullYear()}`;
+
+    const formatDisplayDate = (val: any) => {
+        if (!val) return '';
+        if (typeof val === 'string' && val.includes('/Date(')) {
+            return new Date(parseInt(val.replace(/\D/g, ''), 10)).toDateString();
         }
-
-        if (isNaN(d.getTime())) return String(dateVal);
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')} ${d.getFullYear()}`;
+        return new Date(val).toDateString();
     };
 
-    // Helper for time format
-    const formatTime = (timeString: any) => {
-        if (!timeString || timeString === '0.00' || timeString === 0) return '00.00';
+    const num = (v: any) => (v ? Number(v).toFixed(2) : '0.00');
 
-        if (typeof timeString === 'number') {
-            const hours = Math.floor(timeString);
-            const minutes = Math.round((timeString - hours) * 100);
-            return `${String(hours).padStart(2, '0')}.${String(minutes).padStart(2, '0')}`;
-        }
-        return timeString;
-    };
-
-
-
-    const onChangeFrom = (selectedDate: Date) => {
-        setFromDate(selectedDate);
-    };
-
-    // To date is auto-calculated; no manual onChangeTo handler needed
+    /* ---------------- API ---------------- */
 
     const fetchTimeData = async () => {
         setLoading(true);
         try {
-            // Use current dates or defaults
-            // For now using hardcoded defaults or you can add a picker
-            // Sending in US format based on request snippet "01/01/2024"
-            const fDate = formatDateForApi(fromDate);
-            const tDate = formatDateForApi(toDate);
-
-            const result = await ApiService.getTimeManageList(fDate, tDate);
-            if (result.success && result.data) {
-                setTimeData(result.data);
-            } else {
-                // Alert.alert("Error", result.error || "Failed to fetch data");
-                console.log("Failed to fetch time data", result.error);
-            }
-        } catch (error) {
-            console.log(error);
+            const res = await ApiService.getTimeManageList(
+                formatDateForApi(fromDate),
+                formatDateForApi(toDate),
+            );
+            if (res?.success) setTimeData(res.data || []);
         } finally {
             setLoading(false);
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         fetchTimeData();
-    }, [activeTab, fromDate, toDate]); // Refresh on tab or date change
+    }, [fromDate, toDate]);
 
-    const [downloading, setDownloading] = useState(false);
 
     const handleDownloadedFile = async (url: string) => {
         try {
@@ -182,7 +176,6 @@ export default function TimeManage() {
             Alert.alert('Error', 'Total days must be less than 31 days');
             return;
         }
-
         setDownloading(true);
 
         try {
@@ -213,210 +206,157 @@ export default function TimeManage() {
         }
     };
 
+    /* ---------------- HEADER ---------------- */
+
     const renderHeader = () => (
-        <View style={styles.headerWrapper}>
-            <View style={styles.headerContainer}>
-                <Stack.Screen options={{ headerShown: false }} />
-                <View style={styles.navBar}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={24} color={theme.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.navTitle, { color: theme.text }]}>Time Management</Text>
-                    <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={downloading}>
-                        {downloading ? (
-                            <ActivityIndicator color={theme.text} size="small" />
-                        ) : (
-                            <Ionicons name="download-outline" size={24} color={theme.text} />
-                        )}
-                    </TouchableOpacity>
-                </View>
+        <>
+            <Stack.Screen options={{ headerShown: false }} />
+
+            <View style={styles.navBar}>
+                <TouchableOpacity onPress={() => router.back()}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
+                </TouchableOpacity>
+
+                <Text style={[styles.navTitle, { color: theme.text }]}>
+                    Time Management
+                </Text>
+
+                <TouchableOpacity onPress={handleDownload} disabled={downloading}>
+                    {downloading ? (
+                        <ActivityIndicator />
+                    ) : (
+                        <Ionicons
+                            name="download-outline"
+                            size={24}
+                            color={theme.text}
+                        />
+                    )}
+                </TouchableOpacity>
             </View>
 
             <View style={styles.datePickerSection}>
-                <DatePicker fromDate={fromDate} toDate={toDate} onFromChange={onChangeFrom} />
+                <DatePicker
+                    fromDate={fromDate}
+                    toDate={toDate}
+                    onFromChange={setFromDate}
+                />
             </View>
-        </View>
+        </>
     );
 
-    const renderTabs = () => (
-        <View style={[styles.tabsContainer, { backgroundColor: theme.cardBackground }]}>
-            {['SHIFT TIME', 'OTHERS', 'OT HRS'].map((tab) => (
-                <TouchableOpacity
-                    key={tab}
-                    style={[styles.tabItem, activeTab === tab && { backgroundColor: theme.primary }]}
-                    onPress={() => setActiveTab(tab)}
+    /* ---------------- TABLE HEADER ---------------- */
+
+    const renderTableHeader = () => (
+        <View
+            style={[
+                styles.tableRow,
+                styles.headerRow,
+                { backgroundColor: theme.inputBg },
+            ]}
+        >
+            {SHIFT_COLUMNS.map(col => (
+                <View
+                    key={col.key}
+                    style={[
+                        styles.cell,
+                        { flex: col.flex, alignItems: col.align },
+                    ]}
                 >
-                    <Text style={[styles.tabText, activeTab === tab ? styles.activeTabText : { color: theme.text }]}>{tab}</Text>
-                </TouchableOpacity>
+                    <Text
+                        style={[
+                            styles.headerText,
+                            { color: theme.secondary },
+                        ]}
+                    >
+                        {col.label}
+                    </Text>
+                </View>
             ))}
         </View>
     );
 
+    /* ---------------- ROW ---------------- */
 
-    const renderListItem = ({ item, index }: { item: any, index: number }) => {
-        const dateDisplay = item.DateD ? formatDisplayDate(item.DateD) : formatDisplayDate(new Date()); // Fallback
-        const safeNum = (val: any) => val ? parseFloat(val).toFixed(2) : '0.00';
-
-        let rowContent = null;
-        const cellTextStyle = [styles.cellText, { color: theme.text }];
-        const cellBoldStyle = [styles.cellTextBold, { color: theme.text }];
-
-        if (activeTab === 'SHIFT TIME') {
-            const shiftCode = item.ShiftCodeC || item.ShiftCode || '-';
-            const inTime = safeNum(item.TInN !== undefined ? item.TInN : item.InTimeN);
-            const outTime = safeNum(item.TOutN !== undefined ? item.TOutN : item.OutTimeN);
-            const reason = item.ReaCodeC || item.TMSRemarksC || item.Reason || item.ABS || '-';
-
-            rowContent = (
-                <>
-                    <View style={[styles.cell, { flex: 1.2 }]}>
-                        <Text style={cellBoldStyle}>{dateDisplay}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 1 }]}>
-                        <Text style={cellTextStyle}>{shiftCode}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{inTime}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{outTime}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 1 }]}>
-                        <Text style={cellTextStyle} numberOfLines={1}>{reason}</Text>
-                    </View>
-                </>
-            );
-        } else if (activeTab === 'OTHERS') {
-            const actual = safeNum(item.ActN || item.Actual || item.ActHrs);
-            const nrm = safeNum(item.NRMN || item.NRM || item.NrmHrs);
-            const late = safeNum(item.LateN || item.Late);
-            const under = safeNum(item.UnderN || item.Under);
-
-            rowContent = (
-                <>
-                    <View style={[styles.cell, { flex: 1.2 }]}>
-                        <Text style={cellBoldStyle}>{dateDisplay}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 1 }]}>
-                        <Text style={cellTextStyle}>{actual}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 1 }]}>
-                        <Text style={cellTextStyle}>{nrm}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 1 }]}>
-                        <Text style={cellTextStyle}>{late}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 1 }]}>
-                        <Text style={cellTextStyle}>{under}</Text>
-                    </View>
-                </>
-            );
-        } else /* OT HRS */ {
-            const ot1 = safeNum(item.OTH1N || item.OT1N || item.OT1);
-            const ot2 = safeNum(item.OTH2N || item.OT2N || item.OT2);
-            const ot3 = safeNum(item.OTH3N || item.OT3N || item.OT3);
-            const ot4 = safeNum(item.OTH4N || item.OT4N || item.OT4);
-
-            rowContent = (
-                <>
-                    <View style={[styles.cell, { flex: 1.2 }]}>
-                        <Text style={cellBoldStyle}>{dateDisplay}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{ot1}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{ot2}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{ot3}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{ot4}</Text>
-                    </View>
-                </>
-            );
-        }
+    const renderRow = ({ item, index }: any) => {
+        const rowValues = [
+            formatDisplayDate(item.DateD),
+            item.ShiftCodeC,
+            num(item.TInN),
+            num(item.TOutN),
+            item.ReaCodeC,
+            num(item.ActN),
+            num(item.NRMN),
+            num(item.LateN),
+            num(item.UnderN),
+            num(item.OTH1N),
+            num(item.OTH2N),
+            num(item.OTH3N),
+            num(item.OTH4N),
+        ];
 
         return (
-            <View style={[styles.row, { borderColor: theme.inputBorder }, index % 2 === 0 ? { backgroundColor: theme.cardBackground } : { backgroundColor: theme.background }]}>
-                {rowContent}
+            <View
+                style={[
+                    styles.tableRow,
+                    {
+                        backgroundColor:
+                            index % 2 === 0
+                                ? theme.cardBackground
+                                : theme.background,
+                    },
+                ]}
+            >
+                {rowValues.map((val, i) => (
+                    <View
+                        key={i}
+                        style={[
+                            styles.cell,
+                            {
+                                flex: SHIFT_COLUMNS[i].flex,
+                                alignItems: SHIFT_COLUMNS[i].align,
+                            },
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.cellText,
+                                { color: theme.text },
+                            ]}
+                        >
+                            {val}
+                        </Text>
+                    </View>
+                ))}
             </View>
         );
     };
 
-    const renderListHeader = () => {
-        const renderHeaderCell = (label: string, flexCb: number) => (
-            <Text style={[styles.headerCell, { flex: flexCb, color: theme.secondary }]}>{label}</Text>
-        );
-
-        let headers = null;
-        if (activeTab === 'SHIFT TIME') {
-            headers = (
-                <>
-                    {renderHeaderCell('Date', 1.2)}
-                    {renderHeaderCell('Shift', 1)}
-                    {renderHeaderCell('In', 0.8)}
-                    {renderHeaderCell('Out', 0.8)}
-                    {renderHeaderCell('Reason', 1)}
-                </>
-            );
-        } else if (activeTab === 'OTHERS') {
-            headers = (
-                <>
-                    {renderHeaderCell('Date', 1.2)}
-                    {renderHeaderCell('Actual', 1)}
-                    {renderHeaderCell('NRM', 1)}
-                    {renderHeaderCell('Late', 1)}
-                    {renderHeaderCell('Under', 1)}
-                </>
-            );
-        } else {
-            headers = (
-                <>
-                    {renderHeaderCell('Date', 1.2)}
-                    {renderHeaderCell('OT1', 0.8)}
-                    {renderHeaderCell('OT2', 0.8)}
-                    {renderHeaderCell('OT3', 0.8)}
-                    {renderHeaderCell('OT4', 0.8)}
-                </>
-            );
-        }
-
-        return <View style={[styles.listHeader, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>{headers}</View>;
-    };
+    /* ---------------- RENDER ---------------- */
 
     return (
         <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-            <View style={[styles.listContainer, { backgroundColor: theme.cardBackground, flex: 1 }]}>
-                <FlatList
-                    ListHeaderComponent={() => (
-                        <View>
-                            {renderHeader()}
-                            {renderTabs()}
-                            {renderListHeader()}
-                        </View>
-                    )}
-                    data={timeData}
-                    renderItem={renderListItem}
-                    keyExtractor={(item, index) => index.toString()}
-                    refreshing={loading}
-                    onRefresh={fetchTimeData}
-                    showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Ionicons name="document-text-outline" size={64} color={theme.icon} />
-                            <Text style={[styles.emptyText, { color: theme.placeholder }]}>No records found</Text>
-                        </View>
-                    }
-                />
-            </View>
+            {renderHeader()}
 
-            {/* Floating Action Button (FAB) for Requests */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={{ width: TABLE_WIDTH }}>
+                    {renderTableHeader()}
+
+                    <SectionList
+                        sections={[{ title: 'SHIFT TIME', data: timeData }]}
+                        keyExtractor={(_, i) => i.toString()}
+                        renderItem={renderRow}
+                        renderSectionHeader={() => null}
+                        refreshing={loading}
+                        onRefresh={fetchTimeData}
+                        stickySectionHeadersEnabled={false}
+                        contentContainerStyle={{ paddingBottom: 120 }}
+                    />
+                </View>
+            </ScrollView>
+
             <TouchableOpacity
                 style={[styles.fab, { backgroundColor: theme.primary }]}
                 onPress={() => setShowRequestModal(true)}
-                activeOpacity={0.8}
             >
                 <Ionicons name="add" size={30} color="#fff" />
             </TouchableOpacity>
@@ -424,190 +364,71 @@ export default function TimeManage() {
             <TimeRequestModal
                 visible={showRequestModal}
                 onClose={() => setShowRequestModal(false)}
-                onSuccess={() => {
-                    setShowRequestModal(false);
-                    fetchTimeData();
-                    Alert.alert('Request Sent', 'Your time request has been sent successfully.');
-                }}
+                onSuccess={fetchTimeData}
             />
-
-            {/* DatePicker handles native picker internally; To date is auto-calculated */}
         </View>
     );
 }
 
+/* ---------------- STYLES ---------------- */
+
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-    },
-    headerWrapper: {
-        backgroundColor: 'transparent',
-    },
-    headerContainer: {
-        paddingTop: 10,
-        paddingBottom: 4,
-        zIndex: 1,
-    },
+    safeArea: { flex: 1 },
+
     navBar: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+        padding: 12,
+        alignItems: 'center',
     },
+
     navTitle: {
         fontSize: 17,
         fontWeight: '700',
-        letterSpacing: -0.3,
     },
-    iconButton: {
-        padding: 8,
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+
     datePickerSection: {
-        paddingHorizontal: 16,
-        paddingVertical: 15,
+        paddingHorizontal: 8,
     },
-    dateCard: {
+
+    tableRow: {
         flexDirection: 'row',
-        borderRadius: 4,
-        padding: 4,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        alignItems: 'center',
-        borderWidth: 1,
-    },
-    dateInput: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        alignItems: 'center',
-    },
-    dateLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    dateRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6
-    },
-    dateValue: {
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    dateDivider: {
-        width: 1,
-        height: '50%',
-    },
-    tabsContainer: {
-        flexDirection: 'row',
-        marginTop: 20, // Overlapping nicely if needed, but here simple flow
-        marginHorizontal: 16,
-        borderRadius: 4,
-        padding: 4,
-        // elevation: 2,
-    },
-    tabItem: {
-        flex: 1,
-        paddingVertical: 10,
-        alignItems: 'center',
-        borderRadius: 4,
-    },
-    activeTabItem: {
-        // backgroundColor: '#00838F', // Handled by theme.primary
-    },
-    tabText: {
-        fontSize: 13,
-        fontWeight: '600',
-        // color: '#757575', // Handled by theme.textLight
-    },
-    activeTabText: {
-        color: '#fff',
-    },
-    listContainer: {
-        flex: 1,
-        marginTop: 15,
-        // marginHorizontal: 16,
-        marginBottom: 0,
-        // borderTopLeftRadius: 12,
-        // borderTopRightRadius: 12,
-        elevation: 2,
-        overflow: 'hidden'
-    },
-    listHeader: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 10,
+        height: ROW_HEIGHT,
+        minWidth: TABLE_WIDTH,
         borderBottomWidth: 1,
-        // backgroundColor: '#E0F7FA', // Light Teal - Handled by theme.inputBg
-        // borderBottomColor: '#B2EBF2', // Handled by theme.inputBorder
+        borderColor: '#e5e7eb',
     },
-    headerCell: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        // color: '#006064', // Handled by theme.secondary
-        textAlign: 'center',
+
+    headerRow: {
+        borderBottomWidth: 2,
     },
-    row: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 10,
-        borderBottomWidth: 1,
-        // borderColor: '#F1F1F1', // Handled by theme.inputBorder
-        alignItems: 'center',
-    },
-    rowEven: {
-        // backgroundColor: '#fff', // Handled by theme.cardBackground
-    },
-    rowOdd: {
-        // backgroundColor: '#FAFAFA', // Handled by theme.background
-    },
+
     cell: {
         justifyContent: 'center',
-        alignItems: 'center', // Center align commonly better for data tables
+        paddingHorizontal: 8,
+        borderRightWidth: 1,
+        borderColor: '#e5e7eb',
     },
+
+    headerText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+
     cellText: {
-        fontSize: 12,
-        // color: '#424242', // Handled by theme.text
-        textAlign: 'center'
+        fontSize: 11,
+        fontWeight: '500',
     },
-    cellTextBold: {
-        fontSize: 12,
-        fontWeight: '600',
-        // color: '#333', // Handled by theme.text
-    },
-    emptyState: {
-        alignItems: 'center',
-        paddingTop: 50,
-        opacity: 0.6
-    },
-    emptyText: {
-        marginTop: 10,
-        fontSize: 16,
-        // color: '#888' // Handled by theme.placeholder
-    },
+
     fab: {
         position: 'absolute',
         bottom: 60,
         right: 24,
-        // backgroundColor: '#00838F', // Handled by theme.primary
         width: 56,
         height: 56,
         borderRadius: 28,
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         elevation: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.27,
-        shadowRadius: 4.65,
-    }
+    },
 });
