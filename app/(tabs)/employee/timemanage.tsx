@@ -1,5 +1,5 @@
+import DatePicker from '@/components/DatePicker';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Stack, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -25,8 +25,7 @@ export default function TimeManage() {
         return new Date(d.getFullYear(), d.getMonth(), 1); // 1st of current month
     });
     const [toDate, setToDate] = useState(new Date());
-    const [showFromPicker, setShowFromPicker] = useState(false);
-    const [showToPicker, setShowToPicker] = useState(false);
+    // DatePicker component handles showing native picker internally
 
     // Helper to format Date for API "MM/dd/yyyy" format as expected by the API
     const formatDateForApi = (d: Date) => {
@@ -51,8 +50,6 @@ export default function TimeManage() {
         setToDate(newToDate);
     }, [fromDate]);
 
-
-    // Helper to view format
     // Helper to view format
     const formatDisplayDate = (dateVal: string | Date | null) => {
         if (!dateVal) return '';
@@ -93,19 +90,11 @@ export default function TimeManage() {
 
 
 
-    const onChangeFrom = (event: any, selectedDate?: Date) => {
-        setShowFromPicker(false);
-        if (selectedDate) {
-            setFromDate(selectedDate);
-        }
+    const onChangeFrom = (selectedDate: Date) => {
+        setFromDate(selectedDate);
     };
 
-    const onChangeTo = (event: any, selectedDate?: Date) => {
-        setShowToPicker(false);
-        if (selectedDate) {
-            setToDate(selectedDate);
-        }
-    };
+    // To date is auto-calculated; no manual onChangeTo handler needed
 
     const fetchTimeData = async () => {
         setLoading(true);
@@ -243,17 +232,8 @@ export default function TimeManage() {
                 </View>
             </View>
 
-            {/* Date Picker Card - Now outside the colored header */}
             <View style={styles.datePickerSection}>
-                <View style={[styles.dateCard, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
-                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowFromPicker(true)}>
-                        <Text style={[styles.dateLabel, { color: theme.placeholder }]}>From Date</Text>
-                        <View style={styles.dateRow}>
-                            <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                            <Text style={[styles.dateValue, { color: theme.text }]}>{formatDisplayDate(fromDate)}</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
+                <DatePicker fromDate={fromDate} toDate={toDate} onFromChange={onChangeFrom} />
             </View>
         </View>
     );
@@ -451,23 +431,7 @@ export default function TimeManage() {
                 }}
             />
 
-            {/* Date Pickers */}
-            {showFromPicker && (
-                <DateTimePicker
-                    value={fromDate}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeFrom}
-                />
-            )}
-            {showToPicker && (
-                <DateTimePicker
-                    value={toDate}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeTo}
-                />
-            )}
+            {/* DatePicker handles native picker internally; To date is auto-calculated */}
         </View>
     );
 }
@@ -632,7 +596,7 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: 24,
+        bottom: 60,
         right: 24,
         // backgroundColor: '#00838F', // Handled by theme.primary
         width: 56,

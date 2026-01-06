@@ -1,21 +1,18 @@
+import DatePicker from '@/components/DatePicker';
 import Header from '@/components/Header';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
-    Platform,
     SafeAreaView,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View
 } from 'react-native';
 import { API_ENDPOINTS } from '../../../constants/api';
@@ -95,14 +92,12 @@ export default function MobileAttenRpt() {
 
     const [fromDate, setFromDate] = useState(new Date());
     const [toDate, setToDate] = useState(new Date());
-    const [showFrom, setShowFrom] = useState(false);
     const [loading, setLoading] = useState(false);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
     React.useEffect(()=>{
-        const date = new Date();
+        const date = new Date(fromDate);
         date.setDate(date.getDate() + 30);
-        console.log('Adjusted Date:', date);
         setToDate(date);
     },[fromDate]);
 
@@ -111,7 +106,7 @@ export default function MobileAttenRpt() {
         if (user?.TokenC) {
             fetchReport();
         }
-    }, [user?.TokenC]);
+    }, [user?.TokenC, toDate]);
 
     const fetchReport = async () => {
         if (!user?.TokenC) {
@@ -260,16 +255,10 @@ export default function MobileAttenRpt() {
                 </View>
 
                 <View style={styles.filterRow}>
-                    <TouchableOpacity
-                        style={[styles.dateInput, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
-                        onPress={() => setShowFrom(true)}
-                    >
-                        <Text style={[styles.inputLabel, { color: theme.textLight }]}>From</Text>
-                        <Text style={[styles.inputLabel, { color: theme.text }]}>{formatDateForDisplay(fromDate)}</Text>
-                    </TouchableOpacity>
+                    <DatePicker fromDate={fromDate} toDate={toDate} onFromChange={setFromDate} />
                 </View>
 
-                <TouchableOpacity onPress={fetchReport} disabled={loading}>
+                {/* <TouchableOpacity onPress={fetchReport} disabled={loading}>
                     <LinearGradient
                         colors={[theme.primary, theme.primary + 'DD']}
                         start={{ x: 0, y: 0 }}
@@ -285,24 +274,10 @@ export default function MobileAttenRpt() {
                             </>
                         )}
                     </LinearGradient>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
-            {showFrom && (
-                <DateTimePicker
-                    value={fromDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(_, d) => {
-                        setShowFrom(false);
-                        if (d) {
-                            setFromDate(d);
-                            if (d > toDate) setToDate(d);
-                        }
-                    }}
-                    maximumDate={new Date()}
-                />
-            )}
+            {/* DatePicker handles From selection internally; To is auto-calculated */}
 
             {loading ? (
                 <View style={styles.loadingContainer}>
@@ -338,7 +313,6 @@ const styles = StyleSheet.create({
     // Filter Styles
     filterWrapper: {
         margin: 16,
-        padding: 20,
         borderRadius: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -359,7 +333,6 @@ const styles = StyleSheet.create({
     filterRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
     },
     dateInput: {
         flex: 1,

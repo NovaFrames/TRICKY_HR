@@ -16,30 +16,36 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
         try {
             if (!dateString) return '';
 
+            let date: Date;
+
             // Handle ASP.NET format
             if (typeof dateString === 'string' && dateString.includes('/Date(')) {
-                const timestamp = parseInt(dateString.replace(/\/Date\((-?\d+)\)\//, '$1'));
-                const date = new Date(timestamp);
-
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const d = date.getDate();
-                const m = months[date.getMonth()];
-                const y = date.getFullYear();
-
-                return `${m} ${d}, ${y}`;
+                const timestamp = parseInt(
+                    dateString.replace(/\/Date\((-?\d+)\)\//, '$1'),
+                    10
+                );
+                date = new Date(timestamp);
+            } else {
+                // Fallback for standard date strings
+                date = new Date(dateString);
             }
 
-            // Fallback for standard date strings
-            const date = new Date(dateString);
             if (isNaN(date.getTime())) return dateString;
 
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
             const d = date.getDate();
             const m = months[date.getMonth()];
             const y = date.getFullYear();
 
-            return `${m} ${d}, ${y}`;
-        } catch (e) {
+            let hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+
+            hours = hours % 12 || 12;
+
+            return `${m} ${d}, ${y}, ${hours}:${minutes} ${ampm}`;
+        } catch {
             return dateString;
         }
     };
