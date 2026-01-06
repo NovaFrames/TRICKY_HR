@@ -137,6 +137,18 @@ export const API_ENDPOINTS = {
     // Employee List
     GET_EMPLOYEE_LIST: '/GetSup_EmployeeList',
 
+    // Attendance Report
+    GET_MOBILE_ATTENDANCE_REPORT: '/GetMobileAttenRpt',
+
+    // Service Report
+    GET_CLIENT_LIST: '/GetService_ClientList',
+    SUBMIT_SERVICE_REPORT: '/Update_StatusRpt',
+
+    // Pending Approvals
+    GET_YOUR_PENDING_APPROVALS: '/GetPendingApprove_YourList',
+    GET_OTHER_PENDING_APPROVALS: '/GetPendingApprove_OtherList',
+    UPDATE_PENDING_APPROVAL: '/UpdatePendingApproval',
+
 };
 
 // Types
@@ -1099,6 +1111,267 @@ class ApiService {
             return {
                 success: false,
                 error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
+    async getAttendanceReport(fromDate: string, toDate: string, type: number = 0): Promise<{ success: boolean; data?: any[]; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const payload = {
+                TokenC: this.token,
+                FromDate: fromDate,
+                ToDate: toDate,
+                Type: 1           // 1 for all records
+            };
+
+            console.log('Attendance Report Payload:', payload);
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_MOBILE_ATTENDANCE_REPORT,
+                payload,
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Attendance Report Response Status:', response.data.Status);
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data.data || [] };
+            } else {
+                return { success: false, error: response.data.Error || 'Failed to fetch attendance report' };
+            }
+        } catch (error: any) {
+            console.error('Attendance Report Error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || error.message || 'Network error'
+            };
+        }
+    }
+
+    async getClientList(): Promise<{ success: boolean; data?: { clients: any[]; serviceTypes: any[] }; error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_CLIENT_LIST,
+                {
+                    TokenC: this.token
+                },
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Client List Response Status:', response.data.Status);
+
+            if (response.data.Status === 'success') {
+                return {
+                    success: true,
+                    data: {
+                        clients: response.data.data || [],
+                        serviceTypes: response.data.ServiceType || []
+                    }
+                };
+            } else {
+                return { success: false, error: response.data.Error || 'Failed to fetch client list' };
+            }
+        } catch (error: any) {
+            console.error('Client List Error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || error.message || 'Network error'
+            };
+        }
+    }
+
+    async submitServiceReport(data: {
+        ClientIdN: number;
+        TicketNoC: string;
+        Remark1C: string;
+        Remark2C: string;
+        Remark3C: string;
+        ServiceTypeC: string;
+        FollowUpDateD: string;
+        ServiceDtl: string;
+        StartTimeD: string;
+        CallTimeD: string;
+        AppointmentTimeD: string;
+        ClientSign: string;
+        EmpSign: string;
+    }): Promise<{ success: boolean; error?: string }> {
+        try {
+            if (!this.token || !this.empId) {
+                await this.loadCredentials();
+            }
+
+            // Create FormData for multipart upload
+            const formData = new FormData();
+            formData.append('TokenC', this.token || '');
+            formData.append('EmpIdN', String(this.empId));
+            formData.append('ClientIdN', String(data.ClientIdN));
+            formData.append('TicketNoC', data.TicketNoC);
+            formData.append('Remark1C', data.Remark1C);
+            formData.append('Remark2C', data.Remark2C);
+            formData.append('Remark3C', data.Remark3C);
+            formData.append('ServiceTypeC', data.ServiceTypeC);
+            formData.append('FollowUpDateD', data.FollowUpDateD);
+            formData.append('ServiceDtl', data.ServiceDtl);
+            formData.append('StartTimeD', data.StartTimeD);
+            formData.append('CallTimeD', data.CallTimeD);
+            formData.append('AppointmentTimeD', data.AppointmentTimeD);
+
+            // Add signatures if available
+            if (data.ClientSign) {
+                formData.append('ClientSign', {
+                    uri: data.ClientSign,
+                    name: 'client_signature.png',
+                    type: 'image/png'
+                } as any);
+            }
+
+            if (data.EmpSign) {
+                formData.append('EmpSign', {
+                    uri: data.EmpSign,
+                    name: 'emp_signature.png',
+                    type: 'image/png'
+                } as any);
+            }
+
+            console.log('Submitting Service Report...');
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.SUBMIT_SERVICE_REPORT,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'Token': this.token || ''
+                    }
+                }
+            );
+
+            console.log('Service Report Response Status:', response.data.Status);
+
+            if (response.data.Status === 'success') {
+                return { success: true };
+            } else {
+                return { success: false, error: response.data.Error || 'Failed to submit service report' };
+            }
+        } catch (error: any) {
+            console.error('Submit Service Report Error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || error.message || 'Network error'
+            };
+        }
+    }
+
+    async getYourPendingApprovals(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+        try {
+            if (!this.token || !this.empId) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_YOUR_PENDING_APPROVALS,
+                {
+                    TokenC: this.token,
+                    EmpIdN: this.empId
+                },
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Your Pending Approvals Response Status:', response.data.Status);
+
+            if (response.data.Status === 'success') {
+                return {
+                    success: true,
+                    data: response.data.data || response.data.xx || []
+                };
+            } else {
+                return { success: false, error: response.data.Error || 'Failed to fetch your pending approvals' };
+            }
+        } catch (error: any) {
+            console.error('Your Pending Approvals Error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || error.message || 'Network error'
+            };
+        }
+    }
+
+    async getOtherPendingApprovals(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+        try {
+            if (!this.token || !this.empId) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_OTHER_PENDING_APPROVALS,
+                {
+                    TokenC: this.token,
+                    EmpIdN: this.empId
+                },
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Other Pending Approvals Response Status:', response.data.Status);
+
+            if (response.data.Status === 'success') {
+                return {
+                    success: true,
+                    data: response.data.data || response.data.xx || []
+                };
+            } else {
+                return { success: false, error: response.data.Error || 'Failed to fetch other pending approvals' };
+            }
+        } catch (error: any) {
+            console.error('Other Pending Approvals Error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || error.message || 'Network error'
+            };
+        }
+    }
+
+    async updatePendingApproval(data: {
+        IdN: number;
+        StatusC: string;
+        ApproveRemarkC: string;
+    }): Promise<{ success: boolean; error?: string }> {
+        try {
+            if (!this.token || !this.empId) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.UPDATE_PENDING_APPROVAL,
+                {
+                    TokenC: this.token,
+                    EmpIdN: this.empId,
+                    IdN: data.IdN,
+                    StatusC: data.StatusC,
+                    ApproveRemarkC: data.ApproveRemarkC,
+                },
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Update Pending Approval Response Status:', response.data.Status);
+
+            if (response.data.Status === 'success') {
+                return { success: true };
+            } else {
+                return { success: false, error: response.data.Error || 'Failed to update approval' };
+            }
+        } catch (error: any) {
+            console.error('Update Pending Approval Error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.Error || error.message || 'Network error'
             };
         }
     }
