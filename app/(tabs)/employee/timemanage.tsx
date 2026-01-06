@@ -7,15 +7,14 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    FlexAlignType,
     ScrollView,
-    SectionList,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
+import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
 import { formatDateForApi, formatDisplayDate, formatTimeNumber } from '@/constants/timeFormat';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
@@ -27,31 +26,66 @@ import ApiService from '../../../services/ApiService';
 const ROW_HEIGHT = 44;
 const TABLE_WIDTH = 780;
 
-/* ---------------- TYPES ---------------- */
-
-type ColumnDef = {
-    key: string;
-    label: string;
-    flex: number;
-    align: FlexAlignType;
-};
-
-/* ---------------- COLUMNS ---------------- */
-
-const SHIFT_COLUMNS: ColumnDef[] = [
-    { key: 'date', label: 'Date', flex: 2.5, align: 'flex-start' },
-    { key: 'shift', label: 'Shift', flex: 1.6, align: 'center' },
-    { key: 'in', label: 'In', flex: 1, align: 'flex-end' },
-    { key: 'out', label: 'Out', flex: 1, align: 'flex-end' },
-    { key: 'reason', label: 'Reason', flex: 1.2, align: 'flex-start' },
-    { key: 'actual', label: 'Actual', flex: 1.2, align: 'flex-end' },
-    { key: 'nrm', label: 'NRM', flex: 1, align: 'flex-end' },
-    { key: 'late', label: 'Late', flex: 1, align: 'flex-end' },
-    { key: 'under', label: 'Under', flex: 1, align: 'flex-end' },
-    { key: 'ot1', label: 'OT1', flex: 1, align: 'flex-end' },
-    { key: 'ot2', label: 'OT2', flex: 1, align: 'flex-end' },
-    { key: 'ot3', label: 'OT3', flex: 1, align: 'flex-end' },
-    { key: 'ot4', label: 'OT4', flex: 1, align: 'flex-end' },
+const TIME_COLUMNS: ColumnDef[] = [
+    {
+        key: 'DateD',
+        label: 'Date',
+        flex: 2,
+        align: 'flex-start',
+        formatter: (v: unknown) => formatDisplayDate(v),
+    },
+    { key: 'ShiftCodeC', label: 'Shift', flex: 1.6, align: 'center' },
+    {
+        key: 'TInN',
+        label: 'In',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'TOutN',
+        label: 'Out',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    { key: 'ReaCodeC', label: 'Reason', flex: 1.2, align: 'flex-start' },
+    {
+        key: 'ActN',
+        label: 'Actual',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'NRMN',
+        label: 'NRM',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'LateN',
+        label: 'Late',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'UnderN',
+        label: 'Under',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'OTH1N',
+        label: 'OT1',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'OTH2N',
+        label: 'OT2',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'OTH3N',
+        label: 'OT3',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
+    {
+        key: 'OTH4N',
+        label: 'OT4',
+        formatter: (v: unknown) => formatTimeNumber(v),
+    },
 ];
 
 /* ---------------- COMPONENT ---------------- */
@@ -93,6 +127,8 @@ export default function TimeManage() {
                 formatDateForApi(toDate),
             );
             if (res?.success) setTimeData(res.data || []);
+            console.log("timemanageData: ", res.data);
+
         } finally {
             setLoading(false);
         }
@@ -228,93 +264,6 @@ export default function TimeManage() {
         </>
     );
 
-    /* ---------------- TABLE HEADER ---------------- */
-
-    const renderTableHeader = () => (
-        <View
-            style={[
-                styles.tableRow,
-                styles.headerRow,
-                { backgroundColor: theme.inputBg },
-            ]}
-        >
-            {SHIFT_COLUMNS.map(col => (
-                <View
-                    key={col.key}
-                    style={[
-                        styles.cell,
-                        { flex: col.flex, alignItems: col.align },
-                    ]}
-                >
-                    <Text
-                        style={[
-                            styles.headerText,
-                            { color: theme.secondary },
-                        ]}
-                    >
-                        {col.label}
-                    </Text>
-                </View>
-            ))}
-        </View>
-    );
-
-    /* ---------------- ROW ---------------- */
-
-    const renderRow = ({ item, index }: any) => {
-        const rowValues = [
-            formatDisplayDate(item.DateD),
-            item.ShiftCodeC,
-            formatTimeNumber(item.TInN),
-            formatTimeNumber(item.TOutN),
-            item.ReaCodeC,
-            formatTimeNumber(item.ActN),
-            formatTimeNumber(item.NRMN),
-            formatTimeNumber(item.LateN),
-            formatTimeNumber(item.UnderN),
-            formatTimeNumber(item.OTH1N),
-            formatTimeNumber(item.OTH2N),
-            formatTimeNumber(item.OTH3N),
-            formatTimeNumber(item.OTH4N),
-        ];
-
-        return (
-            <View
-                style={[
-                    styles.tableRow,
-                    {
-                        backgroundColor:
-                            index % 2 === 0
-                                ? theme.cardBackground
-                                : theme.background,
-                    },
-                ]}
-            >
-                {rowValues.map((val, i) => (
-                    <View
-                        key={i}
-                        style={[
-                            styles.cell,
-                            {
-                                flex: SHIFT_COLUMNS[i].flex,
-                                alignItems: SHIFT_COLUMNS[i].align,
-                            },
-                        ]}
-                    >
-                        <Text
-                            style={[
-                                styles.cellText,
-                                { color: theme.text },
-                            ]}
-                        >
-                            {val}
-                        </Text>
-                    </View>
-                ))}
-            </View>
-        );
-    };
-
     /* ---------------- RENDER ---------------- */
 
     return (
@@ -322,20 +271,16 @@ export default function TimeManage() {
             {renderHeader()}
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={{ width: TABLE_WIDTH }}>
-                    {renderTableHeader()}
+                {/* <View style={{ width: TABLE_WIDTH }}> */}
 
-                    <SectionList
-                        sections={[{ title: 'SHIFT TIME', data: timeData }]}
-                        keyExtractor={(_, i) => i.toString()}
-                        renderItem={renderRow}
-                        renderSectionHeader={() => null}
-                        refreshing={loading}
-                        onRefresh={fetchTimeData}
-                        stickySectionHeadersEnabled={false}
-                        contentContainerStyle={{ paddingBottom: 120 }}
+                    <DynamicTable
+                        data={timeData}
+                        columns={TIME_COLUMNS}   // remove this to auto-generate
+                        theme={theme}
+                        tableWidth={900}
                     />
-                </View>
+
+                {/* </View> */}
             </ScrollView>
 
             <TouchableOpacity
