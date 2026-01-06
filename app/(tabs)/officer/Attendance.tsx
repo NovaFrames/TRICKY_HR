@@ -8,14 +8,18 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
-    FlatList,
+    Dimensions,
     Platform,
     SafeAreaView,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
+
+import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
+
 
 // Types for Attendance Data
 export interface AttendanceShift {
@@ -42,7 +46,6 @@ export default function AttendanceList() {
     const { theme } = useTheme();
     const { user } = useUser();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'SHIFT' | 'OTHERS'>('SHIFT');
 
     // Date states
     const [fromDate, setFromDate] = useState(() => {
@@ -55,7 +58,6 @@ export default function AttendanceList() {
 
     const [loading, setLoading] = useState(false);
     const [shiftData, setShiftData] = useState<AttendanceShift[]>([]);
-    const [othersData, setOthersData] = useState<AttendanceOther[]>([]);
 
     const loginData = user || {};
     const token = loginData.Token || loginData.TokenC;
@@ -63,7 +65,7 @@ export default function AttendanceList() {
 
     useEffect(() => {
         fetchAttendance();
-    }, [activeTab, fromDate, toDate]);
+    }, [fromDate, toDate]);
 
     const formatDateForApi = (d: Date) => {
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -98,11 +100,10 @@ export default function AttendanceList() {
 
             if (response.data.Status === 'success') {
                 const data = response.data.data || [];
+                console.log('Attendance Data:', data);
                 setShiftData(data);
-                setOthersData(data);
             } else {
                 setShiftData([]);
-                setOthersData([]);
             }
         } catch (error) {
             console.error('Fetch Attendance Error:', error);
@@ -164,118 +165,106 @@ export default function AttendanceList() {
         </View>
     );
 
-    const renderTabs = () => (
-        <View style={[styles.tabsContainer, { backgroundColor: theme.cardBackground }]}>
-            {['SHIFT', 'OTHERS'].map((tab) => (
-                <TouchableOpacity
-                    key={tab}
-                    style={[styles.tabItem, activeTab === tab && { backgroundColor: theme.primary }]}
-                    onPress={() => setActiveTab(tab as any)}
-                >
-                    <Text style={[styles.tabText, activeTab === tab ? styles.activeTabText : { color: theme.text }]}>
-                        {tab === 'SHIFT' ? 'SHIFT TIME' : 'OTHERS'}
-                    </Text>
-                </TouchableOpacity>
-            ))}
-        </View>
-    );
+    // single table view (SHIFT only)
 
-    const renderListHeader = () => {
-        const renderHeaderCell = (label: string, flexCb: number) => (
-            <Text style={[styles.headerCell, { flex: flexCb, color: theme.secondary }]}>{label}</Text>
-        );
+    // Table columns for DynamicTable (SHIFT view)
+    const tableWidth = Math.max(780, Dimensions.get('window').width);
 
-        if (activeTab === 'SHIFT') {
-            return (
-                <View style={[styles.listHeader, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
-                    {renderHeaderCell('Name', 1.5)}
-                    {renderHeaderCell('Shift', 1)}
-                    {renderHeaderCell('In', 0.8)}
-                    {renderHeaderCell('Out', 0.8)}
-                </View>
-            );
-        } else {
-            return (
-                <View style={[styles.listHeader, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
-                    {renderHeaderCell('Name', 1.5)}
-                    {renderHeaderCell('Act', 0.8)}
-                    {renderHeaderCell('NRM', 0.8)}
-                    {renderHeaderCell('Late', 0.8)}
-                    {renderHeaderCell('Under', 0.8)}
-                </View>
-            );
-        }
-    };
+    const shiftColumns: ColumnDef[] = [
 
-    const renderListItem = ({ item, index }: { item: any, index: number }) => {
-        const cellTextStyle = [styles.cellText, { color: theme.text }];
-        const cellBoldStyle = [styles.cellTextBold, { color: theme.text }];
+        {
+            key: 'DateD',
+            label: 'Date',
+            flex: 0.8,
+            align: 'flex-start',
+            formatter: v =>
+                typeof v === 'string'
+                    ? new Date(Number(v.replace(/\D/g, ''))).toLocaleDateString()
+                    : '',
+        },
+        { key: 'EmpCodeC', label: 'Code', flex: 0.8, align: 'flex-start' },
+        { key: 'EmpNameC', label: 'Name', flex: 1.4, align: 'flex-start' },
+        { key: 'ShiftCodeC', label: 'Shift', flex: 0.7, align: 'center' },
 
-        if (activeTab === 'SHIFT') {
-            return (
-                <View style={[styles.row, { borderColor: theme.inputBorder }, index % 2 === 0 ? { backgroundColor: theme.cardBackground } : { backgroundColor: theme.background }]}>
-                    <View style={[styles.cell, { flex: 1.5 }]}>
-                        <Text style={cellBoldStyle} numberOfLines={1}>{item.EmpNameC}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 1 }]}>
-                        <Text style={cellTextStyle}>{item.ShiftCodeC}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{item.ShiftInN?.toFixed(2) || '0.00'}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{item.ShiftOutN?.toFixed(2) || '0.00'}</Text>
-                    </View>
-                </View>
-            );
-        } else {
-            return (
-                <View style={[styles.row, { borderColor: theme.inputBorder }, index % 2 === 0 ? { backgroundColor: theme.cardBackground } : { backgroundColor: theme.background }]}>
-                    <View style={[styles.cell, { flex: 1.5 }]}>
-                        <Text style={cellBoldStyle} numberOfLines={1}>{item.EmpNameC}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{item.ActN?.toFixed(2) || '0.00'}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{item.NRMN?.toFixed(2) || '0.00'}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{item.LateN?.toFixed(2) || '0.00'}</Text>
-                    </View>
-                    <View style={[styles.cell, { flex: 0.8 }]}>
-                        <Text style={cellTextStyle}>{item.UnderN?.toFixed(2) || '0.00'}</Text>
-                    </View>
-                </View>
-            );
-        }
-    };
+        {
+            key: 'ShiftInN',
+            label: 'Shift In',
+            flex: 0.5,
+            align: 'flex-end',
+            formatter: v => (typeof v === 'number' ? v.toFixed(2) : '0.00'),
+        },
+        {
+            key: 'ShiftOutN',
+            label: 'Shift Out',
+            flex: 0.5,
+            align: 'flex-end',
+            formatter: v => (typeof v === 'number' ? v.toFixed(2) : '0.00'),
+        },
+        { key: 'ReaCodeC', label: 'Reason', flex: 0.6, align: 'center' },
+
+        { key: 'AttC', label: 'Attendance', flex: 0.5, align: 'center' },
+        {
+            key: 'TInN',
+            label: 'Actual In',
+            flex: 0.5,
+            align: 'flex-end',
+            formatter: v => (typeof v === 'number' ? v.toFixed(2) : '0.00'),
+        },
+        {
+            key: 'TOutN',
+            label: 'Actual Out',
+            flex: 0.5,
+            align: 'flex-end',
+            formatter: v => (typeof v === 'number' ? v.toFixed(2) : '0.00'),
+        },
+        {
+            key: 'ShiftNRMN',
+            label: 'Shift NRM',
+            flex: 0.5,
+            align: 'flex-end',
+        },
+        { key: 'LateN', label: 'Late', flex: 0.4, align: 'flex-end' },
+        { key: 'UnderN', label: 'Under', flex: 0.4, align: 'flex-end' },
+
+
+        { key: 'NRMN', label: 'NRM', flex: 0.4, align: 'flex-end' },
+        { key: 'AOTN', label: 'AOT', flex: 0.4, align: 'flex-end' },
+        { key: 'EOTN', label: 'EOT', flex: 0.4, align: 'flex-end' },
+
+        {
+            key: 'LockN',
+            label: 'Locked',
+            flex: 0.4,
+            align: 'center',
+            formatter: v => (v === 1 ? 'Yes' : 'No'),
+        },
+    ];
+
+
+
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
             <View style={[styles.listContainer, { backgroundColor: theme.cardBackground, flex: 1 }]}>
-                <FlatList
-                    ListHeaderComponent={() => (
-                        <View>
-                            {renderHeader()}
-                            {renderTabs()}
-                            {renderListHeader()}
-                        </View>
-                    )}
-                    data={activeTab === 'SHIFT' ? shiftData : othersData}
-                    renderItem={renderListItem}
-                    keyExtractor={(item, index) => `${item.EmpCodeC}-${index}`}
-                    contentContainerStyle={styles.listContent}
-                    refreshing={loading}
-                    onRefresh={fetchAttendance}
-                    showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={
+                {renderHeader()}
+
+                <View style={{ paddingHorizontal: 16, paddingTop: 8, flex: 1 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <DynamicTable
+                            data={shiftData}
+                            columns={shiftColumns}
+                            tableWidth={1200}
+                            theme={theme}
+                        />
+                    </ScrollView>
+
+                    {!shiftData.length && !loading && (
                         <View style={styles.emptyState}>
                             <Ionicons name="document-text-outline" size={64} color={theme.textLight} />
                             <Text style={[styles.emptyText, { color: theme.textLight }]}>No records found</Text>
                         </View>
-                    }
-                />
+                    )}
+                </View>
             </View>
 
             {showFromPicker && (

@@ -1,72 +1,54 @@
 import React, { useMemo } from 'react';
 import {
-    FlexAlignType,
-    ScrollView,
-    SectionList,
-    StyleSheet,
-    Text,
-    View,
+  FlexAlignType,
+  ScrollView,
+  SectionList,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-
-/* ---------------- TYPES ---------------- */
 
 export type ColumnDef = {
   key: string;
   label: string;
   flex?: number;
   align?: FlexAlignType;
-  formatter?: (value: unknown, row: Record<string, any>) => string;
+  formatter?: (value: unknown, row: any) => string;
 };
 
 type Props = {
-  data: Record<string, any>[];
-  columns?: ColumnDef[];
+  data: any[];
+  columns: ColumnDef[];
   rowHeight?: number;
-  tableWidth?: number;
+  tableWidth: number;
   theme: any;
 };
-
-/* ---------------- COMPONENT ---------------- */
 
 export default function DynamicTable({
   data,
   columns,
   rowHeight = 44,
-  tableWidth = 780,
+  tableWidth,
   theme,
 }: Props) {
-  /* -------- AUTO GENERATE COLUMNS FROM API -------- */
-  const resolvedColumns: ColumnDef[] = useMemo(() => {
-    if (columns?.length) return columns;
-    if (!data.length) return [];
 
-    return Object.keys(data[0]).map(key => ({
-      key,
-      label: key.replace(/([A-Z])/g, ' $1').trim(),
-      flex: 1,
-      align: 'flex-end',
-    }));
-  }, [columns, data]);
+  /* ---------- CALCULATE FIXED COLUMN WIDTHS ---------- */
+  const columnWidths = useMemo(() => {
+    const totalFlex = columns.reduce((s, c) => s + (c.flex ?? 1), 0);
+    return columns.map(col =>
+      Math.round(((col.flex ?? 1) / totalFlex) * tableWidth)
+    );
+  }, [columns, tableWidth]);
 
   /* ---------------- HEADER ---------------- */
-
   const renderHeader = () => (
-    <View
-      style={[
-        styles.row,
-        styles.headerRow,
-        { backgroundColor: theme.inputBg, height: rowHeight },
-      ]}
-    >
-      {resolvedColumns.map(col => (
-        <View
-          key={col.key}
-          style={[
-            styles.cell,
-            { flex: col.flex ?? 1, alignItems: col.align ?? 'flex-end' },
-          ]}
-        >
-          <Text style={[styles.headerText, { color: theme.secondary }]}>
+    <View style={[styles.row, styles.headerRow]}>
+      {columns.map((col, i) => (
+        <View key={col.key} style={[styles.cell, { width: columnWidths[i] }]}>
+          <Text
+            style={[styles.headerText, { color: theme.secondary, textAlign: align(col.align) }]}
+            numberOfLines={1}
+          >
             {col.label}
           </Text>
         </View>
@@ -75,33 +57,24 @@ export default function DynamicTable({
   );
 
   /* ---------------- ROW ---------------- */
-
   const renderRow = ({ item, index }: any) => (
     <View
       style={[
         styles.row,
-        {
-          height: rowHeight,
-          backgroundColor:
-            index % 2 === 0 ? theme.cardBackground : theme.background,
-        },
+        { backgroundColor: index % 2 === 0 ? theme.cardBackground : theme.background },
       ]}
     >
-      {resolvedColumns.map(col => {
-        const raw = item[col.key];
+      {columns.map((col, i) => {
         const value = col.formatter
-          ? col.formatter(raw, item)
-          : raw ?? '';
+          ? col.formatter(item[col.key], item)
+          : item[col.key] ?? '';
 
         return (
-          <View
-            key={col.key}
-            style={[
-              styles.cell,
-              { flex: col.flex ?? 1, alignItems: col.align ?? 'flex-end' },
-            ]}
-          >
-            <Text style={[styles.cellText, { color: theme.text }]}>
+          <View key={col.key} style={[styles.cell, { width: columnWidths[i] }]}>
+            <Text
+              style={[styles.cellText, { color: theme.text, textAlign: align(col.align) }]}
+              numberOfLines={1}
+            >
               {String(value)}
             </Text>
           </View>
@@ -110,11 +83,9 @@ export default function DynamicTable({
     </View>
   );
 
-  /* ---------------- RENDER ---------------- */
-
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View style={{ minWidth: tableWidth }}>
+      <View style={{ width: tableWidth }}>
         {renderHeader()}
         <SectionList
           sections={[{ title: 'DATA', data }]}
@@ -122,27 +93,29 @@ export default function DynamicTable({
           renderItem={renderRow}
           renderSectionHeader={() => null}
           stickySectionHeadersEnabled={false}
-          contentContainerStyle={{ paddingBottom: 120 }}
         />
       </View>
     </ScrollView>
   );
 }
 
-/* ---------------- STYLES ---------------- */
+const align = (a?: FlexAlignType) =>
+  a === 'flex-end' ? 'right' : a === 'center' ? 'center' : 'left';
 
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderColor: '#e5e7eb',
+    paddingVertical: 12,
   },
   headerRow: {
+    backgroundColor: '#f1f5f9',
     borderBottomWidth: 2,
   },
   cell: {
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     borderRightWidth: 1,
     borderColor: '#e5e7eb',
   },

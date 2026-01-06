@@ -27,66 +27,21 @@ const ROW_HEIGHT = 44;
 const TABLE_WIDTH = 780;
 
 const TIME_COLUMNS: ColumnDef[] = [
-    {
-        key: 'DateD',
-        label: 'Date',
-        flex: 2,
-        align: 'flex-start',
-        formatter: (v: unknown) => formatDisplayDate(v),
-    },
-    { key: 'ShiftCodeC', label: 'Shift', flex: 1.6, align: 'center' },
-    {
-        key: 'TInN',
-        label: 'In',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'TOutN',
-        label: 'Out',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    { key: 'ReaCodeC', label: 'Reason', flex: 1.2, align: 'flex-start' },
-    {
-        key: 'ActN',
-        label: 'Actual',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'NRMN',
-        label: 'NRM',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'LateN',
-        label: 'Late',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'UnderN',
-        label: 'Under',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'OTH1N',
-        label: 'OT1',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'OTH2N',
-        label: 'OT2',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'OTH3N',
-        label: 'OT3',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
-    {
-        key: 'OTH4N',
-        label: 'OT4',
-        formatter: (v: unknown) => formatTimeNumber(v),
-    },
+  { key: 'DateD', label: 'Date', flex: 2, align: 'flex-start', formatter: v => formatDisplayDate(v) },
+  { key: 'ShiftCodeC', label: 'Shift', flex: 1.6, align: 'center' },
+  { key: 'TInN', label: 'In', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'TOutN', label: 'Out', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'ReaCodeC', label: 'Reason', flex: 1.2, align: 'flex-start' },
+  { key: 'ActN', label: 'Actual', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'NRMN', label: 'NRM', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'LateN', label: 'Late', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'UnderN', label: 'Under', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'OTH1N', label: 'OT1', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'OTH2N', label: 'OT2', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'OTH3N', label: 'OT3', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
+  { key: 'OTH4N', label: 'OT4', flex: 1, align: 'flex-end', formatter: v => formatTimeNumber(v) },
 ];
+
 
 /* ---------------- COMPONENT ---------------- */
 
