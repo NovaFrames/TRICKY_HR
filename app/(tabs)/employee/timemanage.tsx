@@ -16,6 +16,7 @@ import {
     View,
 } from 'react-native';
 
+import { formatDateForApi, formatDisplayDate, formatTimeNumber } from '@/constants/timeFormat';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
 import { useTheme } from '../../../context/ThemeContext';
@@ -81,23 +82,6 @@ export default function TimeManage() {
         d.setDate(d.getDate() + 30);
         setToDate(d);
     }, [fromDate]);
-
-    /* ---------------- HELPERS ---------------- */
-
-    const formatDateForApi = (d: Date) =>
-        `${String(d.getMonth() + 1).padStart(2, '0')}/${String(
-            d.getDate(),
-        ).padStart(2, '0')}/${d.getFullYear()}`;
-
-    const formatDisplayDate = (val: any) => {
-        if (!val) return '';
-        if (typeof val === 'string' && val.includes('/Date(')) {
-            return new Date(parseInt(val.replace(/\D/g, ''), 10)).toDateString();
-        }
-        return new Date(val).toDateString();
-    };
-
-    const num = (v: any) => (v ? Number(v).toFixed(2) : '0.00');
 
     /* ---------------- API ---------------- */
 
@@ -281,17 +265,17 @@ export default function TimeManage() {
         const rowValues = [
             formatDisplayDate(item.DateD),
             item.ShiftCodeC,
-            num(item.TInN),
-            num(item.TOutN),
+            formatTimeNumber(item.TInN),
+            formatTimeNumber(item.TOutN),
             item.ReaCodeC,
-            num(item.ActN),
-            num(item.NRMN),
-            num(item.LateN),
-            num(item.UnderN),
-            num(item.OTH1N),
-            num(item.OTH2N),
-            num(item.OTH3N),
-            num(item.OTH4N),
+            formatTimeNumber(item.ActN),
+            formatTimeNumber(item.NRMN),
+            formatTimeNumber(item.LateN),
+            formatTimeNumber(item.UnderN),
+            formatTimeNumber(item.OTH1N),
+            formatTimeNumber(item.OTH2N),
+            formatTimeNumber(item.OTH3N),
+            formatTimeNumber(item.OTH4N),
         ];
 
         return (

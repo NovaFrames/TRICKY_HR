@@ -1,9 +1,9 @@
 
+import { API_ENDPOINTS } from '@/constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as FileSystem from 'expo-file-system/legacy';
-
-const BASE_URL = 'https://hr.trickyhr.com/WebApi';
+const BASE_URL = API_ENDPOINTS.CompanyUrl;
 
 // Create an axios instance
 const api = axios.create({
@@ -83,73 +83,6 @@ export const attendanceEnrolApi = async ({ projectId, latLon, imageFile, userTok
 };
 
 export { api };
-export const API_ENDPOINTS = {
-    // Authentication
-    LOGIN: '/Login',
-    REFRESH_LOGIN: '/RefreshLogin',
-
-    // Leave Management
-    GET_LEAVE_DETAILS: '/GetEmpLeaveApplyDtlById',
-    GET_LEAVE_MANAGE: '/GetEmpLeaveManageById',
-    GET_LEAVE_BALANCE: '/GetEmpLeaveBalanceByEmpId',
-    GET_SURRENDER_BALANCE: '/GetEmpLVSurrenderBalance',
-    GET_SURRENDER_DETAILS: '/GetEmpLvSurrenderById',
-
-    // Leave Operations
-    APPLY_LEAVE: '/UpdateEmpLeaveApply',
-    SUBMIT_SURRENDER: '/UpdateEmpSurrender',
-    CHECK_LEAVE_BALANCE: '/GetEmpLeaveBalanceByEmpId',
-
-    // Medical Documents
-    UPLOAD_MEDICAL_DOC: '/UploadMedicalDoc',
-
-    // Manager Approvals
-    GET_PENDING_LEAVES: '/GetSup_LeaveManageById',
-    GET_PENDING_SURRENDERS: '/GetSup_LVSurrenderById',
-    SAVE_APPROVAL: '/SaveApproval_Supervisor',
-
-    // Employee Info
-    GET_PROFILE: '/GetEmpProfile',
-    GET_PENDING_LIST: '/GetPendingApprove_YourList',
-    GET_EMP_REQUEST_STATUS: '/GetEmpRequestStatus',
-
-    // Time Management
-    GET_TIME_MANAGE_LIST: '/GetEmpTimeManage',
-    GET_PROJECT_LIST: '/GetProjectList',
-    UPDATE_TIME: '/UpdateEmpTimeManage',
-    DOWNLOAD_REPORT: '/PrintMonthlyReport',
-
-    // Uploaded Documents
-    GET_UPLOADED_DOCUMENTS: '/GetEmpDocumentShow',
-    UPLOAD_DOCUMENT: '/SaveEmpPortalDocument',
-
-    // Office Documents
-    GET_OFFICE_DOCUMENTS: '/GetEmpDocumentsGridList',
-
-    // Payslip
-    GET_PAYSLIP_LIST: '/GetEmpPaySalList',
-    DOWNLOAD_PAYSLIP: '/DownloadEmpPaySlip',
-
-    // Calendar
-    GET_CALENDAR_EVENTS: '/GetLeaveCalender',
-    GET_CALENDAR_DETAILS: '/GetLeaveCalenderDtl',
-
-    // Employee List
-    GET_EMPLOYEE_LIST: '/GetSup_EmployeeList',
-
-    // Attendance Report
-    GET_MOBILE_ATTENDANCE_REPORT: '/GetMobileAttenRpt',
-
-    // Service Report
-    GET_CLIENT_LIST: '/GetService_ClientList',
-    SUBMIT_SERVICE_REPORT: '/Update_StatusRpt',
-
-    // Pending Approvals
-    GET_YOUR_PENDING_APPROVALS: '/GetPendingApprove_YourList',
-    GET_OTHER_PENDING_APPROVALS: '/GetPendingApprove_OtherList',
-    UPDATE_PENDING_APPROVAL: '/UpdatePendingApproval',
-
-};
 
 // Types
 export interface LeaveType {
