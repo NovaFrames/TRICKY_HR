@@ -691,18 +691,23 @@ class ApiService {
                 await this.loadCredentials();
             }
 
+            if (!this.token || !this.empId) {
+                return { success: false, error: 'Authentication details missing. Please login again.' };
+            }
+
             // Get additional user data needed for URL construction
             const userDataStr = await AsyncStorage.getItem('user_data');
             const userData = userDataStr ? JSON.parse(userDataStr) : null;
 
-            if (!this.token || !this.empId || !userData) {
-                return { success: false, error: 'Authentication or user details missing' };
-            }
+            console.log('User data for download:', userData);
 
+            // Use fallback values if user data is missing
             const empId = this.empId;
-            const companyId = userData.CompIdN || userData.CompanyId || '1';
-            const customerId = userData.CustomerIdC || userData.DomainId || 'kevit';
+            const companyId = userData?.CompIdN || userData?.CompanyId || '1';
+            const customerId = userData?.CustomerIdC || userData?.DomainId || 'kevit';
             const companyUrl = 'https://hr.trickyhr.com'; // Base URL is constant for now
+
+            console.log('Download parameters:', { empId, companyId, customerId });
 
             // Build payload exactly as requested
             const payload = {
@@ -722,6 +727,7 @@ class ApiService {
                 { headers: this.getHeaders() }
             );
 
+            console.log('Download Report Response Status:', response.data.Status);
             console.log('Download Report Full Response:', JSON.stringify(response.data));
 
             if (response.data.Status === 'success') {
@@ -737,9 +743,11 @@ class ApiService {
                     data: response.data
                 };
             } else {
+                const errorMsg = response.data.Error || 'Download failed';
+                console.error('API returned error:', errorMsg);
                 return {
                     success: false,
-                    error: response.data.Error || 'Download failed'
+                    error: errorMsg
                 };
             }
         } catch (error: any) {
@@ -747,11 +755,17 @@ class ApiService {
 
             let errorMessage = 'Network error';
             if (error.response) {
+                console.error('Error response data:', error.response.data);
+                console.error('Error response status:', error.response.status);
                 errorMessage = error.response.data?.Error ||
                     error.response.data?.message ||
                     `Server error: ${error.response.status}`;
             } else if (error.request) {
+                console.error('No response received from server');
                 errorMessage = 'No response from server';
+            } else {
+                console.error('Error message:', error.message);
+                errorMessage = error.message;
             }
 
             return { success: false, error: errorMessage };

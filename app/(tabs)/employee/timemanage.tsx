@@ -28,14 +28,12 @@ export default function TimeManage() {
     const [showFromPicker, setShowFromPicker] = useState(false);
     const [showToPicker, setShowToPicker] = useState(false);
 
-    // Helper to format Date for API "MM/dd/yyyy" usually, or whatever the API expects.
-    // User example: "01/01/2024"
-    // User example: "01/01/2024"
+    // Helper to format Date for API "MM/dd/yyyy" format as expected by the API
     const formatDateForApi = (d: Date) => {
         const day = String(d.getDate()).padStart(2, '0');
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
+        return `${month}/${day}/${year}`; // MM/dd/yyyy format
     };
 
     useProtectedBack({
@@ -44,14 +42,14 @@ export default function TimeManage() {
         dashboard: '/dashboard',
     });
 
-React.useEffect(() => {
-    if (!fromDate) return;
+    React.useEffect(() => {
+        if (!fromDate) return;
 
-    const newToDate = new Date(fromDate);
-    newToDate.setDate(newToDate.getDate() + 30);
+        const newToDate = new Date(fromDate);
+        newToDate.setDate(newToDate.getDate() + 30);
 
-    setToDate(newToDate);
-}, [fromDate]);
+        setToDate(newToDate);
+    }, [fromDate]);
 
 
     // Helper to view format
@@ -140,16 +138,28 @@ React.useEffect(() => {
 
     const handleDownloadedFile = async (url: string) => {
         try {
+            if (!url) {
+                throw new Error('Download URL is empty');
+            }
+
             const fileName = `TimeReport_${new Date().getTime()}.pdf`;
             const fileUri = FileSystem.documentDirectory + fileName;
 
-            console.log('Starting download to:', fileUri);
+            console.log('Starting download from URL:', url);
+            console.log('Saving to:', fileUri);
 
             const downloadRes = await FileSystem.downloadAsync(url, fileUri);
 
+            console.log('Download response:', downloadRes);
+
             if (downloadRes.status === 200) {
                 console.log('Download complete:', downloadRes.uri);
-                if (await Sharing.isAvailableAsync()) {
+
+                // Check if sharing is available
+                const isAvailable = await Sharing.isAvailableAsync();
+                console.log('Sharing available:', isAvailable);
+
+                if (isAvailable) {
                     await Sharing.shareAsync(downloadRes.uri, {
                         mimeType: 'application/pdf',
                         dialogTitle: 'Download Time Report',
@@ -159,11 +169,12 @@ React.useEffect(() => {
                     Alert.alert('Success', 'File downloaded to: ' + downloadRes.uri);
                 }
             } else {
-                Alert.alert('Error', 'Failed to download file. Status: ' + downloadRes.status);
+                throw new Error(`Download failed with status: ${downloadRes.status}`);
             }
-        } catch (error) {
-            console.log('Error downloading file:', error);
-            Alert.alert('Error', 'Could not download the file.');
+        } catch (error: any) {
+            console.error('Error downloading file:', error);
+            const errorMessage = error?.message || 'Could not download the file.';
+            Alert.alert('Download Error', errorMessage);
         }
     };
 
@@ -189,20 +200,25 @@ React.useEffect(() => {
             const fromDateStr = formatDateForApi(fromDate);
             const toDateStr = formatDateForApi(toDate);
 
-            console.log('Downloading report:', { fromDateStr, toDateStr });
+            console.log('Downloading report for dates:', { fromDateStr, toDateStr });
 
             // 4. Call ApiService
             const result = await ApiService.downloadTimeReport(fromDateStr, toDateStr);
 
+            console.log('Download result:', result);
+
             if (result.success && result.url) {
+                console.log('Download URL received:', result.url);
                 // 5. Handle the downloaded URL
                 await handleDownloadedFile(result.url);
             } else {
-                Alert.alert('Download Failed', result.error || 'Failed to download report');
+                const errorMsg = result.error || 'Failed to download report';
+                console.error('Download failed:', errorMsg);
+                Alert.alert('Download Failed', errorMsg);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Download error:', error);
-            Alert.alert('Error', 'Download failed. Please try again.');
+            Alert.alert('Error', error?.message || 'Download failed. Please try again.');
         } finally {
             setDownloading(false);
         }
