@@ -23,7 +23,7 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
 }) => {
     /* ---------------- GRID CALCULATION ---------------- */
     const numColumns = 3;
-    const gap = 4;
+    const gap = 3;
     const parentPadding = 32;
     const availableWidth = width - parentPadding;
     const itemWidth =
