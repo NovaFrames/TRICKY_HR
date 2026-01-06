@@ -6,25 +6,48 @@ import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export default function Holiday() {
     const { user } = useUser();
     const { theme } = useTheme();
-    const [holidayData, setHolidayData] = useState<any[] | null>(null);
+
+    const [holidayData, setHolidayData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
     const [refreshing, setRefreshing] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedYear, setSelectedYear] = useState(
+        new Date().getFullYear().toString()
+    );
 
-    useProtectedBack({
-        home: '/home'
-    });
+    useProtectedBack({ home: "/home" });
 
-    // Generate years for the modal (2000 to 2050)
-    const startYear = 2000;
-    const endYear = 2050;
-    const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => (startYear + i).toString());
+    /* ---------------- HELPERS ---------------- */
+
+    const parseDotNetDate = (dateStr: string) => {
+        const timestamp = Number(dateStr.replace(/[^0-9]/g, ""));
+        return new Date(timestamp);
+    };
+
+    const changeYear = (direction: "prev" | "next") => {
+        setSelectedYear((prev) => {
+            const year = Number(prev);
+            if (direction === "prev")
+                return String(year - 1);
+            if (direction === "next")
+                return String(year + 1);
+            return prev;
+        });
+    };
+
+    /* ---------------- API ---------------- */
 
     const fetchHoliday = async () => {
         try {
@@ -38,11 +61,7 @@ export default function Holiday() {
                 payload
             );
 
-            if (response.data.Status === "success") {
-                setHolidayData(response.data.Holiday ?? []);
-            } else {
-                setHolidayData([]);
-            }
+            setHolidayData(response.data?.Holiday ?? []);
         } catch (error) {
             console.error("Holiday API error:", error);
             setHolidayData([]);
@@ -57,247 +76,183 @@ export default function Holiday() {
         fetchHoliday();
     }, [selectedYear]);
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchHoliday();
+    /* ---------------- RENDER ITEM ---------------- */
+
+    const renderHolidayItem = ({ item }: any) => {
+        const date = parseDotNetDate(item.HolidayDateD);
+
+        return (
+            <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+                <View style={[styles.dateBox, { backgroundColor: theme.primary }]}>
+                    <Text style={styles.dateDay}>{date.getDate()}</Text>
+                    <Text style={styles.dateMonth}>
+                        {date.toLocaleString("default", { month: "short" })}
+                    </Text>
+                </View>
+
+                <View style={styles.info}>
+                    <Text style={[styles.name, { color: theme.text }]}>
+                        {item.HolidayNameC}
+                    </Text>
+                    <Text style={[styles.day, { color: theme.textLight }]}>
+                        {date.toLocaleString("default", { weekday: "long" })} •{" "}
+                        {item.HolidayGrpNameC}
+                    </Text>
+                </View>
+            </View>
+        );
     };
 
-    const handleYearSelect = (year: string) => {
-        setSelectedYear(year);
-        setModalVisible(false);
-    };
-
-    const renderYearGridItem = ({ item }: { item: string }) => (
-        <TouchableOpacity
-            style={[
-                styles.gridItem,
-                {
-                    backgroundColor: item === selectedYear ? theme.primary : theme.inputBg,
-                    borderColor: theme.inputBorder,
-                }
-            ]}
-            onPress={() => handleYearSelect(item)}
-        >
-            <Text style={[
-                styles.gridItemText,
-                { color: item === selectedYear ? '#FFFFFF' : theme.text }
-            ]}>
-                {item}
-            </Text>
-        </TouchableOpacity>
-    );
-
-    const renderHolidayItem = ({ item }: { item: any }) => (
-        <View style={[styles.card, { backgroundColor: theme.cardBackground, shadowColor: theme.text }]}>
-            <View style={[styles.dateContainer, { backgroundColor: theme.inputBg }]}>
-                <Text style={[styles.dateDay, { color: theme.primary }]}>
-                    {new Date(item.HDate).getDate()}
-                </Text>
-                <Text style={[styles.dateMonth, { color: theme.textLight }]}>
-                    {new Date(item.HDate).toLocaleString('default', { month: 'short' })}
-                </Text>
-            </View>
-            <View style={styles.detailsContainer}>
-                <Text style={[styles.holidayName, { color: theme.text }]}>{item.HName}</Text>
-                <Text style={[styles.holidayDay, { color: theme.textLight }]}>{item.HDay}</Text>
-            </View>
-        </View>
-    );
+    /* ---------------- UI ---------------- */
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Header title="Holiday" />
+            <Header title="Holidays" />
 
-            <View style={styles.headerControls}>
-                <Text style={[styles.yearLabel, { color: theme.text }]}>Year: {selectedYear}</Text>
+            {/* YEAR SWITCHER */}
+            <View style={[styles.yearSwitcher, { backgroundColor: theme.cardBackground }]}>
                 <TouchableOpacity
-                    style={[styles.calendarButton, { backgroundColor: theme.primary }]}
-                    onPress={() => setModalVisible(true)}
+                    onPress={() => changeYear("prev")}
                 >
-                    <Ionicons name="calendar" size={20} color="#FFFFFF" />
-                    <Text style={styles.calendarButtonText}>Select Year</Text>
+                    <Ionicons
+                        name="chevron-back"
+                        size={26}
+                        
+                    />
+                </TouchableOpacity>
+
+                <Text style={[styles.yearText, { color: theme.text }]}>
+                    {selectedYear}
+                </Text>
+
+                <TouchableOpacity
+                    onPress={() => changeYear("next")}
+                >
+                    <Ionicons
+                        name="chevron-forward"
+                        size={26}
+                       
+                    />
                 </TouchableOpacity>
             </View>
 
+            {/* LIST */}
             {loading ? (
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                </View>
+                <ActivityIndicator
+                    size="large"
+                    color={theme.primary}
+                    style={{ marginTop: 40 }}
+                />
             ) : (
                 <FlatList
                     data={holidayData}
                     renderItem={renderHolidayItem}
-                    keyExtractor={(item, index) => index.toString()}
-                    contentContainerStyle={styles.listContent}
+                    keyExtractor={(_, index) => index.toString()}
+                    contentContainerStyle={{ padding: 16 }}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={fetchHoliday}
+                            colors={[theme.primary]}
+                        />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="calendar-outline" size={64} color={theme.textLight} />
-                            <Text style={[styles.emptyText, { color: theme.textLight }]}>
+                        <View style={styles.empty}>
+                            <Ionicons
+                                name="calendar-outline"
+                                size={64}
+                                color={theme.textLight}
+                            />
+                            <Text
+                                style={{
+                                    marginTop: 12,
+                                    color: theme.textLight,
+                                    fontSize: 16,
+                                }}
+                            >
                                 No holidays found for {selectedYear}
                             </Text>
                         </View>
                     }
                 />
             )}
-
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>Select Year</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                <Ionicons name="close" size={24} color={theme.text} />
-                            </TouchableOpacity>
-                        </View>
-                        <FlatList
-                            data={years}
-                            renderItem={renderYearGridItem}
-                            keyExtractor={(item) => item}
-                            numColumns={4}
-                            contentContainerStyle={styles.gridContent}
-                            columnWrapperStyle={styles.gridColumnWrapper}
-                        />
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 }
+
+/* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    headerControls: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+
+    yearSwitcher: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginHorizontal: 16,
+        marginTop: 12,
+        marginBottom: 6,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 14,
+        elevation: 3,
     },
-    yearLabel: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    calendarButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 4,
-        gap: 6,
-    },
-    calendarButtonText: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    listContent: {
-        padding: 16,
-        paddingTop: 0,
-        gap: 12,
-    },
-    card: {
-        flexDirection: 'row',
-        borderRadius: 4,
-        padding: 12,
-        alignItems: 'center',
-        elevation: 2,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-    },
-    dateContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 10,
-        borderRadius: 4,
-        width: 60,
-        height: 60,
-        marginRight: 16,
-    },
-    dateDay: {
+
+    yearText: {
         fontSize: 20,
-        fontWeight: 'bold',
+        fontWeight: "700",
+        letterSpacing: 1,
     },
-    dateMonth: {
-        fontSize: 12,
-        fontWeight: '500',
-        textTransform: 'uppercase',
-    },
-    detailsContainer: {
-        flex: 1,
-    },
-    holidayName: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    holidayDay: {
-        fontSize: 14,
-    },
-    centerContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 100,
-        gap: 16,
-    },
-    emptyText: {
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        borderTopLeftRadius: 4,
-        borderTopRightRadius: 4,
-        padding: 16,
-        height: '50%',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    gridContent: {
-        paddingBottom: 20,
-    },
-    gridColumnWrapper: {
-        gap: 10,
-        marginBottom: 10,
-    },
-    gridItem: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
+
+    card: {
+        flexDirection: "row",
+        padding: 14,
         borderRadius: 4,
-        borderWidth: 1,
+        marginBottom: 2,
+        elevation: 2,
     },
-    gridItemText: {
+
+    dateBox: {
+        width: 62,
+        height: 62,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    dateDay: {
+        color: "#fff",
+        fontSize: 22,
+        fontWeight: "bold",
+    },
+
+    dateMonth: {
+        color: "#fff",
+        fontSize: 12,
+        textTransform: "uppercase",
+        marginTop: -2,
+    },
+
+    info: {
+        flex: 1,
+        marginLeft: 14,
+        justifyContent: "center",
+    },
+
+    name: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: "600",
+    },
+
+    day: {
+        fontSize: 13,
+        marginTop: 4,
+    },
+
+    empty: {
+        alignItems: "center",
+        marginTop: 80,
     },
 });

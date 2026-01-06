@@ -49,6 +49,9 @@ export default function EmployeeListScreen() {
             const response = await ApiService.getEmployeeList();
 
             if (response.success && response.data) {
+
+                console.log('Fetched Employees in emplist:', response.data);
+
                 // Sort by code
                 const sorted = response.data.sort((a, b) => a.CodeC.localeCompare(b.CodeC));
                 setAllEmployees(sorted);

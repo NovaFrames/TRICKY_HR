@@ -1,5 +1,7 @@
+import { MENU_ICON_MAP } from '@/constants/menuIconMap';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Dimensions,
     StyleSheet,
@@ -13,50 +15,54 @@ const { width } = Dimensions.get('window');
 interface MenuGridProps {
     menuItems: any[];
     theme: any;
-    getMenuIcon: (name: string) => { lib: any; name: string };
 }
 
 export const MenuGrid: React.FC<MenuGridProps> = ({
     menuItems,
     theme,
-    getMenuIcon,
 }) => {
-
-    const safeColor = (color: string, alpha: string) => {
-        if (!color || typeof color !== 'string') return theme.primary + alpha;
-        if (color.startsWith('#')) {
-            if (color.length === 4) {
-                // Expand short hex #ABC to #AABBCC
-                const expanded = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
-                return expanded + alpha;
-            }
-            if (color.length === 7) return color + alpha;
-            return color;
-        }
-        return color; // Return as is if it's named color or rgb
-    };
-
-    /* -------------------- FIXED 3 COLUMNS FOR MOBILE -------------------- */
-    const numColumns = 3; // Always 3 columns on mobile
-    const gap = 4; // Reduced gap to ensure 3 columns fit
-
-    // Parent container already has paddingHorizontal: 16
-    // So we calculate based on full width minus parent padding
-    const parentPadding = 32; // 16px on each side from parent
+    /* ---------------- GRID CALCULATION ---------------- */
+    const numColumns = 3;
+    const gap = 4;
+    const parentPadding = 32;
     const availableWidth = width - parentPadding;
-    const totalGapWidth = gap * (numColumns - 1); // 2 gaps for 3 columns
-    const itemWidth = (availableWidth - totalGapWidth) / numColumns;
+    const itemWidth =
+        (availableWidth - gap * (numColumns - 1)) / numColumns;
 
-    return (
+    /* ---------------- SPLIT SECTIONS ---------------- */
+    const { employeeMenus, officerMenus } = useMemo(() => {
+        const employee: any[] = [];
+        const officer: any[] = [];
+
+        menuItems.forEach(item => {
+            if (!item?.ActionC) return;
+
+            if (item.ActionC.startsWith('employee/')) {
+                employee.push(item);
+            } else if (item.ActionC.startsWith('officer/')) {
+                officer.push(item);
+            }
+        });
+
+        return { employeeMenus: employee, officerMenus: officer };
+    }, [menuItems]);
+
+    /* ---------------- RENDER GRID ---------------- */
+    const renderGrid = (data: any[]) => (
         <View style={[styles.gridContainer, { gap }]}>
-            {menuItems.map((item: any, index: number) => {
-                const { lib: IconLib, name: iconName } =
-                    getMenuIcon(item.MenuNameC);
+            {data.map((item, index) => {
+                const iconConfig =
+                    MENU_ICON_MAP[item.ActionC] ?? {
+                        lib: Ionicons,
+                        name: 'apps',
+                    };
+
+                const IconLib = iconConfig.lib;
                 const iconColor = item.IconcolorC || theme.primary;
 
                 return (
                     <TouchableOpacity
-                        key={index}
+                        key={`${item.IdN}-${index}`}
                         style={[
                             styles.gridItem,
                             {
@@ -64,28 +70,29 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                                 backgroundColor: theme.cardBackground,
                             },
                         ]}
-                        activeOpacity={0.7}
-                        onPress={() => {
-                            if (item.ActionC) {
-                                router.push({ pathname: item.ActionC, params: { from: 'home' } });
-                            }
-                        }}
+                        activeOpacity={0.75}
+                        onPress={() =>
+                            router.push({
+                                pathname: item.ActionC,
+                                params: { from: 'home' },
+                            })
+                        }
                     >
                         <View
-                            style={[styles.gridIconBox, { backgroundColor: iconColor + '15' }]}
+                            style={[
+                                styles.gridIconBox,
+                                { backgroundColor: iconColor + '18' },
+                            ]}
                         >
                             <IconLib
-                                name={iconName as any}
-                                size={22}
+                                name={iconConfig.name as any}
+                                size={24}
                                 color={iconColor}
                             />
                         </View>
 
                         <Text
-                            style={[
-                                styles.gridLabel,
-                                { color: theme.text },
-                            ]}
+                            style={[styles.gridLabel, { color: theme.text }]}
                             numberOfLines={2}
                         >
                             {item.MenuNameC}
@@ -95,42 +102,80 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
             })}
         </View>
     );
+
+    /* ---------------- UI ---------------- */
+    return (
+        <View>
+            {employeeMenus.length > 0 && (
+                <View style={styles.section}>
+                    <View style={[styles.sectionHeader, { borderColor: theme.inputBorder, marginBottom: 16 }]}>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                            Employee
+                        </Text>
+                    </View>
+                    {renderGrid(employeeMenus)}
+                </View>
+            )}
+
+            {officerMenus.length > 0 && (
+
+                <View style={styles.section}>
+                    <View style={[styles.sectionHeader, { borderColor: theme.inputBorder, marginBottom: 16 }]}>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                            Officer
+                        </Text>
+                    </View>
+                    {renderGrid(officerMenus)}
+                </View>
+            )}
+        </View>
+    );
 };
 
+/* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
+    section: {
+        marginBottom: 26,
+    },
+
+    sectionHeader: {
+        borderBottomWidth: 0.6,
+        paddingBottom: 6,
+        marginBottom: 12,
+    },
+
+    sectionTitle: {
+        fontSize: 15,
+        fontWeight: '800',
+        letterSpacing: 0.6,
+    },
+
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'flex-start',
     },
 
     gridItem: {
         alignItems: 'center',
-        borderRadius: 4,
-        padding: 12,
+        borderRadius: 6,
         paddingVertical: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.04,
-        shadowRadius: 10,
+        paddingHorizontal: 8,
         elevation: 3,
     },
 
     gridIconBox: {
-        width: 50,
-        height: 50,
-        borderRadius: 4,
+        width: 52,
+        height: 52,
+        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
     },
 
     gridLabel: {
-        fontSize: 10.5,
+        fontSize: 11,
         fontWeight: '700',
         textAlign: 'center',
-        letterSpacing: -0.2,
-        lineHeight: 13,
-        paddingHorizontal: 2,
+        lineHeight: 14,
     },
 });
