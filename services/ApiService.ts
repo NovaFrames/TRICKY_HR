@@ -15,7 +15,7 @@ const api = axios.create({
 
 export const loginUser = async (empCode: string, password: string, domainId: string) => {
     try {
-        const response = await api.post('/Login', {
+        const response = await api.post(API_ENDPOINTS.LOGIN, {
             EmpCode: empCode,
             Password: password,
             DomainId: domainId,
