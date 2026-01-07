@@ -1,10 +1,14 @@
+import Header from "@/components/Header";
 import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import axios from "axios";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
     FlatList,
+    Pressable,
     StyleSheet,
     Text,
     View,
@@ -31,7 +35,6 @@ type ApprovalItem = {
 export default function ApprovalDetails() {
   const { user } = useUser();
   const { theme } = useTheme();
-
   const styles = createStyles(theme);
 
   const [data, setData] = useState<ApprovalItem[]>([]);
@@ -61,56 +64,84 @@ export default function ApprovalDetails() {
     fetchApprovalDetails();
   }, []);
 
+  /* ---------------- HELPERS ---------------- */
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return "#16a34a";
+      case "rejected":
+        return "#dc2626";
+      case "terminate":
+        return "#f97316";
+      default:
+        return "#2563eb";
+    }
+  };
+
   /* ---------------- RENDER ITEM ---------------- */
 
-  const renderItem = ({ item }: { item: ApprovalItem }) => (
-    <View style={styles.card}>
-      {/* Header */}
-      <View style={styles.headerRow}>
+  const router = useRouter();
+const renderItem = ({ item }: { item: ApprovalItem }) => (
+  <Pressable
+    onPress={() =>
+      router.push({
+        pathname: "/(tabs)/officer/approvalreqdetails",
+        params: { details: JSON.stringify(item) },
+      })
+    }
+    style={({ pressed }) => [
+      styles.card,
+      pressed && { opacity: 0.85 },
+    ]}
+  >
+    {/* Header */}
+    <View style={styles.headerRow}>
+      <View>
         <Text style={styles.name}>{item.NameC}</Text>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>{item.StatusC}</Text>
-        </View>
+        <Text style={styles.code}>{item.CodeC}</Text>
       </View>
 
-      {/* Details */}
-      <Info label="Code" value={item.CodeC} />
-      <Info label="Type" value={item.DescC || "—"} />
-      <Info label="Leave" value={item.LvDescC || "—"} />
-      <Info
-        label="Date"
-        value={
-          item.FromDateC
-            ? `${item.FromDateC} ${item.ToDateC ? `→ ${item.ToDateC}` : ""}`
-            : "—"
-        }
-      />
-      <Info label="Days" value={item.LeaveDaysN?.trim() || "—"} />
-
-      {!!item.EmpRemarksC && (
-        <View style={styles.remarkBox}>
-          <Text style={styles.remarkLabel}>Employee Remark</Text>
-          <Text style={styles.remarkText}>{item.EmpRemarksC}</Text>
-        </View>
-      )}
+      <View
+        style={[
+          styles.statusBadge,
+          { backgroundColor: getStatusColor(item.StatusC) },
+        ]}
+      >
+        <Text style={styles.statusText}>{item.StatusC}</Text>
+      </View>
     </View>
-  );
+
+    {/* Info Grid */}
+    <View style={styles.infoGrid}>
+      <Info label="Request Type" value={item.DescC || "—"} />
+      <Info label="Leave Type" value={item.LvDescC || "—"} />
+      <Info label="Req Date" value={item.FromDateC || "—"} />
+      <Info label="Approve Date" value={item.ToDateC || "—"} />
+    </View>
+  </Pressable>
+);
+
+  /* ---------------- UI ---------------- */
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Approval Details</Text>
+      <Header title="Approval Details" />
 
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.IdN.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        ListEmptyComponent={
-          !loading ? (
+      {loading ? (
+        <ActivityIndicator size="large" color={theme.primary} />
+      ) : (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.IdN.toString()}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 32 }}
+          ListEmptyComponent={
             <Text style={styles.emptyText}>No approval records found</Text>
-          ) : null
-        }
-      />
+          }
+        />
+      )}
     </View>
   );
 }
@@ -118,9 +149,9 @@ export default function ApprovalDetails() {
 /* ---------------- SMALL COMPONENT ---------------- */
 
 const Info = ({ label, value }: { label: string; value: string }) => (
-  <View style={{ marginTop: 6 }}>
+  <View style={{ width: "48%", marginBottom: 12 }}>
     <Text style={{ fontSize: 12, opacity: 0.6 }}>{label}</Text>
-    <Text style={{ fontSize: 14 }}>{value}</Text>
+    <Text style={{ fontSize: 14, fontWeight: "500" }}>{value}</Text>
   </View>
 );
 
@@ -133,6 +164,7 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.background,
       padding: 16,
     },
+
     title: {
       fontSize: 22,
       fontWeight: "700",
@@ -142,9 +174,9 @@ const createStyles = (theme: any) =>
 
     card: {
       backgroundColor: theme.cardBackground,
-      padding: 14,
-      borderRadius: 12,
-      marginBottom: 12,
+      padding: 16,
+      borderRadius: 14,
+      marginBottom: 14,
       borderWidth: 1,
       borderColor: theme.inputBorder,
     },
@@ -153,44 +185,59 @@ const createStyles = (theme: any) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 6,
+      marginBottom: 12,
     },
 
     name: {
       fontSize: 16,
-      fontWeight: "600",
+      fontWeight: "700",
       color: theme.text,
     },
 
+    code: {
+      fontSize: 12,
+      color: theme.textLight,
+      marginTop: 2,
+    },
+
     statusBadge: {
-      backgroundColor: theme.primary,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
       borderRadius: 20,
     },
 
     statusText: {
       color: "#fff",
       fontSize: 12,
-      fontWeight: "600",
+      fontWeight: "700",
+      textTransform: "uppercase",
+    },
+
+    infoGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      marginTop: 4,
     },
 
     remarkBox: {
-      marginTop: 10,
+      marginTop: 12,
       backgroundColor: theme.inputBg,
-      padding: 10,
-      borderRadius: 8,
+      padding: 12,
+      borderRadius: 10,
     },
 
     remarkLabel: {
       fontSize: 12,
+      fontWeight: "600",
       color: theme.textLight,
-      marginBottom: 4,
     },
 
     remarkText: {
       fontSize: 13,
       color: theme.text,
+      marginTop: 2,
+      lineHeight: 18,
     },
 
     emptyText: {

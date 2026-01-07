@@ -56,8 +56,6 @@ const LeaveApply: React.FC = () => {
             setLoading(true);
             const result = await ApiService.getLeaveDetails();
 
-            console.log('Leave API Result:', JSON.stringify(result, null, 2));
-
             if (result.success && result.data) {
                 setLeaveData(result.data);
                 setCanSurrender(result.data.LVSurrenderN === 1);
