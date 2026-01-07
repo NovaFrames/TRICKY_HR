@@ -103,4 +103,7 @@ export const API_ENDPOINTS = {
   GET_OTHER_PENDING_APPROVALS: "/WebApi/GetPendingApprove_OtherList",
 
   UPDATE_PENDING_APPROVAL: "/WebApi/UpdatePendingApproval",
+
+  // Approval Details
+  SUP_DETAPPROVE_URL: "/WebApi/GetApprovaledDetails",
 };
