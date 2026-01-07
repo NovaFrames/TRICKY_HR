@@ -42,7 +42,6 @@ export const API_ENDPOINTS = {
 
   SUBMIT_SURRENDER: "/WebApi/UpdateEmpSurrender",
 
-  CHECK_LEAVE_BALANCE: "/WebApi/GetEmpLeaveBalanceByEmpId",
 
   // Medical Documents
   UPLOAD_MEDICAL_DOC: "/WebApi/UploadMedicalDoc",
@@ -103,6 +102,9 @@ export const API_ENDPOINTS = {
   GET_OTHER_PENDING_APPROVALS: "/WebApi/GetPendingApprove_OtherList",
 
   UPDATE_PENDING_APPROVAL: "/WebApi/UpdatePendingApproval",
+
+  PEND_TIMEMNG_URL: "/WebApi/GetSup_TimeManageById",
+  PEND_CLAIM_URL: "/WebApi/GetSup_ClaimById",
 
   // Approval Details
   SUP_DETAPPROVE_URL: "/WebApi/GetApprovaledDetails",

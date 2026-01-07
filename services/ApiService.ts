@@ -324,7 +324,7 @@ class ApiService {
             }
 
             const response = await axios.post(
-                BASE_URL + API_ENDPOINTS.CHECK_LEAVE_BALANCE,
+                BASE_URL + API_ENDPOINTS.GET_LEAVE_BALANCE,
                 {
                     TokenC: this.token,
                     EmpIdN: this.empId,
@@ -1281,19 +1281,36 @@ class ApiService {
                 await this.loadCredentials();
             }
 
+            // Convert status to Approval number: 1 = Approved, 2 = Rejected
+            const approvalStatus = data.StatusC.toLowerCase() === 'approved' ? 1 : 2;
+
+            const payload = {
+                Flag: "SaveApproval",
+                Tokenc: this.token,
+                EmpId: this.empId,
+                Id: data.IdN,
+                Approval: approvalStatus,
+                YearN: 0,
+                Remarks: data.ApproveRemarkC || '',
+                title: "",
+                DocName: "",
+                ReceiveYearN: 0,
+                ReceiveMonthN: 0,
+                ApproveAmtN: 0,
+                PayTypeN: 0,
+                LFromDateD: new Date().toISOString().split('T')[0],
+                LToDateD: new Date().toISOString().split('T')[0],
+            };
+
+            console.log('Update Pending Approval Payload:', JSON.stringify(payload, null, 2));
+
             const response = await axios.post(
-                BASE_URL + API_ENDPOINTS.UPDATE_PENDING_APPROVAL,
-                {
-                    TokenC: this.token,
-                    EmpIdN: this.empId,
-                    IdN: data.IdN,
-                    StatusC: data.StatusC,
-                    ApproveRemarkC: data.ApproveRemarkC,
-                },
+                BASE_URL + API_ENDPOINTS.SAVE_APPROVAL,
+                payload,
                 { headers: this.getHeaders() }
             );
 
-            console.log('Update Pending Approval Response Status:', response.data.Status);
+            console.log('Update Pending Approval Response:', JSON.stringify(response.data, null, 2));
 
             if (response.data.Status === 'success') {
                 return { success: true };
@@ -1302,6 +1319,9 @@ class ApiService {
             }
         } catch (error: any) {
             console.error('Update Pending Approval Error:', error);
+            if (error.response) {
+                console.error('Error Response:', JSON.stringify(error.response.data, null, 2));
+            }
             return {
                 success: false,
                 error: error.response?.data?.Error || error.message || 'Network error'

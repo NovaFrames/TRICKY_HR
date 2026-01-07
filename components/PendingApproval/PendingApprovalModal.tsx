@@ -1,10 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -13,6 +11,7 @@ import {
     View,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import AppModal from '../common/AppModal';
 
 interface PendingApprovalData {
     IdN: number;
@@ -55,242 +54,267 @@ export default function PendingApprovalModal({
 
     const [selectedStatus, setSelectedStatus] = useState('');
     const [rejectRemarks, setRejectRemarks] = useState('');
+    const [processingAction, setProcessingAction] = useState<'Approved' | 'Rejected' | null>(null);
 
     useEffect(() => {
         if (visible && data) {
             setSelectedStatus('');
             setRejectRemarks('');
+            setProcessingAction(null);
         }
     }, [visible, data]);
 
+    if (!data) return null;
+
+    // Helper to format ASP.NET JSON Date /Date(1234567890)/
     const formatDate = (dateString: string) => {
-        if (!dateString) return '';
+        try {
+            if (!dateString) return 'N/A';
 
-        const match = dateString.match(/\/Date\((\d+)\)\//);
-        if (match) {
-            const millis = parseInt(match[1]);
-            const date = new Date(millis);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: '2-digit'
-            });
+            if (typeof dateString === 'string' && dateString.includes('/Date(')) {
+                const timestamp = parseInt(dateString.replace(/\/Date\((-?\d+)\)\//, '$1'));
+                const date = new Date(timestamp);
+                return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch (e) {
+            return dateString;
         }
-
-        return dateString;
     };
 
-    const handleUpdate = () => {
-        if (!selectedStatus) {
-            Alert.alert('Error', 'Please select a status');
-            return;
-        }
+    // Status Logic for Color
+    const status = data.StatusC || 'Waiting';
+    let statusInfo = { color: '#D97706', bg: '#FEF3C7', label: 'PENDING' };
+    if (status.toLowerCase().includes('approv')) statusInfo = { color: '#16A34A', bg: '#DCFCE7', label: 'APPROVED' };
+    if (status.toLowerCase().includes('reject') || status.toLowerCase().includes('cancel')) {
+        statusInfo = { color: '#DC2626', bg: '#FEE2E2', label: status.toUpperCase() };
+    }
 
-        if (selectedStatus === 'Rejected' && !rejectRemarks.trim()) {
+    const handleApprove = () => {
+        Alert.alert(
+            "Approve Request",
+            "Are you sure you want to approve this request?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Approve",
+                    style: "default",
+                    onPress: () => {
+                        setProcessingAction('Approved');
+                        onUpdate('Approved', rejectRemarks);
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleReject = () => {
+        if (!rejectRemarks.trim()) {
             Alert.alert('Error', 'Please enter reject remarks');
             return;
         }
 
-        onUpdate(selectedStatus, rejectRemarks);
+        Alert.alert(
+            "Reject Request",
+            "Are you sure you want to reject this request?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Reject",
+                    style: "destructive",
+                    onPress: () => {
+                        setProcessingAction('Rejected');
+                        onUpdate('Rejected', rejectRemarks);
+                    }
+                }
+            ]
+        );
     };
 
-    if (!data) return null;
+    const DetailItem = ({ label, value, icon }: { label: string, value: string | number, icon: any }) => (
+        <View style={styles.detailItem}>
+            <View style={[styles.detailIcon, { backgroundColor: theme.inputBg }]}>
+                <Ionicons name={icon} size={18} color={theme.primary} />
+            </View>
+            <View style={styles.detailText}>
+                <Text style={[styles.detailLabel, { color: theme.placeholder }]}>{label}</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>{value || '—'}</Text>
+            </View>
+        </View>
+    );
 
     return (
-        <Modal
+        <AppModal
             visible={visible}
-            animationType="slide"
-            transparent={false}
-            onRequestClose={onClose}
-        >
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
-                {/* Header */}
-                <View style={[styles.header, { backgroundColor: theme.primary }]}>
-                    <TouchableOpacity onPress={onClose} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
+            onClose={onClose}
+            title="Approval Request"
+            subtitle={`Employee: ${data.NameC} • Ref: #${data.IdN}`}
+            footer={
+                <View style={styles.footerButtons}>
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.rejectButton]}
+                        onPress={handleReject}
+                        disabled={loading || processingAction !== null}
+                    >
+                        {loading && processingAction === 'Rejected' ? (
+                            <ActivityIndicator size="small" color="#DC2626" />
+                        ) : (
+                            <>
+                                <Ionicons name="close-circle-outline" size={20} color="#DC2626" />
+                                <Text style={styles.rejectButtonText}>Reject</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{data.NameC}</Text>
-                    <View style={styles.backButton} />
+
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.approveButton, { backgroundColor: theme.primary }]}
+                        onPress={handleApprove}
+                        disabled={loading || processingAction !== null}
+                    >
+                        {loading && processingAction === 'Approved' ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <>
+                                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                                <Text style={styles.approveButtonText}>Approve</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            }
+        >
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                <View style={styles.badgeRow}>
+                    <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+                        <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+                        <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
+                            {statusInfo.label}
+                        </Text>
+                    </View>
                 </View>
 
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                    {/* Read-only Information */}
-                    <View style={styles.section}>
-                        <View style={styles.infoRow}>
-                            <Text style={[styles.label, { color: theme.text }]}>Apply date</Text>
-                            <Text style={[styles.value, { color: theme.text }]}>
-                                {formatDate(data.ApplyDateD)}
-                            </Text>
-                        </View>
+                <DetailItem icon="person-outline" label="EMPLOYEE CODE" value={data.CodeC} />
+                <DetailItem icon="briefcase-outline" label="PROJECT NAME" value={data.CatgNameC || 'N/A'} />
+                <DetailItem icon="document-text-outline" label="REQUEST TYPE" value={data.DescC || 'N/A'} />
+                <DetailItem icon="calendar-outline" label="APPLY DATE" value={formatDate(data.ApplyDateD)} />
 
-                        <View style={styles.infoRow}>
-                            <Text style={[styles.label, { color: theme.text }]}>Project Name</Text>
-                            <Text style={[styles.value, { color: theme.text }]}>
-                                {data.CatgNameC || 'N/A'}
-                            </Text>
-                        </View>
+                {data.LvDescC && (
+                    <DetailItem icon="time-outline" label="SCHEDULE/DURATION" value={data.LvDescC} />
+                )}
 
-                        <View style={styles.infoRow}>
-                            <Text style={[styles.label, { color: theme.text }]}>Request Type</Text>
-                            <Text style={[styles.value, { color: theme.text }]}>
-                                {data.DescC || 'N/A'}
-                            </Text>
-                        </View>
+                {data.LeaveDaysN !== null && (
+                    <DetailItem icon="timer-outline" label="LEAVE DAYS" value={data.LeaveDaysN} />
+                )}
 
-                        {data.LeaveDaysN !== null && (
-                            <View style={styles.infoRow}>
-                                <Text style={[styles.label, { color: theme.text }]}>In Time</Text>
-                                <Text style={[styles.value, { color: theme.text }]}>
-                                    {data.LeaveDaysN}
-                                </Text>
-                            </View>
-                        )}
+                {data.EmpRemarksC && (
+                    <DetailItem icon="chatbubble-outline" label="EMPLOYEE REMARKS" value={data.EmpRemarksC} />
+                )}
 
-                        {data.EmpRemarksC && (
-                            <View style={styles.infoRow}>
-                                <Text style={[styles.label, { color: theme.text }]}>Remarks</Text>
-                                <Text style={[styles.value, { color: theme.text }]}>
-                                    {data.EmpRemarksC}
-                                </Text>
-                            </View>
-                        )}
-                    </View>
+                {/* Approval Section */}
+                <View style={styles.approvalSection}>
+                    <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+                        APPROVAL DECISION
+                    </Text>
 
-                    {/* Editable Section */}
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: theme.primary }]}>
-                            Editable
-                        </Text>
-
-                        {/* Status Dropdown */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldLabel, { color: theme.text }]}>Status</Text>
-                            <View style={[styles.pickerContainer, {
+                    <View style={styles.fieldContainer}>
+                        <Text style={[styles.fieldLabel, { color: theme.text }]}>Remarks</Text>
+                        <TextInput
+                            style={[styles.textArea, {
                                 backgroundColor: theme.inputBg,
-                                borderColor: theme.inputBorder
-                            }]}>
-                                <Picker
-                                    selectedValue={selectedStatus}
-                                    onValueChange={(value) => setSelectedStatus(value)}
-                                    style={[styles.picker, { color: theme.text }]}
-                                    dropdownIconColor={theme.text}
-                                >
-                                    <Picker.Item label="--Select--" value="" />
-                                    <Picker.Item label="Approved" value="Approved" />
-                                    <Picker.Item label="Rejected" value="Rejected" />
-                                </Picker>
-                            </View>
-                        </View>
-
-                        {/* Reject Remarks */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={[styles.fieldLabel, { color: theme.text }]}>
-                                Reject Remarks
-                            </Text>
-                            <TextInput
-                                style={[styles.textArea, {
-                                    backgroundColor: theme.inputBg,
-                                    borderColor: theme.inputBorder,
-                                    color: theme.text
-                                }]}
-                                placeholder=""
-                                placeholderTextColor={theme.placeholder}
-                                value={rejectRemarks}
-                                onChangeText={setRejectRemarks}
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                            />
-                        </View>
-
-                        {/* Update Button */}
-                        <TouchableOpacity
-                            style={[styles.updateButton, { backgroundColor: theme.primary }]}
-                            onPress={handleUpdate}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="#fff" />
-                            ) : (
-                                <Text style={styles.updateButtonText}>Update</Text>
-                            )}
-                        </TouchableOpacity>
+                                borderColor: theme.inputBorder,
+                                color: theme.text
+                            }]}
+                            placeholder="Enter your remarks here (required for rejection)"
+                            placeholderTextColor={theme.placeholder}
+                            value={rejectRemarks}
+                            onChangeText={setRejectRemarks}
+                            multiline
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                        />
                     </View>
-                </ScrollView>
-            </View>
-        </Modal>
+                </View>
+            </ScrollView>
+        </AppModal>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
+    modalBody: {
+        padding: 18,
+        flexShrink: 1,
     },
-    header: {
+    badgeRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 8,
-        paddingVertical: 12,
-        paddingTop: 40,
-    },
-    backButton: {
-        padding: 8,
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#fff',
-    },
-    content: {
-        flex: 1,
-        padding: 16,
-    },
-    section: {
         marginBottom: 24,
     },
-    sectionTitle: {
-        fontSize: 16,
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
+        gap: 6,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    statusLabelText: {
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    detailItem: {
+        flexDirection: 'row',
+        marginBottom: 24,
+        alignItems: 'flex-start',
+    },
+    detailIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    detailText: {
+        flex: 1,
+    },
+    detailLabel: {
+        fontSize: 10,
         fontWeight: '700',
+        letterSpacing: 1,
+        marginBottom: 4,
+    },
+    detailValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        lineHeight: 22,
+    },
+    approvalSection: {
+        marginTop: 8,
+        paddingTop: 24,
+        borderTopWidth: 1,
+        borderTopColor: '#E0E0E0',
+    },
+    sectionTitle: {
+        fontSize: 12,
+        fontWeight: '800',
+        letterSpacing: 1,
         marginBottom: 16,
     },
-    infoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '400',
-        flex: 1,
-    },
-    value: {
-        fontSize: 14,
-        fontWeight: '600',
-        flex: 1,
-        textAlign: 'right',
-    },
     fieldContainer: {
-        marginBottom: 20,
+        marginBottom: 8,
     },
     fieldLabel: {
         fontSize: 14,
-        fontWeight: '400',
+        fontWeight: '600',
         marginBottom: 8,
-    },
-    pickerContainer: {
-        borderWidth: 1,
-        borderRadius: 4,
-        overflow: 'hidden',
-    },
-    picker: {
-        height: 50,
     },
     textArea: {
         borderWidth: 1,
@@ -299,16 +323,35 @@ const styles = StyleSheet.create({
         fontSize: 15,
         minHeight: 100,
     },
-    updateButton: {
-        paddingVertical: 14,
-        borderRadius: 25,
-        alignItems: 'center',
-        marginTop: 20,
-        marginHorizontal: 40,
+    footerButtons: {
+        flexDirection: 'row',
+        gap: 12,
     },
-    updateButtonText: {
+    actionButton: {
+        flex: 1,
+        height: 56,
+        borderRadius: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    approveButton: {
+        backgroundColor: '#16A34A',
+    },
+    approveButtonText: {
         color: '#fff',
-        fontSize: 16,
         fontWeight: '700',
+        fontSize: 16,
+    },
+    rejectButton: {
+        backgroundColor: '#FEE2E2',
+        borderWidth: 1,
+        borderColor: '#FECACA',
+    },
+    rejectButtonText: {
+        color: '#DC2626',
+        fontWeight: '700',
+        fontSize: 16,
     },
 });
