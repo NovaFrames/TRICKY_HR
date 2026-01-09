@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import SegmentTabs from '@/components/SegmentTabs';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
@@ -9,8 +10,7 @@ import {
     RefreshControl,
     StyleSheet,
     Text,
-    TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import RequestModal from '../../../components/RequestPage/RequestModal';
 import RequestStatusItem from '../../../components/RequestPage/RequestStatusItem';
@@ -126,32 +126,11 @@ export default function EmpRequestPage() {
         <View>
             <Header title="Request Status" />
 
-            <View style={styles.tabSection}>
-                <View style={[styles.tabOuterContainer, { backgroundColor: theme.inputBg }]}>
-                    {TABS.map((tab) => {
-                        const isActive = activeTab === tab;
-                        return (
-                            <TouchableOpacity
-                                key={tab}
-                                style={[
-                                    styles.tabItem,
-                                    isActive && { backgroundColor: theme.cardBackground },
-                                ]}
-                                onPress={() => setActiveTab(tab)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.tabText,
-                                        { color: isActive ? theme.primary : theme.placeholder },
-                                    ]}
-                                >
-                                    {tab}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-            </View>
+            <SegmentTabs
+                tabs={TABS}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+            />
         </View>
     );
 

@@ -1,10 +1,12 @@
 import Header from "@/components/Header";
+import SegmentTabs from "@/components/SegmentTabs";
 import { API_ENDPOINTS } from "@/constants/api";
+import { formatDisplayDate } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import axios from "axios";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +16,12 @@ import {
   Text,
   View,
 } from "react-native";
+import {
+  PanGestureHandler,
+  PanGestureHandlerGestureEvent,
+  State,
+} from 'react-native-gesture-handler';
+
 
 /* ---------------- TYPES ---------------- */
 
@@ -25,10 +33,9 @@ type ApprovalItem = {
   LvDescC: string;
   FromDateC: string;
   ToDateC: string;
-  LeaveDaysN: string;
   StatusC: string;
-  EmpRemarksC: string;
-  ApproveRemarkC: string;
+  ApproveRejDateD: string;
+  ApplyDateD: string;
 };
 
 /* ---------------- COMPONENT ---------------- */
@@ -37,39 +44,71 @@ export default function ApprovalDetails() {
   const { user } = useUser();
   const { theme } = useTheme();
   const styles = createStyles(theme);
+  const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  const originFrom = typeof from === "string" ? from : "home";
 
+  const onSwipeEnd = (event: PanGestureHandlerGestureEvent) => {
+    if (event.nativeEvent.state !== State.END) return;
+
+    const { translationX } = event.nativeEvent;
+
+    // swipe left → Approved → Rejected
+    if (translationX < -60 && activeTab === 'Approved') {
+      setActiveTab('Rejected');
+    }
+
+    // swipe right → Rejected → Approved
+    if (translationX > 60 && activeTab === 'Rejected') {
+      setActiveTab('Approved');
+    }
+  };
+
+
+  const [activeTab, setActiveTab] = useState<"Approved" | "Rejected">(
+    "Approved"
+  );
   const [data, setData] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(false);
-  useProtectedBack({
-        home: '/home',
-        settings: '/settings',
-        dashboard: '/dashboard',
-    });
 
+  useProtectedBack({
+    home: "/home",
+    settings: "/settings",
+    dashboard: "/dashboard",
+  });
 
   /* ---------------- API ---------------- */
 
-  const fetchApprovalDetails = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
+
+      const endpoint =
+        activeTab === "Approved"
+          ? API_ENDPOINTS.SUP_DETAPPROVE_URL
+          : API_ENDPOINTS.SUP_GETREJECT_URL;
+
       const response = await axios.post(
-        `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.SUP_DETAPPROVE_URL}`,
+        `${API_ENDPOINTS.CompanyUrl}${endpoint}`,
         { TokenC: user?.TokenC }
       );
 
       if (response.data?.Status === "success") {
         setData(response.data.data || []);
+      } else {
+        setData([]);
       }
     } catch (error) {
-      console.error("Approval Details API error:", error);
+      console.error("Approval API error:", error);
+      setData([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchApprovalDetails();
-  }, []);
+    fetchData();
+  }, [activeTab]);
 
   /* ---------------- HELPERS ---------------- */
 
@@ -86,23 +125,25 @@ export default function ApprovalDetails() {
     }
   };
 
+
+  const TABS: Array<'Approved' | 'Rejected'> = ['Approved', 'Rejected'];
+
   /* ---------------- RENDER ITEM ---------------- */
 
-  const router = useRouter();
   const renderItem = ({ item }: { item: ApprovalItem }) => (
     <Pressable
       onPress={() =>
         router.push({
           pathname: "/(tabs)/officer/approvalreqdetails",
-          params: { details: JSON.stringify(item), from: "approvaldetails" },
+          params: {
+            details: JSON.stringify(item),
+            from: "approvaldetails",
+            parentFrom: originFrom,
+          },
         })
       }
-      style={({ pressed }) => [
-        styles.card,
-        pressed && { opacity: 0.85 },
-      ]}
+      style={styles.card}
     >
-      {/* Header */}
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.name}>{item.NameC}</Text>
@@ -119,12 +160,11 @@ export default function ApprovalDetails() {
         </View>
       </View>
 
-      {/* Info Grid */}
       <View style={styles.infoGrid}>
         <Info label="Request Type" value={item.DescC || "—"} />
         <Info label="Leave Type" value={item.LvDescC || "—"} />
-        <Info label="Req Date" value={item.FromDateC || "—"} />
-        <Info label="Approve Date" value={item.ToDateC || "—"} />
+        <Info label="Apply Date" value={formatDisplayDate(item.ApplyDateD)} />
+        <Info label="Approve/Reject Date" value={formatDisplayDate(item.ApproveRejDateD)} />
       </View>
     </Pressable>
   );
@@ -132,28 +172,43 @@ export default function ApprovalDetails() {
   /* ---------------- UI ---------------- */
 
   return (
-    <View style={styles.container}>
-      <Header title="Approval Details" />
 
-      {loading ? (
-        <ActivityIndicator size="large" color={theme.primary} />
-      ) : (
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.IdN.toString()}
-          renderItem={renderItem}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 32 }}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No approval records found</Text>
-          }
+    <PanGestureHandler
+      onHandlerStateChange={onSwipeEnd}
+      activeOffsetX={[-30, 30]}
+      failOffsetY={[-30, 30]}
+    >
+      <View style={styles.container}>
+        <Header title="Approval Requests" />
+
+        {/* Tabs */}
+
+        <SegmentTabs
+          tabs={TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
         />
-      )}
-    </View>
+
+        {loading ? (
+          <ActivityIndicator size="large" color={theme.primary} />
+        ) : (
+          <FlatList
+            data={data}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 32 }}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No records found</Text>
+            }
+          />
+        )}
+      </View>
+    </PanGestureHandler>
   );
 }
 
-/* ---------------- SMALL COMPONENT ---------------- */
+/* ---------------- SMALL COMPONENTS ---------------- */
 
 const Info = ({ label, value }: { label: string; value: string }) => (
   <View style={{ width: "48%", marginBottom: 12 }}>
@@ -172,11 +227,33 @@ const createStyles = (theme: any) =>
       padding: 16,
     },
 
-    title: {
-      fontSize: 22,
-      fontWeight: "700",
-      color: theme.text,
+    tabRow: {
+      flexDirection: "row",
+      backgroundColor: theme.cardBackground,
+      borderRadius: 12,
+      padding: 4,
       marginBottom: 16,
+    },
+
+    tab: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+
+    activeTab: {
+      backgroundColor: theme.primary,
+    },
+
+    tabText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.textLight,
+    },
+
+    activeTabText: {
+      color: "#fff",
     },
 
     card: {
@@ -224,27 +301,6 @@ const createStyles = (theme: any) =>
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "space-between",
-      marginTop: 4,
-    },
-
-    remarkBox: {
-      marginTop: 12,
-      backgroundColor: theme.inputBg,
-      padding: 12,
-      borderRadius: 10,
-    },
-
-    remarkLabel: {
-      fontSize: 12,
-      fontWeight: "600",
-      color: theme.textLight,
-    },
-
-    remarkText: {
-      fontSize: 13,
-      color: theme.text,
-      marginTop: 2,
-      lineHeight: 18,
     },
 
     emptyText: {

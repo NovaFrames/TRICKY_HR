@@ -1,12 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Href, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
+const BACK_FALLBACKS: Record<string, Href> = {
+    home: '/home',
+    settings: '/settings',
+    dashboard: '/dashboard',
+    approvaldetails: '/officer/approvaldetails',
+};
+
 export default function Header({ title }: { title: string }) {
     const { theme, isDark } = useTheme();
     const router = useRouter();
+    const { from } = useLocalSearchParams<{ from?: string }>();
+
+    const handleBack = () => {
+        if (typeof from === 'string' && BACK_FALLBACKS[from]) {
+            router.replace(BACK_FALLBACKS[from]);
+            return;
+        }
+
+        router.back();
+    };
 
     return (
         <View style={[{ backgroundColor: theme.background }]}>
@@ -16,7 +33,7 @@ export default function Header({ title }: { title: string }) {
             <View style={styles.headerContainer}>
                 <View style={styles.navBar}>
                     <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={handleBack}
                         style={styles.iconButton}
                     >
                         <Ionicons name="arrow-back" size={24} color={theme.text} />

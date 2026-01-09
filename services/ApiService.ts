@@ -1363,7 +1363,8 @@ class ApiService {
                 BASE_URL + API_ENDPOINTS.GET_YOUR_PENDING_APPROVALS,
                 {
                     TokenC: this.token,
-                    EmpIdN: this.empId
+                    EmpIdN: this.empId,
+                    Type: 0
                 },
                 { headers: this.getHeaders() }
             );

@@ -1,4 +1,4 @@
-import { formatTimeNumber } from "@/constants/timeFormat";
+import { formatDisplayDate, formatTimeNumber } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService, { LeaveType } from "@/services/ApiService";
@@ -32,6 +32,8 @@ type ApprovalItem = {
   StatusC: string;
   EmpRemarksC: string;
   ApproveRemarkC: string;
+  ApproveRejDateD: string;
+  ApplyDateD: string;
 };
 
 interface FormattedLeaveType extends LeaveType {
@@ -51,7 +53,10 @@ interface FormattedLeaveType extends LeaveType {
 export default function ApprovalReqDetails() {
   const { theme } = useTheme();
   const styles = createStyles(theme);
-  const { details } = useLocalSearchParams();
+  const { details, parentFrom } = useLocalSearchParams<{
+    details?: string;
+    parentFrom?: string;
+  }>();
 
   const [loading, setLoading] = useState(false);
   const [formattedLeaves, setFormattedLeaves] = useState<FormattedLeaveType[]>([]);
@@ -158,9 +163,11 @@ export default function ApprovalReqDetails() {
       loadLeaveData(approval.IdN);
     }, [approval?.IdN])
   );
+
+  /* ---------------- BACK HANDLING ---------------- */
+
   useProtectedBack({
     approvaldetails: '/officer/approvaldetails',
-    
   });
   /* ---------------- FORMATTER ---------------- */
 
@@ -212,7 +219,7 @@ export default function ApprovalReqDetails() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Header title="Approval Request Details" />
+      <Header title="Approval/Reject Request Details" />
 
       {/* HEADER */}
       <View style={styles.header}>
@@ -228,8 +235,11 @@ export default function ApprovalReqDetails() {
 
       {/* META */}
       <View style={styles.metaRow}>
-        <Text style={styles.metaText}>From: {approval.FromDateC}</Text>
-        <Text style={styles.metaText}>To: {approval.ToDateC}</Text>
+        <Text style={styles.metaText}>Apply Date: {formatDisplayDate(approval.ApplyDateD)}</Text>
+      </View>
+
+      <View style={styles.metaRow}>
+        <Text style={styles.metaText}>Approve/Reject Date: {formatDisplayDate(approval.ApproveRejDateD)}</Text>
         <Text style={styles.metaText}>Days: {approval.LeaveDaysN}</Text>
       </View>
 
@@ -246,6 +256,10 @@ export default function ApprovalReqDetails() {
         <RemarkBlock
           label="Employee Remarks"
           value={approval.EmpRemarksC || "-"}
+        />
+        <RemarkBlock
+          label="Approve Remarks"
+          value={approval.ApproveRemarkC || "-"}
         />
       </View>
 
