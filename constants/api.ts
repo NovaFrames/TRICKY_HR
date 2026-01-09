@@ -37,6 +37,8 @@ export const API_ENDPOINTS = {
 
   GET_SURRENDER_DETAILS: "/WebApi/GetEmpLvSurrenderById",
 
+  GET_DELETE_APPLY: "/WebApi/GetDeletApply",
+
   // Leave Operations
   APPLY_LEAVE: "/WebApi/UpdateEmpLeaveApply",
 

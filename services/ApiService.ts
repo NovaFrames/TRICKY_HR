@@ -518,6 +518,96 @@ class ApiService {
         }
     }
 
+    async deleteRequest(requestId: number | string): Promise<{ success: boolean, data?: any, error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            if (!this.token) {
+                return {
+                    success: false,
+                    error: 'Authentication token not found. Please login again.'
+                };
+            }
+
+            // Convert requestId to string to match API expectations
+            const payload = {
+                TokenC: this.token,
+                RequestID: String(requestId)
+            };
+
+            console.log('Delete Request Payload:', JSON.stringify(payload));
+            console.log('Delete Request Endpoint:', BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY);
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY,
+                payload,
+                { headers: this.getHeaders() }
+            );
+
+            console.log('Delete Request Response Status:', response.status);
+            console.log('Delete Request Response Data:', JSON.stringify(response.data));
+
+            // Check for success in the response
+            const status = response.data.Status || response.data.status;
+
+            if (status === 'success') {
+                return {
+                    success: true,
+                    data: response.data,
+                    error: undefined
+                };
+            } else {
+                // API returned but operation failed
+                const errorMessage = response.data.Error ||
+                    response.data.Message ||
+                    response.data.error ||
+                    response.data.message ||
+                    'Failed to cancel request';
+
+                console.error('Delete Request Failed:', errorMessage);
+                return {
+                    success: false,
+                    error: errorMessage
+                };
+            }
+        } catch (error: any) {
+            console.error('Delete Request API Error:', error);
+
+            // Log detailed error information
+            if (error.response) {
+                console.error('Error Response Status:', error.response.status);
+                console.error('Error Response Data:', JSON.stringify(error.response.data));
+                console.error('Error Response Headers:', JSON.stringify(error.response.headers));
+
+                // Extract error message from response
+                const errorMessage = error.response.data?.Error ||
+                    error.response.data?.Message ||
+                    error.response.data?.error ||
+                    error.response.data?.message ||
+                    `Server error: ${error.response.status}`;
+
+                return {
+                    success: false,
+                    error: errorMessage
+                };
+            } else if (error.request) {
+                console.error('No response received from server');
+                return {
+                    success: false,
+                    error: 'No response from server. Please check your connection.'
+                };
+            } else {
+                console.error('Error Message:', error.message);
+                return {
+                    success: false,
+                    error: error.message || 'Network error'
+                };
+            }
+        }
+    }
+
     // Request Status
     async getEmpRequestStatus(): Promise<{ success: boolean, data?: any[], error?: string }> {
         try {

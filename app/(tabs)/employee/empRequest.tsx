@@ -216,6 +216,7 @@ export default function EmpRequestPage() {
                     visible={modalVisible}
                     item={selectedItem}
                     onClose={() => setModalVisible(false)}
+                    onRefresh={() => fetchRequests(true)}
                 />
             )}
         </View>

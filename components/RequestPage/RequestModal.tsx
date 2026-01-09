@@ -9,9 +9,10 @@ interface RequestModalProps {
     visible: boolean;
     onClose: () => void;
     item: any;
+    onRefresh?: () => void;
 }
 
-const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) => {
+const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item, onRefresh }) => {
     const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
 
@@ -41,6 +42,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
     const description = item.DescC || item.LeaveName || item.Description || 'General Request';
     const rangeDescription = item.LvDescC || '';
     const status = item.StatusC || item.StatusResult || item.Status || 'Waiting';
+    const remarks = item.LVRemarksC || item.RemarksC || item.Remarks || 'No remarks provided';
 
     // Status Logic for Color
     let statusInfo = { color: '#D97706', bg: '#FEF3C7', label: 'WAITING' };
@@ -49,7 +51,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
         statusInfo = { color: '#DC2626', bg: '#FEE2E2', label: status.toUpperCase() };
     }
 
-    const handleCancelLeave = async () => {
+    const handleCancelRequest = async () => {
         Alert.alert(
             "Cancel Request",
             "Are you sure you want to cancel this request?",
@@ -61,40 +63,45 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
                     onPress: async () => {
                         setLoading(true);
                         try {
-                            const { empId, token } = ApiService.getCurrentUser();
-                            if (!empId) {
-                                Alert.alert("Error", "User details not found.");
+                            const requestId = item.IdN || item.Id || item.id;
+
+                            console.log('=== Cancel Request Debug ===');
+                            console.log('Item:', JSON.stringify(item, null, 2));
+                            console.log('Request ID:', requestId);
+
+                            if (!requestId) {
+                                console.error('Request ID not found in item');
+                                Alert.alert("Error", "Request ID not found. Cannot cancel this request.");
                                 setLoading(false);
                                 return;
                             }
 
-                            const payload = {
-                                Flag: "CancelLeave",
-                                Tokenc: token || '',
-                                EmpId: empId,
-                                Id: item.IdN || item.Id,
-                                Approval: 2,
-                                YearN: 0,
-                                Remarks: "Cancellation requested by user",
-                                title: "",
-                                DocName: "",
-                                ReceiveYearN: 0,
-                                ReceiveMonthN: 0,
-                                ApproveAmtN: 0,
-                                PayTypeN: 0,
-                                LFromDateD: item.LFromDateD ? item.LFromDateD.split('T')[0] : new Date().toISOString().split('T')[0],
-                                LToDateD: item.LToDateD ? item.LToDateD.split('T')[0] : new Date().toISOString().split('T')[0],
-                            };
+                            console.log('Calling deleteRequest with ID:', requestId);
+                            const result = await ApiService.deleteRequest(requestId);
 
-                            const result = await ApiService.cancelLeave(payload);
+                            console.log('Delete Request Result:', JSON.stringify(result, null, 2));
+
                             if (result.success) {
                                 Alert.alert("Success", "Request cancelled successfully");
                                 onClose();
+                                // Refresh the list after successful cancellation
+                                if (onRefresh) {
+                                    console.log('Calling onRefresh to update list');
+                                    onRefresh();
+                                }
                             } else {
-                                Alert.alert("Error", result.error || "Failed to cancel request");
+                                console.error('Cancel failed:', result.error);
+                                Alert.alert(
+                                    "Error",
+                                    result.error || "Failed to cancel request. Please try again."
+                                );
                             }
-                        } catch (error) {
-                            Alert.alert("Error", "An unexpected error occurred");
+                        } catch (error: any) {
+                            console.error('Unexpected error in handleCancelRequest:', error);
+                            Alert.alert(
+                                "Error",
+                                error.message || "An unexpected error occurred while canceling the request."
+                            );
                         } finally {
                             setLoading(false);
                         }
@@ -125,7 +132,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
             footer={(status.toLowerCase().includes('waiting') || status.toLowerCase().includes('pending')) ? (
                 <TouchableOpacity
                     style={[styles.cancelButton]}
-                    onPress={handleCancelLeave}
+                    onPress={handleCancelRequest}
                     disabled={loading}
                 >
                     {loading ? (
@@ -151,7 +158,7 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item }) =
                 {rangeDescription ? (
                     <DetailItem icon="time-outline" label="SCHEDULE/DURATION" value={rangeDescription} />
                 ) : null}
-                <DetailItem icon="chatbubble-outline" label="REMARKS" value={item.LVRemarksC || item.RemarksC} />
+                <DetailItem icon="chatbubble-outline" label="REMARKS" value={remarks} />
             </ScrollView>
         </AppModal>
     );
