@@ -68,8 +68,6 @@ export default function ApprovalReqDetails() {
     }
   }, [details]);
 
-  console.log("Approval Param:", approval);
-
   /* ---------------- TABLE COLUMNS ---------------- */
 
   const ATTENDANCE_COLUMNS: ColumnDef[] = [
@@ -96,10 +94,7 @@ export default function ApprovalReqDetails() {
         IdN: approval.EmpIdN,
       });
 
-      console.log("Leave Details Result:", result);
-
       const rawData = result?.data?.data;
-      console.log("Raw Data:", rawData);
       if (!rawData) {
         Alert.alert("Info", "No leave data found");
         return;
@@ -142,7 +137,6 @@ export default function ApprovalReqDetails() {
       }
 
       const formatted = tableData.map(formatLeaveData);
-      console.log("Formatted Leave Data:", formatted);
       setFormattedLeaves(formatted);
     } catch (error) {
       console.error(error);
