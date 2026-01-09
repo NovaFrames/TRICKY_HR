@@ -1,18 +1,23 @@
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     Dimensions,
     FlatList,
+    Modal,
     PanResponder,
+    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import DocumentCard from '../../../components/UploadDocument/DocumentCard';
 import UploadDocumentModal from '../../../components/UploadDocument/UploadDocumentModal';
 import { useTheme } from '../../../context/ThemeContext';
@@ -48,6 +53,8 @@ const empdocument: React.FC = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
+    const [imageLoading, setImageLoading] = useState(false);
 
     const flatListRefs = useRef<{ [key: string]: FlatList | null }>({});
 
@@ -120,18 +127,42 @@ const empdocument: React.FC = () => {
     };
 
     const handleDocumentPress = (document: Document) => {
-        Alert.alert(
-            'Document Details',
-            `Name: ${document.name}\nType: ${document.type}\nDate: ${document.date}\nSize: ${document.size}`,
-            [
-                { text: 'Download', onPress: () => downloadDocument(document) },
-                { text: 'Cancel', style: 'cancel' },
-            ]
-        );
+        if (document.url) {
+            setViewingDoc(document);
+        } else {
+            Alert.alert('Info', 'Preview not available for this document.');
+        }
     };
 
-    const downloadDocument = (document: Document) => {
-        Alert.alert('Download', `Downloading ${document.name}`);
+    const handleDownload = async (document: Document) => {
+        if (!document.url) return;
+        try {
+            const fileUri = `${(FileSystem as any).documentDirectory}${document.name}`;
+            const { uri } = await FileSystem.downloadAsync(document.url, fileUri);
+            Alert.alert('Success', 'Document downloaded successfully');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to download document');
+        }
+    };
+
+    const handleShare = async (document: Document) => {
+        if (!document.url) return;
+        try {
+            const fileUri = `${(FileSystem as any).documentDirectory}${document.name}`;
+            const fileInfo = await FileSystem.getInfoAsync(fileUri);
+            if (!fileInfo.exists) {
+                await FileSystem.downloadAsync(document.url, fileUri);
+            }
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(fileUri);
+            } else {
+                Alert.alert('Error', 'Sharing is not available on this device');
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to share document');
+        }
     };
 
     const handleRefresh = () => {
@@ -204,7 +235,7 @@ const empdocument: React.FC = () => {
                             <DocumentCard
                                 document={item}
                                 onPress={() => handleDocumentPress(item)}
-                                onDownload={() => downloadDocument(item)}
+                                onDownload={() => handleDownload(item)}
                             />
                         )}
                         keyExtractor={(item) => item.id.toString()}
@@ -245,6 +276,44 @@ const empdocument: React.FC = () => {
                 onUpload={handleUpload}
                 uploading={uploading}
             />
+
+            {/* Document Viewer Modal */}
+            <Modal
+                visible={!!viewingDoc}
+                transparent={true}
+                onRequestClose={() => setViewingDoc(null)}
+                animationType="slide"
+            >
+                <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
+                    <View style={styles.viewerHeader}>
+                        <TouchableOpacity onPress={() => setViewingDoc(null)} style={styles.closeButton}>
+                            <Icon name="close" size={24} color="white" />
+                        </TouchableOpacity>
+                        <View style={styles.viewerActions}>
+                            <TouchableOpacity onPress={() => viewingDoc && handleDownload(viewingDoc)} style={styles.actionButton}>
+                                <Icon name="file-download" size={24} color="white" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => viewingDoc && handleShare(viewingDoc)} style={styles.actionButton}>
+                                <Icon name="share" size={24} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        {viewingDoc?.url && (
+                            <WebView
+                                source={{ uri: viewingDoc.url }}
+                                style={{ flex: 1 }}
+                                startInLoadingState={true}
+                                renderLoading={() => (
+                                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                                        <ActivityIndicator size="large" color={theme.primary} />
+                                    </View>
+                                )}
+                            />
+                        )}
+                    </View>
+                </SafeAreaView>
+            </Modal>
         </View>
     );
 };
@@ -315,6 +384,23 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 12,
         fontSize: 16,
+    },
+    viewerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    closeButton: {
+        padding: 8,
+    },
+    viewerActions: {
+        flexDirection: 'row',
+    },
+    actionButton: {
+        padding: 8,
+        marginLeft: 16,
     },
 });
 

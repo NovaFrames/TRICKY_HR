@@ -900,7 +900,7 @@ class ApiService {
                         ? new Date(parseInt(doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, '$1'))).toLocaleDateString()
                         : (doc.LastWriteTimeC || new Date().toLocaleDateString()),
                     size: 'Unknown',
-                    url: doc.NameC ? `${BASE_URL}/uploads/${doc.NameC}` : ''
+                    url: `${BASE_URL}/Employee/DownloadDocByFile?FileName=${encodeURIComponent(doc.FileNameC || doc.NameC)}&FolderName=${encodeURIComponent((doc.FolderNameC || '') + (doc.FileNameC || doc.NameC))}`
                 }));
             }
             return [];
