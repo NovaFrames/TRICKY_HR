@@ -4,7 +4,7 @@ import { useUser } from '@/context/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
@@ -19,6 +19,8 @@ import {
 } from 'react-native';
 
 import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
+import Header from '@/components/Header';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
 
 
 // Types for Attendance Data
@@ -46,6 +48,10 @@ export default function AttendanceList() {
     const { theme } = useTheme();
     const { user } = useUser();
     const router = useRouter();
+
+    useProtectedBack({
+        home: '/home'
+    });
 
     // Date states
     const [fromDate, setFromDate] = useState(() => {
@@ -129,16 +135,7 @@ export default function AttendanceList() {
 
     const renderHeader = () => (
         <View style={styles.headerWrapper}>
-            <View style={styles.headerContainer}>
-                <Stack.Screen options={{ headerShown: false }} />
-                <View style={styles.navBar}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={24} color={theme.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.navTitle, { color: theme.text }]}>Attendance List</Text>
-                    <View style={styles.iconButton} />
-                </View>
-            </View>
+            <Header title="Attendance List" />
 
             {/* Date Picker Card */}
             <View style={styles.datePickerSection}>
@@ -175,21 +172,21 @@ export default function AttendanceList() {
         {
             key: 'DateD',
             label: 'Date',
-            flex: 0.8,
+            flex: 0.5,
             align: 'flex-start',
             formatter: v =>
                 typeof v === 'string'
                     ? new Date(Number(v.replace(/\D/g, ''))).toLocaleDateString()
                     : '',
         },
-        { key: 'EmpCodeC', label: 'Code', flex: 0.8, align: 'flex-start' },
-        { key: 'EmpNameC', label: 'Name', flex: 1.4, align: 'flex-start' },
+        { key: 'EmpCodeC', label: 'Code', flex: 0.5, align: 'flex-start' },
+        { key: 'EmpNameC', label: 'Name', flex: 0.8, align: 'flex-start' },
         { key: 'ShiftCodeC', label: 'Shift', flex: 0.7, align: 'center' },
 
         {
             key: 'ShiftInN',
             label: 'Shift In',
-            flex: 0.5,
+            flex: 0.4,
             align: 'flex-end',
             formatter: v => (typeof v === 'number' ? v.toFixed(2) : '0.00'),
         },
@@ -200,9 +197,9 @@ export default function AttendanceList() {
             align: 'flex-end',
             formatter: v => (typeof v === 'number' ? v.toFixed(2) : '0.00'),
         },
-        { key: 'ReaCodeC', label: 'Reason', flex: 0.6, align: 'center' },
+        { key: 'ReaCodeC', label: 'Reason', flex: 0.5, align: 'center' },
 
-        { key: 'AttC', label: 'Attendance', flex: 0.5, align: 'center' },
+        { key: 'AttC', label: 'Attendance', flex: 0.6, align: 'center' },
         {
             key: 'TInN',
             label: 'Actual In',
@@ -213,7 +210,7 @@ export default function AttendanceList() {
         {
             key: 'TOutN',
             label: 'Actual Out',
-            flex: 0.5,
+            flex: 0.6,
             align: 'flex-end',
             formatter: v => (typeof v === 'number' ? v.toFixed(2) : '0.00'),
         },
@@ -234,7 +231,7 @@ export default function AttendanceList() {
         {
             key: 'LockN',
             label: 'Locked',
-            flex: 0.4,
+            flex: 0.6,
             align: 'center',
             formatter: v => (v === 1 ? 'Yes' : 'No'),
         },
@@ -253,7 +250,7 @@ export default function AttendanceList() {
                         <DynamicTable
                             data={shiftData}
                             columns={shiftColumns}
-                            tableWidth={1200}
+                            tableWidth={1400}
                             theme={theme}
                         />
                     </ScrollView>
