@@ -2,16 +2,17 @@ import Header from "@/components/Header";
 import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
+import { useProtectedBack } from "@/hooks/useProtectedBack";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 /* ---------------- TYPES ---------------- */
@@ -39,6 +40,10 @@ export default function ApprovalDetails() {
 
   const [data, setData] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(false);
+
+   useProtectedBack({
+      home: '/home'
+    });
 
   /* ---------------- API ---------------- */
 
