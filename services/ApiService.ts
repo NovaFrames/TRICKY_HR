@@ -856,7 +856,7 @@ class ApiService {
 
     // --- Document Management ---
 
-    async getDocuments(): Promise<any[]> {
+    async getDocuments(category: string = 'All'): Promise<any[]> {
         try {
             if (!this.token) {
                 await this.loadCredentials();
@@ -874,21 +874,33 @@ class ApiService {
             // For getDocuments, I'll use a placeholder or best guess.
 
             const response = await axios.post(
-                BASE_URL + API_ENDPOINTS.GET_UPLOADED_DOCUMENTS, // Guessing endpoint
-                { TokenC: this.token, EmpID: this.empId },
+                BASE_URL + API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
+                {
+                    TokenC: this.token,
+                    Id: this.empId,           // C# backend expects 'Id', not 'EmpID'
+                    FolderName: category === 'All' ? '' : category,
+                    DocName: 'All'            // Required parameter
+                },
                 { headers: this.getHeaders() }
             );
 
+            console.log('Get Documents Request - Category:', category);
+            console.log('Get Documents Response:', response.data);
+
             if (response.data.Status === 'success') {
-                // Map response to Document interface if needed
-                const docs = response.data.data || [];
+                // The C# backend returns documents in the 'data' or 'xx' field
+                const docs = response.data.data || response.data.xx || [];
                 return docs.map((doc: any, index: number) => ({
-                    id: doc.Id || index,
-                    name: doc.EmpDocName || doc.Name || 'Document',
-                    type: doc.Type || 'Unknown',
-                    date: doc.CreatedDate || new Date().toLocaleDateString(),
-                    size: doc.Size || 'Unknown',
-                    url: doc.Path || doc.Url
+                    id: `${doc.DocIdN || 'doc'}_${index}`, // Ensure unique key for FlatList
+                    name: doc.NameC || 'Document',
+                    fileName: doc.FileNameC || doc.NameC,
+                    type: doc.FolderNameC || 'Unknown',
+                    icon: doc.IconC || '',
+                    date: doc.LastWriteTimeC && doc.LastWriteTimeC.includes('/Date(')
+                        ? new Date(parseInt(doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, '$1'))).toLocaleDateString()
+                        : (doc.LastWriteTimeC || new Date().toLocaleDateString()),
+                    size: 'Unknown',
+                    url: doc.NameC ? `${BASE_URL}/uploads/${doc.NameC}` : ''
                 }));
             }
             return [];

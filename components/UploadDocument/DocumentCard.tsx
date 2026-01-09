@@ -10,7 +10,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 interface DocumentCardProps {
     document: {
-        id: number;
+        id: string | number;
         name: string;
         type: string;
         date: string;
