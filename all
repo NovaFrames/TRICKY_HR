@@ -1,0 +1,3203 @@
+
+    public class WebApiController : Controller
+    {
+        string Error;
+        string strErrMsg;
+        String Status = "";
+        DataTable dt;
+        LoginUser Elu;
+        LoginUser lu = new LoginUser();
+
+        public object Application { get; private set; }
+
+        #region FaceVerfication
+        [AcceptVerbs(HttpVerbs.Post)]
+        public JsonResult UpdateLiveLoc(string TokenC, int EmpIdN, string Lat, string Lon)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            General_BL bl = new General_BL();
+            bl.UpdateLiveLoc(EmpIdN,  Lat, Lon, Elu, out strErrMsg);
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public JsonResult UpdateFaceRegister(string TokenC, int EmpIdN, string EmpFaceIdC)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            //0= Normal, 1=FaceRegister, 2 Waiting for Approved, 3 Reject show Reason and FaceRegister, 4 Approved check Face
+
+            EmpPortal_BL bl = new EmpPortal_BL();
+            bl.UpdateFaceRegister(EmpIdN, EmpFaceIdC, Elu, out strErrMsg);
+
+            string _imgname = string.Empty;
+            var ImageObj = System.Web.HttpContext.Current.Request.Files.AllKeys.Any();
+
+            if (System.Web.HttpContext.Current.Request.Files.AllKeys.Any())
+            {
+                var pic = System.Web.HttpContext.Current.Request.Files["EmpImages"];
+                if (pic.ContentLength > 0)
+                {
+                    if (!System.IO.Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID)))
+                    {
+                        Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID));
+                    }
+
+                    if (!Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpFacePhoto")))
+                    {
+                        Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpFacePhoto"));
+                    }
+
+                    var _comPath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpFacePhoto" + "/") + EmpIdN + ".jpg";
+                    var path = _comPath;
+                    pic.SaveAs(path);
+                }
+            }
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, ImageObj }, JsonRequestBehavior.AllowGet);
+        }
+
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public JsonResult GetEmpFaceDetail(string TokenC, int EmpIdN, int SubEmpIdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+
+            var data = bl.GetEmpFaceDetail(Elu, EmpIdN, SubEmpIdN, out strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        #endregion
+
+        #region Common
+        private string GetIP()
+        {
+            var xx = "";
+            try
+            {
+                xx = Server.HtmlEncode(Request.UserHostAddress);
+            }
+            catch (Exception e)
+            {
+                strErrMsg = e.Message;
+            }
+            return xx;
+        }
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public JsonResult Login(string EmpCode, string Password, string DomainId)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            EmpAPI_DA DA = new EmpAPI_DA();
+            dt = new DataTable();
+            string Con = "";
+          //  //DBEng.LogError("Check EmpCode :" + EmpCode + " Password :" + Password, "");
+            if (EmpCode == null || Password==null)
+            {
+                Error = "Invalid EmpCode...";
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            var data = DA.CheckEmployee(EmpCode, Password, DomainId, out Con, out dt, out strErrMsg);
+            DA.Dispose();
+
+           // DBEng.LogError("Check CheckEmployee :" + strErrMsg);
+
+            Session["ConnStringC"] = Con;
+            if (data.EmpIdN == 0)
+            {
+                Error = "Invalid Login..." + strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            Int32 PoliciseId = 0;
+            string PoliciseFileName = "";
+            
+            if (CheckTokenC(data.TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                //DBEng.LogError("Check CheckTokenC :" + strErrMsg);
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            String FName = Server.MapPath("/kevit-Customer/" + Elu.Master_DB+ "/CompanyPolicies");
+            if (Directory.Exists(FName))
+            {
+                GeneralBL gbl = new GeneralBL();
+                gbl.GetCompPoliciesByEmpId(FName, Con, Elu.Master_DB, Elu.Login_DB, data.EmpIdN, out PoliciseId, out PoliciseFileName, out strErrMsg);
+                if (!System.IO.File.Exists(FName + "/" + PoliciseFileName))
+                {
+                    PoliciseId = 0;
+                    PoliciseFileName = "";
+                }
+                else
+                {
+                    PoliciseFileName = "/kevit-Customer/" + Elu.Master_DB + "/CompanyPolicies/" + PoliciseFileName;
+                }
+            }
+            return Json(new { Status, data, PoliciseId, PoliciseFileName, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult CompPoliciesUpdate(string TokenC, Int32 PoliciseId)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            GeneralBL gbl = new GeneralBL();
+            gbl.UpdateCompanyPoliciesByEmp(Elu.ConnStringC, Elu.Master_DB, Elu.Login_DB, Elu.IdN, PoliciseId, out strErrMsg);
+            return Json(JsonRequestBehavior.AllowGet);
+        }
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public JsonResult RefreshLogin(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            String PasswordC = Hisoft.Helpers.Cryptography.Decrypt(Elu.PasswordC);
+            return Login(Elu.CodeC, PasswordC, Elu.DominID);
+        }
+
+        [HttpPost]
+        public JsonResult GetServerTime()
+        {
+            DateTime xx = DateTime.Now;
+            var ServerTime = "";
+            ServerTime = xx.ToString("dd MMM yyyy HH:mm:ss");
+
+            return Json(ServerTime, JsonRequestBehavior.AllowGet);
+        }
+
+        private Boolean CheckTokenC(string TokenC, out string strErrMsg)
+        {
+            strErrMsg = "";
+            String strTokenC = "";
+            Elu = new LoginUser();
+            try
+            {
+                Elu.IPAddess = GetIP();
+            }
+            catch (Exception ex) { 
+                strErrMsg = ex.Message;
+                DBEng.LogError("Check CheckTokenC :GetIP " + strErrMsg);
+            }
+
+            try
+            {
+                strTokenC = Hisoft.Helpers.Cryptography.Decrypt(TokenC);
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+                DBEng.LogError("Check CheckTokenC :strTokenC " + strErrMsg);
+                return false;
+            }
+
+            string[] values = strTokenC.Split('|');
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (i == 0) Elu.CodeC = values[i].Trim();
+                if (i == 1) Elu.PasswordC = values[i].Trim();
+                if (i == 2) Elu.Master_DB = values[i].Trim();
+                if (i == 3) Elu.Login_DB = values[i].Trim();
+                if (i == 4) Elu.CompIdN = Convert.ToInt32(values[i].Trim());
+                if (i == 5) Elu.CustomerID = values[i].Trim();
+                if (i == 6) Elu.IdN = Convert.ToInt32(values[i].Trim());
+                if (i == 7) Elu.ConnStringC = values[i].Trim();
+                if (i == 8) Elu.DominID = values[i].Trim();
+                if (i == 9) Elu.LoginTypeN = Convert.ToInt32(values[i].Trim());
+            }
+            EmpAPI_DA DA = new EmpAPI_DA();
+            Boolean xx = DA.CheckCodePassword(Elu.CodeC, Elu.PasswordC, Elu.Login_DB, out strErrMsg);
+          //  DBEng.LogError("Check CheckTokenC :CheckCodePassword " + strErrMsg);
+            DA.Dispose();
+            return xx;
+
+        }
+
+        public JsonResult CheckURL(string DomainId)
+        {
+            Status = "success"; Error = "ok";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetDeviceLastDownDateTime(string SerialNo)
+        {
+            EmpAPI_DA da = new EmpAPI_DA();
+            String Masterdb = "";
+            DateTime xLDownloadDate = new DateTime(1900, 1, 1, 0, 0, 0);
+
+            string[] values = SerialNo.Split(';');
+            SerialNo = values[0];
+            Masterdb = values[1];
+
+            da.GetDeviceLastDownDateTime(SerialNo, Masterdb, out xLDownloadDate, out strErrMsg);
+            da.Dispose();
+            var LDownloadDate = xLDownloadDate.ToString("MMM/dd/yyyy HH:mm:ss");
+            return Json(LDownloadDate, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult SetDeviceLastDownloadDate(string SerialNo)
+        {
+            EmpAPI_DA da = new EmpAPI_DA();
+            String Masterdb = "";
+            DateTime xLDownloadDate = new DateTime(1900, 1, 1, 0, 0, 0);
+            string[] values = SerialNo.Split(';');
+            SerialNo = values[0];
+            Masterdb = values[1];
+            xLDownloadDate = Convert.ToDateTime( values[2]);
+            da.SetDeviceLastDownloadDate(SerialNo, Masterdb, xLDownloadDate, out strErrMsg);
+            da.Dispose();
+            return Json("ok", JsonRequestBehavior.AllowGet);
+        }
+
+
+        #endregion
+
+
+       
+
+        #region Lead
+        private Boolean CheckLeadToken(string TokenC,  out string LeadIdN, out string Master_DB, out string Login_DB, out string ConnStringC, out string CompanyIdN,  out string ReleaseDate, out string strErrMsg)
+        {
+            strErrMsg = "";
+            String strTokenC = "";
+            LeadIdN = ""; Master_DB = ""; Login_DB = ""; ConnStringC = ""; CompanyIdN = ""; ReleaseDate = "";
+            try
+            {
+                strTokenC = Hisoft.Helpers.Cryptography.Decrypt(TokenC);
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+                return false;
+            }
+
+            string[] values = strTokenC.Split('|');
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (i == 0) LeadIdN = values[i].Trim();
+                if (i == 1) Master_DB = values[i].Trim();
+                if (i == 2) Login_DB = values[i].Trim();
+                if (i == 3) ConnStringC = values[i].Trim();
+                if (i == 4) ReleaseDate = values[i].Trim();
+                if (i == 5) CompanyIdN = values[i].Trim();
+
+            }
+            
+
+            return true;
+
+        }
+
+        string LeadIdN="", Master_DB = "", Login_DB = "", ConnStringC = "", CompanyIdN="";
+        public JsonResult GetLeadByToken(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = ""; string ReleaseDate = "";
+
+            if (CheckLeadToken(TokenC, out LeadIdN, out Master_DB, out Login_DB, out ConnStringC,out CompanyIdN, out ReleaseDate,   out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            if (LeadIdN == "" || Master_DB == "" || Login_DB == "" || ConnStringC == "")
+            {
+                Error = "Invalid Token";
+                if(strErrMsg!="") Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            DateTime CDate = Convert.ToDateTime(ReleaseDate);
+            if (CDate < DateTime.Now.AddDays(-7))
+            {
+                strErrMsg = "Token Expired.";
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            ATS_DA dd = new ATS_DA(ConnStringC, Master_DB, Login_DB, 0);
+            dd.GetLeadList(" Where a.LeadIdN= " + LeadIdN, out dt, out strErrMsg);//StatusN=1 and 
+            dd.Dispose();
+            if (dt.Rows.Count <= 0)
+            {
+                Error = "Invalid Token";
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            else if(Convert.ToInt16( dt.Rows[0]["StatusN"])==6)
+            {
+                Error = "Already submitted";
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+                //a.StatusN=3 and
+            }
+
+            var data=dt.AsEnumerable().Select(row =>
+            {
+                return new ATSLead
+                {
+                    LeadIdN = Convert.ToInt32(row["LeadIdN"]),
+                    LeadNameC = Convert.ToString(row["LeadNameC"]),
+                    PHNoC = Convert.ToString(row["PHNoC"]),
+                    EMailIdC = Convert.ToString(row["EMailIdC"]),
+                    PositionC = Convert.ToString(row["DesigNameC"]),
+                    InterviewDateC = Convert.ToDateTime(row["InterviewDateD"]).ToString("dd MMM yyyy HH:mm"),
+                };
+            });
+
+            EmpAPI_DA dd1 = new EmpAPI_DA();
+            dd1.GetCompanyByLDBName(Master_DB, Login_DB, out dt, out strErrMsg);
+            dd1.Dispose();
+            string CompanyName = dt.Rows[0]["CompNameC"].ToString();
+            string WebsiteC = dt.Rows[0]["WebsiteC"].ToString();
+            string CompIdN = dt.Rows[0]["CompIdN"].ToString();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            return Json(new { Status, Error, data, CompanyName, WebsiteC, CompIdN, Master_DB }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetPositionByToken(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = ""; string ReleaseDate = "";
+
+            if (CheckLeadToken(TokenC, out LeadIdN, out Master_DB, out Login_DB, out ConnStringC, out CompanyIdN, out ReleaseDate, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            if (Master_DB == "" || Login_DB == "" || ConnStringC == "")
+            {
+                Error = "Invalid Token";
+                if (strErrMsg != "") Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            lu.ConnStringC = ConnStringC;
+            lu.Master_DB = Master_DB;
+            lu.Login_DB=Login_DB;
+            ATS_BL bl = new ATS_BL();
+            var data = bl.GetManpowerById("where ReleaseN=1", lu, out strErrMsg);
+            
+            EmpAPI_DA dd1 = new EmpAPI_DA();
+            dd1.GetCompanyByLDBName(Master_DB, Login_DB, out dt, out strErrMsg);
+            dd1.Dispose();
+            string CompanyName = dt.Rows[0]["CompNameC"].ToString();
+            string WebsiteC = dt.Rows[0]["WebsiteC"].ToString();
+            string CompIdN = dt.Rows[0]["CompIdN"].ToString();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            return Json(new { Status, Error, data, CompanyName, WebsiteC, CompIdN, Master_DB }, JsonRequestBehavior.AllowGet);
+        }
+        public JsonResult ATSSaveResumeData(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = ""; string ReleaseDate = "";
+
+            if (CheckLeadToken(TokenC, out LeadIdN, out Master_DB, out Login_DB, out ConnStringC, out CompanyIdN, out ReleaseDate, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+        
+                ATSLead Model = new ATSLead();
+                string Form = System.Web.HttpContext.Current.Request["Form"];
+                if (Form == "InterviewAcceptance")
+                {
+                    Model.FormC = Form;
+                    Model.LeadIdN = Convert.ToInt32(LeadIdN);
+                    Model.AcceptanceC = Convert.ToInt32(System.Web.HttpContext.Current.Request["Acceptance"]).ToString();
+                    Model.InterviewDateC = System.Web.HttpContext.Current.Request["RescheduleDate"];
+                    Model.RemarksC = System.Web.HttpContext.Current.Request["Remarks"];
+
+                    ATS_BL bl = new ATS_BL();
+                    int CLeadIdN = 0;
+                    var xx = bl.ATSSaveResumeData(Model, ConnStringC, Master_DB, Login_DB, 0, out strErrMsg, out CLeadIdN);
+                    LeadIdN = CLeadIdN.ToString();
+                }
+                else if (Form == "Resume")
+                {
+                    Model.FormC = Form;
+                    Model.LeadIdN = Convert.ToInt32(LeadIdN);
+                    Model.LNameC = System.Web.HttpContext.Current.Request["lname"];
+                    Model.GenderN = Convert.ToInt32(System.Web.HttpContext.Current.Request["Gender"]);
+                    Model.DobD = Convert.ToDateTime(System.Web.HttpContext.Current.Request["dob"]);
+                    Model.DoorNoC = System.Web.HttpContext.Current.Request["DoorNo"];
+                    Model.StreetC = System.Web.HttpContext.Current.Request["Street"];
+                    Model.AreaC = System.Web.HttpContext.Current.Request["Area"];
+                    Model.CityC = System.Web.HttpContext.Current.Request["City"];
+                    Model.StateC = System.Web.HttpContext.Current.Request["State"];
+                    Model.PincodeC = System.Web.HttpContext.Current.Request["pincode"];
+
+
+                    Model.QualiC = System.Web.HttpContext.Current.Request["Quali"];
+                    Model.PCompanyNameC = System.Web.HttpContext.Current.Request["PCompanyName"];
+                    Model.PCompanyPositionC = System.Web.HttpContext.Current.Request["PCompanyPosition"];
+                    Model.PCompanyNOYearsC = System.Web.HttpContext.Current.Request["PCompanyNOYears"];
+
+                    Model.employmentN = System.Web.HttpContext.Current.Request["employment"];
+                    Model.CurrentSalaryN = System.Web.HttpContext.Current.Request["CurrentSalary"];
+                    Model.ExpectedSalaryN = System.Web.HttpContext.Current.Request["ExpectedSalary"];
+                    Model.RemarksC = System.Web.HttpContext.Current.Request["Remarks"];
+
+                    Model.joinimmediately = System.Web.HttpContext.Current.Request["joinimmediately"];
+                    Model.Availability = System.Web.HttpContext.Current.Request["Availability"];
+                    Model.relocate = System.Web.HttpContext.Current.Request["relocate"];
+                    Model.Reference = System.Web.HttpContext.Current.Request["Reference"];
+                    Model.EmpReferralName = System.Web.HttpContext.Current.Request["EmpReferralName"];
+
+                    ATS_BL bl = new ATS_BL();
+                    int CLeadIdN = 0;
+                    var xx = bl.ATSSaveResumeData(Model, ConnStringC, Master_DB, Login_DB, 0, out strErrMsg, out CLeadIdN);
+                    LeadIdN = CLeadIdN.ToString();
+                    if (strErrMsg == "")
+                    {
+                        var LeadImage = System.Web.HttpContext.Current.Request.Files["myfile"];
+                        if (LeadImage != null && LeadImage.ContentLength > 0)
+                        {
+                            ATSSaveDoc(Model.LeadIdN, LeadImage, "LeadImage", Master_DB, CompanyIdN);
+                        }
+                        var Resume = System.Web.HttpContext.Current.Request.Files["Resume"];
+                        if (Resume != null && Resume.ContentLength > 0)
+                        {
+                            ATSSaveDoc(Model.LeadIdN, Resume, "Resume", Master_DB, CompanyIdN);
+                        }
+
+                        var Payslip = System.Web.HttpContext.Current.Request.Files["Payslip"];
+                        if (Payslip != null && Payslip.ContentLength > 0)
+                        {
+                            ATSSaveDoc(Model.LeadIdN, Payslip, "Payslip", Master_DB, CompanyIdN);
+                        }
+                    }
+                }
+            
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            return Json(new { Status, Error}, JsonRequestBehavior.AllowGet);
+        }
+
+
+        private Boolean ATSSaveDoc( Int32 LeadIdN, HttpPostedFile File,  string FileName, string CustomerID, string CompIdN)
+        {
+            if (!Directory.Exists(Server.MapPath("/kevit-Customer/" + CustomerID + "/" + CompIdN + "/ATS/" + LeadIdN + "/" + FileName)))
+            {
+                Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + CustomerID + "/" + CompIdN + "/ATS/" + LeadIdN + "/") + FileName);
+            }
+            var _ext = Path.GetExtension(File.FileName);
+            var _comPath = Server.MapPath("/kevit-Customer/" + CustomerID + "/" + CompIdN + "/ATS/" + LeadIdN + "/" + FileName + "/" + FileName) + _ext;
+            File.SaveAs(_comPath);
+
+            return true;
+        }
+
+            #endregion
+
+        #region My Request Status
+        public JsonResult GetEmpRequestStatus(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            DateTime Fromdate = DateTime.Now.AddDays(-250);
+            DateTime Todate = DateTime.Now.AddDays(10);
+            var xx = bl.GetEmpDashBoardList(Elu, Fromdate, Todate);
+
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.EmpNodi_Update(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            return Json(new { Status, Error, xx }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpRequestStatusFTDate(string TokenC, DateTime FromDate, DateTime ToDate)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+
+            var xx = bl.GetEmpDashBoardList(Elu, FromDate, ToDate);
+
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.EmpNodi_Update(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            return Json(new { Status, Error, xx }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpDocumentShow(string TokenC, int Id, string FolderName, string DocName)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            var path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Id + "/EmpPortalDocuments/");
+            if (DocName == "ClaimDoc")
+            {
+                FolderName = FolderName + "/" + Elu.IdN + "/" + Id;
+                DocName = "All";
+                path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/");
+            }
+            if (DocName == "Medical")
+            {
+                FolderName = "";
+                DocName = "All";
+                path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/MedDoc/" + Id + "/");
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            var xx = bl.GetEmpDocumentshomeEdit(path, FolderName, DocName, Id, Elu);
+            return Json(new { Status, Error, xx }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetDeletApply(string TokenC, int EmpId, string Type, 
+            int Id, DateTime FromDate, DateTime ToDate, string RemarksC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            String FileName = "";
+            String FolderName = "";
+            string mailfrom = "", mailTo = "", mailToCC = "", subject = "", body = "";
+            bl.GetDeletApply(EmpId, Type, Id, Elu, out FolderName, out FileName, out mailfrom, out mailTo, out mailToCC, out subject, out body, out strErrMsg, FromDate, ToDate, RemarksC);
+            if (strErrMsg == "")
+            {
+                if (Type == "Claim")
+                {
+                    string path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/ClaimDoc/" + EmpId + "/" + Id);
+                    try
+                    {
+                        System.IO.DirectoryInfo di = new DirectoryInfo(path);
+                        if (Directory.Exists(path))
+                        {
+                            foreach (FileInfo file in di.GetFiles())
+                            {
+                                file.Delete();
+                            }
+                            Directory.Delete(path, true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        strErrMsg = ex.Message;
+                    }
+                }
+
+
+               // DBEng.LogError("Type:" + Type);
+
+                if (Type == "Lev")
+                {
+                    string path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/MedEmpPhoto/" + Id + ".jpg");
+                    try
+                    {
+                        if (System.IO.File.Exists(path))
+                        {
+                            System.IO.File.Delete(path);
+                        }
+                        path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/MedDoc/" + Id + "/");
+                        System.IO.DirectoryInfo di = new DirectoryInfo(path);
+                        if (Directory.Exists(path))
+                        {
+                            foreach (FileInfo file in di.GetFiles())
+                            {
+                                file.Delete();
+                            }
+                            Directory.Delete(path, true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        strErrMsg = ex.Message;
+                    }
+                }
+
+                SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+
+                if (Type == "Pro")
+                {
+                    try
+                    {
+                        var imgpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal/EmpPhoto" + "/") + EmpId + ".jpg";
+                        if (System.IO.File.Exists(imgpath))
+                        {
+                            System.IO.File.Delete(imgpath);
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        strErrMsg = ex.Message;
+                    }
+                }
+            
+        
+                if (Type == "Doc")
+                {
+                    string fileName = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + EmpId + "/EmpPortalDocuments/" + FolderName);
+                    if (Directory.Exists(fileName))
+                    {
+                        string[] filePaths = Directory.GetFiles(fileName, "*.*", SearchOption.AllDirectories);
+                        foreach (string inf in filePaths)
+                        {
+                            FileInfo info = new FileInfo(inf);
+
+                            if (info.Name == FileName + info.Extension)
+                            {
+                                System.IO.File.Delete(info.FullName);
+                            }
+                        }
+                    }
+                }
+
+            }
+            DateTime Fromdate = DateTime.Now.AddDays(-100);
+            DateTime Todate = DateTime.Now.AddDays(10);
+            var xx = bl.GetEmpDashBoardList(Elu, Fromdate, Todate);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            return Json(new { Status, Error, xx }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region ProfileUpdate
+        public JsonResult GetEmpProfile(string TokenC, Boolean blnEmpMaster, Boolean ViewReject)
+        {
+            //DBEng.LogError("GetEmpProfile");
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            EmpPortal_BL bl = new EmpPortal_BL();
+            Boolean EditDenied = true;
+            DateTime Fromdate = DateTime.Now;
+            DateTime Todate = DateTime.Now.AddDays(10);
+            var xx1 = bl.GetEmpDashBoardList(Elu, Fromdate, Todate);
+           // DBEng.LogError("GetEmpProfile1111");
+            var i = xx1.FirstOrDefault().empRequestWating.Count();
+
+            if (i == 0 || xx1.FirstOrDefault().empRequestWating.FirstOrDefault().DescC != "Profile Update")
+            {
+                if (!System.IO.Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID)))
+                {
+                    Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID));
+                }
+
+                if (!Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpPhoto")))
+                {
+                    Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpPhoto"));
+                }
+            }
+            var data = bl.GetEmpProfileById(Elu, blnEmpMaster, ViewReject, out EditDenied);
+          //  DBEng.LogError("GetEmpProfile22222");
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.Nodi_ProfileUpdate(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+          //  DBEng.LogError("GetEmpProfile33333");
+
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data, EditDenied }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UpdateEmpProfile(string TokenC, IEnumerable<EmpProfile> Model, IEnumerable<EmpChild> Child, IEnumerable<EmpEducation> Education
+            , IEnumerable<EmpFamily> Family, IEnumerable<PerviousComp> PerviousComp)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            EmpPortal_BL bl = new EmpPortal_BL();
+            if (Model.FirstOrDefault().ApplyDateD.Year <= 1900)
+            {
+                Model.FirstOrDefault().ApplyDateD = DateTime.Now;
+            }
+            int Empid;
+            string mailfrom = "";
+            string mailTo = "";
+            string mailToCC = "";
+            string subject = "";
+            string body = "";
+            Empid = Model.FirstOrDefault().EmpIdN;
+
+            //List<EmpFamily> Family = new List<EmpFamily>();
+            //List<PerviousComp> PerviousComp = new List<PerviousComp>();
+
+            bl.UpdateEmpProfile(Model, Child, Education, Family, PerviousComp,  Elu, out mailfrom, out mailTo, out mailToCC, out subject, out body, out strErrMsg);
+            var imgpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpPhoto" + "/") + Empid + ".jpg";
+            if (System.IO.File.Exists(imgpath))
+            {
+                System.IO.File.Delete(imgpath);
+            }
+            if (strErrMsg == "")
+            {
+                SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+            }
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, Empid });
+        }
+
+        public JsonResult EmpUploadFile(string TokenC)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            string _imgname = string.Empty;
+            if (System.Web.HttpContext.Current.Request.Files.AllKeys.Any())
+            {
+                var EmpID = System.Web.HttpContext.Current.Request["EmpID"];
+                var pic = System.Web.HttpContext.Current.Request.Files["EmpImages"];
+
+                
+                if (pic.ContentLength > 0)
+                {
+                    if (!System.IO.Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID)))
+                    {
+                        Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID));
+                    }
+
+                    if (!Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpPhoto")))
+                    {
+                        Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpPhoto"));
+                    }
+
+                    var fileName = Path.GetFileName(pic.FileName);
+                    var _ext = Path.GetExtension(pic.FileName);
+                    var _comPath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + "EmpPortal" + "/" + "EmpPhoto" + "/") + EmpID + ".jpg";
+                    _imgname = EmpID + ".jpg";
+                    ViewBag.Msg = _comPath;
+
+                    //DBEng.LogError("Emp Image Update :" + EmpID);
+                    //DBEng.LogError("File Path :" + _comPath);
+                    //DBEng.LogError("Upload File Name :" + pic.FileName);
+
+                    var path = _comPath;
+                    pic.SaveAs(path);
+                }
+            }
+            return Json(Status, Convert.ToString(_imgname), JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region GetChangeSupPassword
+        public JsonResult UpdateEmpChangePassword(string TokenC, string NewPassword)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            bl.UpdateChangePassword(Elu, NewPassword, out strErrMsg);
+            return Json(new { Status, Error });
+        }
+        #endregion
+
+        #region Leave Manage
+        public JsonResult GetEmpLeaveManageById(string TokenC, int Id)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            var data = bl.GetEmpLeaveManageById(Id, Elu, out strErrMsg);
+
+            var Time = "Leave";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, Time, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpLVSurrenderById(string TokenC, int Id)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            var data = bl.GetEmpLVSurrenderById(Id, Elu, out strErrMsg);
+            var Time = "Leave Surrender";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, Time, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpLVSurrenderBalance(string TokenC)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            decimal EligLeave = 0;
+            var data = bl.GetEmpLVSurrenderBalance(Elu, Elu.IdN, out EligLeave, out strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data, EligLeave }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpLeaveApplyDtlById(string TokenC)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            DateTime Fromdate = DateTime.Now;
+            DateTime Todate = DateTime.Now.AddDays(10);
+          
+
+            Leave_BL bl1 = new Leave_BL();
+            LoginUser lu = new LoginUser();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+
+            decimal MLClaimLimitN = 0, MLPerVisitMaxN = 0, MLClaimAvailN = 0;
+            bl1.GetLeaveAppDtlListById(Elu.IdN, out MLClaimLimitN, out MLPerVisitMaxN, out MLClaimAvailN, lu, out strErrMsg);
+
+            int loginType = 0;
+            if (Elu.LoginTypeN == 1) loginType = 1;
+             var data = bl.GetEmpLeaveApplyDtlById(Elu, Fromdate, Todate, MLClaimAvailN, loginType, out strErrMsg);
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.Nodi_LeaveManageUpdate(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+
+            var GenderN = Elu.GenderN;
+            SystemSetting.SystemSetting_BL sysbl = new SystemSetting.SystemSetting_BL();
+            var SystemSet = sysbl.GetLeaveSettingList(lu.ConnStringC, lu.Master_DB).FirstOrDefault();
+            var LvApplyBeforeN = SystemSet.LvApplyBeforeN;
+            var LVSurrenderN = SystemSet.LVSurrenderN;
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+
+            return Json(new { Status, Error, MLClaimLimitN, MLPerVisitMaxN, MLClaimAvailN, data, GenderN, LvApplyBeforeN, LVSurrenderN }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UpdateEmpLeaveApply(string TokenC, EmpLeaveApply lap)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            string mailfrom = "";
+            string mailTo = "";
+            string mailToCC = "";
+            string subject = "";
+            string body = "";
+            int IdN = 0;
+
+           // DBEng.LogError("leave app :" + lap.LVRemarksC + " DB Name :" + lu.Login_DB, "");
+            var data = bl.UpdateEmpLeaveApply(lap, Elu, out mailfrom, out mailTo, out mailToCC, out subject, out body, out IdN, out strErrMsg);
+            if (strErrMsg == "")
+            {
+                SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, IdN }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UploadMedicalDoc(string TokenC)
+        {
+            try
+            {
+                string _imgname = string.Empty;
+                Status = "success"; Error = ""; strErrMsg = "";
+                if (CheckTokenC(TokenC, out strErrMsg) == false)
+                {
+                    Error = strErrMsg;
+                    Status = "Error";
+                    return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+                }
+                var IdN = System.Web.HttpContext.Current.Request["IdN"];
+                var pic = System.Web.HttpContext.Current.Request.Files["Photo"];
+                var Doc = System.Web.HttpContext.Current.Request.Files["Doc"];
+                var Docpath = "";
+                if (pic != null)
+                {
+                    if (pic.ContentLength > 0)
+                    {
+                        Docpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/MedEmpPhoto/");
+                        if (!Directory.Exists(Docpath))
+                        {
+                            Directory.CreateDirectory(Docpath);
+                        }
+                        var _ext = Path.GetExtension(pic.FileName);
+                        var _comPath = Docpath + "/" + IdN + ".jpg";
+                        pic.SaveAs(_comPath);
+
+                    }
+                }
+                if (Doc != null)
+                {
+                    if (Doc.ContentLength > 0)
+                    {
+                        Docpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/MedDoc/" + IdN + "/");
+                        if (!Directory.Exists(Docpath))
+                        {
+                            Directory.CreateDirectory(Docpath);
+                        }
+                        var _ext = Path.GetExtension(Doc.FileName);
+                        var _comPath = Docpath + Doc.FileName;
+                        Doc.SaveAs(_comPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, }, JsonRequestBehavior.AllowGet);
+        }
+
+
+        public JsonResult GetEmpLeaveBalanceByEmpId(string TokenC, int EmpIdN, DateTime LDateD, DateTime LToDateD, int ReaGrpIdN, double unit, decimal THrsN)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Leave_DA DA = new Leave_DA(Elu.IdN, Elu.ConnStringC, Elu.Master_DB, Elu.Login_DB, Elu.IPAddess);
+            string[] LeaveDate;
+            string[] LeaveDateRea;
+            int LeaveDays = 0;
+            DA.CheckLeaveByEmpId(0, EmpIdN, LDateD, LToDateD, ReaGrpIdN, unit, THrsN, out LeaveDate, out LeaveDateRea, false, out strErrMsg, out LeaveDays, false);
+            DA.Dispose();
+            int k = 0;
+            int i = 0;
+            String data = "";
+            if (ReaGrpIdN == 2 && unit == 0 && THrsN == 0)
+            {
+
+            }
+            else if (ReaGrpIdN != 6)
+            {
+                k = LeaveDateRea.Length;
+                for (i = 0; i < k; i++)
+                {
+                    if (LeaveDateRea[i] != "PAID")
+                    {
+                        if (data != "") data = data + ", ";
+                        data = data + Convert.ToDateTime(LeaveDate[i]).ToString("MMM dd yyyy");
+                    }
+                }
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data, LeaveDays }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UpdateEmpSurrender(string TokenC, EmpLvSurrender data)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            string mailfrom = "";
+            string mailTo = "";
+            string mailToCC = "";
+            string subject = "";
+            string body = "";
+
+            bl.UpdateEmpSurrender(data, Elu, out mailfrom, out mailTo, out mailToCC, out subject, out body, out strErrMsg);
+            if (strErrMsg == "")
+            {
+                SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult ReasonReportList(string TokenC)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            Master_bl bl = new Master_bl();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            EmpPortal_BL bl1 = new EmpPortal_BL();
+            var PastLeave = bl1.GetPastLeaveForEmp(Elu.IdN, lu, out strErrMsg);
+            IEnumerable<Reason>  data1 = bl.GetReason(" a.ActiveN =0 and ", lu) as IEnumerable<Reason>;
+            List<Reason> data = new List<Reason>();
+            foreach (Reason o in data1)
+            {
+                if (PastLeave == false)
+                {
+                    o.PastLeaveN = 0;
+                }
+                data.Add(o);
+            }
+            
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult PrintLeaveHistory(string TokenC, DateTime FromDate, DateTime ToDate, string Where, string Group)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+          
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            Int16 EmpIdN = 0;
+            var aaa = Where.IndexOf("and ");
+            var xx1 = Where.Substring(0, aaa) + "and ";
+            Where = Where.Replace(xx1, "");
+            EmpIdN = Convert.ToInt16(xx1.Replace("a.EmpIdN=", "").Replace(" and ", ""));
+
+
+            var aaa1 = Where.IndexOf("(");
+            var xx2 = Where.Substring(aaa).Replace("(", "").Replace(")", "");
+            if (xx2 == "20")
+            {
+                Report_BL DA = new Report_BL(lu);
+                IEnumerable<CompOffHistory> xx = DA.PrintCompOffHistory(FromDate, EmpIdN, 0, lu, out strErrMsg);
+                DA.Dispose();
+                if (xx.Count() <= 0)
+                {
+                    return Json("No infomation found!", JsonRequestBehavior.AllowGet);
+                }
+                return Json(new { Status, xx }, JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                Leave_BL bl = new Leave_BL();
+                IEnumerable<LeaveHistory> xx = bl.GetLeaveHistory(EmpIdN, Where, FromDate, ToDate, lu, out strErrMsg);
+                if (xx.Count() <= 0)
+                {
+                    return Json("No infomation found!", JsonRequestBehavior.AllowGet);
+                }
+                return Json(new { Status, xx }, JsonRequestBehavior.AllowGet);
+            }
+        }
+        #endregion
+
+        #region TimeManage
+        public JsonResult GetEmpTimeManageById(string TokenC, int Id)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            var data = bl.GetEmpTimeManageById(Id, Elu, out strErrMsg);
+            var Time = "Time";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, Time, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpTimeManage(string TokenC, int Id, DateTime FDate, DateTime TDate)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            TMSTran_BL bl = new TMSTran_BL();
+            LoginUser lu = new LoginUser();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            string Where = "A.EmpIdN = " + Id;
+            var data = bl.GetGroupwiseDaily(Where, FDate, TDate, lu, "");
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.Nodi_TimeManageUpdate(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult PrintMonthlyReport(string TokenC, DateTime FromDate, DateTime ToDate, string Where, string Group, int OrderBY)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            LoginUser lu = new LoginUser();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            lu.CustomerID = Elu.CustomerID;
+            lu.IdN = Elu.IdN;
+            lu.CompIdN = Elu.CompIdN;
+            ReportBL.Report_BL bl = new ReportBL.Report_BL(lu);
+            string strOrderBY = " ORDER BY a.EmpCodeC, a.EmpNameC, b.DateD ";
+            if (OrderBY == 1) strOrderBY = " ORDER BY a.EmpNameC, a.EmpCodeC, b.DateD ";
+            IEnumerable<RptDaily> xx = bl.GetRptDaily(Where, "", FromDate, ToDate, strOrderBY);
+            if (xx.Count() <= 0)
+            {
+                return Json("No infomation found!", JsonRequestBehavior.AllowGet);
+            }
+
+            Hisoft.ReportViewer.Reports.Tran.AttendanceReport report = new Hisoft.ReportViewer.Reports.Tran.AttendanceReport();
+            report.ReportParameters["txtTitle"].Value = "Attendance Report";
+            report.ReportParameters["txtPeriod"].Value = FromDate.ToString("MMM dd yyyy") + " To " + ToDate.ToString("MMM dd yyyy");
+            SystemSetting.SystemSetting_BL sysbl = new SystemSetting.SystemSetting_BL();
+            var sysOT = sysbl.GetSysOTPercList(lu.ConnStringC, lu.Master_DB);
+            foreach (SystemSetting.SysOTPerc o in sysOT)
+            {
+                if (o.IdN == 1) { report.ReportParameters["OT1"].Value = o.UDNameC; }
+                if (o.IdN == 2) { report.ReportParameters["OT2"].Value = o.UDNameC; }
+                if (o.IdN == 3) { report.ReportParameters["OT3"].Value = o.UDNameC; }
+                if (o.IdN == 4) { report.ReportParameters["OT4"].Value = o.UDNameC; }
+            }
+
+            var allow = sysbl.GetSysAllowanceList(lu.ConnStringC, lu.Master_DB);
+            foreach (SystemSetting.SysAllowance o in allow)
+            {
+                if (o.IdN == 1) { report.ReportParameters["AL1"].Value = o.DescC; }
+                if (o.IdN == 2) { report.ReportParameters["AL2"].Value = o.DescC; }
+                if (o.IdN == 3) { report.ReportParameters["AL3"].Value = o.DescC; }
+                if (o.IdN == 4) { report.ReportParameters["AL4"].Value = o.DescC; }
+                if (o.IdN == 5) { report.ReportParameters["AL5"].Value = o.DescC; }
+                if (o.IdN == 6) { report.ReportParameters["AL6"].Value = o.DescC; }
+            }
+            report.DataSource = xx;
+            BLAccount bl1 = new BLAccount();
+            var data1 = bl1.GetCompanyById(lu.CompIdN, lu);
+            report.ReportParameters["txtCompany"].Value = data1.FirstOrDefault().company.FirstOrDefault().CompNameC;
+            report.ReportParameters["LogoLanN"].Value = lu.LogoLanN;
+            var mm = System.Web.Hosting.HostingEnvironment.MapPath("/kevit-Customer/" + lu.CustomerID + "/COMPLOGO/" + lu.CompIdN + ".jpg");
+            if (System.IO.File.Exists(mm)) { report.ReportParameters["Logo"].Value = mm; }
+            else { report.ReportParameters["Logo"].Value = System.Web.Hosting.HostingEnvironment.MapPath("\\kevit-Customer\\images\\Noprint.jpg"); }
+            Session["report"] = report;
+            Telerik.Reporting.Report reportToExport = report;
+            ReportProcessor reportProcessor = new ReportProcessor();
+            Telerik.Reporting.InstanceReportSource instanceReportSource = new Telerik.Reporting.InstanceReportSource();
+            instanceReportSource.ReportDocument = reportToExport;
+            RenderingResult result = reportProcessor.RenderReport("PDF", instanceReportSource, null);
+            var path = Server.MapPath("/kevit-Customer/" + lu.CustomerID + "/" + lu.CompIdN + "/EmpPortal/TMSReport");
+            if (!System.IO.Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            var pdfFile = path + "/" + lu.IdN + ".pdf";
+            if (System.IO.File.Exists(pdfFile))
+            {
+                System.IO.File.Delete(pdfFile);
+            }
+            System.IO.File.WriteAllBytes(pdfFile, result.DocumentBytes);
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UpdateEmpTimeManage(string TokenC, TimeMange model)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            string mailfrom = "";
+            string mailTo = "";
+            string mailToCC = "";
+            string subject = "";
+            string body = "";
+
+            DateTime d1 = DateTime.Now;
+
+            if (strErrMsg == "")
+            {
+                if (model.InTimeN > 0)
+                {
+                    DateTime d = model.DateD;
+                    if (d.Year < 1900)
+                    {
+                        strErrMsg = "Invalid Date & Time.";
+                    }
+                    var x = model.InTimeN.ToString().Split('.');
+                    d = d.AddHours(Convert.ToInt16(x[0]));
+                    d = d.AddMinutes(Convert.ToInt16(x[1]));
+
+                    if (d > d1)
+                    {
+                        strErrMsg = "Invalid Date & Time. In Time less than Current Date & Time  ";
+                    }
+                }
+
+                if (model.OutTimeN > 0)
+                {
+                    DateTime d = model.DateD;
+                    if (d.Year < 1900)
+                    {
+                        strErrMsg = "Invalid Date & Time.";
+                    }
+                    var x = model.OutTimeN.ToString().Split('.');
+                    d = d.AddHours(Convert.ToInt16(x[0]));
+                    d = d.AddMinutes(Convert.ToInt16(x[1]));
+
+                    if (d > d1)
+                    {
+                        strErrMsg = "Invalid Date & Time. Out Time less than Current Date & Time  ";
+                    }
+                }
+            }
+
+            if (strErrMsg == "")
+            {
+                bl.UpdateEmpTimeManage(model, Elu, out mailfrom, out mailTo, out mailToCC, out subject, out body, out strErrMsg);
+                if (strErrMsg == "" && mailTo!="")
+                {
+                    SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+                }
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Emp Portal Document     
+        public JsonResult GetEmpPortalDocumentById(string TokenC, int Id)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            var data = bl.GetEmpPortalDocumentById(Id, Elu, out strErrMsg);
+            var Time = "Employee Document";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, Time, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpDocumentsGridList(string TokenC, int Id, string FolderName)
+        {
+            
+
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            EmpPortal_BL bl = new EmpPortal_BL();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            lu.IdN = Elu.IdN;
+            string path = "";
+
+           
+
+            if (FolderName == "OfficeDoc")
+            {
+                path = Elu.CompIdN + "/OfficeDoc/";
+            }
+            else if (FolderName == "All")
+            {
+                path = Elu.CompIdN + "/" + Id + "/EmpDocuments";
+            }
+            else
+            {
+                string[] EmpidList = FolderName.Split('/');
+                if (EmpidList.Length > 1) FolderName = EmpidList[EmpidList.Length - 1];
+                path = Elu.CompIdN + "/" + Id + "/EmpDocuments/" + FolderName;
+            }
+
+            FolderName = path;
+            path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + path);
+
+          //  DBEng.LogError("path :" + path);
+
+            var data = bl.GetTMSEmpDocumentsList(path, FolderName, Id, Elu);
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.Nodi_DocumentUpdate(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+
+           // DBEng.LogError("data :" + data.Count);
+
+
+            General_BL bl1 = new General_BL();
+            bl1.View_PortRemnder(Elu, Id, "DOC", out strErrMsg);
+
+
+           // DBEng.LogError("strErrMsg :" + strErrMsg);
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+
+            //DBEng.LogError("Status :" + strErrMsg);
+            //DBEng.LogError("Error :" + Error);
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpLoginDocumentsById(string TokenC, int Id)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            lu.IdN = Elu.IdN;
+            var data = bl.GetEmpDocumentsById(Id, Elu);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult SaveEmpPortalDocument(string TokenC)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            string mailfrom = "";
+            string mailTo = "";
+            string mailToCC = "";
+            string subject = "";
+            string body = "";
+            try
+            {
+             //   DBEng.LogError("Upload Doc");
+                EmpPortalDocument Model = new EmpPortalDocument();
+                string _imgname = string.Empty;
+        
+                if (System.Web.HttpContext.Current.Request.Files.AllKeys.Any())
+                {
+                    Model.EmpIdN = Convert.ToInt32(System.Web.HttpContext.Current.Request["EmpID"]);
+                  //  DBEng.LogError("Upload Doc Emp Id:" + Model.EmpIdN);
+                    Model.DocNameC = System.Web.HttpContext.Current.Request["EmpDocName"];
+                    Model.DocTypeC = System.Web.HttpContext.Current.Request["Type"];
+                    var pic = System.Web.HttpContext.Current.Request.Files["EmpDoc"];
+                  //  DBEng.LogError("Upload DocFile Name :" + pic.FileName);
+                    Model.PDRemarksC = System.Web.HttpContext.Current.Request["Remarks"];
+                    EmpPortal_BL bl = new EmpPortal_BL();
+                    var xx = bl.SaveEmpPortalDocument(Model, Elu, out strErrMsg);
+                    if (strErrMsg == "")
+                    {
+                        if (pic.ContentLength > 0)
+                        {
+                            if (!Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Model.EmpIdN + "/EmpPortalDocuments/" + Model.DocTypeC)))
+                            {
+                                Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Model.EmpIdN + "/EmpPortalDocuments/" + Model.DocTypeC));
+                            }
+                            var _ext = Path.GetExtension(pic.FileName);
+                            var _comPath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Model.EmpIdN + "/EmpPortalDocuments/" + Model.DocTypeC + "/") + Model.DocNameC + _ext;
+                            pic.SaveAs(_comPath);
+                            strErrMsg = "";
+                            //DBEng.LogError("Upload Doc Saved" );
+                        }
+                        //else
+                        //{
+                        //    DBEng.LogError("Upload Doc Not Saved");
+                        //}
+                    }
+                }
+                else
+                {
+                    strErrMsg = "File Not Found";
+                    Status = "Error";
+                    DBEng.LogError("Upload Doc " + strErrMsg);
+                }
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+                DBEng.LogError("Upload Doc " + strErrMsg);
+            }
+            EmpPortal_DA b = new EmpPortal_DA(Elu);
+            EmpLeaveApply data = new EmpLeaveApply();
+            TimeMange Model1 = new TimeMange();
+            b.sendmail(lu.IdN, "Document", data, Model1, out mailfrom, out mailTo, out mailToCC, out subject, out body);
+            SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+            b.Dispose();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+          //  DBEng.LogError("Upload Doc strErrMsg " + strErrMsg);
+            return Json(new { Status, strErrMsg }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Leave Calender
+        public class APICalendar
+        {
+            public DateTime LDateD { get; set; }
+            public String DescC { get; set; }
+        }
+
+        public JsonResult GetLeaveCalender(string TokenC, int Month, int Year)
+        {
+            string strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            DateTime StartDate = new DateTime(Year, Month, 1);
+            DateTime EndDate = StartDate.AddMonths(1).AddDays(-1);
+
+            Leave_BL bl = new Leave_BL();
+            DataTable dt;
+            String where = Session["WhereResigEmp"] as String;
+            if (Elu.LoginTypeN == 1)
+            {
+                where = " and c.SupervisorIdN in (select IdN from dbo.SupervisorDtl where SupEmpIdN = " + Elu.IdN + ") ";
+            }
+            else if (Elu.LoginTypeN == 0)
+            {
+                where = " and c.EmpIdN = " + Elu.IdN + " ";
+            }
+           // DBEng.LogError("Start");
+            var xx = bl.LeaveCalender(where, Elu.IdN, Elu.ConnStringC, Elu.Master_DB, Elu.Login_DB, StartDate, EndDate, out dt, out strErrMsg, Elu.IPAddess);
+            List<APICalendar> cllist = new List<APICalendar>();
+            foreach (DataRow row in dt.Rows)
+            {
+                APICalendar cl = new APICalendar();
+                cl.LDateD = Convert.ToDateTime( Convert.ToDateTime(row["LDateD"]).ToString("dd-MMM-yyyy"));
+
+                //DBEng.LogError("Date :");
+                //DBEng.LogError(Convert.ToDateTime(row["LDateD"]).ToString("dd-MMM-yyyy"));
+
+                var check = false;
+                foreach (var chklist in cllist)
+                {
+                    if (Convert.ToDateTime(chklist.LDateD) == Convert.ToDateTime(row["LDateD"]))
+                    {
+                        check = true;
+                    }
+                }
+                if (check == false)
+                {
+                    foreach (DataRow row1 in dt.Rows)
+                    {
+                        if (Convert.ToDateTime(row1["LDateD"]) == Convert.ToDateTime(row["LDateD"]))
+                        {
+                            cl.DescC = "Leave - " + Convert.ToInt32(row1["LeaveCountN"]) + ",";
+                        }
+                    }
+                    cl.DescC = cl.DescC.Substring(0, cl.DescC.Length - 1);
+                    cllist.Add(cl);
+                }
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, cllist }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetLeaveCalenderDtl(string TokenC, DateTime StartDate)
+        {
+            string strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Leave_BL bl = new Leave_BL();
+            String where = Session["WhereResigEmp"] as String;
+            if (Elu.LoginTypeN == 1)
+            {
+                where = " and a.SupervisorIdN in (select IdN from dbo.SupervisorDtl where SupEmpIdN = " + Elu.IdN + ") ";
+            }
+            else if (Elu.LoginTypeN == 0)
+            {
+                where = " and a.EmpIdN = " + Elu.IdN + " ";
+            }
+            var xx = bl.LeaveCalenderDtl(where, Elu.IdN, Elu.ConnStringC, Elu.Master_DB, Elu.Login_DB, StartDate, out strErrMsg, Elu.IPAddess);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, xx }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Holiday
+        public JsonResult GetHolidayList(string TokenC, int Year)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            string query = "";
+            DataTable dt = new DataTable();
+            DBEng objDBEng;
+            DbCommand cmd = null;
+            objDBEng = new DBEng(Elu.ConnStringC);
+            objDBEng.ChangeDB(Elu.Login_DB);
+
+            int HolidayGrpIdN = 0;
+            query = "select HolidayGrpIdN from Empmaster where EmpIdN=" + Elu.IdN;
+            objDBEng.GetCommand(query, out cmd, CommandType.Text, out strErrMsg);
+            objDBEng.ExecuteTable(cmd, out dt, out strErrMsg);
+            if (dt.Rows.Count > 0) { HolidayGrpIdN = Convert.ToInt32(dt.Rows[0]["HolidayGrpIdN"]); }
+
+            query = "select b.HolidayGrpNameC, convert(varchar(20),a.HolidayDateD,106)HolidayDateD, a.HolidayNameC " +
+                    "from " + Elu.Master_DB + ".dbo.Holiday a inner Join " + Elu.Master_DB + ".dbo.HolidayGroup b on a.HolidayGrpIdN = b.HolidayGrpIdN " +
+                    "where year(a.HolidayDateD) = " + Year + " and a.HolidayGrpIdN=" + HolidayGrpIdN + " order by a.HolidayDateD";
+            objDBEng.GetCommand(query, out cmd, CommandType.Text, out strErrMsg);
+            objDBEng.ExecuteTable(cmd, out dt, out strErrMsg);
+            objDBEng.Dispose();
+
+            List<Holiday> Holiday = new List<Holiday>();
+            Holiday Pr = new Holiday();
+            foreach (DataRow data in dt.Rows)
+            {
+                Holiday pr = new Holiday();
+                pr.HolidayGrpNameC = data["HolidayGrpNameC"].ToString();
+                pr.HolidayDateD = Convert.ToDateTime(data["HolidayDateD"]);
+                pr.HolidayNameC = data["HolidayNameC"].ToString();
+                Holiday.Add(pr);
+            }
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, Holiday }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Today Celebration
+        public JsonResult GetTodayCelebration(string TokenC, int Type)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Master_bl bl = new Master_bl();
+            double ALN, MLN, UPLN, OtherN, PresentN, TotalEmpN;
+            lu = new LoginUser();
+            lu.IdN = Elu.IdN; lu.ConnStringC = Elu.ConnStringC; lu.Master_DB = Elu.Master_DB; lu.Login_DB = Elu.Login_DB;
+            var DashData = bl.GetDashBoardList(lu, Type, out ALN, out MLN, out UPLN, out OtherN, out PresentN, out TotalEmpN, " and a.ActiveN=0 and (a.EmpStatusN not in(1,3,4,5,6,7) or (a.EmpStatusN in(1,3,4,5,6,7) and a.TerminateDateD >=getdate()))");
+            return Json(new { Status, DashData, ALN, MLN, UPLN, OtherN }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region EmpTaxDeclaration
+        public JsonResult GetTaxDeclaration(string TokenC, int Id, int YearN)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+            string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC;
+            var data = bl.GetEmpTaxDeclaration(Id, YearN, logintype);
+
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.Nodi_TaxDeclarationUpdate(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, data.Data, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpTaxDeclarationById(string TokenC, int Id)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+            string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC;
+            var data = bl.GetEmpTaxDeclarationById(Id, logintype);
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data.Data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UpdateEmpTaxDeclare(string TokenC, EmpTaxDeclaration data)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            if (data.ApplyDateD.Year <= 1900)
+            {
+                data.ApplyDateD = DateTime.Now;
+            }
+            Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+            string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC;
+            bl.UpdateEmpTaxDeclare(data, logintype);
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        private Boolean SendMailToserver(string mailfrom, string mailTo, string mailToCC, string subject, string body)
+        {
+            string strHost = Convert.ToString(Session["Pop3ServernameC"]);
+
+            if (strHost == null || strHost == "")
+            {
+                BLAccount sysbl1 = new BLAccount();
+                var xx = sysbl1.EditMailSetting(1, Elu.ConnStringC, Elu.Master_DB, out strErrMsg);
+                Session["Pop3ServernameC"] = xx.SMTPServernameC;
+                Session["SMTPUsernameC"] = xx.SMTPUsernameC;
+                Session["SMTPPasswrdC"] = xx.SMTPPasswrdC;
+                Session["PortNoC"] = xx.PortNoC;
+                Session["EnableSslN"] = xx.EnableSslN;
+                strHost = Convert.ToString(Session["Pop3ServernameC"]);
+            }
+            //DBEng.LogError("Check Host Name");
+            //DBEng.LogError(strHost);
+            if (strHost != "")
+            {
+                int intPort = Convert.ToUInt16(Session["PortNoC"]);
+                string SMTPUsername = Convert.ToString(Session["SMTPUsernameC"]);
+                string SMTPPasswrd = Convert.ToString(Session["SMTPPasswrdC"]);
+                Boolean EnableSsl = (Convert.ToString(Session["EnableSslN"]) == "1" ? true : false);
+                if (strHost != "" && strErrMsg == "" && mailTo != "")
+                {
+                    Hisoft.Object.Send_EMail(mailfrom, mailTo, mailToCC, subject, body, strHost, intPort, SMTPUsername, SMTPPasswrd, SMTPUsername, EnableSsl, true);
+                    //DBEng.LogError("Mail send Completed");
+                }
+            }
+            return true;
+        }
+        #endregion
+
+        #region PaySalList
+        public JsonResult GetEmpPaySalList(string TokenC, int EmpIdN)
+        {
+
+          //  DBEng.LogError("GetEmpPaySalList EmpIdN :" + EmpIdN);
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            EmpPortal_BL bl = new EmpPortal_BL();
+            var data = bl.GetEmpPaySalList(EmpIdN, Elu, out strErrMsg);
+            if (strErrMsg != "") DBEng.LogError(strErrMsg);
+
+            General_BL dc = new General_BL();
+            dc.View_PortRemnder(Elu, EmpIdN, "PAYSLIP", out strErrMsg);
+
+            if (strErrMsg != "") DBEng.LogError(strErrMsg);
+
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+
+        //old one
+        public JsonResult DownloadPaySlip(string TokenC, int Month, int Year, string PayPeriod, string PayTypeC)
+        {
+            
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            string where = "0";
+            if (PayTypeC == "Mid") where = "1";
+            if (PayTypeC == "Bonus") where = "2";
+            where = " b.EmpIdN = " + Elu.IdN + " and b.YearN = " + Year + " and b.MonthN = " + Month + " and b.PayTypeN = " + where;
+
+            Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+            var serverpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/EmpPaySlip/");
+           
+          //  DBEng.LogError("WebApi Old PaySlip create Path :" + serverpath);
+            string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC + "|" + serverpath + "|" + Elu.IdN;
+           // DBEng.LogError("WebApi Old call EmpPaySlipPrint:");
+            var data = bl.EmpPaySlipPrint(where, PayPeriod, logintype, 0 );
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult DownloadEmpPaySlip(string TokenC, int Month, int Year, string PayPeriod, string PayTypeC)
+        {
+            //DBEng.LogError("PayPeriod :" + PayPeriod);
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            string where = "0";
+            if (PayTypeC == "Mid") where = "1";
+            if (PayTypeC == "Bonus") where = "2";
+            where = " b.EmpIdN = " + Elu.IdN + " and b.YearN = " + Year + " and b.MonthN = " + Month + " and b.PayTypeN = " + where;
+
+            Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+            var serverpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/EmpPaySlip/"+ Elu.IdN+"/");
+            if (!Directory.Exists(serverpath))
+            {
+                Directory.CreateDirectory(serverpath);
+            }
+            //serverpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/EmpPaySlip/" + Elu.IdN);
+            //if (!Directory.Exists(serverpath))
+            //{
+            //    Directory.CreateDirectory(serverpath);
+            //}
+
+
+            string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC + "|" + serverpath + "|" + PayPeriod;
+            int Mode = 1;
+          //  DBEng.LogError("WebApi call EmpPaySlipPrint ");
+            var data = bl.EmpPaySlipPrint(where, PayPeriod, logintype, Mode);
+
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public ActionResult DownloadDocByFile(string TokenC, string FileName, string FolderName)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+          //  DBEng.LogError("DownloadDocByFile PaySlip :" + Server.MapPath(FolderName) +" File Name :" + FileName);
+            // return File(Server.MapPath(FolderName), System.Net.Mime.MediaTypeNames.Application.Octet, FileName);
+            return new FilePathResult(Server.MapPath(FolderName), FileName);
+        }
+
+        public JsonResult getPaySlipBreakup(string TokenC, int PaySalIdN)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+            string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC;
+            //var data = bl.getPaySlipBreakup(Elu.IdN, DateTime.Now.Year, logintype);
+
+            //, data.Data 
+            return Json(new { Status}, JsonRequestBehavior.AllowGet);
+        }
+
+        #endregion
+
+        #region Yearly Summary Report
+        public JsonResult DownloadYearlySummaryDtl(string TokenC, int Month, int Year)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            string where = "0";
+            where = "A.EmpIdN IN( " + Elu.IdN + " )";
+            DateTime StartDate = new DateTime(Year, Month, 1);
+            DateTime EndDate = new DateTime(Year, Month, 1);
+
+            EndDate = StartDate.AddYears(1).AddDays(-1);
+
+            Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+            var serverpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/EmpYearlySummaryDtl");
+            string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC + " | " + serverpath;
+            var data = bl.GetYearlySummaryDtlRpt(StartDate, EndDate, where, logintype);
+            if (data.Data.ToString() != "ok")
+            {
+                strErrMsg = "No infomation found!";
+            }
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        //#region GetEmpTaxSheetRpt
+        //public JsonResult GetEmpTaxSheetRpt(string TokenC, int Month, int Year)
+        //{
+        //    Status = "success"; Error = ""; strErrMsg = "";
+        //    if (CheckTokenC(TokenC, out strErrMsg) == false)
+        //    {
+        //        Error = strErrMsg;
+        //        Status = "Error";
+        //        return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        //    }
+        //    string where = "0";
+        //    where = "A.EmpIdN IN( " + Elu.IdN + " )";
+        //    DateTime StartDate = new DateTime(Year, Month, 1);
+        //    Hisoft.Controllers.EmpPaySlipController bl = new EmpPaySlipController();
+        //    var serverpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/EmpTaxSheet");
+        //    string logintype = Elu.Master_DB + " | " + Elu.Login_DB + " | " + Elu.CompIdN + " | " + Elu.CustomerID + " | " + Elu.IdN + " | " + Elu.ConnStringC + " | " + serverpath;
+        //    var data = bl.GetEmpTaxSheetRpt(StartDate, where, logintype);
+        //    if (data.Data.ToString() != "ok")
+        //    {
+        //        strErrMsg = "No infomation found!";
+        //    }
+        //    Error = (strErrMsg == "" ? "" : strErrMsg);
+        //    if (strErrMsg != "") Status = "Error";
+        //    return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        //}
+        //#endregion
+
+        
+
+        #region LoanDetails
+        public JsonResult GetEmpLoanList(string TokenC, string where)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            PayrollGen_BL bl = new PayrollGen_BL();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            var data = bl.GetEmpLoanList(where, lu, out strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpLoanById(string TokenC, int Id)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            PayrollGen_BL bl = new PayrollGen_BL();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+            var data = bl.Get_EmpLoanById(Id, lu);
+            Error = (strErrMsg == "" ? "" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region ChangePassword
+        public JsonResult ChangePassword(string TokenC, ChangePassword ChPassword)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpAPI_DA bl = new EmpAPI_DA();
+            bl.ChangePassword(ChPassword, Elu.CodeC, Elu.Login_DB, out strErrMsg);
+            bl.Dispose();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region MobileAttendance
+        public JsonResult InsertMobileAtten(string TokenC, MobileAtten Model)
+        {
+           // DBEng.LogError("InsertMobileAtten Check Token");
+
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                DBEng.LogError("CheckTokenC Error : " + Model.EmpIdN.ToString() +" " + strErrMsg);
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            EmpPortal_BL bl = new EmpPortal_BL();
+           // DBEng.LogError("Insert Atten : " + Model.EmpIdN.ToString());
+            bl.InsertMobileAtten(Model, Elu, out strErrMsg);
+
+          //  DBEng.LogError("Save Photo :" + Model.EmpIdN.ToString());
+            try
+            {
+                string _imgname = string.Empty;
+                if (System.Web.HttpContext.Current.Request.Files.AllKeys.Any())
+                {
+                    var pic = System.Web.HttpContext.Current.Request.Files["MobilePht"];
+                    if (strErrMsg == "")
+                    {
+                        if (pic.ContentLength > 0)
+                        {
+                            if (!Directory.Exists(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Model.EmpIdN + "/MobileAtten/")))
+                            {
+                                Directory.CreateDirectory(Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Model.EmpIdN + "/MobileAtten/"));
+                            }
+                            var _ext = Path.GetExtension(pic.FileName);
+                            var _comPath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Model.EmpIdN + "/MobileAtten/") + Model.DateD.ToString("ddMMyyyyhhmmss") + ".jpg";
+                            pic.SaveAs(_comPath);
+                            strErrMsg = "";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+                DBEng.LogError("Save Photo Error :" + Model.EmpIdN.ToString() +" " + ex.Message);
+            }
+
+            //Remove before 90 Data
+            try
+            {
+                String EmpPath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + Model.EmpIdN + "/MobileAtten/");
+                if (Directory.Exists(EmpPath))
+                {
+                    DateTime from_date = DateTime.Now.AddMonths(-3);
+                    DirectoryInfo Diinfo = new DirectoryInfo(@EmpPath);
+                    var files = Diinfo.GetFiles().Where(file => file.LastWriteTime <= from_date);
+                    foreach (FileInfo fi in files)
+                    {
+                        try
+                        {
+                            fi.Delete();
+                        }
+                        catch (Exception ex)
+                        {
+                            DBEng.LogError("Remove before 90 Data Error :" + ex.Message);
+                        }
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DBEng.LogError("Remove before 90 Data Error :" + Model.EmpIdN.ToString() + " " + ex.Message);
+            }
+
+            try
+            {
+
+               // DBEng.LogError(Elu.Master_DB+ " Start CloudOnlineProcessAttLog :" + Model.EmpIdN.ToString());
+                TMSTran_BL tbl = new TMSTran_BL();
+                DateTime DateD = new DateTime();
+                DateD = Convert.ToDateTime(Model.DateD.ToString("dd/MMM/yyyy"));
+                Thread t = new Thread(() => tbl.CloudOnlineProcessAttLog(DateD, Elu.ConnStringC, Elu.Master_DB, out strErrMsg));
+                t.IsBackground = true;
+                t.Start();
+            }
+            catch (Exception e)
+            {
+                DBEng.LogError("Error Processing Thread :" + Model.EmpIdN.ToString() + " " + e.Message);
+            }
+
+            //DBEng.LogError("Completed :" + Model.EmpIdN.ToString() + " " + strErrMsg);
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetProjectList(string TokenC)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+    
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+            EmpPortal_BL bl = new EmpPortal_BL();
+            int EmpIdN=0, SubEmpIdN= 0;
+            if (Elu.LoginTypeN == 0) EmpIdN = Elu.IdN;
+            else if (Elu.LoginTypeN==1) SubEmpIdN = Elu.IdN;
+            var FaceData = bl.GetEmpFaceDetail(Elu, EmpIdN, SubEmpIdN, out strErrMsg);
+
+            Master_bl bl1 = new Master_bl();
+            lu.ConnStringC = Elu.ConnStringC;
+            lu.Master_DB = Elu.Master_DB;
+            lu.Login_DB = Elu.Login_DB;
+         //   DBEng.LogError(Elu.Master_DB+ " Check Token : EmpId =:" + Elu.IdN.ToString());
+
+            var data = bl1.GetMobileProject(Elu.IdN.ToString(), lu, out strErrMsg);
+            if (strErrMsg != "")
+            {
+                DBEng.LogError("GetProject EmpId =:" + Elu.IdN.ToString() +" Error : " + strErrMsg);
+            }
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, data, FaceData }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult Insert_SupMobileAtten(string TokenC, IEnumerable<MobileAtten> Model)
+        {
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+
+            foreach (var row in Model)
+            {
+                bl.InsertMobileAtten(row, Elu, out strErrMsg);
+            }
+
+            if (strErrMsg != "") DBEng.LogError(strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetSupAtten_EmployeeList(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetSupEmployeeList(Elu,Elu.IdN, out strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetMobileAttenRpt(string TokenC, DateTime FromDate, DateTime ToDate, int Type)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            General_BL bl = new General_BL();
+            string where = "";
+            if (Type == 0)
+            {
+                where = " and b.EmpIdN In(" + Elu.IdN + ")";
+            }
+            else
+            {
+                where = " and b.SupervisorIdN In (select IdN from dbo.SupervisorDtl where SupEmpIdN = " + Elu.IdN + ")";
+            }
+            var data = bl.GetEmpDaily_Atten(where, FromDate, ToDate, Elu, out strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult InsertRowData(string ConnStringC, IEnumerable<RowData> RowData)
+        {
+            string[] CompAdrary = ConnStringC.Split('|');
+
+            ConnStringC = CompAdrary[0].ToString();
+            String MasterDB = CompAdrary[1].ToString();
+            strErrMsg = "";
+            TMSTran_BL bl = new TMSTran_BL();
+            bl.InsertRowData(ConnStringC, MasterDB, RowData);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status}, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult Insert_RowData(string MasterDB, IEnumerable<RowData> RowData)
+        {
+            if (RowData != null)
+            {
+                EmpAPI_DA da = new EmpAPI_DA();
+                da.Insert_RowData(MasterDB, RowData);
+                da.Dispose();
+            }
+            Status = "ok";
+            return Json(Status, JsonRequestBehavior.AllowGet);
+        }
+
+
+        #endregion
+
+        #region Claim
+        public JsonResult UpdateClaim(string TokenC, ClaimExpense data, IEnumerable<ClaimExpenseDtl1> ClaimExpenseDtl1)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            string mailfrom = "";
+            string mailTo = "";
+            string mailToCC = "";
+            string subject = "";
+            string body = "";
+            int IdN = 0;
+
+            data.ClaimExpenseDtl1 = data.ClaimExpenseDtl1;
+
+            try
+            {
+                EmpPortal_BL b1 = new EmpPortal_BL();
+                var xx = b1.UpdateClaim(data, out IdN, Elu, out strErrMsg);
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+
+                DBEng.LogError(strErrMsg);
+            }
+
+            EmpLeaveApply data1 = new EmpLeaveApply();
+            TimeMange Model1 = new TimeMange();
+            EmpPortal_DA b = new EmpPortal_DA(Elu);
+            b.sendmail(lu.IdN, "Claim", data1, Model1, out mailfrom, out mailTo, out mailToCC, out subject, out body);
+            SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+            if(strErrMsg!="") DBEng.LogError(strErrMsg);
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error, IdN }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UpdateClaimDoc(string TokenC)
+        {
+            try
+            {
+                strErrMsg = "";
+                Status = "success"; Error = ""; strErrMsg = "";
+                if (CheckTokenC(TokenC, out strErrMsg) == false)
+                {
+                    Error = strErrMsg;
+                    Status = "Error";
+                    return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+                }
+                string _imgname = string.Empty;
+                if (System.Web.HttpContext.Current.Request.Files.AllKeys.Any())
+                {
+
+                    HttpFileCollection UploadedFilesCollection = System.Web.HttpContext.Current.Request.Files;
+                    string IdN = System.Web.HttpContext.Current.Request["IdN"];
+                    var path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/ClaimDoc/" + Elu.IdN + "/" + IdN + "/");
+                    for (int i = 0; i < UploadedFilesCollection.Count; i++)
+                    {
+                        HttpPostedFile PostedFiles = UploadedFilesCollection[i];
+                        if (!Directory.Exists(path))
+                        {
+                            Directory.CreateDirectory(path);
+                        }
+                        var _comPath = path + System.IO.Path.GetFileName(PostedFiles.FileName);
+                        PostedFiles.SaveAs(_comPath);
+                        strErrMsg = "";
+                    }
+                }
+                else
+                {
+                    strErrMsg = "Please Select File";
+                }
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEmpClaimById(string TokenC, int Id)
+        {
+
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            int LevelN = 0;
+            var data = bl.GetEmpClaimById(0, Elu.IdN, Id, Elu, out LevelN, out strErrMsg);
+            string Time = "Claim";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, Time, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetEClaimList(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Master_bl bl = new Master_bl();
+            var data = bl.GetHeadAllowanceList(Elu, "Where a.EClaimN = 1 and a.TypeN In (0,1) ");
+            General_BL bl1 = new General_BL();
+
+            var Currency = bl1.GetCurrencyList(Elu, "");
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+
+            EmpAPI_DA da = new Controllers.EmpAPI_DA();
+            Boolean EnableCurrency=da.GetMulitiCurrencyStatus(Elu.Master_DB, out strErrMsg);
+            return Json(new { Error, Status, data, EnableCurrency, Currency }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Service_ClientList
+        public JsonResult GetService_ClientList(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            General_BL bl = new General_BL();
+            var data = bl.GetService_ClientList(Elu, out strErrMsg);
+            var ServiceType = bl.GetWork_ServiceTypeList(Elu, out strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data, ServiceType }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult Update_StatusRpt(string TokenC, StatusRpt data, string ServiceDtl)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+
+         //   DBEng.LogError("Update_StatusRpt start");
+            JavaScriptSerializer j = new JavaScriptSerializer();
+            List<StatusRptDtl> Strdata = new List<StatusRptDtl>();
+            try
+            {
+                Strdata = j.Deserialize(ServiceDtl, typeof(List<StatusRptDtl>)) as List<StatusRptDtl>;
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                General_BL bl = new General_BL();
+                DateTime dd = DateTime.Now;
+                data.DateD = dd;
+                if (data.StartTimeD.Year < 1900) data.StartTimeD = Convert.ToDateTime("01/01/1900");
+                if (data.CallTimeD.Year < 1900) data.CallTimeD = Convert.ToDateTime("01/01/1900");
+                if (data.FollowUpDateD.Year < 1900) data.FollowUpDateD = Convert.ToDateTime("01/01/1900");
+                if (data.AppointmentTimeD.Year < 1900) data.AppointmentTimeD = Convert.ToDateTime("01/01/1900");
+
+                var xx = bl.Update_StatusRpt(data, Strdata, Elu, out strErrMsg);
+
+                if (strErrMsg == "")
+                {
+                    if (System.Web.HttpContext.Current.Request.Files.AllKeys.Any())
+                    {
+                        var EmpSign = System.Web.HttpContext.Current.Request.Files["EmpSign"];
+                        var path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/StatusRpt/EmpSign/" + Elu.IdN);
+                        if (!Directory.Exists(path)) { Directory.CreateDirectory(path); }
+                        var _ext = Path.GetExtension(EmpSign.FileName);
+
+                        String strEmpSign = path + "/" + dd.ToString("ddMMyyyyhhmmss") + '.' + _ext;
+                        EmpSign.SaveAs(strEmpSign);
+
+                        var ClientSign = System.Web.HttpContext.Current.Request.Files["ClientSign"];
+                        var Cpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/StatusRpt/ClientSign/" + data.ClientIdN + "/" + Elu.IdN);
+                        if (!Directory.Exists(Cpath)) { Directory.CreateDirectory(Cpath); }
+                        var C_ext = Path.GetExtension(ClientSign.FileName);
+
+                        String strClienfSign = Cpath + "/" + dd.ToString("ddMMyyyyhhmmss") + '.' + C_ext;
+                        ClientSign.SaveAs(strClienfSign);
+
+                        DataTable SMTPdt;
+                        bl.GetStatusMail_Data(data.EmpIdN, data.ClientIdN, out dt, out SMTPdt, Elu, out strErrMsg);
+
+                        if (dt.Rows.Count > 0)
+                        {
+                            int SMTPIdN = Convert.ToInt32(dt.Rows[0]["SMTPIdN"].ToString());
+                            Hisoft_Cloud.ReportViewer.Reports.ClientServiceRpt report = new Hisoft_Cloud.ReportViewer.Reports.ClientServiceRpt();
+                         
+                            if (dt.Rows[0]["OtherProjectNameC"].ToString() == "")
+                            {
+                                report.ReportParameters["txtCompany"].Value = "Customer Service Report";
+                                report.ReportParameters["txtTitle"].Value = "";
+                            }else
+                            {
+                                report.ReportParameters["txtCompany"].Value = dt.Rows[0]["OtherProjectNameC"].ToString();
+                                report.ReportParameters["txtTitle"].Value = "Customer Service Report";
+                            }
+                            report.ReportParameters["txtCompAddress1C"].Value = dt.Rows[0]["CompAddress1C"].ToString();
+                            report.ReportParameters["txtCompAddress2C"].Value = dt.Rows[0]["CompAddress2C"].ToString();
+
+                            report.ReportParameters["LogoLanN"].Value = Elu.LogoLanN;
+                            var mm = System.Web.Hosting.HostingEnvironment.MapPath("/kevit-Customer/" + Elu.CustomerID + "/Project/" + data.ClientIdN + ".jpg");
+                            if (System.IO.File.Exists(mm)) { report.ReportParameters["Logo"].Value = mm; }
+                            else { report.ReportParameters["Logo"].Value = System.Web.Hosting.HostingEnvironment.MapPath("\\kevit-Customer\\images\\Noprint.jpg"); }
+
+                            report.ReportParameters["EmpNameC"].Value = dt.Rows[0]["EmpNameC"].ToString();
+                            report.ReportParameters["ClientNameC"].Value = dt.Rows[0]["ClientNameC"].ToString();
+                            report.ReportParameters["ContactNameC"].Value = dt.Rows[0]["ContactNameC"].ToString();
+                            report.ReportParameters["Remark1C"].Value = data.Remark1C == null ? "" : data.Remark1C;
+                            report.ReportParameters["Remark2C"].Value = data.Remark2C == null ? "" : data.Remark2C;
+                            report.ReportParameters["Remark3C"].Value = data.Remark3C == null ? "" : data.Remark3C;
+                            report.ReportParameters["DateD"].Value = dd.ToString("MMM dd yyyy");
+                            report.ReportParameters["CallTimeD"].Value = data.CallTimeD.ToString("MMM dd yyyy HH:mm");
+                            report.ReportParameters["AppointmentTimeD"].Value = data.AppointmentTimeD.ToString("MMM dd yyyy HH:mm");
+                            report.ReportParameters["TicketNoC"].Value = data.TicketNoC;
+                            report.ReportParameters["StartTimeN"].Value = data.StartTimeD.ToString("HH:mm");
+                            report.ReportParameters["EndTimeN"].Value = dd.ToString("HH:mm");
+                            report.ReportParameters["EmpSign"].Value = strEmpSign;
+                            report.ReportParameters["ClientSign"].Value = strClienfSign;
+                            report.ReportParameters["EmailIdC"].Value = dt.Rows[0]["EmailIdC"].ToString();
+                            report.ReportParameters["ClientEmailIdC"].Value = dt.Rows[0]["ClientEmailC"].ToString();
+
+                            string[] Adrary = dt.Rows[0]["AddressC"].ToString().Split(',');
+                            var address = "";
+                            foreach (var add in Adrary)
+                            {
+                                if (add != "") { address += add.Trim() + ',' + Environment.NewLine; }
+                            }
+                            if (address.Length > 0) { address = address.Substring(0, address.Length - 3); }
+
+                            report.ReportParameters["AddressC"].Value = address;
+                            report.ReportParameters["PhoneNoC"].Value = dt.Rows[0]["PhoneNoC"].ToString();
+
+                            string[] ary = data.ServiceTypeC.Split(',');
+                            report.ReportParameters["Type1N"].Value = 0;
+                            report.ReportParameters["Type2N"].Value = 0;
+                            report.ReportParameters["Type3N"].Value = 0;
+                            report.ReportParameters["Type4N"].Value = 0;
+                            report.ReportParameters["Type5N"].Value = 0;
+                            report.ReportParameters["Type7N"].Value = 0;
+                            report.ReportParameters["Type8N"].Value = 0;
+                            report.ReportParameters["Type9N"].Value = 0;
+                            report.ReportParameters["Type10N"].Value = 0;
+
+                            report.ReportParameters["Type101N"].Value = 0;
+                            report.ReportParameters["Type102N"].Value = 0;
+                            for (int i = 0; i < ary.Length; i++)
+                            {
+                                report.ReportParameters["Type" + ary[i] + "N"].Value = 1;
+                            }
+
+                            report.ReportParameters["FollowUpDateD"].Value = "";
+                            if(data.FollowUpDateD.Year>1900) report.ReportParameters["FollowUpDateD"].Value = data.FollowUpDateD.ToString("dd/MM/yyyy");
+
+                            report.DataSource = Strdata;
+                            ExportToPDF(report, lu, dd);
+                            
+                            var ServiceDoc = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/ServiceDoc/" + Elu.IdN + "/");
+                            ServiceDoc = ServiceDoc + dd.ToString("ddMMyyyyhhmmss") + ".pdf";
+                            string mailfrom = ServiceDoc + ", DocTemplate";
+
+                            string mailTo = "", BCCmailTo = "";
+                            if (dt.Rows[0]["EmailIdC"].ToString() != "") BCCmailTo = dt.Rows[0]["EmailIdC"].ToString();
+
+                            if (dt.Rows[0]["AdminMailC"].ToString() != "")
+                            {
+                                if (BCCmailTo != "") BCCmailTo = BCCmailTo + ",";
+                                BCCmailTo = BCCmailTo + dt.Rows[0]["AdminMailC"].ToString();
+                            }
+
+                            if (dt.Rows[0]["ClientEmailC"].ToString() != "")
+                            {
+                                if (mailTo != "") mailTo = mailTo + ",";
+                                mailTo = mailTo + dt.Rows[0]["ClientEmailC"].ToString();
+                            }
+
+                            
+                            try
+                            {
+                                strErrMsg = "begin Send Mail";
+                                StatusSendMailToserver(SMTPIdN, SMTPdt, mailfrom, mailTo, BCCmailTo, "Customer service report for " + data.TicketNoC, out strErrMsg);
+                            }
+                            catch (System.Exception exp)
+                            {
+                                strErrMsg = exp.Message;
+                                DBEng.LogError(strErrMsg);
+                            }
+
+                            try { 
+                                if (System.IO.File.Exists(ServiceDoc)) System.IO.File.Delete(ServiceDoc);
+                                if (System.IO.File.Exists(strEmpSign)) System.IO.File.Delete(strEmpSign);
+                                if (System.IO.File.Exists(strClienfSign)) System.IO.File.Delete(strClienfSign);
+                            }
+                            catch (Exception)
+                            {
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+                DBEng.LogError("Error " + strErrMsg);
+            }
+
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+        }
+
+
+
+        private Boolean StatusSendMailToserver(int SMTPIdN, DataTable SMTPdt, string mailfrom, string mailTo, string mailToCC, string subject, out string strErrMsg)
+        {
+            strErrMsg = "";
+            string strHost = Convert.ToString(Session["Pop3ServernameC"]);
+            if (strHost == null || strHost == "")
+            {
+                BLAccount sysbl1 = new BLAccount();
+                var xx = sysbl1.EditMailSetting(1, Elu.ConnStringC, Elu.Master_DB, out strErrMsg);
+                Session["Pop3ServernameC"] = xx.SMTPServernameC;
+                Session["SMTPUsernameC"] = xx.SMTPUsernameC;
+                Session["SMTPPasswrdC"] = xx.SMTPPasswrdC;
+                Session["PortNoC"] = xx.PortNoC;
+                Session["EnableSslN"] = xx.EnableSslN;
+                strHost = Convert.ToString(Session["Pop3ServernameC"]);
+            }
+           
+
+            if (strHost != "")
+            {
+                string SMTPUsername = Convert.ToString(Session["SMTPUsernameC"]);
+                string SMTPPasswrd = Convert.ToString(Session["SMTPPasswrdC"]);
+                string SendFromC = Convert.ToString(Session["SMTPUsernameC"]);
+                Boolean EnableSsl = (Convert.ToString(Session["EnableSslN"]) == "1" ? true : false);
+                int intPort = Convert.ToUInt16(Session["PortNoC"]);
+
+                if (SMTPIdN >0)
+                {
+                    if(SMTPdt.Rows.Count > 0)
+                    {
+                        strHost = SMTPdt.Rows[0]["SMTPNameC"].ToString();
+                        SMTPUsername = SMTPdt.Rows[0]["SMTPUserNameC"].ToString();
+                        SMTPPasswrd = SMTPdt.Rows[0]["SMTPPasswordC"].ToString();
+                        SendFromC = SMTPdt.Rows[0]["SendFromC"].ToString();
+                        
+                        intPort = Convert.ToUInt16(SMTPdt.Rows[0]["SMTPPortNoC"].ToString());
+                        EnableSsl = (Convert.ToString(SMTPdt.Rows[0]["SMTPSSLN"].ToString()) == "1" ? true : false);
+                    }
+                    else
+                    {
+                        strErrMsg = "Cliend SMTP Setting Invalid.";
+                        DBEng.LogError("Cliend SMTP Setting Invalid.");
+                        return false;
+                    }
+                }
+
+                //DBEng.LogError("SMTPNameC :" + strHost);
+                //DBEng.LogError("SMTPUserNameC :" + SMTPUsername);
+
+                //DBEng.LogError("mailfrom:" + mailfrom);
+                //DBEng.LogError("SendFromC:" + SendFromC);
+                //DBEng.LogError("mailTo:" + mailTo);
+                //DBEng.LogError("BCCmailTo:" + mailToCC);
+
+                if (strHost != "" && strErrMsg == "" && mailTo != "")
+                {
+                    string body = "<table width='50%'> <tr><td><span style = 'font-size:20px;'> Dear Valued Customer,</span></td></tr>" +
+                            "<tr><td><br/> Please find Customer service report attached for your kind acceptance.<br/> <br/>" +
+                                   "Feel free to provide your valuable feedback to " + SendFromC + " about our recent support services, for us to enhance further.<br/> <br/> " +
+                                   "Thank you and have a nice day.<br/><br/></td></tr >" +
+                                   "<tr><td> Yours sincerely,<br/><br/> Support Services Team.<br/></td></tr></table>";
+
+                    //DBEng.LogError("start Send Mail");
+                    try
+                    {
+                        strErrMsg = "start Send Mail";
+                        strErrMsg = Hisoft.Object.Send_EMail(mailfrom, mailTo, mailToCC, subject, body, strHost, intPort, SMTPUsername, SMTPPasswrd, SendFromC, EnableSsl, false);
+                    }
+                    catch (System.Exception exp)
+                    {
+                        strErrMsg = exp.Message;
+                        DBEng.LogError(strErrMsg);
+                        return false;
+                    }
+
+                    
+                   // DBEng.LogError("End Send Mail");
+                    if (strErrMsg != "")
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        DBEng.LogError("Mail send Completed");
+                    }
+                }
+            }
+            return true;
+        }
+
+        public void ExportToPDF(Telerik.Reporting.Report reportToExport, LoginUser lu, DateTime dd)
+        {
+            ReportProcessor reportProcessor = new ReportProcessor();
+            Telerik.Reporting.InstanceReportSource instanceReportSource = new Telerik.Reporting.InstanceReportSource();
+            instanceReportSource.ReportDocument = reportToExport;
+            RenderingResult result = reportProcessor.RenderReport("PDF", instanceReportSource, null);
+            string serverpath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/ServiceDoc/" + Elu.IdN + "/");
+            if (!System.IO.Directory.Exists(serverpath)) { Directory.CreateDirectory(serverpath); }
+            var pdfFile = serverpath + dd.ToString("ddMMyyyyhhmmss") + ".pdf";
+            if (System.IO.File.Exists(pdfFile)) { System.IO.File.Delete(pdfFile); }
+            System.IO.File.WriteAllBytes(pdfFile, result.DocumentBytes);
+        }
+
+        #endregion
+
+        #region Supervisor_EmployeeAttendanceList
+        public JsonResult GetEmployee_AttendanceList(string TokenC, DateTime FDate)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            DateTime TDate = FDate;
+            string OrderBy = " Order by a.EmpCodeC, b.DateD ";
+            TMSTran_BL bl = new TMSTran_BL();
+            string where = " SupervisorIdN in (select IdN from dbo.SupervisorDtl where SupEmpIdN = " + Elu.IdN + ") " +
+               "and (a.EmpStatusN not in(3,7,8) or (a.EmpStatusN in(3,7,8) and a.TerminateDateD >=cast(convert(varchar(20),getdate(),106) as date)) and a.JoinDateD <=cast(convert(varchar(20),getdate(),106) as date)) ";
+            var data = bl.GetGroupwiseDaily(where, FDate, TDate, Elu, OrderBy);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Supervisor_Employeelist
+        public JsonResult GetSup_EmployeeList(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetSupEmployeeList(Elu, Elu.IdN, out strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetLeaveBalanceDtlById(string TokenC, int EmpIdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Leave_BL bl = new Leave_BL();
+            var ReaGrpIdN = "";
+            var data = bl.GetLeaveApplyDtlById(EmpIdN, Elu, out ReaGrpIdN, 1, out strErrMsg);
+            data = data.ToString();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region PendingApproval
+        public JsonResult GetPendingApprove_YourList(string TokenC)
+        {
+
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetPendingApprovebyYou(Elu, out strErrMsg);
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.SupNoti_Update(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetPendingApprove_OtherList(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetPendingApprove_OtherList(0, Elu, out strErrMsg);
+            EmpAPI_DA dd = new EmpAPI_DA();
+            dd.SupNoti_Update(Elu.IdN, Elu.Login_DB);
+            dd.Dispose();
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        //View Sup Employee Profile
+        public JsonResult GetSup_EmpProfileByEmpId(string TokenC, int EmpIdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetEmpProfileUpdateById(Elu, EmpIdN);
+            var Time = "Profile";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data, Time }, JsonRequestBehavior.AllowGet);
+        }
+
+        //View Sup Employee Document
+        public JsonResult GetSup_EmpDocumentById(string TokenC, int IdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetEmpPortalDocuManageById(IdN, Elu, out strErrMsg);
+            var Time = "Employee Document";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data, Time }, JsonRequestBehavior.AllowGet);
+
+        }
+
+        //View Sup_TimeMage
+        public JsonResult GetSup_TimeManageById(string TokenC, int IdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetSupTimeManageById(IdN, Elu, out strErrMsg);
+            var Time = "Time";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data, Time }, JsonRequestBehavior.AllowGet);
+        }
+
+        //View Sup_LeaveManage
+        public JsonResult GetSup_LeaveManageById(string TokenC, int IdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetSupLeaveManageById(IdN, Elu, out strErrMsg);
+            var Time = "Leave";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data, Time }, JsonRequestBehavior.AllowGet);
+        }
+
+        //View Sup_LeaveSurrender
+        public JsonResult GetSup_LVSurrenderById(string TokenC, int IdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetSupLVSurrenderById(IdN, Elu, out strErrMsg);
+            var Time = "LVSurrender";
+
+            EmpPortal_BL bl1 = new EmpPortal_BL();
+            decimal EligLeave = 0;
+            var LVdtl = bl1.GetEmpLVSurrenderBalance(Elu, data.FirstOrDefault().EmpIdN, out EligLeave, out strErrMsg);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data, LVdtl, EligLeave, Time }, JsonRequestBehavior.AllowGet);
+        }
+
+        //View Sup_Claim
+        public JsonResult GetSup_ClaimById(string TokenC, int IdN, int EmpIdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl1 = new EmpPortal_BL();
+            int LevelN = 0;
+            var data = bl1.GetEmpClaimById(Elu.IdN, EmpIdN, IdN, Elu, out LevelN, out strErrMsg);
+            var Time = "Claim";
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data, LevelN, Time }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult Get_SupClaimDocList(string TokenC, int Id, int EmpIdN)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            EmpPortal_BL bl = new EmpPortal_BL();
+            var FolderName = "/EmpPortal/ClaimDoc/" + EmpIdN + "/" + Id;
+            var path = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/");
+            var xx = bl.GetEmpDocumentshomeEdit(path, FolderName, "All", Id, Elu);
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, xx }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Approval Details
+        public JsonResult GetApprovaledDetails(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetApprovaledDetails(Elu, "");
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data}, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetApprovaledDetailsFTDate(string TokenC, DateTime FromDate, DateTime ToDate)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetApprovaledDetails(Elu, "");
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+        public JsonResult GetApproval_RejectedDetails(string TokenC)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetApprovalRejectedDetails(Elu, "");
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetApproval_RejectedDetailsFTDate(string TokenC, DateTime FromDate, DateTime ToDate)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            var data = bl.GetApprovalRejectedDetails(Elu, "");
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status, data }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+        #region Update_Approval
+        public JsonResult SaveApproval_Supervisor(string TokenC, string Flag, int EmpId, int Id, int Approval, int YearN, string Remarks, string title, string DocName, int ReceiveYearN, int ReceiveMonthN, int PayTypeN, double ApproveAmtN, IEnumerable<ClaimExpenseDtl1> ClaimExpenseDtl1)
+        {
+            strErrMsg = "";
+            Status = "success"; Error = ""; strErrMsg = "";
+            if (CheckTokenC(TokenC, out strErrMsg) == false)
+            {
+                Error = strErrMsg;
+                Status = "Error";
+                return Json(new { Status, Error }, JsonRequestBehavior.AllowGet);
+            }
+            Superviser_BL bl = new Superviser_BL();
+            int Level;
+            int Approve = Approval;
+            var dtl = false;
+
+            string mailfrom = "";
+            string mailTo = "";
+            string mailToCC = "";
+            string subject = "";
+            string body = "";
+
+
+            dtl = bl.SupervisorUpdate(Flag, EmpId, Id, Elu.IdN, Approval, YearN, Remarks, Elu, ReceiveYearN, ReceiveMonthN, PayTypeN, out Level, out strErrMsg, out mailfrom, out mailTo, out mailToCC, out subject, out body, ApproveAmtN, ClaimExpenseDtl1);
+            try
+            {
+                if (Level == 3 && strErrMsg == "" && Approve == 1)
+                {
+                    if (Flag == "Profile")
+                    {
+                        strErrMsg = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/EmpPhoto/" + EmpId + ".jpg");
+                        if (System.IO.File.Exists(strErrMsg))
+                        {
+                            String disFile = "";
+                            disFile = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + EmpId + ".jpg");
+                            if (System.IO.File.Exists(disFile)) 
+                            {
+                                System.IO.File.Delete(disFile);
+                            }
+                            System.IO.File.Copy(strErrMsg, disFile);
+                            System.IO.File.Delete(strErrMsg);
+                            strErrMsg = "";
+                        }
+                        else { strErrMsg = ""; }
+                    }
+                    else if (Flag == "Employee Document")
+                    {
+                        strErrMsg = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + EmpId + "/EmpPortalDocuments/" + title + "/");
+                        string[] fileArray = Directory.GetFiles(strErrMsg, "" + DocName + ".*");
+                        strErrMsg = fileArray[0];
+                        if (System.IO.File.Exists(strErrMsg))
+                        {
+                            var DesPath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + EmpId + "/EmpDocuments/" + title + "/");
+                            if (!Directory.Exists(DesPath)) { Directory.CreateDirectory(DesPath); }
+                            System.IO.File.Copy(strErrMsg, DesPath + DocName + "_EmpPortal_" + Path.GetExtension(strErrMsg));
+                            System.IO.File.Delete(strErrMsg);
+                            strErrMsg = "";
+                        }
+                    }
+                    else if (Flag == "Claim")
+                    {
+                        strErrMsg = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/ClaimDoc/" + EmpId + "/" + Id);
+                        System.IO.DirectoryInfo di = new DirectoryInfo(strErrMsg);
+                        if (Directory.Exists(strErrMsg))
+                        {
+                            var DesPath = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/ClaimDoc/" + EmpId + "/" + Id);
+                            if (!Directory.Exists(DesPath)) { Directory.CreateDirectory(DesPath); }
+
+                            foreach (FileInfo file in di.GetFiles())
+                            {
+                                string f = file.Name;
+                                System.IO.File.Copy(strErrMsg + "/" + file.Name, DesPath + "/" + file.Name);
+                                file.Delete();
+                            }
+                            Directory.Delete(strErrMsg, true);
+                            strErrMsg = "";
+                        }
+                    }
+                }
+                if (Approve == 2)
+                {
+                    if (Flag == "Employee Document")
+                    {
+                        strErrMsg = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/" + EmpId + "/EmpPortalDocuments/" + title + "/");
+                        string[] fileArray = Directory.GetFiles(strErrMsg, "" + DocName + ".*");
+                        strErrMsg = fileArray[0];
+                        if (System.IO.File.Exists(strErrMsg))
+                        {
+                            System.IO.File.Delete(strErrMsg);
+                            strErrMsg = "";
+                        }
+                    }
+                    if (Flag == "Claim")
+                    {
+                        strErrMsg = Server.MapPath("/kevit-Customer/" + Elu.CustomerID + "/" + Elu.CompIdN + "/EmpPortal/ClaimDoc/" + EmpId + "/" + Id);
+                        System.IO.DirectoryInfo di = new DirectoryInfo(strErrMsg);
+                        if (Directory.Exists(strErrMsg))
+                        {
+                            foreach (FileInfo file in di.GetFiles())
+                            {
+                                file.Delete();
+                            }
+                            Directory.Delete(strErrMsg, true);
+                        }
+                        strErrMsg = "";
+                    }
+                }
+                if (strErrMsg == "")
+                {
+                    SendMailToserver(mailfrom, mailTo, mailToCC, subject, body);
+                }
+            }
+            catch (Exception ex)
+            {
+                strErrMsg = ex.Message;
+            }
+            Error = (strErrMsg == "" ? "ok" : strErrMsg);
+            if (strErrMsg != "") Status = "Error";
+            return Json(new { Error, Status }, JsonRequestBehavior.AllowGet);
+        }
+        #endregion
+
+
+        public JsonResult GetOtherCloudCustomer()
+        {
+            EmpAPI_DA DA = new EmpAPI_DA();
+            var data= DA.GetCloudCustomer();
+            DA.Dispose();
+            Error = "ok";
+            return Json(new { Error, data }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult UpdateOtherCloudCustomer(string key)
+        {
+            CloudCustomer data = new CloudCustomer();
+            string[] values = key.Split(';');
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (i == 0) data.CustomerIdC = values[i].Trim();
+                if (i == 1) data.DominIdC = values[i].Trim();
+                if (i == 2) data.AppCodeC = values[i].Trim();
+                if (i == 3) data.AppNameC = values[i].Trim();
+                if (i == 4) data.CountryIdN = Convert.ToInt32( values[i].Trim());
+                if (i == 5) data.OTPN = Convert.ToInt32(values[i].Trim());
+            }
+
+            EmpAPI_DA DA = new EmpAPI_DA();
+            DA.UpdateCloudCustomer(data, out strErrMsg);
+            DA.Dispose();
+            if (strErrMsg == "") strErrMsg = "ok";
+            return Json(new { strErrMsg }, JsonRequestBehavior.AllowGet);
+        }
+
+    }
