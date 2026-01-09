@@ -76,8 +76,68 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item, onR
                                 return;
                             }
 
-                            console.log('Calling deleteRequest with ID:', requestId);
-                            const result = await ApiService.deleteRequest(requestId);
+                            // Extract dates from item (if available)
+                            const parseDate = (dateStr: string | undefined) => {
+                                if (!dateStr) return undefined;
+                                try {
+                                    // Handle ASP.NET JSON date format /Date(timestamp)/
+                                    if (typeof dateStr === 'string' && dateStr.includes('/Date(')) {
+                                        const timestamp = parseInt(dateStr.replace(/\/Date\((-?\d+)\)\//, '$1'));
+                                        return new Date(timestamp);
+                                    }
+                                    return new Date(dateStr);
+                                } catch (e) {
+                                    return undefined;
+                                }
+                            };
+
+                            const fromDate = parseDate(item.LFromDateD || item.FromDate);
+                            const toDate = parseDate(item.LToDateD || item.ToDate);
+
+                            // Determine request type based on description
+                            // Map the DescC field to the backend Type parameter
+                            const getRequestType = (desc: string): string => {
+                                const descLower = desc.toLowerCase();
+
+                                if (descLower.includes('time') || descLower.includes('attendance')) {
+                                    return 'TMS'; // Time Management System / Time Update
+                                } else if (descLower.includes('leave') || descLower.includes('permission')) {
+                                    return 'Lev'; // Leave or Permission
+                                } else if (descLower.includes('claim')) {
+                                    return 'Claim'; // Claim
+                                } else if (descLower.includes('profile')) {
+                                    return 'Pro'; // Profile Update
+                                } else if (descLower.includes('document')) {
+                                    return 'Doc'; // Employee Document
+                                } else {
+                                    // Default to Leave for unknown types
+                                    return 'Lev';
+                                }
+                            };
+
+                            const requestType = getRequestType(description);
+
+                            console.log('Detected request type:', requestType, 'from description:', description);
+
+                            const cancelRemarks = remarks !== 'No remarks provided'
+                                ? `Original: ${remarks}. Cancelled by user.`
+                                : 'Cancelled by user';
+
+                            console.log('Calling deleteRequest with parameters:', {
+                                requestId,
+                                requestType,
+                                fromDate,
+                                toDate,
+                                remarks: cancelRemarks
+                            });
+
+                            const result = await ApiService.deleteRequest(
+                                requestId,
+                                requestType,
+                                fromDate,
+                                toDate,
+                                cancelRemarks
+                            );
 
                             console.log('Delete Request Result:', JSON.stringify(result, null, 2));
 

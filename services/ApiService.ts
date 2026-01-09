@@ -310,7 +310,7 @@ class ApiService {
         }
     }
 
-    async getLeaveApprovalDetails({IdN}: {IdN: number}): Promise<{ success: boolean, data?: LeaveBalanceResponse, error?: string }> {
+    async getLeaveApprovalDetails({ IdN }: { IdN: number }): Promise<{ success: boolean, data?: LeaveBalanceResponse, error?: string }> {
         try {
             if (!this.token) {
                 await this.loadCredentials();
@@ -550,26 +550,43 @@ class ApiService {
         }
     }
 
-    async deleteRequest(requestId: number | string): Promise<{ success: boolean, data?: any, error?: string }> {
+    async deleteRequest(
+        requestId: number | string,
+        requestType: string = 'Lev',
+        fromDate?: Date,
+        toDate?: Date,
+        remarks: string = 'Cancelled by user'
+    ): Promise<{ success: boolean, data?: any, error?: string }> {
         try {
-            if (!this.token) {
+            if (!this.token || !this.empId) {
                 await this.loadCredentials();
             }
 
-            if (!this.token) {
+            if (!this.token || !this.empId) {
                 return {
                     success: false,
                     error: 'Authentication token not found. Please login again.'
                 };
             }
 
-            // Convert requestId to string to match API expectations
-            const payload = {
-                TokenC: this.token,
-                RequestID: String(requestId)
+            // Format dates to match backend expectations (ISO format or specific format)
+            const formatDate = (date?: Date) => {
+                if (!date) return new Date().toISOString();
+                return date.toISOString();
             };
 
-            console.log('Delete Request Payload:', JSON.stringify(payload));
+            // Build payload matching the backend C# method signature
+            const payload = {
+                TokenC: this.token,
+                EmpId: this.empId,
+                Type: requestType, // 'Lev' for Leave, 'Claim' for Claim, 'Pro' for Profile, 'Doc' for Document
+                Id: Number(requestId),
+                FromDate: formatDate(fromDate),
+                ToDate: formatDate(toDate),
+                RemarksC: remarks
+            };
+
+            console.log('Delete Request Payload:', JSON.stringify(payload, null, 2));
             console.log('Delete Request Endpoint:', BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY);
 
             const response = await axios.post(
@@ -579,12 +596,12 @@ class ApiService {
             );
 
             console.log('Delete Request Response Status:', response.status);
-            console.log('Delete Request Response Data:', JSON.stringify(response.data));
+            console.log('Delete Request Response Data:', JSON.stringify(response.data, null, 2));
 
             // Check for success in the response
             const status = response.data.Status || response.data.status;
 
-            if (status === 'success') {
+            if (status === 'success' || status === 'Success') {
                 return {
                     success: true,
                     data: response.data,
@@ -601,7 +618,7 @@ class ApiService {
                 console.error('Delete Request Failed:', errorMessage);
                 return {
                     success: false,
-                    error: errorMessage
+                    error: errorMessage !== 'ok' ? errorMessage : 'Failed to cancel request'
                 };
             }
         } catch (error: any) {
