@@ -40,10 +40,12 @@ export default function ApprovalDetails() {
 
   const [data, setData] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(false);
-
-   useProtectedBack({
-      home: '/home'
+  useProtectedBack({
+        home: '/home',
+        settings: '/settings',
+        dashboard: '/dashboard',
     });
+
 
   /* ---------------- API ---------------- */
 
@@ -87,45 +89,45 @@ export default function ApprovalDetails() {
   /* ---------------- RENDER ITEM ---------------- */
 
   const router = useRouter();
-const renderItem = ({ item }: { item: ApprovalItem }) => (
-  <Pressable
-    onPress={() =>
-      router.push({
-        pathname: "/(tabs)/officer/approvalreqdetails",
-        params: { details: JSON.stringify(item) },
-      })
-    }
-    style={({ pressed }) => [
-      styles.card,
-      pressed && { opacity: 0.85 },
-    ]}
-  >
-    {/* Header */}
-    <View style={styles.headerRow}>
-      <View>
-        <Text style={styles.name}>{item.NameC}</Text>
-        <Text style={styles.code}>{item.CodeC}</Text>
+  const renderItem = ({ item }: { item: ApprovalItem }) => (
+    <Pressable
+      onPress={() =>
+        router.push({
+          pathname: "/(tabs)/officer/approvalreqdetails",
+          params: { details: JSON.stringify(item), from: "approvaldetails" },
+        })
+      }
+      style={({ pressed }) => [
+        styles.card,
+        pressed && { opacity: 0.85 },
+      ]}
+    >
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.name}>{item.NameC}</Text>
+          <Text style={styles.code}>{item.CodeC}</Text>
+        </View>
+
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getStatusColor(item.StatusC) },
+          ]}
+        >
+          <Text style={styles.statusText}>{item.StatusC}</Text>
+        </View>
       </View>
 
-      <View
-        style={[
-          styles.statusBadge,
-          { backgroundColor: getStatusColor(item.StatusC) },
-        ]}
-      >
-        <Text style={styles.statusText}>{item.StatusC}</Text>
+      {/* Info Grid */}
+      <View style={styles.infoGrid}>
+        <Info label="Request Type" value={item.DescC || "—"} />
+        <Info label="Leave Type" value={item.LvDescC || "—"} />
+        <Info label="Req Date" value={item.FromDateC || "—"} />
+        <Info label="Approve Date" value={item.ToDateC || "—"} />
       </View>
-    </View>
-
-    {/* Info Grid */}
-    <View style={styles.infoGrid}>
-      <Info label="Request Type" value={item.DescC || "—"} />
-      <Info label="Leave Type" value={item.LvDescC || "—"} />
-      <Info label="Req Date" value={item.FromDateC || "—"} />
-      <Info label="Approve Date" value={item.ToDateC || "—"} />
-    </View>
-  </Pressable>
-);
+    </Pressable>
+  );
 
   /* ---------------- UI ---------------- */
 

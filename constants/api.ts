@@ -109,6 +109,9 @@ export const API_ENDPOINTS = {
 
   PEND_TIMEMNG_URL: "/WebApi2/GetSup_TimeManageById",
   PEND_CLAIM_URL: "/WebApi2/GetSup_ClaimById",
+  PEND_DOC_URL: "/WebApi2/GetSup_EmpDocumentById",
+  PEND_PROFILE_URL: "/WebApi2/GetSup_EmpProfileByEmpId",
+  
 
   // Approval Details
   SUP_DETAPPROVE_URL: "/WebApi2/GetApprovaledDetails",

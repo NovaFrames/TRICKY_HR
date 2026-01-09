@@ -1,5 +1,6 @@
 import { formatTimeNumber } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
+import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService, { LeaveType } from "@/services/ApiService";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
@@ -157,7 +158,10 @@ export default function ApprovalReqDetails() {
       loadLeaveData(approval.IdN);
     }, [approval?.IdN])
   );
-
+  useProtectedBack({
+    approvaldetails: '/officer/approvaldetails',
+    
+  });
   /* ---------------- FORMATTER ---------------- */
 
   const formatLeaveData = (leave: LeaveType): FormattedLeaveType => {
