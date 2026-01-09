@@ -56,7 +56,7 @@ export default function CalendarScreen() {
                     const dateB = parseDotNetDate(b.LDateD);
                     return dateA.getTime() - dateB.getTime();
                 });
-                console.log(sortedEvents);
+                // console.log(sortedEvents);s
 
                 setEvents(sortedEvents);
             } else {

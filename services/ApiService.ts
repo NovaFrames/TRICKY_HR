@@ -158,7 +158,6 @@ export interface Employee {
     DescC: string; // Designation
 }
 
-
 export interface TimeRequestPayload {
     TokenC: string;
     model: {
@@ -294,6 +293,39 @@ class ApiService {
                 {
                     TokenC: this.token,
                     EmpIdN: this.empId
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return { success: true, data: response.data };
+            } else {
+                return { success: false, error: response.data.Error };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.Error || 'Network error'
+            };
+        }
+    }
+
+    async getLeaveApprovalDetails({IdN}: {IdN: number}): Promise<{ success: boolean, data?: LeaveBalanceResponse, error?: string }> {
+        try {
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            console.log('getLeaveDetails Request Payload:', {
+                TokenC: this.token,
+                EmpIdN: IdN
+            });
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_LEAVE_BALANCE_DETAILS,
+                {
+                    TokenC: this.token,
+                    EmpIdN: IdN
                 },
                 { headers: this.getHeaders() }
             );
@@ -686,8 +718,6 @@ class ApiService {
         }
     }
 
-
-
     async getTimeManageList(fromDate: string, toDate: string): Promise<{ success: boolean, data?: any[], error?: string }> {
         try {
             if (!this.token) {
@@ -1053,6 +1083,7 @@ class ApiService {
             return null;
         }
     }
+
     async getCalendarEvents(month: number, year: number): Promise<{ success: boolean; data?: CalendarEvent[]; error?: string }> {
         try {
             if (!this.token) {

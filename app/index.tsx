@@ -77,7 +77,7 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             const response = await loginUser(empCode, password, domainId);
-            console.log('Login response:', JSON.stringify(response));
+            // console.log('Login response:', JSON.stringify(response));
 
             const isValidLogin =
                 (response.Status === 'success' || response.Status === 'Success') ||

@@ -15,11 +15,13 @@ const { width } = Dimensions.get('window');
 interface MenuGridProps {
     menuItems: any[];
     theme: any;
+    getMenuIcon?: (name: string) => { lib: any; name: string; };
 }
 
 export const MenuGrid: React.FC<MenuGridProps> = ({
     menuItems,
     theme,
+    getMenuIcon,
 }) => {
     /* ---------------- GRID CALCULATION ---------------- */
     const numColumns = 3;

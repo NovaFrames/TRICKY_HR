@@ -29,6 +29,8 @@ export const API_ENDPOINTS = {
   // Leave Management
   GET_LEAVE_DETAILS: "/WebApi/GetEmpLeaveApplyDtlById",
 
+  GET_LEAVE_BALANCE_DETAILS: "/WebApi/GetLeaveBalanceDtlById",
+
   GET_LEAVE_MANAGE: "/WebApi/GetEmpLeaveManageById",
 
   GET_LEAVE_BALANCE: "/WebApi/GetEmpLeaveBalanceByEmpId",

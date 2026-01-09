@@ -28,7 +28,7 @@ export default function HomeScreen() {
     // Critical: Token extraction
     const token = loginData.Token || loginData.TokenC;
 
-    console.log('Extracted Token for Projects:', token);
+    // console.log('Extracted Token for Projects:', token);
 
     // Dynamic Menu Items
     const menuItems = (Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0)
