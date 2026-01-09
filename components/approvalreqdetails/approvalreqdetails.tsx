@@ -3,6 +3,7 @@ import { useTheme } from "@/context/ThemeContext";
 import ApiService, { LeaveType } from "@/services/ApiService";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
+import { XMLParser } from "fast-xml-parser";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,6 +20,7 @@ import Header from "../Header";
 
 type ApprovalItem = {
   IdN: number;
+  EmpIdN: number;
   NameC: string;
   CodeC: string;
   DescC: string;
@@ -66,6 +68,8 @@ export default function ApprovalReqDetails() {
     }
   }, [details]);
 
+  console.log("Approval Param:", approval);
+
   /* ---------------- TABLE COLUMNS ---------------- */
 
   const ATTENDANCE_COLUMNS: ColumnDef[] = [
@@ -76,7 +80,7 @@ export default function ApprovalReqDetails() {
     { key: "ALEarnN", label: "Earn", align: "center" },
     { key: "ALTotalN", label: "Total", align: "center", formatter: formatTimeNumber },
     { key: "TakenN", label: "Taken", align: "center", formatter: formatTimeNumber },
-    { key: "BalanceN", label: "Balance", align: "center", formatter: formatTimeNumber },
+    { key: "BalanceN", label: "Balance", flex: 1.32, align: "center", formatter: formatTimeNumber },
   ];
 
   /* ---------------- API ---------------- */
@@ -84,26 +88,70 @@ export default function ApprovalReqDetails() {
   const loadLeaveData = async (id: number) => {
     try {
       setLoading(true);
-      setFormattedLeaves([]); // 🔥 CLEAR OLD DATA
+      setFormattedLeaves([]);
 
       if (!approval) return;
 
-      const result = await ApiService.getLeaveApprovalDetails({ IdN: approval.IdN });
+      const result = await ApiService.getLeaveApprovalDetails({
+        IdN: approval.EmpIdN,
+      });
 
       console.log("Leave Details Result:", result);
-      
-      if (result.success && result.data?.data?.length) {
-        const formatted = result.data.data[0].EmpLeaveApply.map(formatLeaveData);
-        setFormattedLeaves(formatted);
-      } else {
+
+      const rawData = result?.data?.data;
+      console.log("Raw Data:", rawData);
+      if (!rawData) {
         Alert.alert("Info", "No leave data found");
+        return;
       }
-    } catch {
+
+      let tableData: LeaveType[] = [];
+
+      /* ----------------------------------
+         CASE 1: API already returned JSON
+      -----------------------------------*/
+      if (Array.isArray(rawData)) {
+        tableData = rawData[0]?.EmpLeaveApply ?? [];
+      }
+
+      /* ----------------------------------
+         CASE 2: API returned XML string
+      -----------------------------------*/
+      else if (typeof rawData === "string") {
+        const parser = new XMLParser({
+          ignoreAttributes: false,
+          parseTagValue: true,
+        });
+
+        const json = parser.parse(rawData);
+
+        const table =
+          json?.NewDataSet?.Table &&
+            Array.isArray(json.NewDataSet.Table)
+            ? json.NewDataSet.Table
+            : json?.NewDataSet?.Table
+              ? [json.NewDataSet.Table]
+              : [];
+
+        tableData = table;
+      }
+
+      if (!tableData.length) {
+        Alert.alert("Info", "No leave data found");
+        return;
+      }
+
+      const formatted = tableData.map(formatLeaveData);
+      console.log("Formatted Leave Data:", formatted);
+      setFormattedLeaves(formatted);
+    } catch (error) {
+      console.error(error);
       Alert.alert("Error", "Failed to load leave details");
     } finally {
       setLoading(false);
     }
   };
+
 
   /* ---------------- IMPORTANT FIX ---------------- */
   /* Re-run EVERY TIME screen is focused */
@@ -119,21 +167,22 @@ export default function ApprovalReqDetails() {
   /* ---------------- FORMATTER ---------------- */
 
   const formatLeaveData = (leave: LeaveType): FormattedLeaveType => {
-    const format = (v: number) => v.toFixed(2);
+    const safe = (v?: number) => Number(v ?? 0).toFixed(2);
 
     return {
       ...leave,
-      formattedBalance: format(leave.BalanceN),
-      formattedEligible: format(leave.EligibleN),
-      formattedCredit: format(leave.CreditN),
-      formattedSurrender: format(leave.LVSurrenderN),
-      formattedBF: format(leave.BFN),
-      formattedEarn: format(leave.ALEarnN),
-      formattedTotal: format(leave.ALTotalN),
-      formattedRequest: format(leave.RequestN),
-      formattedTaken: format(leave.TakenN),
+      formattedBalance: safe(leave.BalanceN),
+      formattedEligible: safe(leave.EligibleN),
+      formattedCredit: safe(leave.CreditN),
+      formattedSurrender: safe(leave.LVSurrenderN),
+      formattedBF: safe(leave.BFN),
+      formattedEarn: safe(leave.ALEarnN),
+      formattedTotal: safe(leave.ALTotalN),
+      formattedRequest: safe(leave.RequestN),
+      formattedTaken: safe(leave.TakenN),
     };
   };
+  /* ---------------- RENDER GUARD ---------------- */
 
   if (!approval) {
     return (
