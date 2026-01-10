@@ -1,3 +1,4 @@
+import EmployeeLeaveBalance from '@/components/EmployeeList/EmployeeLeaveBalance';
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,8 @@ export default function EmployeeListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDesignation, setSelectedDesignation] = useState<string>('All');
     const [designations, setDesignations] = useState<string[]>([]);
+    const [showBalanceModal, setShowBalanceModal] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
     useProtectedBack({
         home: '/home',
@@ -98,7 +101,8 @@ export default function EmployeeListScreen() {
                 {
                     text: 'View Balance',
                     onPress: () => {
-                        // TODO: Navigate to leave balance page
+                        setSelectedEmployee(employee);
+                        setShowBalanceModal(true);
                     }
                 },
                 { text: 'Cancel', style: 'cancel' }
@@ -276,6 +280,13 @@ export default function EmployeeListScreen() {
                     showsVerticalScrollIndicator={false}
                 />
             )}
+
+            <EmployeeLeaveBalance
+                visible={showBalanceModal}
+                onClose={() => setShowBalanceModal(false)}
+                empId={selectedEmployee?.EmpIdN || 0}
+                empName={selectedEmployee?.NameC || ''}
+            />
         </View>
     );
 }
