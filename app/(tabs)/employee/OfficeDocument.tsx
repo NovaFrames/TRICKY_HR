@@ -1,6 +1,6 @@
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
-import { MaterialIcons as Icon } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
@@ -8,11 +8,15 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
+    Modal,
+    Platform,
+    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useTheme } from '../../../context/ThemeContext';
 import { useUser } from '../../../context/UserContext';
 import ApiService from '../../../services/ApiService';
@@ -30,6 +34,7 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [downloading, setDownloading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
     useProtectedBack({
         home: '/home'
@@ -60,60 +65,74 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
         const customerId = user?.CustomerIdC || 'kevit';
         const companyId = user?.CompIdN || '1';
         const empId = user?.EmpIdN || '1';
-
-        // Pattern based on previous tasks
         return `https://hr.trickyhr.com/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`;
     };
 
-    const handleDocumentPress = async (document: Document) => {
-        const fileName = document.NameC;
-        const fs = FileSystem as any;
-        const localDir = fs.documentDirectory + 'OfficeDoc/';
-        const localUri = localDir + fileName;
-
+    const handleDownloadedFile = async (url: string, shouldShare: boolean = false) => {
         try {
-            const dirInfo = await fs.getInfoAsync(localDir);
-            if (!dirInfo.exists) {
-                await fs.makeDirectoryAsync(localDir, { intermediates: true });
+            if (!url) {
+                throw new Error('Download URL is empty');
             }
 
-            const fileInfo = await fs.getInfoAsync(localUri);
+            const fileName = `Document_${new Date().getTime()}.pdf`; // Or extract extension
+            const fileUri = FileSystem.documentDirectory + fileName;
 
-            if (fileInfo.exists) {
-                await openDocument(localUri);
-            } else {
-                if (downloading) return;
+            console.log('Starting download from URL:', url);
 
-                setDownloading(fileName);
-                const url = constructDownloadUrl(fileName);
-                const downloadedUri = await ApiService.downloadFile(url, fileName);
+            // 1. If explicit "Download" on Android -> Use Storage Access Framework
+            if (!shouldShare && Platform.OS === 'android') {
+                const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+                if (permissions.granted) {
+                    const downloadRes = await FileSystem.downloadAsync(url, fileUri);
+                    if (downloadRes.status !== 200) throw new Error('Failed to download temp file');
 
-                if (downloadedUri) {
-                    await openDocument(downloadedUri);
+                    const base64 = await FileSystem.readAsStringAsync(downloadRes.uri, { encoding: FileSystem.EncodingType.Base64 });
+                    const createdUri = await FileSystem.StorageAccessFramework.createFileAsync(permissions.directoryUri, fileName, 'application/pdf');
+                    await FileSystem.writeAsStringAsync(createdUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+
+                    Alert.alert('Success', 'File captured to selected folder.');
+                    return;
                 } else {
-                    Alert.alert('Error', 'Failed to download document');
+                    return;
                 }
-                setDownloading(null);
             }
-        } catch (error) {
-            console.error('Error handling document:', error);
-            Alert.alert('Error', 'Failed to open document');
-            setDownloading(null);
+
+            // 2. Default logic
+            const downloadRes = await FileSystem.downloadAsync(url, fileUri);
+
+            if (downloadRes.status === 200) {
+                if (shouldShare) {
+                    const isAvailable = await Sharing.isAvailableAsync();
+                    if (isAvailable) {
+                        await Sharing.shareAsync(downloadRes.uri);
+                    } else {
+                        Alert.alert('Success', 'File downloaded to: ' + downloadRes.uri);
+                    }
+                } else {
+                    Alert.alert('Success', 'File downloaded successfully.');
+                }
+            } else {
+                throw new Error(`Download failed with status: ${downloadRes.status}`);
+            }
+        } catch (error: any) {
+            console.error('Error downloading file:', error);
+            Alert.alert('Download Error', error?.message || 'Could not download the file.');
         }
     };
 
-    const openDocument = async (uri: string) => {
-        if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(uri);
-        } else {
-            Alert.alert('Error', 'Sharing is not available on this device');
-        }
+    const handleDocumentPress = async (document: Document) => {
+        const url = constructDownloadUrl(document.NameC);
+        // Directly open viewer
+        setViewingUrl(url);
+    };
+
+    const handleShareFromPreview = async (url: string) => {
+        if (url) await handleDownloadedFile(url, true);
     };
 
     const formatDate = (dateString: string) => {
         try {
             if (!dateString) return '';
-            // Handle /Date(...)/ format if present
             const match = dateString.match(/\/Date\((\d+)\)\//);
             if (match) {
                 return new Date(parseInt(match[1])).toLocaleDateString() + ' ' + new Date(parseInt(match[1])).toLocaleTimeString();
@@ -128,10 +147,9 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
         <TouchableOpacity
             style={[styles.documentItem, { backgroundColor: theme.cardBackground }]}
             onPress={() => handleDocumentPress(item)}
-            disabled={downloading === item.NameC}
         >
             <View style={styles.documentIcon}>
-                <Icon name="description" size={24} color={theme.primary} />
+                <Ionicons name="document-text-outline" size={32} color={theme.primary} />
             </View>
 
             <View style={styles.documentInfo}>
@@ -144,24 +162,22 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
             </View>
 
             <View style={styles.documentAction}>
-                {downloading === item.NameC ? (
-                    <ActivityIndicator size="small" color={theme.primary} />
-                ) : (
-                    <Icon name="cloud-download" size={24} color={theme.icon} />
-                )}
+                <Ionicons name="eye-outline" size={24} color={theme.icon} />
             </View>
         </TouchableOpacity>
     );
 
     const renderEmptyState = () => (
         <View style={styles.emptyContainer}>
-            <Icon name="folder-open" size={80} color={theme.icon} />
+            <Ionicons name="folder-open-outline" size={80} color={theme.icon} />
             <Text style={[styles.emptyText, { color: theme.text }]}>No documents found</Text>
             <Text style={[styles.emptySubText, { color: theme.textLight }]}>
                 There are no office documents available at the moment.
             </Text>
         </View>
     );
+
+    const isImage = (url: string) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
 
     return (
         <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
@@ -181,7 +197,7 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
                     </View>
                 ) : error ? (
                     <View style={styles.errorContainer}>
-                        <Icon name="error-outline" size={40} color="#FF6B6B" />
+                        <Ionicons name="alert-circle-outline" size={40} color="#FF6B6B" />
                         <Text style={styles.errorText}>{error}</Text>
                         <TouchableOpacity
                             style={[styles.retryButton, { backgroundColor: theme.primary }]}
@@ -194,6 +210,50 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
                     renderEmptyState()
                 ) : null}
             />
+
+            <Modal
+                visible={!!viewingUrl}
+                transparent={true}
+                onRequestClose={() => setViewingUrl(null)}
+                animationType="slide"
+            >
+                <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
+                    <View style={styles.viewerHeader}>
+                        <TouchableOpacity onPress={() => setViewingUrl(null)} style={styles.closeButton}>
+                            <Ionicons name="close" size={24} color="white" />
+                        </TouchableOpacity>
+
+                        <Text style={{ color: 'white', fontWeight: 'bold', flex: 1, textAlign: 'center' }}>Document Preview</Text>
+
+                        <View style={{ flexDirection: 'row', gap: 16 }}>
+                            <TouchableOpacity onPress={() => viewingUrl && handleDownloadedFile(viewingUrl, false)}>
+                                <Ionicons name="download-outline" size={24} color="white" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => viewingUrl && handleShareFromPreview(viewingUrl)}>
+                                <Ionicons name="share-social-outline" size={24} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        {viewingUrl && (
+                            <WebView
+                                source={{
+                                    uri: (Platform.OS === 'android' && !isImage(viewingUrl))
+                                        ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingUrl)}`
+                                        : viewingUrl
+                                }}
+                                style={{ flex: 1 }}
+                                startInLoadingState={true}
+                                renderLoading={() => (
+                                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                                        <ActivityIndicator size="large" color={theme.primary} />
+                                    </View>
+                                )}
+                            />
+                        )}
+                    </View>
+                </SafeAreaView>
+            </Modal>
         </View>
     );
 };
@@ -202,13 +262,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    content: {
-        flex: 1,
-    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingVertical: 50,
     },
     loadingText: {
         marginTop: 16,
@@ -219,6 +277,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
+        paddingVertical: 50,
     },
     errorText: {
         marginTop: 16,
@@ -273,6 +332,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
+        paddingVertical: 50,
     },
     emptyText: {
         fontSize: 18,
@@ -283,6 +343,16 @@ const styles = StyleSheet.create({
     emptySubText: {
         fontSize: 14,
         textAlign: 'center',
+    },
+    viewerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+    },
+    closeButton: {
+        padding: 8,
     },
 });
 
