@@ -11,6 +11,7 @@ import {
     View,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import ApiService from '../../services/ApiService';
 import AppModal from '../common/AppModal';
 
 interface PendingApprovalData {
@@ -38,29 +39,53 @@ interface PendingApprovalData {
 interface PendingApprovalModalProps {
     visible: boolean;
     onClose: () => void;
-    onUpdate: (status: string, remarks: string) => void;
+    onSuccess: () => void;
     data: PendingApprovalData | null;
-    loading?: boolean;
 }
 
 export default function PendingApprovalModal({
     visible,
     onClose,
-    onUpdate,
+    onSuccess,
     data,
-    loading = false,
 }: PendingApprovalModalProps) {
     const { theme } = useTheme();
 
-    const [selectedStatus, setSelectedStatus] = useState('');
     const [rejectRemarks, setRejectRemarks] = useState('');
+    const [approveAmt, setApproveAmt] = useState('');
     const [processingAction, setProcessingAction] = useState<'Approved' | 'Rejected' | null>(null);
+
+    // Determine flag helper
+    const getFlag = (desc: string) => {
+        const d = (desc || '').toLowerCase();
+        if (d.includes('claim')) return 'Claim';
+        if (d.includes('document')) return 'Employee Document';
+        if (d.includes('profile')) return 'Profile';
+        if (d.includes('time')) return 'Time';
+        if (d.includes('surrender')) return 'Leave Surrender';
+        if (d.includes('cancel')) return d.includes('surrender') ? 'Cancel Leave Surrender' : 'Cancel Leave';
+        return 'Lev'; // Default to Leave
+    };
+
+    const flag = data ? getFlag(data.DescC) : 'Lev';
+    const isClaim = flag === 'Claim';
 
     useEffect(() => {
         if (visible && data) {
-            setSelectedStatus('');
             setRejectRemarks('');
             setProcessingAction(null);
+
+            // For claims, pre-fill amount from remarks if possible
+            if (getFlag(data.DescC) === 'Claim' && data.EmpRemarksC) {
+                const match = data.EmpRemarksC.match(/(\d+(\.\d+)?)/);
+                if (match) {
+                    setApproveAmt(match[0]);
+                } else {
+                    setApproveAmt('');
+                }
+            } else {
+                setApproveAmt('');
+            }
         }
     }, [visible, data]);
 
@@ -85,12 +110,75 @@ export default function PendingApprovalModal({
         }
     };
 
+    const handleSubmission = async (status: 'Approved' | 'Rejected', remarks: string) => {
+        if (!data) return;
+
+        // Validation based on Java snippets
+        if (status === 'Rejected') {
+            if (remarks.trim().length < 11) {
+                Alert.alert('Validation Error', 'Remarks should be more than 10 characters');
+                return;
+            }
+        }
+
+        let amount = 0;
+        if (flag === 'Claim') {
+            if (status === 'Approved') {
+                if (!approveAmt || parseFloat(approveAmt) <= 0) {
+                    Alert.alert('Validation Error', 'Enter approved amount');
+                    return;
+                }
+                // Optional: Validating against Claim Amount if you want to implement strictly
+            }
+            amount = parseFloat(approveAmt) || 0;
+        }
+
+        setProcessingAction(status);
+
+        try {
+            const result = await ApiService.updatePendingApproval({
+                IdN: data.IdN,
+                StatusC: status,
+                ApproveRemarkC: remarks,
+                EmpIdN: data.EmpIdN,
+                Flag: flag,
+                ApproveAmtN: amount,
+                // Add specific fields if needed based on Flag
+                title: flag === 'Employee Document' ? (data.CatgNameC || data.DescC) : (flag === 'Claim' ? 'ClaimDoc' : ""),
+                DocName: flag === 'Employee Document' ? (data.NameC || "") : (flag === 'Claim' ? 'tyht' : ""),
+                // Defaults
+                ReceiveYearN: 0,
+                ReceiveMonthN: 0,
+                PayTypeN: 0,
+                ClaimExpenseDtl1: []
+            });
+
+            if (result.success) {
+                Alert.alert('Success', `Request ${status.toLowerCase()} successfully`, [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            onSuccess();
+                            onClose();
+                        },
+                    },
+                ]);
+            } else {
+                Alert.alert('Error', result.error || 'Failed to update approval');
+            }
+        } catch (error: any) {
+            Alert.alert('Error', error?.message || 'Failed to update approval');
+        } finally {
+            setProcessingAction(null);
+        }
+    };
+
     // Status Logic for Color
-    const status = data.StatusC || 'Waiting';
+    const statusStr = data.StatusC || 'Waiting';
     let statusInfo = { color: '#D97706', bg: '#FEF3C7', label: 'PENDING' };
-    if (status.toLowerCase().includes('approv')) statusInfo = { color: '#16A34A', bg: '#DCFCE7', label: 'APPROVED' };
-    if (status.toLowerCase().includes('reject') || status.toLowerCase().includes('cancel')) {
-        statusInfo = { color: '#DC2626', bg: '#FEE2E2', label: status.toUpperCase() };
+    if (statusStr.toLowerCase().includes('approv')) statusInfo = { color: '#16A34A', bg: '#DCFCE7', label: 'APPROVED' };
+    if (statusStr.toLowerCase().includes('reject') || statusStr.toLowerCase().includes('cancel')) {
+        statusInfo = { color: '#DC2626', bg: '#FEE2E2', label: statusStr.toUpperCase() };
     }
 
     const handleApprove = () => {
@@ -102,10 +190,7 @@ export default function PendingApprovalModal({
                 {
                     text: "Approve",
                     style: "default",
-                    onPress: () => {
-                        setProcessingAction('Approved');
-                        onUpdate('Approved', rejectRemarks);
-                    }
+                    onPress: () => handleSubmission('Approved', rejectRemarks)
                 }
             ]
         );
@@ -125,10 +210,7 @@ export default function PendingApprovalModal({
                 {
                     text: "Reject",
                     style: "destructive",
-                    onPress: () => {
-                        setProcessingAction('Rejected');
-                        onUpdate('Rejected', rejectRemarks);
-                    }
+                    onPress: () => handleSubmission('Rejected', rejectRemarks)
                 }
             ]
         );
@@ -157,9 +239,9 @@ export default function PendingApprovalModal({
                     <TouchableOpacity
                         style={[styles.actionButton, styles.rejectButton]}
                         onPress={handleReject}
-                        disabled={loading || processingAction !== null}
+                        disabled={processingAction !== null}
                     >
-                        {loading && processingAction === 'Rejected' ? (
+                        {processingAction === 'Rejected' ? (
                             <ActivityIndicator size="small" color="#DC2626" />
                         ) : (
                             <>
@@ -172,9 +254,9 @@ export default function PendingApprovalModal({
                     <TouchableOpacity
                         style={[styles.actionButton, styles.approveButton, { backgroundColor: theme.primary }]}
                         onPress={handleApprove}
-                        disabled={loading || processingAction !== null}
+                        disabled={processingAction !== null}
                     >
-                        {loading && processingAction === 'Approved' ? (
+                        {processingAction === 'Approved' ? (
                             <ActivityIndicator size="small" color="#fff" />
                         ) : (
                             <>
@@ -211,6 +293,20 @@ export default function PendingApprovalModal({
 
                 {data.EmpRemarksC && (
                     <DetailItem icon="chatbubble-outline" label="EMPLOYEE REMARKS" value={data.EmpRemarksC} />
+                )}
+
+                {isClaim && (
+                    <View style={styles.inputContainer}>
+                        <Text style={[styles.fieldLabel, { color: theme.text }]}>Approve Amount</Text>
+                        <TextInput
+                            style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                            placeholder="Enter amount"
+                            placeholderTextColor={theme.placeholder}
+                            value={approveAmt}
+                            onChangeText={setApproveAmt}
+                            keyboardType="numeric"
+                        />
+                    </View>
                 )}
 
                 {/* Approval Section */}
@@ -295,6 +391,16 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         lineHeight: 22,
+    },
+    inputContainer: {
+        marginBottom: 16,
+    },
+    input: {
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: 12,
+        fontSize: 15,
+        height: 48,
     },
     approvalSection: {
         marginTop: 8,

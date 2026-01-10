@@ -57,7 +57,7 @@ export default function PendingApproval() {
     // Modal state
     const [showModal, setShowModal] = useState(false);
     const [selectedItem, setSelectedItem] = useState<PendingApproval | null>(null);
-    const [updating, setUpdating] = useState(false);
+
 
     useProtectedBack({
         home: '/home',
@@ -164,37 +164,7 @@ export default function PendingApproval() {
         setShowModal(true);
     };
 
-    const handleUpdateApproval = async (status: string, remarks: string) => {
-        if (!selectedItem) return;
 
-        setUpdating(true);
-        try {
-            const result = await ApiService.updatePendingApproval({
-                IdN: selectedItem.IdN,
-                StatusC: status,
-                ApproveRemarkC: remarks,
-            });
-
-            if (result.success) {
-                Alert.alert('Success', `Request ${status.toLowerCase()} successfully`, [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            setShowModal(false);
-                            setSelectedItem(null);
-                            fetchPendingApprovals();
-                        },
-                    },
-                ]);
-            } else {
-                Alert.alert('Error', result.error || 'Failed to update approval');
-            }
-        } catch (error: any) {
-            Alert.alert('Error', error?.message || 'Failed to update approval');
-        } finally {
-            setUpdating(false);
-        }
-    };
 
     const renderPendingItem = ({ item, index }: { item: PendingApproval; index: number }) => {
         const isSelected = selectedIndex === index;
@@ -372,9 +342,12 @@ export default function PendingApproval() {
                     setShowModal(false);
                     setSelectedItem(null);
                 }}
-                onUpdate={handleUpdateApproval}
+                onSuccess={() => {
+                    setShowModal(false);
+                    setSelectedItem(null);
+                    fetchPendingApprovals();
+                }}
                 data={selectedItem}
-                loading={updating}
             />
         </View>
     );

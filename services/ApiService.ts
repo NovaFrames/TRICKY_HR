@@ -1426,6 +1426,15 @@ class ApiService {
         IdN: number;
         StatusC: string;
         ApproveRemarkC: string;
+        EmpIdN: number;
+        Flag: string;
+        ApproveAmtN?: number;
+        title?: string;
+        DocName?: string;
+        ReceiveYearN?: number;
+        ReceiveMonthN?: number;
+        PayTypeN?: number;
+        ClaimExpenseDtl1?: any[];
     }): Promise<{ success: boolean; error?: string }> {
         try {
             if (!this.token || !this.empId) {
@@ -1433,24 +1442,24 @@ class ApiService {
             }
 
             // Convert status to Approval number: 1 = Approved, 2 = Rejected
-            const approvalStatus = data.StatusC.toLowerCase() === 'approved' ? 1 : 2;
+            const approvalStatus = (data.StatusC.toLowerCase() === 'approved' || data.StatusC.toLowerCase() === 'approve') ? 1 : 2;
 
+            // Construct payload matching C# SaveApproval_Supervisor signature
             const payload = {
-                Flag: "SaveApproval",
-                Tokenc: this.token,
-                EmpId: this.empId,
+                Tokenc: this.token, // Note: Java uses 'Tokenc', C# might expect 'TokenC' or 'Tokenc' depending on binding. Keeping 'Tokenc' as per User Java snippet.
+                Flag: data.Flag,
+                EmpId: data.EmpIdN,
                 Id: data.IdN,
                 Approval: approvalStatus,
-                YearN: 0,
+                YearN: 0, // Java snippet sets this to 0
                 Remarks: data.ApproveRemarkC || '',
-                title: "",
-                DocName: "",
-                ReceiveYearN: 0,
-                ReceiveMonthN: 0,
-                ApproveAmtN: 0,
-                PayTypeN: 0,
-                LFromDateD: new Date().toISOString().split('T')[0],
-                LToDateD: new Date().toISOString().split('T')[0],
+                title: data.title || "",
+                DocName: data.DocName || "",
+                ReceiveYearN: data.ReceiveYearN || 0,
+                ReceiveMonthN: data.ReceiveMonthN || 0,
+                PayTypeN: data.PayTypeN || 0,
+                ApproveAmtN: data.ApproveAmtN || 0,
+                ClaimExpenseDtl1: data.ClaimExpenseDtl1 || []
             };
 
             console.log('Update Pending Approval Payload:', JSON.stringify(payload, null, 2));

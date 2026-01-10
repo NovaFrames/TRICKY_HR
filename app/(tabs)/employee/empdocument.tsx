@@ -77,10 +77,7 @@ const empdocument: React.FC = () => {
             // Get the current tab and convert to folder name
             const currentTab = routes[index].key;
             const folderName = currentTab === 'all' ? 'All' : currentTab.toUpperCase();
-
-            console.log('Fetching documents for folder:', folderName);
             const docs = await ApiService.getDocuments(folderName);
-            console.log('Fetched documents:', docs);
 
             setDocuments(docs);
             setFilteredDocuments(docs); // API already filters by category
