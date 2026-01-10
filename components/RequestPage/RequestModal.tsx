@@ -64,104 +64,90 @@ const RequestModal: React.FC<RequestModalProps> = ({ visible, onClose, item, onR
                         setLoading(true);
                         try {
                             const requestId = item.IdN || item.Id || item.id;
-
-                            console.log('=== Cancel Request Debug ===');
-                            console.log('Item:', JSON.stringify(item, null, 2));
-                            console.log('Request ID:', requestId);
+                            // Attempt to get EmpId from item or fallback to current user
+                            const currentUser = ApiService.getCurrentUser();
+                            const empId = item.EmpIdN || item.EmpId || currentUser.empId;
 
                             if (!requestId) {
-                                console.error('Request ID not found in item');
-                                Alert.alert("Error", "Request ID not found. Cannot cancel this request.");
+                                Alert.alert("Error", "Request ID not found.");
                                 setLoading(false);
                                 return;
                             }
 
-                            // Extract dates from item (if available)
-                            const parseDate = (dateStr: string | undefined) => {
-                                if (!dateStr) return undefined;
-                                try {
-                                    // Handle ASP.NET JSON date format /Date(timestamp)/
-                                    if (typeof dateStr === 'string' && dateStr.includes('/Date(')) {
-                                        const timestamp = parseInt(dateStr.replace(/\/Date\((-?\d+)\)\//, '$1'));
-                                        return new Date(timestamp);
-                                    }
-                                    return new Date(dateStr);
-                                } catch (e) {
-                                    return undefined;
+                            const descLower = description.toLowerCase();
+
+                            // Specific logic for Time/Attendance requests
+                            if (descLower.includes('time') || descLower.includes('attendance')) {
+                                if (!empId) {
+                                    Alert.alert("Error", "Employee ID not found.");
+                                    setLoading(false);
+                                    return;
                                 }
-                            };
 
-                            const fromDate = parseDate(item.LFromDateD || item.FromDate);
-                            const toDate = parseDate(item.LToDateD || item.ToDate);
+                                const result = await ApiService.updatePendingApproval({
+                                    IdN: requestId,
+                                    StatusC: 'Rejected', // Mapping to Approval: 2
+                                    ApproveRemarkC: remarks !== 'No remarks provided' ? remarks : 'Cancelled by user',
+                                    EmpIdN: empId,
+                                    Flag: 'Time',
+                                    ApproveAmtN: 0,
+                                    title: "",
+                                    DocName: "",
+                                    ReceiveYearN: 0,
+                                    ReceiveMonthN: 0,
+                                    PayTypeN: 0
+                                });
 
-                            // Determine request type based on description
-                            // Map the DescC field to the backend Type parameter
-                            const getRequestType = (desc: string): string => {
-                                const descLower = desc.toLowerCase();
-
-                                if (descLower.includes('time') || descLower.includes('attendance')) {
-                                    return 'TMS'; // Time Management System / Time Update
-                                } else if (descLower.includes('leave') || descLower.includes('permission')) {
-                                    return 'Lev'; // Leave or Permission
-                                } else if (descLower.includes('claim')) {
-                                    return 'Claim'; // Claim
-                                } else if (descLower.includes('profile')) {
-                                    return 'Pro'; // Profile Update
-                                } else if (descLower.includes('document')) {
-                                    return 'Doc'; // Employee Document
+                                if (result.success) {
+                                    Alert.alert("Success", "Request cancelled successfully");
+                                    onClose();
+                                    onRefresh?.();
                                 } else {
-                                    // Default to Leave for unknown types
-                                    return 'Lev';
-                                }
-                            };
-
-                            const requestType = getRequestType(description);
-
-                            console.log('Detected request type:', requestType, 'from description:', description);
-
-                            const cancelRemarks = remarks !== 'No remarks provided'
-                                ? `Original: ${remarks}. Cancelled by user.`
-                                : 'Cancelled by user';
-
-                            console.log('Calling deleteRequest with parameters:', {
-                                requestId,
-                                requestType,
-                                fromDate,
-                                toDate,
-                                remarks: cancelRemarks
-                            });
-
-                            const result = await ApiService.deleteRequest(
-                                requestId,
-                                requestType,
-                                fromDate,
-                                toDate,
-                                cancelRemarks
-                            );
-
-                            console.log('Delete Request Result:', JSON.stringify(result, null, 2));
-
-                            if (result.success) {
-                                Alert.alert("Success", "Request cancelled successfully");
-                                onClose();
-                                // Refresh the list after successful cancellation
-                                if (onRefresh) {
-                                    console.log('Calling onRefresh to update list');
-                                    onRefresh();
+                                    Alert.alert("Error", result.error || "Failed to cancel time request.");
                                 }
                             } else {
-                                console.error('Cancel failed:', result.error);
-                                Alert.alert(
-                                    "Error",
-                                    result.error || "Failed to cancel request. Please try again."
+                                // Existing logic for other requests
+                                const parseDate = (dateStr: string | undefined) => {
+                                    if (!dateStr) return undefined;
+                                    try {
+                                        if (typeof dateStr === 'string' && dateStr.includes('/Date(')) {
+                                            const timestamp = parseInt(dateStr.replace(/\/Date\((-?\d+)\)\//, '$1'));
+                                            return new Date(timestamp);
+                                        }
+                                        return new Date(dateStr);
+                                    } catch (e) { return undefined; }
+                                };
+
+                                const fromDate = parseDate(item.LFromDateD || item.FromDate);
+                                const toDate = parseDate(item.LToDateD || item.ToDate);
+
+                                const getRequestType = (desc: string): string => {
+                                    const d = desc.toLowerCase();
+                                    if (d.includes('leave') || d.includes('permission')) return 'Lev';
+                                    if (d.includes('claim')) return 'Claim';
+                                    if (d.includes('profile')) return 'Pro';
+                                    if (d.includes('document')) return 'Doc';
+                                    return 'Lev';
+                                };
+
+                                const result = await ApiService.deleteRequest(
+                                    requestId,
+                                    getRequestType(description),
+                                    fromDate,
+                                    toDate,
+                                    'Cancelled by user'
                                 );
+
+                                if (result.success) {
+                                    Alert.alert("Success", "Request cancelled successfully");
+                                    onClose();
+                                    onRefresh?.();
+                                } else {
+                                    Alert.alert("Error", result.error || "Failed to cancel request.");
+                                }
                             }
                         } catch (error: any) {
-                            console.error('Unexpected error in handleCancelRequest:', error);
-                            Alert.alert(
-                                "Error",
-                                error.message || "An unexpected error occurred while canceling the request."
-                            );
+                            Alert.alert("Error", error.message || "An unexpected error occurred.");
                         } finally {
                             setLoading(false);
                         }

@@ -54,15 +54,9 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
 
     const fetchProjects = async () => {
         try {
-            const { token } = ApiService.getCurrentUser();
-            if (!token) return;
-            const result = await ApiService.getProjectList(token);
-            let projectsData = [];
-            if (Array.isArray(result)) projectsData = result;
-            else if (result?.data && Array.isArray(result.data)) projectsData = result.data;
-            else if (result?.Status === 'success' && Array.isArray(result.data)) projectsData = result.data;
+            const projectsData = await ApiService.getProjectList();
 
-            if (projectsData.length > 0) {
+            if (projectsData && projectsData.length > 0) {
                 const mapped = projectsData.map((p: any) => ({
                     label: p.ProjectNameC || p.NameC || `Project ${p.ProjectIdN || p.IdN}`,
                     value: p.ProjectIdN || p.IdN,

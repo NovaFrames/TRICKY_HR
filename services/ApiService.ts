@@ -262,18 +262,30 @@ class ApiService {
     }
 
     // Leave Management APIs
-    async getProjectList(token: string) {
+    async getProjectList() {
         try {
-            const response = await api.get('/GetProjectList/', {
-                params: {
-                    TokenC: token
-                }
-            });
-            // Handle both direct array or wrapped data { Status: 'success', data: [...] }
-            return response?.data?.data || response?.data || [];
-        } catch (error) {
-            // Fallback or rethrow
-            throw error;
+            if (!this.token) {
+                await this.loadCredentials();
+            }
+
+            const response = await axios.post(
+                BASE_URL + API_ENDPOINTS.GET_PROJECT_LIST,
+                {
+                    TokenC: this.token
+                },
+                { headers: this.getHeaders() }
+            );
+
+            if (response.data.Status === 'success') {
+                return response.data.data || [];
+            } else if (Array.isArray(response.data)) {
+                return response.data;
+            }
+
+            return [];
+        } catch (error: any) {
+            console.error('Error fetching project list:', error);
+            return [];
         }
     }
 
