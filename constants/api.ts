@@ -125,4 +125,7 @@ export const API_ENDPOINTS = {
   //Profile Urls
   PROFILE_URL: "/WebApi2/GetEmpProfile",
   UPLOADPRO_URL: "/WebApi2/UpdateEmpProfile",
+
+  //server time
+  SERVERTIME_URL: "/WebApi2/GetServerTime",
 };

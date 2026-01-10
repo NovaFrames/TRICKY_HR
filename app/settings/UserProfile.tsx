@@ -4,10 +4,12 @@ import { formatDateForApi, formatDisplayDate } from '@/constants/timeFormat';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { getServerTime } from '@/services/ServerTime';
 import {
     Ionicons,
     MaterialIcons
 } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
@@ -28,7 +30,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { width } = Dimensions.get('window');
 
@@ -60,16 +61,16 @@ const FAMILY_FIELDS = ['NamesC', 'DateofBirthD', 'RelationshipN', 'OccupationC',
 const COMPANY_FIELDS = ['CompNameC', 'DesignationC', 'FromDateD', 'ToDateD', 'ExperienceN', 'DescC'];
 
 // Filter functions for each type
-const filterMeaningfulChildren = (children: any[]) => 
+const filterMeaningfulChildren = (children: any[]) =>
     children.filter(child => hasMeaningfulData(child, CHILD_FIELDS));
 
-const filterMeaningfulEducation = (education: any[]) => 
+const filterMeaningfulEducation = (education: any[]) =>
     education.filter(edu => hasMeaningfulData(edu, EDUCATION_FIELDS));
 
-const filterMeaningfulFamily = (family: any[]) => 
+const filterMeaningfulFamily = (family: any[]) =>
     family.filter(member => hasMeaningfulData(member, FAMILY_FIELDS));
 
-const filterMeaningfulCompanies = (companies: any[]) => 
+const filterMeaningfulCompanies = (companies: any[]) =>
     companies.filter(company => hasMeaningfulData(company, COMPANY_FIELDS));
 
 // CollapsibleCard component
@@ -195,7 +196,7 @@ const EditArraySection = ({
                 <Text style={styles.addButtonText}>Add More</Text>
             </TouchableOpacity>
         </View>
-        
+
         {data.length > 0 ? (
             data.map((item, index) => (
                 <View key={index} style={[styles.arrayItemContainer, { backgroundColor: `${theme.primary}05` }]}>
@@ -270,11 +271,11 @@ export default function UserProfile() {
     const [datePickerState, setDatePickerState] = useState<{
         visible: boolean;
         target:
-            | { scope: 'form'; field: keyof typeof formData }
-            | { scope: 'child'; field: 'BDateD'; index: number }
-            | { scope: 'family'; field: 'DateofBirthD'; index: number }
-            | { scope: 'company'; field: 'FromDateD' | 'ToDateD'; index: number }
-            | null;
+        | { scope: 'form'; field: keyof typeof formData }
+        | { scope: 'child'; field: 'BDateD'; index: number }
+        | { scope: 'family'; field: 'DateofBirthD'; index: number }
+        | { scope: 'company'; field: 'FromDateD' | 'ToDateD'; index: number }
+        | null;
         initialDate: Date;
     }>({
         visible: false,
@@ -523,10 +524,33 @@ export default function UserProfile() {
         }
     };
 
+    const formatServerDateSafe = async (
+        token: string,
+        value?: string,
+        fallback = '/Date(-2209008600000)/' // 01/01/1900
+    ): Promise<string> => {
+        if (!value) return fallback;
+
+        // Already server format → send as-is
+        if (typeof value === 'string' && value.includes('/Date(')) {
+            return value;
+        }
+
+        // Convert using server
+        try {
+            return await getServerTime(token, value);
+        } catch {
+            return fallback;
+        }
+    };
+
+
     const updateProfileData = async () => {
         try {
             if (!user?.TokenC || !profile) return;
             setIsSaving(true);
+
+            const token = user?.TokenC;
 
             const resolvedPermanent = sameAddress
                 ? {
@@ -548,28 +572,16 @@ export default function UserProfile() {
                     PNationN: formData.PNationN,
                 };
 
-            // Filter out completely empty items before sending
-            const meaningfulChildren = children.filter(child => 
-                child.NameC || child.BDateD || child.StatusN || child.HidNationIdN > 0
-            );
-            const meaningfulEducation = education.filter(edu => 
-                edu.EducationC || edu.CenterC || edu.YearN
-            );
-            const meaningfulFamily = family.filter(member => 
-                member.NamesC || member.RelationshipN || member.OccupationC
-            );
-            const meaningfulCompanies = previousCompanies.filter(company => 
-                company.CompNameC || company.DesignationC
-            );
-
             const payload = {
-                TokenC: user.TokenC,
+                TokenC: token,
+
                 Model: [
                     {
                         EmpIdN: profile.EmpIdN,
                         EmpNameC: formData.EmpNameC.trim(),
                         MiddleNameC: formData.MiddleNameC.trim(),
                         LastNameC: formData.LastNameC.trim(),
+
                         CDoorNoC: formData.CDoorNoC.trim(),
                         CStreetC: formData.CStreetC.trim(),
                         CAreaC: formData.CAreaC.trim(),
@@ -577,32 +589,58 @@ export default function UserProfile() {
                         CStateC: formData.CStateC.trim(),
                         CPinC: formData.CPinC.trim(),
                         CNationN: formData.CNationN,
+
                         ...resolvedPermanent,
+
                         PhNoC: formData.PhNoC.trim(),
                         EmailIdC: formData.EmailIdC.trim(),
+
                         MaritalN: formData.MaritalN,
                         BloodTypeN: formData.BloodTypeN,
-                        MarriedDateD: formData.MarriedDateD ? formatApiDateSafe(formData.MarriedDateD, '01/01/1900') : '01/01/1900',
+
+                        MarriedDateD: await formatServerDateSafe(
+                            token,
+                            formData.MarriedDateD
+                        ),
+
                         SpouseNameC: formData.SpouseNameC || '',
                         SpousePhNoC: formData.SpousePhNoC || '',
                         SpouseEmailIdC: formData.SpouseEmailIdC || '',
-                        MotherNameC: formData.MotherNameC || '',
+
                         FatherNameC: formData.FatherNameC || '',
+                        MotherNameC: formData.MotherNameC || '',
+
                         PassportNoC: formData.PassportNoC || '',
                         IssuePlaceC: formData.IssuePlaceC || '',
-                        IssueDateD: formData.IssueDateD ? formatApiDateSafe(formData.IssueDateD, '') : '',
-                        ExpiryDateD: formData.ExpiryDateD ? formatApiDateSafe(formData.ExpiryDateD, '') : '',
+
+                        IssueDateD: await formatServerDateSafe(
+                            token,
+                            formData.IssueDateD,
+                        ),
+
+                        ExpiryDateD: await formatServerDateSafe(
+                            token,
+                            formData.ExpiryDateD,
+                        ),
+
                         SameCurrentAddN: sameAddress ? 1 : 0,
                     },
                 ],
-                Child: meaningfulChildren.map((child: any) => ({
-                    EmpIdN: profile.EmpIdN,
-                    NameC: child.NameC || '',
-                    BDateD: child.BDateD ? formatApiDateSafe(child.BDateD, '') : '',
-                    HidNationIdN: child.HidNationIdN || 0,
-                    StatusN: child.StatusN || '',
-                })),
-                Education: meaningfulEducation.map((edu: any) => ({
+
+                Child: await Promise.all(
+                    children.map(async (child) => ({
+                        EmpIdN: profile.EmpIdN,
+                        NameC: child.NameC || '',
+                        BDateD: await formatServerDateSafe(
+                            token,
+                            child.BDateD,
+                        ),
+                        HidNationIdN: child.HidNationIdN || 0,
+                        StatusN: child.StatusN || '',
+                    }))
+                ),
+
+                Education: education.map((edu) => ({
                     EmpIdN: profile.EmpIdN,
                     EducationC: edu.EducationC || '',
                     CenterC: edu.CenterC || '',
@@ -616,7 +654,6 @@ export default function UserProfile() {
                 { headers: { 'Content-Type': 'application/json' } }
             );
 
-            console.log('Profile Update Response:', res.data);
             if (res.data?.Status === 'success') {
                 setIsEditing(false);
                 await fetchUserData();
@@ -625,12 +662,15 @@ export default function UserProfile() {
                 Alert.alert('Profile Update', res.data?.Error || 'Update failed.');
             }
         } catch (err: any) {
-            console.error('Profile Update API Error:', err?.response?.data || err.message);
-            Alert.alert('Profile Update', err?.response?.data?.Error || err.message);
+            Alert.alert(
+                'Profile Update',
+                err?.response?.data?.Error || err.message
+            );
         } finally {
             setIsSaving(false);
         }
     };
+
 
     useEffect(() => {
         fetchUserData();
