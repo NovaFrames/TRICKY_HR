@@ -1434,6 +1434,65 @@ class ApiService {
         }
     }
 
+    async getExitRequests(): Promise<{ success: boolean; data?: any; error?: string }> {
+        try {
+            if (!this.token || !this.empId) await this.loadCredentials();
+            const response = await axios.post(BASE_URL + API_ENDPOINTS.GET_EXIT_REQUEST, {
+                TokenC: this.token,
+                EmpIdN: this.empId,
+                where: "" // Matching C# parameter 'string where'
+            }, { headers: this.getHeaders() });
+
+            // C# returns { Error, data, FileList }
+            if (response.data.Status === 'success' || response.data.Error === 'ok') {
+                return { success: true, data: response.data };
+            }
+            return { success: false, error: response.data.Error };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async getExitReasons(): Promise<{ success: boolean; data?: any; error?: string }> {
+        try {
+            if (!this.token) await this.loadCredentials();
+            const response = await axios.post(BASE_URL + API_ENDPOINTS.GET_EXIT_REASON, {
+                TokenC: this.token
+            }, { headers: this.getHeaders() });
+
+            // C# returns { Error, reason }
+            if (response.data.Status === 'success' || response.data.Error === 'ok') {
+                return { success: true, data: response.data.reason || [] };
+            }
+            return { success: false, error: response.data.Error };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async updateExitRequest(data: any): Promise<{ success: boolean; error?: string }> {
+        try {
+            if (!this.token) await this.loadCredentials();
+
+            const payload = {
+                ...data,
+                TokenC: this.token,
+                EmpIdN: this.empId
+            };
+
+            const response = await axios.post(BASE_URL + API_ENDPOINTS.UPDATE_EXIT_REQUEST, payload, { headers: this.getHeaders() });
+
+            // C# returns { Error }
+            if (response.data.Status === 'success' || response.data.Error === 'ok') {
+                return { success: true };
+            }
+            return { success: false, error: response.data.Error || 'Failed to update exit request' };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Existing updatePendingApproval...
     async updatePendingApproval(data: {
         IdN: number;
         StatusC: string;
