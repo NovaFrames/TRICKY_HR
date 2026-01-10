@@ -121,4 +121,8 @@ export const API_ENDPOINTS = {
   UPDATE_EXIT_REQUEST: "/WebApi2/UpdateEmpExit",
   REVOKE_EXIT_REQUEST: "/WebApi2/RevokeEmpExit",
   GET_EXIT_REASON: "/WebApi2/GetExitReasonList",
+
+  //Profile Urls
+  PROFILE_URL: "/WebApi2/GetEmpProfile",
+  UPLOADPRO_URL: "/WebApi2/UpdateEmpProfile",
 };

@@ -1,17 +1,17 @@
 import Header from "@/components/Header";
+import RequestStatusItem from "@/components/RequestPage/RequestStatusItem";
 import SegmentTabs from "@/components/SegmentTabs";
 import { API_ENDPOINTS } from "@/constants/api";
-import { formatDisplayDate } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -112,26 +112,17 @@ export default function ApprovalDetails() {
 
   /* ---------------- HELPERS ---------------- */
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return "#16a34a";
-      case "rejected":
-        return "#dc2626";
-      case "terminate":
-        return "#f97316";
-      default:
-        return "#2563eb";
-    }
-  };
-
-
   const TABS: Array<'Approved' | 'Rejected'> = ['Approved', 'Rejected'];
 
   /* ---------------- RENDER ITEM ---------------- */
 
   const renderItem = ({ item }: { item: ApprovalItem }) => (
-    <Pressable
+    <RequestStatusItem
+      item={{
+        ...item,
+        DescC: item.DescC ? `${item.NameC} • ${item.DescC}` : item.NameC,
+        applyDateD: item.ApplyDateD,
+      }}
       onPress={() =>
         router.push({
           pathname: "/(tabs)/officer/approvalreqdetails",
@@ -142,31 +133,19 @@ export default function ApprovalDetails() {
           },
         })
       }
-      style={styles.card}
-    >
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.name}>{item.NameC}</Text>
-          <Text style={styles.code}>{item.CodeC}</Text>
-        </View>
+    />
+  );
 
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(item.StatusC) },
-          ]}
-        >
-          <Text style={styles.statusText}>{item.StatusC}</Text>
-        </View>
-      </View>
+  const renderListHeader = () => (
+    <View>
+      <Header title="Approval Requests" />
 
-      <View style={styles.infoGrid}>
-        <Info label="Request Type" value={item.DescC || "—"} />
-        <Info label="Leave Type" value={item.LvDescC || "—"} />
-        <Info label="Apply Date" value={formatDisplayDate(item.ApplyDateD)} />
-        <Info label="Approve/Reject Date" value={formatDisplayDate(item.ApproveRejDateD)} />
-      </View>
-    </Pressable>
+      <SegmentTabs
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
+    </View>
   );
 
   /* ---------------- UI ---------------- */
@@ -179,27 +158,37 @@ export default function ApprovalDetails() {
       failOffsetY={[-30, 30]}
     >
       <View style={styles.container}>
-        <Header title="Approval Requests" />
-
-        {/* Tabs */}
-
-        <SegmentTabs
-          tabs={TABS}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
-
         {loading ? (
-          <ActivityIndicator size="large" color={theme.primary} />
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.placeholder }]}>
+              Loading requests...
+            </Text>
+          </View>
         ) : (
           <FlatList
+            ListHeaderComponent={renderListHeader}
             data={data}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderItem}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerStyle={styles.listContent}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>No records found</Text>
+              <View style={styles.emptyContainer}>
+                <View style={[styles.emptyIconBox, { backgroundColor: theme.inputBg }]}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={48}
+                    color={theme.placeholder}
+                  />
+                </View>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                  No {activeTab} Requests
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: theme.placeholder }]}>
+                  When you have {activeTab.toLowerCase()} requests, they will appear here.
+                </Text>
+              </View>
             }
           />
         )}
@@ -210,13 +199,6 @@ export default function ApprovalDetails() {
 
 /* ---------------- SMALL COMPONENTS ---------------- */
 
-const Info = ({ label, value }: { label: string; value: string }) => (
-  <View style={{ width: "48%", marginBottom: 12 }}>
-    <Text style={{ fontSize: 12, opacity: 0.6 }}>{label}</Text>
-    <Text style={{ fontSize: 14, fontWeight: "500" }}>{value}</Text>
-  </View>
-);
-
 /* ---------------- STYLES ---------------- */
 
 const createStyles = (theme: any) =>
@@ -224,88 +206,47 @@ const createStyles = (theme: any) =>
     container: {
       flex: 1,
       backgroundColor: theme.background,
-      padding: 16,
     },
 
-    tabRow: {
-      flexDirection: "row",
-      backgroundColor: theme.cardBackground,
-      borderRadius: 12,
-      padding: 4,
-      marginBottom: 16,
+    listContent: {
+      paddingTop: 10,
+      paddingBottom: 120,
     },
 
-    tab: {
+    center: {
       flex: 1,
-      paddingVertical: 10,
-      borderRadius: 10,
+      justifyContent: "center",
       alignItems: "center",
     },
-
-    activeTab: {
-      backgroundColor: theme.primary,
-    },
-
-    tabText: {
+    loadingText: {
+      marginTop: 12,
       fontSize: 14,
       fontWeight: "600",
-      color: theme.textLight,
     },
 
-    activeTabText: {
-      color: "#fff",
-    },
-
-    card: {
-      backgroundColor: theme.cardBackground,
-      padding: 16,
-      borderRadius: 14,
-      marginBottom: 14,
-      borderWidth: 1,
-      borderColor: theme.inputBorder,
-    },
-
-    headerRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
+    emptyContainer: {
       alignItems: "center",
-      marginBottom: 12,
+      justifyContent: "center",
+      marginTop: 100,
+      paddingHorizontal: 40,
     },
-
-    name: {
-      fontSize: 16,
-      fontWeight: "700",
-      color: theme.text,
+    emptyIconBox: {
+      width: 100,
+      height: 100,
+      borderRadius: 30,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 20,
     },
-
-    code: {
-      fontSize: 12,
-      color: theme.textLight,
-      marginTop: 2,
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: "800",
+      marginBottom: 8,
     },
-
-    statusBadge: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-    },
-
-    statusText: {
-      color: "#fff",
-      fontSize: 12,
-      fontWeight: "700",
-      textTransform: "uppercase",
-    },
-
-    infoGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
-    },
-
-    emptyText: {
+    emptySubtitle: {
+      fontSize: 14,
       textAlign: "center",
-      marginTop: 40,
-      color: theme.textLight,
+      lineHeight: 20,
+      fontWeight: "500",
     },
   });

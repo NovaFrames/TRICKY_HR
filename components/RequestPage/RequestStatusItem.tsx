@@ -74,6 +74,13 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
                 icon: 'close-circle-outline' as const,
                 label: 'Rejected'
             };
+        } else if (s.includes('terminate')) {
+            return {
+                bg: '#FEE2E2',
+                color: '#DC2626',
+                icon: 'close-circle-outline' as const,
+                label: 'Terminated'
+            };
         }
         return {
             bg: theme.inputBg,
@@ -128,7 +135,7 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
                 <View style={styles.footerDetail}>
                     <Ionicons name="finger-print-outline" size={14} color={theme.placeholder} />
                     <Text style={[styles.footerText, { color: theme.placeholder }]}>
-                        Ref: {item.IdN || 'N/A'}
+                        EmpIdN: {item.CodeC || 'N/A'}
                     </Text>
                 </View>
 
@@ -143,8 +150,8 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
 
 const styles = StyleSheet.create({
     card: {
-        marginHorizontal: 20,
-        marginVertical: 8,
+        marginHorizontal: 12,
+        marginVertical: 4,
         borderRadius: 4,
         padding: 16,
         borderWidth: 1,
@@ -169,7 +176,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     title: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '700',
         marginBottom: 2,
         letterSpacing: -0.3,

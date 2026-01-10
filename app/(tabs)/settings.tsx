@@ -66,29 +66,17 @@ export default function SettingsScreen() {
                     description: 'Update your profile information',
                     icon: <FontAwesome5 name="user" />,
                     color: '#3b82f6',
+                    type: 'action',
                     onPress: () => {
                         router.push({ pathname: '/(tabs)/employee/profileupdate', params: { from: 'settings' } });
                     },
-                },
-                {
-                    label: 'Personal Information',
-                    description: 'Manage your personal details',
-                    icon: <Ionicons name="document-text" />,
-                    color: '#10b981',
-                    onPress: () => { router.push({ pathname: '/settings/PersonalInformation', params: { from: 'settings' } }); },
-                },
-                {
-                    label: 'Address',
-                    description: 'Update your address information',
-                    icon: <MaterialIcons name="home" />,
-                    color: '#ec4899',
-                    onPress: () => { },
                 },
                 {
                     label: 'Security',
                     description: 'Update your security information',
                     icon: <MaterialIcons name="lock" />,
                     color: '#f59e0b',
+                    type: 'action',
                     onPress: () => { },
                 },
             ],
@@ -104,37 +92,10 @@ export default function SettingsScreen() {
                     type: 'switch',
                 },
                 {
-                    label: 'Theme Colors',
-                    description: 'Customize app colors',
-                    icon: <Ionicons name="color-palette" />,
-                    color: '#f59e0b',
-                    onPress: () => { },
-                },
-            ],
-        },
-        {
-            title: 'Others',
-            items: [
-                {
-                    label: 'Passport Details',
-                    description: 'Update your passport details',
-                    icon: <Ionicons name="document-text-outline" />,
-                    color: '#64748b',
-                    onPress: () => { },
-                },
-                {
-                    label: 'Child Details',
-                    description: 'Update your child details',
-                    icon: <MaterialIcons name="privacy-tip" />,
-                    color: '#8b5cf6',
-                    onPress: () => { },
-                },
-                {
-                    label: 'Education Details',
-                    description: 'Update your education details',
-                    icon: <Ionicons name="help-circle" />,
-                    color: '#3b82f6',
-                    onPress: () => { },
+                    label: 'Choose Theme',
+                    description: '',
+                    icon: <Ionicons name="brush" />,
+                    color: theme.primary,
                 },
             ],
         },
@@ -185,9 +146,9 @@ export default function SettingsScreen() {
                     onValueChange={toggleTheme}
                     value={isDark}
                 />
-            ) : (
+            ) : item.type === 'action' ? (
                 <Feather name="chevron-right" size={20} color={`${theme.text}80`} />
-            );
+            ) : ('');
 
         return (
             <TouchableOpacity
@@ -218,7 +179,7 @@ export default function SettingsScreen() {
                         <Text style={[styles.itemLabel, { color: theme.text }]}>
                             {item.label}
                         </Text>
-                        {item.description && (
+                        {item.description ? (
                             <Text
                                 style={[
                                     styles.itemDescription,
@@ -227,8 +188,33 @@ export default function SettingsScreen() {
                             >
                                 {item.description}
                             </Text>
+                        ):(
+                            <View style={styles.themeBadgeSection}>
+                            <View style={styles.inlineColorRow}>
+                                {THEME_COLORS.map((color, index) => {
+                                    const isSelected = theme.primary === color.value;
+                                    return (
+                                        <View key={index} style={{ alignItems: 'center', gap: 6, }}>
+                                            <TouchableOpacity
+                                                key={index}
+                                                style={[
+                                                    styles.inlineColorCircle,
+                                                    { backgroundColor: color.value },
+                                                    isSelected && styles.inlineSelectedCircle
+                                                ]}
+                                                onPress={() => setPrimaryColor(color.value)}
+                                            >
+                                                {isSelected && <Feather name="check" size={14} color="#FFF" />}
+                                            </TouchableOpacity>
+                                            <Text>{color.label}</Text>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </View>
                         )}
                     </View>
+  
                 </View>
                 {rightElement}
             </TouchableOpacity>
@@ -285,39 +271,14 @@ export default function SettingsScreen() {
                                 isLast={index === section.items.length - 1}
                             />
                         ))}
-
-                        {/* Theme Customization Section Integration */}
-                        {section.title === 'App Preferences' && (
-                            <View style={styles.themeBadgeSection}>
-                                <Text style={[styles.inlineLabel, { color: theme.text }]}>Accent Color</Text>
-                                <View style={styles.inlineColorRow}>
-                                    {THEME_COLORS.map((color) => {
-                                        const isSelected = theme.primary === color.value;
-                                        return (
-                                            <TouchableOpacity
-                                                key={color.value}
-                                                style={[
-                                                    styles.inlineColorCircle,
-                                                    { backgroundColor: color.value },
-                                                    isSelected && styles.inlineSelectedCircle
-                                                ]}
-                                                onPress={() => setPrimaryColor(color.value)}
-                                            >
-                                                {isSelected && <Feather name="check" size={14} color="#FFF" />}
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </View>
-                            </View>
-                        )}
                     </View>
                 ))}
 
-                <View style={styles.footer}>
+                {/* <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: theme.textLight }]}>
                         Version 1.0.0 • © 2026 Novaframes
                     </Text>
-                </View>
+                </View> */}
             </ScrollView>
         </View>
     );
