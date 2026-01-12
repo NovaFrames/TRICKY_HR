@@ -9,3 +9,7 @@ export async function getDomainId(): Promise<string | undefined> {
     const domainId = await AsyncStorage.getItem('domain_id');
     return domainId ?? undefined;
 }
+
+export async function initDomainUrl(): Promise<string | undefined> {
+    return getDomainUrl();
+}

@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useUser } from '@/context/UserContext';
@@ -34,8 +34,25 @@ export const IdCard: React.FC<IdCardProps> = ({
     const { user } = useUser();
 
     const [logoError, setLogoError] = React.useState(false);
+    const [logoUrl, setLogoUrl] = useState<string | undefined>();
 
-    const logoUrl = getProfileImageUrl(user?.CustomerIdC, user?.CompIdN, user?.EmpIdN);
+    useEffect(() => {
+        let isActive = true;
+        setLogoError(false);
+
+        const loadLogoUrl = async () => {
+            const url = await getProfileImageUrl(user?.CustomerIdC, user?.CompIdN, user?.EmpIdN);
+            if (isActive) {
+                setLogoUrl(url);
+            }
+        };
+
+        loadLogoUrl();
+
+        return () => {
+            isActive = false;
+        };
+    }, [user?.CustomerIdC, user?.CompIdN, user?.EmpIdN]);
 
     return (
         <View style={[styles.idCard, {

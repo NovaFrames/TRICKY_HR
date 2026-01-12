@@ -129,3 +129,5 @@ export const API_ENDPOINTS = {
   //server time
   SERVERTIME_URL: "/WebApi2/GetServerTime",
 };
+
+export const API = () => API_ENDPOINTS;

@@ -1,6 +1,6 @@
 import { useUser } from '@/context/UserContext';
-import { useCompanyLogo } from '@/hooks/useGetImage';
-import React from 'react';
+import { getCompanyLogoUrl } from '@/hooks/useGetImage';
+import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,8 +16,25 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
     const { user } = useUser();
     const [logoError, setLogoError] = React.useState(false);
+    const [logoUrl, setLogoUrl] = useState<string | undefined>();
 
-    const logoUrl = useCompanyLogo(user?.CustomerIdC, user?.CompIdN);
+    useEffect(() => {
+        let isActive = true;
+        setLogoError(false);
+
+        const loadLogoUrl = async () => {
+            const url = await getCompanyLogoUrl(user?.CustomerIdC, user?.CompIdN);
+            if (isActive) {
+                setLogoUrl(url);
+            }
+        };
+
+        loadLogoUrl();
+
+        return () => {
+            isActive = false;
+        };
+    }, [user?.CustomerIdC, user?.CompIdN]);
 
 
     return (

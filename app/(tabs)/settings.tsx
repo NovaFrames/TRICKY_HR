@@ -4,7 +4,7 @@ import { useUser } from '@/context/UserContext';
 import { getProfileImageUrl } from '@/hooks/useGetImage';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Image,
     ScrollView,
@@ -45,11 +45,28 @@ export default function SettingsScreen() {
     const { logout, user } = useUser();
     const router = useRouter();
 
-    const profileImage = getProfileImageUrl(
-        user?.CustomerIdC,
-        user?.CompIdN,
-        user?.EmpIdN
-    );
+    const [profileImage, setProfileImage] = useState<string | undefined>();
+
+    useEffect(() => {
+        let isActive = true;
+
+        const loadProfileImage = async () => {
+            const url = await getProfileImageUrl(
+                user?.CustomerIdC,
+                user?.CompIdN,
+                user?.EmpIdN
+            );
+            if (isActive) {
+                setProfileImage(url);
+            }
+        };
+
+        loadProfileImage();
+
+        return () => {
+            isActive = false;
+        };
+    }, [user?.CustomerIdC, user?.CompIdN, user?.EmpIdN]);
 
     const handleLogout = async () => {
         await logout();

@@ -7,6 +7,7 @@ export const getCompanyLogoUrl = async (
   if (!customerIdC || !compIdN) return undefined;
 
   const domainUrl = await getDomainUrl();
+  if (!domainUrl) return undefined;
 
   const safeCustomerId = encodeURIComponent(customerIdC);
   const safeCompId = encodeURIComponent(String(compIdN));
@@ -22,6 +23,7 @@ export const getProfileImageUrl = async (
   if (!customerIdC || !compIdN || !empIdN) return undefined;
 
   const domainUrl = await getDomainUrl();
+  if (!domainUrl) return undefined;
 
   const safeCustomerIdC = encodeURIComponent(customerIdC);
   const safeCompIdN = encodeURIComponent(String(compIdN));
