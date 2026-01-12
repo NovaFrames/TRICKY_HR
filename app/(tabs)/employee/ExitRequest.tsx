@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     Alert,
     Platform,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -39,13 +40,31 @@ interface ExitReason {
     NameC: string;
 }
 
+const parseAspDate = (dateString?: string) => {
+    if (!dateString) return null;
+    const match = dateString.match(/\/Date\((-?\d+)\)\//);
+    if (match) return new Date(parseInt(match[1], 10));
+    return new Date(dateString);
+};
+
+const formatDate = (dateString?: string) => {
+    if (!dateString) return null;
+    const date = parseAspDate(dateString);
+    if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1900) return null;
+    return date.toDateString();
+};
+
 export default function ExitRequestScreen() {
     const { theme } = useTheme();
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [submitLoading, setSubmitLoading] = useState(false);
 
     const [exitData, setExitData] = useState<ExitRequestData>({});
     const [reasons, setReasons] = useState<ExitReason[]>([]);
+
+    // Check if editing is allowed (new request only)
+    const isReadOnly = !!exitData.EmpIdN;
 
     // Form States
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -61,8 +80,8 @@ export default function ExitRequestScreen() {
         fetchInitialData();
     }, []);
 
-    const fetchInitialData = async () => {
-        setLoading(true);
+    const fetchInitialData = async (isRefresh = false) => {
+        if (!isRefresh) setLoading(true);
         try {
             // Fetch Reasons
             const reasonsRes = await ApiService.getExitReasons();
@@ -112,7 +131,10 @@ export default function ExitRequestScreen() {
                 if (finalData) {
                     setExitData(finalData);
                     // Initialize form
-                    if (finalData.ResExitDateD) setSelectedDate(new Date(finalData.ResExitDateD));
+                    if (finalData.ResExitDateD) {
+                        const parsed = parseAspDate(finalData.ResExitDateD);
+                        if (parsed) setSelectedDate(parsed);
+                    }
                     if (finalData.RegReasonIdN) setSelectedReason(finalData.RegReasonIdN);
                     if (finalData.RegNoteC) setNotes(finalData.RegNoteC);
                 }
@@ -122,7 +144,13 @@ export default function ExitRequestScreen() {
             Alert.alert('Error', 'Failed to fetch exit details');
         } finally {
             setLoading(false);
+            if (isRefresh) setRefreshing(false);
         }
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchInitialData(true);
     };
 
     const handleDateChange = (event: any, date?: Date) => {
@@ -143,15 +171,32 @@ export default function ExitRequestScreen() {
 
         setSubmitLoading(true);
         try {
+            // Ensure dates are in ISO format
+            let declareDate = exitData.ResDeclareD
+                ? (exitData.ResDeclareD.includes('/Date(') ? parseAspDate(exitData.ResDeclareD) : new Date(exitData.ResDeclareD))
+                : new Date();
+
+            // Fix: If date is invalid or too old (e.g. 1899), use today
+            if (!declareDate || isNaN(declareDate.getTime()) || declareDate.getFullYear() < 2000) {
+                declareDate = new Date();
+            }
+
             const payload = {
-                ...exitData,
-                ResExitDateD: selectedDate.toISOString(),
-                RegReasonIdN: selectedReason,
+                EmpIdN: exitData.EmpIdN || ApiService.getCurrentUser().empId || 0,
+                EmpStatusN: 3, // Default as requested
+                RegClearanceN: false,
                 RegNoteC: notes,
-                // StatusC: 'Resigned' ?? Should we set this? Likely backend handles status updates or it's fixed.
+                RegNoticePeriodN: exitData.RegNoticePeriodN || 0,
+                RegReasonIdN: String(selectedReason),
+                RegWaiveN: exitData.RegWaiveN || 0,
+                ResDeclareD: declareDate ? declareDate.toISOString() : new Date().toISOString(),
+                ResExitDateD: selectedDate.toISOString(),
+                RevokeDaysN: exitData.RevokeDaysN || 1,
+                ShortFallDaysN: exitData.ShortFallDaysN || 0
             };
 
             const result = await ApiService.updateExitRequest(payload);
+            console.log('Update Exit Request Response:', result);
             if (result.success) {
                 Alert.alert('Success', 'Exit request updated successfully');
                 fetchInitialData();
@@ -165,19 +210,40 @@ export default function ExitRequestScreen() {
         }
     };
 
-    const parseAspDate = (dateString?: string) => {
-        if (!dateString) return null;
-        const match = dateString.match(/\/Date\((-?\d+)\)\//);
-        if (match) return new Date(parseInt(match[1], 10));
-        return new Date(dateString);
+    const handleRevoke = async () => {
+        Alert.alert(
+            "Revoke Request",
+            "Are you sure you want to revoke your exit request?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Revoke",
+                    style: "destructive",
+                    onPress: async () => {
+                        setSubmitLoading(true);
+                        try {
+                            const result = await ApiService.revokeExitRequest();
+                            if (result.success) {
+                                Alert.alert("Success", "Exit request revoked successfully");
+                                setExitData({}); // Clear local data
+                                setNotes('');
+                                setSelectedReason(0);
+                                fetchInitialData(); // Refresh to be sure
+                            } else {
+                                Alert.alert("Error", result.error || "Failed to revoke request");
+                            }
+                        } catch (error) {
+                            Alert.alert("Error", "An error occurred while revoking");
+                        } finally {
+                            setSubmitLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return null;
-        const date = parseAspDate(dateString);
-        if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1900) return null;
-        return date.toDateString();
-    };
+
 
     if (loading) {
         return (
@@ -191,7 +257,13 @@ export default function ExitRequestScreen() {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <Header title="Exit Request" />
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+                }
+            >
                 <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
 
                     {/* Read Only Fields */}
@@ -214,8 +286,9 @@ export default function ExitRequestScreen() {
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: theme.text }]}>Last Working Date</Text>
                         <TouchableOpacity
-                            style={[styles.dateButton, { borderColor: theme.inputBorder, backgroundColor: theme.inputBg }]}
-                            onPress={() => setShowDatePicker(true)}
+                            style={[styles.dateButton, { borderColor: theme.inputBorder, backgroundColor: isReadOnly ? theme.background : theme.inputBg }]}
+                            onPress={() => !isReadOnly && setShowDatePicker(true)}
+                            disabled={isReadOnly}
                         >
                             <Text style={{ color: theme.text }}>{selectedDate.toLocaleDateString()}</Text>
                         </TouchableOpacity>
@@ -238,7 +311,7 @@ export default function ExitRequestScreen() {
                         <Text style={[styles.label, { color: theme.text }]}>Last Working Date (Policy)</Text>
                         <Text style={[styles.value, { color: theme.text }]}>
                             {/* Assuming this is calculated or same as declaration for now if not provided */}
-                            {formatDate(exitData.ResExitDateD) || '-'}
+                            {formatDate(exitData.ResExitDateD) || new Date().toDateString()}
                         </Text>
                     </View>
 
@@ -251,8 +324,9 @@ export default function ExitRequestScreen() {
                     {/* Picker */}
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: theme.text }]}>Exit Reason</Text>
-                        <View style={[styles.pickerContainer, { borderColor: theme.inputBorder, backgroundColor: theme.inputBg }]}>
+                        <View style={[styles.pickerContainer, { borderColor: theme.inputBorder, backgroundColor: isReadOnly ? theme.background : theme.inputBg }]}>
                             <Picker
+                                enabled={!isReadOnly}
                                 selectedValue={selectedReason}
                                 onValueChange={(itemValue) => setSelectedReason(itemValue)}
                                 style={{ color: theme.text }}
@@ -285,9 +359,10 @@ export default function ExitRequestScreen() {
                             }]}
                             multiline
                             numberOfLines={4}
+                            editable={!isReadOnly}
                             value={notes}
                             onChangeText={setNotes}
-                            placeholder="Enter notes..."
+                            placeholder={isReadOnly ? "No notes provided" : "Enter notes..."}
                             placeholderTextColor={theme.placeholder}
                         />
                     </View>
@@ -297,24 +372,31 @@ export default function ExitRequestScreen() {
 
             {/* Footer Buttons */}
             <View style={[styles.footer, { backgroundColor: theme.cardBackground, borderTopColor: theme.inputBorder }]}>
-                <TouchableOpacity
-                    style={[styles.button, { backgroundColor: '#3498db' }]}
-                    onPress={() => Alert.alert('Info', 'Upload functionality not implemented yet')}
-                >
-                    <Text style={styles.buttonText}>Upload</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.button, { backgroundColor: '#e74c3c' }]}
-                    onPress={() => handleSubmit()}
-                    disabled={submitLoading}
-                >
-                    {submitLoading ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                    ) : (
-                        <Text style={styles.buttonText}>Exit</Text>
-                    )}
-                </TouchableOpacity>
+                {exitData.EmpIdN ? (
+                    <TouchableOpacity
+                        style={[styles.button, { backgroundColor: '#FF3B30' }]} // Red color for Revoke
+                        onPress={handleRevoke}
+                        disabled={submitLoading}
+                    >
+                        {submitLoading ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                            <Text style={styles.buttonText}>Revoke</Text>
+                        )}
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        style={[styles.button, { backgroundColor: theme.primary }]}
+                        onPress={() => handleSubmit()}
+                        disabled={submitLoading}
+                    >
+                        {submitLoading ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                            <Text style={styles.buttonText}>Submit</Text>
+                        )}
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
