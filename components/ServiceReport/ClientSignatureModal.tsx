@@ -87,7 +87,7 @@ export default function ClientSignatureModal({
                         onOK={handleOK}
                         onEmpty={handleEmpty}
                         onBegin={handleBegin}
-                        onEnd={handleEnd}
+
                         descriptionText=""
                         clearText="Clear"
                         confirmText="Save"

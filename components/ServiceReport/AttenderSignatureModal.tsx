@@ -87,7 +87,6 @@ export default function AttenderSignatureModal({
                         onOK={handleOK}
                         onEmpty={handleEmpty}
                         onBegin={handleBegin}
-                        onEnd={handleEnd}
                         descriptionText=""
                         clearText="Clear"
                         confirmText="Save"
