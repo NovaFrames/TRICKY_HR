@@ -1,13 +1,11 @@
 import Header from '@/components/Header';
-import { API_ENDPOINTS } from '@/constants/api';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import ApiService, { markMobileAttendance } from '@/services/ApiService';
 import { getServerTime } from '@/services/ServerTime';
-import { getDomainUrl } from '@/services/urldomain';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import axios from 'axios';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -27,99 +25,13 @@ import {
 
 const { width } = Dimensions.get('window');
 
-interface AttendanceResponse {
-    success: boolean;
-    message?: string;
-    raw?: any; // optional: keep original server response if needed
-}
-
-
-const parseServerDate = (serverDateTime: string) => {
-    // Example: "02 Jan 2026 17:18:27"
-    const [day, monthStr, year, time] = serverDateTime.split(' ');
-
-    const monthMap: Record<string, string> = {
-        Jan: '01', Feb: '02', Mar: '03', Apr: '04',
-        May: '05', Jun: '06', Jul: '07', Aug: '08',
-        Sep: '09', Oct: '10', Nov: '11', Dec: '12',
-    };
-
-    return {
-        date: `${monthMap[monthStr]}/${day}/${year}`, // MM/dd/yyyy
-        time,                                        // HH:mm:ss
-    };
-};
-
-const markAttendance = async (
-    domainUrl: string,
-    token: string,
-    empId: number,
-    projectId: number,
-    mode: 0 | 1,
-    location: { latitude: number; longitude: number; address?: string },
-    imageUri: string,
-    remark: string,
-    serverDateTime: string
-): Promise<AttendanceResponse> => {
-
-    const url = `${domainUrl}${API_ENDPOINTS.INSERT_MOBILE_ATTENDANCE}`;
-    const { date, time } = parseServerDate(serverDateTime);
-
-    const formData = new FormData();
-
-    formData.append('MobilePht', {
-        uri: imageUri,
-        name: 'attendance.jpg',
-        type: 'image/jpeg',
-    } as any);
-
-    formData.append('TokenC', token);
-    formData.append('EmpIdN', empId.toString());
-    formData.append('DateD', date);
-    formData.append('TimeD', time);
-    formData.append('GPRSC', `${location.latitude},${location.longitude}`);
-    formData.append('ModeN', mode.toString());
-    formData.append('PunchLocC', location.address || '');
-    formData.append('RemarkC', remark || '');
-    formData.append('ProjectIdN', projectId.toString());
-    formData.append('CreatedByN', empId.toString());
-
-    try {
-        const response = await axios.post(url, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-            timeout: 120000,
-        });
-
-        // ✅ normalize backend response
-        if (response.data?.Status === 'success') {
-            return {
-                success: true,
-                message: response.data?.Message || 'Attendance marked successfully',
-                raw: response.data,
-            };
-        }
-
-        return {
-            success: false,
-            message: response.data?.Message || 'Attendance failed',
-            raw: response.data,
-        };
-
-    } catch (error: any) {
-        return {
-            success: false,
-            message: error?.message || 'Network / Server error',
-        };
-    }
-};
-
 export default function Attendance() {
     const { theme } = useTheme();
     const { user } = useUser();
     const router = useRouter();
 
     useEffect(() => {
-       console.log('Attendance Rendered & domain_url:', user?.domain_url);
+        console.log('Attendance Rendered & domain_url:', user?.domain_url);
     }, [user]);
 
     const cameraRef = useRef<CameraView>(null);
@@ -190,25 +102,17 @@ export default function Attendance() {
         try {
             const token = user?.TokenC || user?.Token;
             if (!token) return;
-            const domainUrl = await getDomainUrl();
 
-            console.log('Fetching projects from:', `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`);
+            const projectList = await ApiService.getAttendanceProjectList({
+                token, // ✅ PASS AS OBJECT
+            });
 
-            const formData = new FormData();
-            formData.append('TokenC', token);
-            formData.append('blnEmpMaster', 'false');
-            formData.append('ViewReject', 'false');
+            console.log("Projects:", projectList);
+            console.log("UserToken:", token);
 
-            const res = await axios.post(
-                `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
-                formData,
-                { headers: { 'Content-Type': 'multipart/form-data' } }
-            );
-
-            if (res.data?.Status === 'success') {
-                setProjects(res.data.data || []);
-            }
-        } catch {
+            setProjects(projectList);
+        } catch (error) {
+            console.error('Fetch projects error:', error);
             setProjects([]);
         }
     };
@@ -241,12 +145,10 @@ export default function Attendance() {
         try {
             const token = user?.TokenC || user?.Token;
             const empId = user?.EmpIdN || user?.EmpId;
-            const domainUrl = await getDomainUrl() || '';
             const mode = attendanceType === 'Check-in' ? 0 : 1;
             const serverDate = await getServerTime(token!);
 
-            const res = await markAttendance(
-                domainUrl,
+            const res = await markMobileAttendance(
                 token,
                 empId,
                 Number(selectedProject),
@@ -324,7 +226,7 @@ export default function Attendance() {
                             weekday: 'short',
                             day: 'numeric',
                             month: 'short',
-                            year:"numeric",
+                            year: "numeric",
                         })}
                     </Text>
                 </View>
