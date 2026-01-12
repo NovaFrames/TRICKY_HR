@@ -7,6 +7,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { FC, useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import new components
 import ClaimDetailsSection from '@/components/claim/ClaimDetailsSection';
@@ -18,11 +19,11 @@ import TravelExpensesSection from '@/components/claim/TravelExpensesSection';
 
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { getServerTime } from '@/services/ServerTime';
 import {
     ActivityIndicator,
     Alert,
     Platform,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -459,14 +460,17 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
                 return `${month}/${day}/${date.getFullYear()}`;
             };
 
+            const fromDateStr = await getServerTime(user?.TokenC || '', fromDate);
+            const toDateStr = await getServerTime(user?.TokenC || '', toDate);
+
             // Prepare claim data
             const claimData: ClaimData = {
                 ClaimAmtN: totalAmount,
                 DescC: description,
                 AllownIdN: claimIds[selectedClaim],
                 CurrencyIdN: currencyStatus ? currencyIds[selectedCurrency] : 0,
-                FromDateD: formatDateForAPI(fromDate),
-                ToDateD: formatDateForAPI(toDate),
+                FromDateD: fromDateStr,
+                ToDateD: toDateStr,
                 ClaimExpenseDtl1: travelExpensesArray,
             };
 

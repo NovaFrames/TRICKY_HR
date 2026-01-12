@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '@/constants/timeFormat';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -10,45 +11,6 @@ interface RequestStatusItemProps {
 
 const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) => {
     const { theme, isDark } = useTheme();
-
-    // Helper to format ASP.NET JSON Date /Date(1234567890)/
-    const formatDate = (dateString: string) => {
-        try {
-            if (!dateString) return '';
-
-            let date: Date;
-
-            // Handle ASP.NET format
-            if (typeof dateString === 'string' && dateString.includes('/Date(')) {
-                const timestamp = parseInt(
-                    dateString.replace(/\/Date\((-?\d+)\)\//, '$1'),
-                    10
-                );
-                date = new Date(timestamp);
-            } else {
-                // Fallback for standard date strings
-                date = new Date(dateString);
-            }
-
-            if (isNaN(date.getTime())) return dateString;
-
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-            const d = date.getDate();
-            const m = months[date.getMonth()];
-            const y = date.getFullYear();
-
-            let hours = date.getHours();
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-
-            hours = hours % 12 || 12;
-
-            return `${m} ${d}, ${y}, ${hours}:${minutes} ${ampm}`;
-        } catch {
-            return dateString;
-        }
-    };
 
     // Determine status color and icon
     const getStatusInfo = (status: string) => {
@@ -117,7 +79,7 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({ item, onPress }) 
                 <View style={styles.headerTextContainer}>
                     <Text style={[styles.title, { color: theme.text }]}>{description}</Text>
                     <Text style={[styles.date, { color: theme.placeholder }]}>
-                        Requested on {formatDate(requestDate)}
+                        Requested on {formatDisplayDate(requestDate, { showTime: true })}
                     </Text>
                 </View>
 

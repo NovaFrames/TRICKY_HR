@@ -14,15 +14,17 @@ export const useCompanyLogo = (
     return `${BASE_URL}/kevit-Customer/${safeCustomerId}/COMPLOGO/${safeCompId}.jpg`;
 };
 
-export const useProfileImage = (
-    customerIdC?: string | null,
-    compIdN?: string | number | null,
-    EmpIdN?: string | number | null
+export const getProfileImageUrl = (
+  customerIdC?: string | null,
+  compIdN?: string | number | null,
+  empIdN?: string | number | null
 ) => {
-    const safeCustomerIdC = encodeURIComponent(customerIdC ?? '');
-    const safeCompIdN = encodeURIComponent(String(compIdN ?? ''));
-    const safeEmpIdN = encodeURIComponent(String(EmpIdN ?? ''));
+  if (!customerIdC || !compIdN || !empIdN) return undefined;
 
-    if (!safeCustomerIdC || !safeCompIdN || !safeEmpIdN) return undefined;
-    return `${BASE_URL}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`;
+  const safeCustomerIdC = encodeURIComponent(customerIdC);
+  const safeCompIdN = encodeURIComponent(String(compIdN));
+  const safeEmpIdN = encodeURIComponent(String(empIdN));
+
+  return `${BASE_URL}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`;
 };
+

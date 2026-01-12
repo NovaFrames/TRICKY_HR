@@ -6,11 +6,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     Alert,
     Dimensions,
     Platform,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,

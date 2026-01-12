@@ -4,81 +4,90 @@ import axios from "axios";
 /**
  * Safely parses known server date formats
  */
-const parseDateString = (dateStr: string): Date => {
-  // 1️⃣ .NET format: /Date(1750159303847)/
-  if (dateStr.includes("/Date(")) {
-    const timestamp = Number(dateStr.replace(/\D/g, ""));
+/**
+ * Parses server time string and returns UTC timestamp (ms)
+ * Example input: "12 Jan 2026 17:01:26"
+ */
+const parseServerTimeToUTC = (dateInput: string | Date): number => {
+  // If Date object is passed
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) {
+      throw new Error("Invalid Date object");
+    }
+    return Date.UTC(
+      dateInput.getUTCFullYear(),
+      dateInput.getUTCMonth(),
+      dateInput.getUTCDate(),
+      dateInput.getUTCHours(),
+      dateInput.getUTCMinutes(),
+      dateInput.getUTCSeconds()
+    );
+  }
+
+  // /Date(1750159303847)/
+  if (dateInput.includes("/Date(")) {
+    const timestamp = Number(dateInput.replace(/\D/g, ""));
     if (Number.isFinite(timestamp)) {
-      return new Date(timestamp);
+      return timestamp;
     }
   }
 
-  // 2️⃣ dd/MM/yyyy (force UTC)
-  const dmy = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  // dd/MM/yyyy
+  const dmy = dateInput.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (dmy) {
     const [, day, month, year] = dmy;
-    return new Date(Date.UTC(+year, +month - 1, +day));
+    return Date.UTC(+year, +month - 1, +day);
   }
 
-  // 3️⃣ "10 Jan 2026 23:53:07" (server-style)
-  const textDate = dateStr.match(
+  // "12 Jan 2026 17:01:26"
+  const textDate = dateInput.match(
     /^(\d{1,2}) ([A-Za-z]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2})$/
   );
 
   if (textDate) {
     const [, day, mon, year, hh, mm, ss] = textDate;
-
     const monthIndex = [
-      "Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ].indexOf(mon);
 
     if (monthIndex !== -1) {
-      return new Date(
-        Date.UTC(+year, monthIndex, +day, +hh, +mm, +ss)
-      );
+      return Date.UTC(+year, monthIndex, +day, +hh, +mm, +ss);
     }
   }
 
-  // 4️⃣ ISO only (safe)
-  if (/^\d{4}-\d{2}-\d{2}T/.test(dateStr)) {
-    const iso = new Date(dateStr);
-    if (!isNaN(iso.getTime())) return iso;
-  }
-
-  throw new Error(`Invalid date format: ${dateStr}`);
+  throw new Error(`Invalid date format: ${dateInput}`);
 };
 
 /**
- * Converts any supported date input to .NET date format
+ * Converts to .NET date
  */
 const toDotNetDate = (dateInput: string | Date): string => {
-  const date =
-    dateInput instanceof Date
-      ? dateInput
-      : parseDateString(dateInput);
-
-      console.log("Original Input:", dateInput);
-      console.log("Parsed Date:", date);
-      console.log("Converted Date from toDotNetDate:", `/Date(${date.getTime()})/`);
-
-  return `/Date(${date.getTime()})/`;
+  const utcTimestamp = parseServerTimeToUTC(dateInput);
+  return `/Date(${utcTimestamp})/`;
 };
 
 /**
- * Always uses SERVER TIME (never device time)
+ * ✅ Always uses SERVER TIME
+ * ✅ Optional override date supported
  */
 export const getServerTime = async (
-  token?: string,
-  dateStr?: string
-) => {
-  // If explicit date passed (testing / overrides)
-  if (dateStr) {
-    return toDotNetDate(dateStr);
-  }
-
-  if (!token) {
-    throw new Error("Token is required to fetch server time.");
+  token: string,
+  overrideDate?: string | Date
+): Promise<string> => {
+  // Optional override (still safe)
+  if (overrideDate) {
+    return toDotNetDate(overrideDate);
   }
 
   const response = await axios.post(
@@ -86,5 +95,6 @@ export const getServerTime = async (
     { TokenC: token }
   );
 
+  // Example response: "12 Jan 2026 17:01:26"
   return toDotNetDate(response.data);
 };

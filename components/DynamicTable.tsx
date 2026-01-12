@@ -47,7 +47,6 @@ export default function DynamicTable({
         <View key={col.key} style={[styles.cell, { width: columnWidths[i] }]}>
           <Text
             style={[styles.headerText, { color: theme.secondary, textAlign: align(col.align) }]}
-            numberOfLines={1}
           >
             {col.label}
           </Text>
@@ -72,8 +71,7 @@ export default function DynamicTable({
         return (
           <View key={col.key} style={[styles.cell, { width: columnWidths[i] }]}>
             <Text
-              style={[styles.cellText, { color: theme.text, textAlign: align(col.align) }]}
-              numberOfLines={1}
+              style={[styles.cellText, { color: theme.text, textAlign: align(col.align), flexWrap: 'wrap' }]}
             >
               {String(value)}
             </Text>

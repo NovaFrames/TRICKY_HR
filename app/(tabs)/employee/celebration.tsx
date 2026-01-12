@@ -1,8 +1,9 @@
 import Header from "@/components/Header";
 import { API_ENDPOINTS } from "@/constants/api";
+import { formatDisplayDate } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
-import { useProfileImage } from "@/hooks/useGetImage";
+import { getProfileImageUrl } from "@/hooks/useGetImage";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -17,18 +18,15 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-
-/* -------------------- HELPERS -------------------- */
-const parseDotNetDate = (value?: string) => {
-    if (!value) return '';
-    const match = /\/Date\((\d+)\)\//.exec(value);
-    if (!match) return '';
-    const date = new Date(Number(match[1]));
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-};
+// import emptyProfile from "../../../assets/images/";
 
 /* -------------------- TABS -------------------- */
 type TabKey = 'birthday' | 'wedding' | 'work';
+
+type Props = {
+    uri?: string;
+    size?: number;
+};
 
 export default function Celebration() {
     const { theme } = useTheme();
@@ -88,9 +86,30 @@ export default function Celebration() {
     const weddings = data?.DashBoardAnniversary ?? [];
     const workAnniv = data?.DashEmpService ?? [];
 
+    const ProfileImage = ({ uri, size = 60 }: Props) => {
+        const [imageError, setImageError] = useState(false);
+
+        return (
+            <Image
+                source={
+                    !uri || imageError
+                        ? require('@/assets/images/emptyprofile.png')
+                        : { uri }
+                }
+                onError={() => setImageError(true)}
+                style={{
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    resizeMode: 'cover',
+                }}
+            />
+        );
+    };
+
     const profileUrl = (item: any) => {
         console.log("from celebration item:", item)
-        return useProfileImage(user?.CustomerIdC, user?.CompIdN, item?.EmpIdN)
+        return getProfileImageUrl(user?.CustomerIdC, user?.CompIdN, item?.EmpIdN)
     };
 
     const renderCards = (list: any[], type: TabKey) => {
@@ -108,18 +127,9 @@ export default function Celebration() {
         return list.map((item: any) => (
             <View key={item.EmpIdN} style={[styles.card, { backgroundColor: theme.cardBackground, shadowColor: theme.text }]}>
                 <View style={[styles.iconContainer, { backgroundColor: theme.inputBg }]}>
-                    <Image
-                        source={
-                            { uri: profileUrl(item) }
-                        }
-                        style={{
-                            marginTop: 0,
-                            width: 60, // Reduced from 140
-                            height: 60, // Reduced from 35
-                            resizeMode: 'cover',
-                            borderRadius: 100,
-                        }}
-                    />
+                    <ProfileImage uri={profileUrl(item)} size={60} />
+
+
                 </View>
                 <View style={styles.detailsContainer}>
                     <Text style={[styles.name, { color: theme.text }]}>{item.EmpNameC}</Text>
@@ -130,7 +140,7 @@ export default function Celebration() {
                             <>
                                 <Ionicons name="gift-outline" size={16} color={theme.primary} />
                                 <Text style={[styles.infoText, { color: theme.primary }]}>
-                                    Birthday: {parseDotNetDate(item.BirthDateD)}
+                                    Birthday: {formatDisplayDate(item.BirthDateD)}
                                 </Text>
                             </>
                         )}
@@ -148,7 +158,7 @@ export default function Celebration() {
                             <>
                                 <Ionicons name="heart-outline" size={16} color={theme.primary} />
                                 <Text style={[styles.infoText, { color: theme.primary }]}>
-                                    Anniversary: {parseDotNetDate(item.MarriageDateD)}
+                                    Anniversary: {formatDisplayDate(item.MarriageDateD)}
                                 </Text>
                             </>
                         )}

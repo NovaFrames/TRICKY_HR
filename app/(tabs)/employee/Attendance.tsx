@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from '@/constants/api';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { getServerTime } from '@/services/ServerTime';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
@@ -235,7 +236,7 @@ export default function Attendance() {
             const companyUrl = 'https://hr.trickyhr.com';
             const mode = attendanceType === 'Check-in' ? 0 : 1;
 
-            const serverDate = new Date().toLocaleString('en-GB');
+            const serverDate = await getServerTime(token!);
 
             const res = await markAttendance(
                 companyUrl,

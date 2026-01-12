@@ -9,9 +9,9 @@ import {
 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     Dimensions,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,

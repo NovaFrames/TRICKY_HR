@@ -4,6 +4,7 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -11,7 +12,6 @@ import {
     FlatList,
     Modal,
     PanResponder,
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,

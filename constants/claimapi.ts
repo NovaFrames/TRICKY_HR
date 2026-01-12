@@ -51,7 +51,7 @@ export const ClaimAPI = {
             const response = await api.post<APIResponse>(`${API_ENDPOINTS.CompanyUrl}/WebApi/GetEClaimList`, {
                 TokenC: token
             });
-
+            
             return response.data;
         } catch (error) {
             console.error('Error fetching claim list:', error);
@@ -67,6 +67,7 @@ export const ClaimAPI = {
                 ...claimData
             };
 
+            console.log("Submitting claim data: ", data);
             const response = await api.post<APIResponse>(`${API_ENDPOINTS.CompanyUrl}/WebApi/UpdateClaim`, data);
             return response.data;
         } catch (error) {

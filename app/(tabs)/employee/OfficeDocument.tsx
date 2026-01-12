@@ -4,13 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     Modal,
     Platform,
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,

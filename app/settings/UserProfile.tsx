@@ -13,6 +13,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -21,7 +22,6 @@ import {
     FlatList,
     Modal,
     Platform,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Switch,

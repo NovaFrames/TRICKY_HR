@@ -3,7 +3,7 @@ import React from 'react';
 import { Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useUser } from '@/context/UserContext';
-import { useProfileImage } from '@/hooks/useGetImage';
+import { getProfileImageUrl } from '@/hooks/useGetImage';
 import { ThemeType } from '../../theme/theme';
 import { TeamLeaders } from './TeamLeaders';
 
@@ -35,7 +35,7 @@ export const IdCard: React.FC<IdCardProps> = ({
 
     const [logoError, setLogoError] = React.useState(false);
 
-    const logoUrl = useProfileImage(user?.CustomerIdC, user?.CompIdN, user?.EmpIdN);
+    const logoUrl = getProfileImageUrl(user?.CustomerIdC, user?.CompIdN, user?.EmpIdN);
 
     return (
         <View style={[styles.idCard, {
