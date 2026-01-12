@@ -873,17 +873,13 @@ class ApiService {
             if (!this.token) {
                 await this.loadCredentials();
             }
-            // Assuming an endpoint exists. If not, this might need adjustment.
-            // Using /GetEmpDocument based on naming conventions (or user's /documents)
-            // User prompt used /documents. I will try to follow conventions or use what is requested.
-            // Since the user is providing code to "add this function", I'll adapt it.
-            // The user's code: axios.get(`${API_BASE_URL}/documents`, params: { employeeId })
 
-            // I'll assume we likely don't have this endpoint working yet if I invent it, 
-            // but I will add the method. 
-            // Note: The user provided specific endpoints for upload: '/UploadDocument_Emp' (implied by content type example?)
-            // No, the user provided Request/Response for Upload.
-            // For getDocuments, I'll use a placeholder or best guess.
+            // Get user data for URL construction
+            const userDataStr = await AsyncStorage.getItem('user_data');
+            const userData = userDataStr ? JSON.parse(userDataStr) : null;
+            const companyId = userData?.CompIdN || userData?.CompanyId || '1';
+            const customerId = userData?.CustomerIdC || userData?.DomainId || 'trickyhr';
+            const companyUrl = 'https://hr.trickyhr.com';
 
             const response = await axios.post(
                 BASE_URL + API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
@@ -902,18 +898,36 @@ class ApiService {
             if (response.data.Status === 'success') {
                 // The C# backend returns documents in the 'data' or 'xx' field
                 const docs = response.data.data || response.data.xx || [];
-                return docs.map((doc: any, index: number) => ({
-                    id: `${doc.DocIdN || 'doc'}_${index}`, // Ensure unique key for FlatList
-                    name: doc.NameC || 'Document',
-                    fileName: doc.FileNameC || doc.NameC,
-                    type: doc.FolderNameC || 'Unknown',
-                    icon: doc.IconC || '',
-                    date: doc.LastWriteTimeC && doc.LastWriteTimeC.includes('/Date(')
-                        ? new Date(parseInt(doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, '$1'))).toLocaleDateString()
-                        : (doc.LastWriteTimeC || new Date().toLocaleDateString()),
-                    size: 'Unknown',
-                    url: `${BASE_URL}/Employee/DownloadDocByFile?FileName=${encodeURIComponent(doc.FileNameC || doc.NameC)}&FolderName=${encodeURIComponent((doc.FolderNameC || '') + (doc.FileNameC || doc.NameC))}`
-                }));
+                return docs.map((doc: any, index: number) => {
+                    const fileName = doc.FileNameC || doc.NameC;
+                    const folderName = category;
+
+                    // URL Pattern: https://hr.trickyhr.com/kevit-Customer/{CustomerId}/{CompanyId}/{EmpId}/EmpDocuments/{FolderName}/{FileName}
+                    // Example: https://hr.trickyhr.com/kevit-Customer/trickyhr/1/38/EmpDocuments/Experience/Naveen_EmpPortal_.jpg
+
+                    // Handle potential double slashes if folderName is empty/mixed
+                    const cleanFolder = folderName && folderName !== 'All' ? `${folderName}/` : '';
+
+                    // If FolderNameC is just the category name e.g. "Experience", perfect.
+                    // If it includes full path, we might need adjustment, but assuming simple name per example.
+
+                    const url = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/${this.empId}/EmpDocuments/${folderName}/${fileName}`;
+                    console.log('Generated document URL:', url);
+
+
+                    return {
+                        id: `${doc.DocIdN || 'doc'}_${index}`,
+                        name: doc.NameC || 'Document',
+                        fileName: fileName,
+                        type: doc.FolderNameC || 'Unknown',
+                        icon: doc.IconC || '',
+                        date: doc.LastWriteTimeC && doc.LastWriteTimeC.includes('/Date(')
+                            ? new Date(parseInt(doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, '$1'))).toLocaleDateString()
+                            : (doc.LastWriteTimeC || new Date().toLocaleDateString()),
+                        size: 'Unknown',
+                        url: url
+                    };
+                });
             }
             return [];
         } catch (error) {

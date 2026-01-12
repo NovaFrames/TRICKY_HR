@@ -4,7 +4,6 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -12,11 +11,13 @@ import {
     FlatList,
     Modal,
     PanResponder,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import DocumentCard from '../../../components/UploadDocument/DocumentCard';
 import UploadDocumentModal from '../../../components/UploadDocument/UploadDocumentModal';
@@ -40,7 +41,7 @@ const empdocument: React.FC = () => {
     const { theme } = useTheme();
     const [index, setIndex] = useState(0);
     const [routes] = useState([
-        { key: 'all', title: 'ALL' },
+
         { key: 'education', title: 'EDUCATION' },
         { key: 'experience', title: 'EXPERIENCE' },
         { key: 'proof', title: 'PROOF' },
@@ -131,17 +132,7 @@ const empdocument: React.FC = () => {
         }
     };
 
-    const handleDownload = async (document: Document) => {
-        if (!document.url) return;
-        try {
-            const fileUri = `${(FileSystem as any).documentDirectory}${document.name}`;
-            const { uri } = await FileSystem.downloadAsync(document.url, fileUri);
-            Alert.alert('Success', 'Document downloaded successfully');
-        } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'Failed to download document');
-        }
-    };
+
 
     const handleShare = async (document: Document) => {
         if (!document.url) return;
@@ -232,7 +223,6 @@ const empdocument: React.FC = () => {
                             <DocumentCard
                                 document={item}
                                 onPress={() => handleDocumentPress(item)}
-                                onDownload={() => handleDownload(item)}
                             />
                         )}
                         keyExtractor={(item) => item.id.toString()}
@@ -286,19 +276,15 @@ const empdocument: React.FC = () => {
                         <TouchableOpacity onPress={() => setViewingDoc(null)} style={styles.closeButton}>
                             <Icon name="close" size={24} color="white" />
                         </TouchableOpacity>
-                        <View style={styles.viewerActions}>
-                            <TouchableOpacity onPress={() => viewingDoc && handleDownload(viewingDoc)} style={styles.actionButton}>
-                                <Icon name="file-download" size={24} color="white" />
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => viewingDoc && handleShare(viewingDoc)} style={styles.actionButton}>
-                                <Icon name="share" size={24} color="white" />
-                            </TouchableOpacity>
-                        </View>
                     </View>
                     <View style={{ flex: 1 }}>
                         {viewingDoc?.url && (
                             <WebView
-                                source={{ uri: viewingDoc.url }}
+                                source={{
+                                    uri: (Platform.OS === 'android' && !/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(viewingDoc.url))
+                                        ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingDoc.url)}`
+                                        : viewingDoc.url
+                                }}
                                 style={{ flex: 1 }}
                                 startInLoadingState={true}
                                 renderLoading={() => (

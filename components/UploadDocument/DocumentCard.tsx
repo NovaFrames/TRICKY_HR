@@ -18,10 +18,9 @@ interface DocumentCardProps {
         status?: string;
     };
     onPress: () => void;
-    onDownload: () => void;
 }
 
-const DocumentCard: React.FC<DocumentCardProps> = ({ document, onPress, onDownload }) => {
+const DocumentCard: React.FC<DocumentCardProps> = ({ document, onPress }) => {
     const { theme } = useTheme();
 
     const getDocumentIcon = () => {
@@ -64,12 +63,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onPress, onDownlo
                         </View>
                     </View>
                 </View>
-                <TouchableOpacity
-                    style={styles.downloadButton}
-                    onPress={onDownload}
-                >
-                    <Icon name="cloud-download" size={24} color={theme.primary} />
-                </TouchableOpacity>
+
             </View>
         </TouchableOpacity>
     );
