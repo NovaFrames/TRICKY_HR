@@ -34,8 +34,8 @@ export default function LoginScreen() {
     const router = useRouter();
     const [empCode, setEmpCode] = useState('10005');
     const [password, setPassword] = useState('10005');
-    const [domainId, setDomainId] = useState('');
-    const [domainUrl, setDomainUrl] = useState('');
+    const [domainId, setDomainId] = useState('trickyhr');
+    const [domainUrl, setDomainUrl] = useState('hr.trickyhr.com')
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -96,7 +96,7 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-        const response = await loginUser(empCode, password, domainId);
+        const response = await loginUser(empCode, password, domainId, domainUrl);
 
         const token = response.TokenC || response.data?.TokenC;
         const empId = response.data?.EmpIdN || response.EmpIdN;

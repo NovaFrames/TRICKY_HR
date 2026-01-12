@@ -72,6 +72,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 'domain_url',
                 'auth_token',
                 'emp_id',
+                'domain_id',
             ]);
         } catch (error) {
             console.error('Failed to logout', error);

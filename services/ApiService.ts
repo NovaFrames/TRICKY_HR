@@ -25,9 +25,10 @@ const initializeBaseUrl = async () => {
 
 void initializeBaseUrl();
 
-export const loginUser = async (empCode: string, password: string, domainId: string) => {
+export const loginUser = async (empCode: string, password: string, domainId: string, domainUrl: string) => {
     try {
-        const response = await api.post(API_ENDPOINTS.LOGIN, {
+
+        const response = await axios.post(`${domainUrl}/${API_ENDPOINTS.LOGIN}`, {
             EmpCode: empCode,
             Password: password,
             DomainId: domainId,
@@ -811,7 +812,7 @@ class ApiService {
             const empId = this.empId;
             const companyId = userData?.CompIdN || userData?.CompanyId || '1';
             const customerId = userData?.CustomerIdC || userData?.DomainId || 'kevit';
-            const companyUrl = 'https://hr.trickyhr.com'; // Base URL is constant for now
+            const companyUrl = BASE_URL; // Base URL is constant for now
 
             console.log('Download parameters:', { empId, companyId, customerId });
 
@@ -891,7 +892,7 @@ class ApiService {
             const userData = userDataStr ? JSON.parse(userDataStr) : null;
             const companyId = userData?.CompIdN || userData?.CompanyId || '1';
             const customerId = userData?.CustomerIdC || userData?.DomainId || 'trickyhr';
-            const companyUrl = 'https://hr.trickyhr.com';
+            const companyUrl = BASE_URL;
 
             const response = await axios.post(
                 BASE_URL + API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
@@ -1014,7 +1015,7 @@ class ApiService {
             // 2. Construct the URL
             const companyId = userData.CompIdN || userData.CompanyId;
             const customerId = userData.CustomerIdC || userData.DomainId;
-            const companyUrl = 'https://hr.trickyhr.com'; // Or from storage if dynamic
+            const companyUrl = BASE_URL; // Or from storage if dynamic
 
             // Pattern from Java: company_url+"/kevit-Customer/"+customer_id+"/"+company_id+ "/EmpPortal/EmpPaySlip/"+emp_id+"/" + pay_period+".pdf"
             const downloadUrl = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/EmpPaySlip/${this.empId}/${payPeriod}.pdf`;
