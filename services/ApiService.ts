@@ -5,7 +5,7 @@ import axios from 'axios';
 import * as FileSystem from 'expo-file-system/legacy';
 import { getDomainUrl } from './urldomain';
 
-let BASE_URL = API_ENDPOINTS.CompanyUrl;
+let BASE_URL = "";
 
 // Create an axios instance
 const api = axios.create({
