@@ -119,9 +119,7 @@ export interface AttendanceResponse {
   raw?: any;
 }
 
-const parseServerDate = (serverDateTime: string) => {
-  const [day, monthStr, year, time] = serverDateTime.split(" ");
-
+const parseServerDate = (serverDateTime?: string) => {
   const monthMap: Record<string, string> = {
     Jan: "01",
     Feb: "02",
@@ -137,10 +135,37 @@ const parseServerDate = (serverDateTime: string) => {
     Dec: "12",
   };
 
-  return {
-    date: `${monthMap[monthStr]}/${day}/${year}`,
-    time,
+  const formatParts = (date: Date) => {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const year = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    const ss = String(date.getSeconds()).padStart(2, "0");
+    return { date: `${month}/${day}/${year}`, time: `${hh}:${mm}:${ss}` };
   };
+
+  if (!serverDateTime || typeof serverDateTime !== "string") {
+    return formatParts(new Date());
+  }
+
+  const dotNetMatch = serverDateTime.match(/\/Date\((\d+)\)\//);
+  if (dotNetMatch) {
+    const ms = Number(dotNetMatch[1]);
+    if (Number.isFinite(ms)) {
+      return formatParts(new Date(ms));
+    }
+  }
+
+  const [day, monthStr, year, time] = serverDateTime.trim().split(" ");
+  if (day && monthStr && year && monthMap[monthStr]) {
+    return {
+      date: `${monthMap[monthStr]}/${day}/${year}`,
+      time: time || "00:00:00",
+    };
+  }
+
+  return formatParts(new Date());
 };
 
 export const markMobileAttendance = async (

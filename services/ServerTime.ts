@@ -101,3 +101,25 @@ export const getServerTime = async (
   // Example response: "12 Jan 2026 17:01:26"
   return toDotNetDate(response.data);
 };
+
+/**
+ * Returns raw server time string (no .NET conversion).
+ * Example response: "12 Jan 2026 17:01:26"
+ */
+export const getRawServerTime = async (token: string): Promise<string> => {
+  const domainUrl = await getDomainUrl();
+  if (!domainUrl) {
+    throw new Error("Domain not available");
+  }
+
+  const response = await axios.post(
+    `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
+    { TokenC: token }
+  );
+
+  if (typeof response.data === "string") {
+    return response.data;
+  }
+
+  return String(response.data ?? "");
+};

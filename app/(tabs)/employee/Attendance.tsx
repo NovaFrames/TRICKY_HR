@@ -3,7 +3,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import ApiService, { markMobileAttendance } from '@/services/ApiService';
-import { getServerTime } from '@/services/ServerTime';
+import { getRawServerTime } from '@/services/ServerTime';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -145,8 +145,12 @@ export default function Attendance() {
         try {
             const token = user?.TokenC || user?.Token;
             const empId = user?.EmpIdN || user?.EmpId;
+            if (!token || !empId) {
+                Alert.alert('Session Error', 'Please sign in again');
+                return;
+            }
             const mode = attendanceType === 'Check-in' ? 0 : 1;
-            const serverDate = await getServerTime(token!);
+            const serverDate = await getRawServerTime(token);
 
             const res = await markMobileAttendance(
                 token,
@@ -166,6 +170,9 @@ export default function Attendance() {
             } else {
                 Alert.alert('Failed', res.message || 'Attendance failed');
             }
+        } catch (error) {
+            console.error('Attendance submit error:', error);
+            Alert.alert('Error', 'Unable to submit attendance right now');
         } finally {
             setSubmitting(false);
         }
@@ -271,11 +278,25 @@ export default function Attendance() {
                     <View style={styles.cameraFrame}>
                         {capturedImage ? (
                             <Image source={{ uri: capturedImage }} style={styles.preview} />
-                        ) : (
+                        ) : permission?.granted ? (
                             <CameraView ref={cameraRef} facing="front" style={styles.preview} />
+                        ) : (
+                            <View style={[styles.permissionBlock, { backgroundColor: theme.inputBg }]}>
+                                <Ionicons name="camera-outline" size={32} color={theme.placeholder} />
+                                <Text style={[styles.permissionText, { color: theme.placeholder }]}>
+                                    Camera permission is required
+                                </Text>
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    style={[styles.permissionBtn, { backgroundColor: theme.primary }]}
+                                    onPress={requestPermission}
+                                >
+                                    <Text style={styles.permissionBtnText}>Allow Camera</Text>
+                                </TouchableOpacity>
+                            </View>
                         )}
 
-                        {!capturedImage && (
+                        {!capturedImage && permission?.granted && (
                             <View style={styles.cameraOverlay}>
                                 <View style={[styles.faceGuide, { borderColor: theme.primary + '50' }]} />
                             </View>
@@ -283,7 +304,7 @@ export default function Attendance() {
                     </View>
 
                     <View style={styles.cameraActions}>
-                        {!capturedImage ? (
+                        {!capturedImage && permission?.granted ? (
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 style={[styles.captureBtnFull, { backgroundColor: theme.primary }]}
@@ -432,6 +453,27 @@ const styles = StyleSheet.create({
     },
     cameraActions: {
         padding: 12,
+    },
+    permissionBlock: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+    },
+    permissionText: {
+        fontSize: 13,
+        fontWeight: '600',
+        marginTop: 8,
+    },
+    permissionBtn: {
+        marginTop: 6,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 4,
+    },
+    permissionBtnText: {
+        color: '#fff',
+        fontWeight: '700',
     },
     captureBtnFull: {
         flexDirection: 'row',
