@@ -1,5 +1,5 @@
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { useUser } from '@/context/UserContext';
+import { UserData, useUser } from '@/context/UserContext';
 import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
@@ -22,7 +22,7 @@ export default function HomeScreen() {
     const { theme, isDark } = useTheme();
     const { user } = useUser();
 
-    const loginData = user || {};
+    const loginData: Partial<UserData> = user ?? {};
     const empName = loginData.EmpNameC || loginData.EmpName || loginData.Name || 'User';
 
     // Critical: Token extraction

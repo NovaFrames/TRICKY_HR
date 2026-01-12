@@ -4,6 +4,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { getServerTime } from '@/services/ServerTime';
+import { getDomainUrl } from '@/services/urldomain';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
@@ -117,6 +118,10 @@ export default function Attendance() {
     const { user } = useUser();
     const router = useRouter();
 
+    useEffect(() => {
+       console.log('Attendance Rendered & domain_url:', user?.domain_url);
+    }, [user]);
+
     const cameraRef = useRef<CameraView>(null);
 
     const [permission, requestPermission] = useCameraPermissions();
@@ -185,6 +190,9 @@ export default function Attendance() {
         try {
             const token = user?.TokenC || user?.Token;
             if (!token) return;
+            const domainUrl = await getDomainUrl();
+
+            console.log('Fetching projects from:', `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`);
 
             const formData = new FormData();
             formData.append('TokenC', token);
@@ -192,7 +200,7 @@ export default function Attendance() {
             formData.append('ViewReject', 'false');
 
             const res = await axios.post(
-                `https://hr.trickyhr.com${API_ENDPOINTS.GET_PROJECT_LIST}`,
+                `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
@@ -233,9 +241,8 @@ export default function Attendance() {
         try {
             const token = user?.TokenC || user?.Token;
             const empId = user?.EmpIdN || user?.EmpId;
-            const companyUrl = 'https://hr.trickyhr.com';
+            const companyUrl = await getDomainUrl() || '';
             const mode = attendanceType === 'Check-in' ? 0 : 1;
-
             const serverDate = await getServerTime(token!);
 
             const res = await markAttendance(

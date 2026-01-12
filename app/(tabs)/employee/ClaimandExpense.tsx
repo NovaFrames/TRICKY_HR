@@ -469,8 +469,8 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
                 DescC: description,
                 AllownIdN: claimIds[selectedClaim],
                 CurrencyIdN: currencyStatus ? currencyIds[selectedCurrency] : 0,
-                FromDateD: fromDateStr,
-                ToDateD: toDateStr,
+                FromDateD: formatDateForAPI(fromDate),
+                ToDateD: formatDateForAPI(toDate),
                 ClaimExpenseDtl1: travelExpensesArray,
             };
 

@@ -1,24 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+export interface UserData {
+    domain_url: string;
+    domain_id: string;
+    [key: string]: any;
+}
+
 interface UserContextType {
-    user: any;
-    setUser: (user: any) => void;
-    logout: () => void;
+    user: UserData | null;
+    setUser: (user: UserData) => Promise<void>;
+    logout: () => Promise<void>;
     isLoading: boolean;
 }
 
 const UserContext = createContext<UserContextType>({
     user: null,
-    setUser: () => { },
-    logout: () => { },
+    setUser: async () => { },
+    logout: async () => { },
     isLoading: true,
 });
 
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUserState] = useState<any>(null);
+    const [user, setUserState] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -38,10 +44,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const setUser = async (userData: any) => {
+    const setUser = async (userData: UserData) => {
         setUserState(userData);
+
         try {
             await AsyncStorage.setItem('user_data', JSON.stringify(userData));
+
+            // 🔥 Save domain_url separately for Axios
+            if (userData.domain_url) {
+                await AsyncStorage.setItem('domain_url', userData.domain_url);
+            }
+
+            if (userData.domain_id) {
+                await AsyncStorage.setItem('domain_id', userData.domain_id);
+            }
         } catch (error) {
             console.error('Failed to save user', error);
         }
@@ -49,8 +65,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = async () => {
         setUserState(null);
+
         try {
-            await AsyncStorage.removeItem('user_data');
+            await AsyncStorage.multiRemove([
+                'user_data',
+                'domain_url',
+                'auth_token',
+                'emp_id',
+            ]);
         } catch (error) {
             console.error('Failed to logout', error);
         }

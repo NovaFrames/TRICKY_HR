@@ -1,7 +1,7 @@
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
-import { useProfileImage } from '@/hooks/useGetImage';
+import { getProfileImageUrl } from '@/hooks/useGetImage';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -45,7 +45,7 @@ export default function SettingsScreen() {
     const { logout, user } = useUser();
     const router = useRouter();
 
-    const profileImage = useProfileImage(
+    const profileImage = getProfileImageUrl(
         user?.CustomerIdC,
         user?.CompIdN,
         user?.EmpIdN

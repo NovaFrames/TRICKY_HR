@@ -34,8 +34,8 @@ export default function LoginScreen() {
     const router = useRouter();
     const [empCode, setEmpCode] = useState('10005');
     const [password, setPassword] = useState('10005');
-    const [domainId, setDomainId] = useState('trickyhr');
-    const [domainUrl, setDomainUrl] = useState('hr.trickyhr.com');
+    const [domainId, setDomainId] = useState('');
+    const [domainUrl, setDomainUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -68,50 +68,64 @@ export default function LoginScreen() {
 
     const { setUser } = useUser();
 
+    useEffect(() => {
+        const fetchStoredDomain = async () => {
+            try {
+                const storedDomainUrl = await AsyncStorage.getItem('domain_url');
+                const storedDomainId = await AsyncStorage.getItem('domain_id');
+                if (storedDomainUrl) {
+                    setDomainUrl(storedDomainUrl);
+                }
+                if (storedDomainId) {
+                    setDomainId(storedDomainId);
+                }
+            } catch (error) {
+                console.error('Failed to load stored domain info', error);
+            }
+        };
+
+        fetchStoredDomain();
+    }, []);
+
     const handleLogin = async () => {
-        if (!empCode || !password || !domainId) {
-            Alert.alert('Error', 'Please fill in all fields');
+    if (!empCode || !password || !domainId || !domainUrl) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
+    }
+
+    setIsLoading(true);
+
+    try {
+        const response = await loginUser(empCode, password, domainId);
+
+        const token = response.TokenC || response.data?.TokenC;
+        const empId = response.data?.EmpIdN || response.EmpIdN;
+
+        if (!token) {
+            Alert.alert('Login Failed', 'Invalid credentials');
             return;
         }
 
-        setIsLoading(true);
-        try {
-            const response = await loginUser(empCode, password, domainId);
-            // console.log('Login response:', JSON.stringify(response));
+        await AsyncStorage.setItem('auth_token', token);
+        await AsyncStorage.setItem('emp_id', empId?.toString() ?? '');
 
-            const isValidLogin =
-                (response.Status === 'success' || response.Status === 'Success') ||
-                (response.Token) ||
-                (response.TokenC) ||
-                (response.data?.TokenC);
+        // 🔥🔥🔥 THIS IS THE CRITICAL PART 🔥🔥🔥
+        const userData = {
+            ...(response.data || response),
+            domain_url: domainUrl.trim(),
+            domain_id: domainId.trim(),
+        };
 
-            if (!isValidLogin) {
-                Alert.alert('Login Failed', response.Message || 'Invalid credentials. Please try again.');
-                return;
-            }
+        await setUser(userData);
 
-            // Save Token and EmpId manually to AsyncStorage for ApiService to use
-            const token = response.TokenC || response.data?.TokenC;
-            const empId = response.data?.EmpIdN || response.EmpIdN;
+        router.replace('/dashboard');
+    } catch (error: any) {
+        Alert.alert('Login Failed', error.message || 'Login error');
+    } finally {
+        setIsLoading(false);
+    }
+};
 
-            if (token) {
-                await AsyncStorage.setItem('auth_token', token);
-            }
-            if (empId) {
-                await AsyncStorage.setItem('emp_id', empId.toString());
-            }
-
-            const userData = response.data || response;
-            await setUser(userData);
-
-            router.replace('/dashboard');
-        } catch (error: any) {
-            console.error('Login error:', error);
-            Alert.alert('Login Failed', error.message || 'An error occurred during login');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     // --- Animated Styles (Blob Design) ---
 
@@ -163,32 +177,56 @@ export default function LoginScreen() {
     // 4. Staggered Item Animations
     const itemStyle0 = useAnimatedStyle(() => ({
         opacity: interpolate(formItemsProgress.value, [0, 0.4], [0, 1], 'clamp'),
-        translateX: interpolate(formItemsProgress.value, [0, 0.4], [20, 0], 'clamp'),
+        transform: [
+            {
+                translateX: interpolate(formItemsProgress.value, [0, 0.4], [20, 0], 'clamp'),
+            },
+        ],
     }));
 
     const itemStyle1 = useAnimatedStyle(() => ({
         opacity: interpolate(formItemsProgress.value, [0.1, 0.5], [0, 1], 'clamp'),
-        translateX: interpolate(formItemsProgress.value, [0.1, 0.5], [20, 0], 'clamp'),
+        transform: [
+            {
+                translateX: interpolate(formItemsProgress.value, [0.1, 0.5], [20, 0], 'clamp'),
+            },
+        ],
     }));
 
     const itemStyle2 = useAnimatedStyle(() => ({
         opacity: interpolate(formItemsProgress.value, [0.2, 0.6], [0, 1], 'clamp'),
-        translateX: interpolate(formItemsProgress.value, [0.2, 0.6], [20, 0], 'clamp'),
+        transform: [
+            {
+                translateX: interpolate(formItemsProgress.value, [0.2, 0.6], [20, 0], 'clamp'),
+            },
+        ],
     }));
 
     const itemStyle3 = useAnimatedStyle(() => ({
         opacity: interpolate(formItemsProgress.value, [0.3, 0.7], [0, 1], 'clamp'),
-        translateX: interpolate(formItemsProgress.value, [0.3, 0.7], [20, 0], 'clamp'),
+        transform: [
+            {
+                translateX: interpolate(formItemsProgress.value, [0.3, 0.7], [20, 0], 'clamp'),
+            },
+        ],
     }));
 
     const itemStyle4 = useAnimatedStyle(() => ({
         opacity: interpolate(formItemsProgress.value, [0.4, 0.8], [0, 1], 'clamp'),
-        translateX: interpolate(formItemsProgress.value, [0.4, 0.8], [20, 0], 'clamp'),
+        transform: [
+            {
+                translateX: interpolate(formItemsProgress.value, [0.4, 0.8], [20, 0], 'clamp'),
+            },
+        ],
     }));
 
     const itemStyle5 = useAnimatedStyle(() => ({
         opacity: interpolate(formItemsProgress.value, [0.5, 0.9], [0, 1], 'clamp'),
-        translateX: interpolate(formItemsProgress.value, [0.5, 0.9], [20, 0], 'clamp'),
+        transform: [
+            {
+                translateX: interpolate(formItemsProgress.value, [0.5, 0.9], [20, 0], 'clamp'),
+            },
+        ],
     }));
 
     return (

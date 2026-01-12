@@ -1,6 +1,6 @@
 import DashboardCards from '@/components/dashboard/DashboardCards';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { useUser } from '@/context/UserContext';
+import { UserData, useUser } from '@/context/UserContext';
 import React from 'react';
 import {
     ScrollView,
@@ -15,7 +15,7 @@ export default function HomeScreen() {
     const { theme, isDark } = useTheme();
     const { user } = useUser();
 
-    const loginData = user || {};
+    const loginData: Partial<UserData> = user ?? {};
 
     const empName = loginData.EmpNameC || loginData.EmpName || loginData.Name || '-';
     const empCode = loginData.EmpCodeC || loginData.EmpCode || '-';

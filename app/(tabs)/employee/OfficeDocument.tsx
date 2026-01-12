@@ -1,10 +1,10 @@
 import Header from '@/components/Header';
+import { API_ENDPOINTS } from '@/constants/api';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -16,6 +16,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useTheme } from '../../../context/ThemeContext';
 import { useUser } from '../../../context/UserContext';
@@ -65,7 +66,7 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
         const customerId = user?.CustomerIdC || 'kevit';
         const companyId = user?.CompIdN || '1';
         const empId = user?.EmpIdN || '1';
-        return `https://hr.trickyhr.com/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`;
+        return `${API_ENDPOINTS.CompanyUrl}/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`;
     };
 
     const handleDownloadedFile = async (url: string, shouldShare: boolean = false) => {

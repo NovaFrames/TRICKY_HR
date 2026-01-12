@@ -27,4 +27,3 @@ export const getProfileImageUrl = (
 
   return `${BASE_URL}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`;
 };
-
