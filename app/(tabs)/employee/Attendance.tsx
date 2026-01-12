@@ -51,7 +51,7 @@ const parseServerDate = (serverDateTime: string) => {
 };
 
 const markAttendance = async (
-    companyUrl: string,
+    domainUrl: string,
     token: string,
     empId: number,
     projectId: number,
@@ -62,7 +62,7 @@ const markAttendance = async (
     serverDateTime: string
 ): Promise<AttendanceResponse> => {
 
-    const url = `${companyUrl}${API_ENDPOINTS.INSERT_MOBILE_ATTENDANCE}`;
+    const url = `${domainUrl}${API_ENDPOINTS.INSERT_MOBILE_ATTENDANCE}`;
     const { date, time } = parseServerDate(serverDateTime);
 
     const formData = new FormData();
@@ -241,12 +241,12 @@ export default function Attendance() {
         try {
             const token = user?.TokenC || user?.Token;
             const empId = user?.EmpIdN || user?.EmpId;
-            const companyUrl = await getDomainUrl() || '';
+            const domainUrl = await getDomainUrl() || '';
             const mode = attendanceType === 'Check-in' ? 0 : 1;
             const serverDate = await getServerTime(token!);
 
             const res = await markAttendance(
-                companyUrl,
+                domainUrl,
                 token,
                 empId,
                 Number(selectedProject),

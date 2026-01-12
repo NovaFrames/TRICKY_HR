@@ -5,6 +5,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { getServerTime } from '@/services/ServerTime';
+import { getDomainUrl } from '@/services/urldomain';
 import {
     Ionicons,
     MaterialIcons
@@ -13,7 +14,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -30,6 +30,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -504,10 +505,11 @@ export default function UserProfile() {
     /* -------------------- API -------------------- */
     const fetchUserData = async () => {
         try {
+            const domainUrl = await getDomainUrl();
             if (!user?.TokenC) return;
 
             const res = await axios.post(
-                `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.PROFILE_URL}`,
+                `${domainUrl}${API_ENDPOINTS.PROFILE_URL}`,
                 {
                     TokenC: user.TokenC,
                     BlnEmpMaster: true,
@@ -648,8 +650,10 @@ export default function UserProfile() {
                 })),
             };
 
+            const domainUrl = await getDomainUrl();
+
             const res = await axios.post(
-                `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.UPLOADPRO_URL}`,
+                `${domainUrl}${API_ENDPOINTS.UPLOADPRO_URL}`,
                 payload,
                 { headers: { 'Content-Type': 'application/json' } }
             );

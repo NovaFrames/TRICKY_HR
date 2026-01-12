@@ -3,7 +3,9 @@ import { API_ENDPOINTS } from '@/constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as FileSystem from 'expo-file-system/legacy';
-const BASE_URL = API_ENDPOINTS.CompanyUrl;
+import { getDomainUrl } from './urldomain';
+
+let BASE_URL = API_ENDPOINTS.CompanyUrl;
 
 // Create an axios instance
 const api = axios.create({
@@ -12,6 +14,16 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
 });
+
+const initializeBaseUrl = async () => {
+    const domainUrl = await getDomainUrl();
+    if (domainUrl) {
+        BASE_URL = domainUrl;
+        api.defaults.baseURL = BASE_URL;
+    }
+};
+
+void initializeBaseUrl();
 
 export const loginUser = async (empCode: string, password: string, domainId: string) => {
     try {

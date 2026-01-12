@@ -5,10 +5,10 @@ import { formatDateForApi, formatDisplayDate } from '@/constants/timeFormat';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { getDomainUrl } from '@/services/urldomain';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -17,6 +17,7 @@ import {
     Text,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_ENDPOINTS } from '../../../constants/api';
 
 /* ---------------- TYPES ---------------- */
@@ -117,8 +118,10 @@ export default function MobileAttenRpt() {
                 Type: 0,
             };
 
+            const domainUrl = await getDomainUrl();
+
             const res = await axios.post(
-                `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`,
+                `${domainUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`,
                 payload
             );
 

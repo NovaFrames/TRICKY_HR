@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
+import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -56,8 +57,10 @@ export default function Holiday() {
                 Year: selectedYear,
             };
 
+            const domainUrl = await getDomainUrl();
+
             const response = await axios.post(
-                `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.HOLIDAY}`,
+                `${domainUrl}${API_ENDPOINTS.HOLIDAY}`,
                 payload
             );
 

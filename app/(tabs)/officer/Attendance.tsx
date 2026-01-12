@@ -1,12 +1,11 @@
 import { API_ENDPOINTS } from '@/constants/api';
 import { useTheme } from '@/context/ThemeContext';
-import { useUser } from '@/context/UserContext';
+import { UserData, useUser } from '@/context/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     Alert,
     Dimensions,
@@ -17,10 +16,12 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { getDomainUrl } from '@/services/urldomain';
 
 
 // Types for Attendance Data
@@ -65,9 +66,8 @@ export default function AttendanceList() {
     const [loading, setLoading] = useState(false);
     const [shiftData, setShiftData] = useState<AttendanceShift[]>([]);
 
-    const loginData = user || {};
+    const loginData: Partial<UserData> = user ?? {};
     const token = loginData.Token || loginData.TokenC;
-    const companyUrl = API_ENDPOINTS.CompanyUrl;
 
     useEffect(() => {
         fetchAttendance();
@@ -86,7 +86,10 @@ export default function AttendanceList() {
     };
 
     const fetchAttendance = async () => {
-        if (!token || !companyUrl) return;
+
+        const domainUrl = await getDomainUrl();
+
+        if (!token || !domainUrl) return;
 
         if (fromDate > toDate) {
             Alert.alert('Invalid Date Range', 'From date cannot be greater than To date.');
@@ -95,7 +98,7 @@ export default function AttendanceList() {
 
         setLoading(true);
         try {
-            const url = `${companyUrl}${API_ENDPOINTS.ATTENDANCE_LIST}`;
+            const url = `${domainUrl}${API_ENDPOINTS.ATTENDANCE_LIST}`;
             const payload = {
                 TokenC: token,
                 FDate: formatDateForApi(fromDate),

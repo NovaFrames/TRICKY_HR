@@ -5,6 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { getProfileImageUrl } from "@/hooks/useGetImage";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
+import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -46,8 +47,10 @@ export default function Celebration() {
                 Type: 1,
             };
 
+            const domainUrl = await getDomainUrl();
+
             const response = await axios.post(
-                `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.CELEBRATION}`,
+                `${domainUrl}${API_ENDPOINTS.CELEBRATION}`,
                 payload
             );
 
@@ -86,8 +89,38 @@ export default function Celebration() {
     const weddings = data?.DashBoardAnniversary ?? [];
     const workAnniv = data?.DashEmpService ?? [];
 
-    const ProfileImage = ({ uri, size = 60 }: Props) => {
+    const ProfileImage = ({
+        customerIdC,
+        compIdN,
+        empIdN,
+        size = 60,
+    }: {
+        customerIdC?: string | null;
+        compIdN?: string | number | null;
+        empIdN?: string | number | null;
+        size?: number;
+    }) => {
+        const [uri, setUri] = useState<string>();
         const [imageError, setImageError] = useState(false);
+
+        useEffect(() => {
+            let mounted = true;
+
+            const loadImage = async () => {
+                const url = await getProfileImageUrl(
+                    customerIdC,
+                    compIdN,
+                    empIdN
+                );
+                if (mounted) setUri(url);
+            };
+
+            loadImage();
+
+            return () => {
+                mounted = false;
+            };
+        }, [customerIdC, compIdN, empIdN]);
 
         return (
             <Image
@@ -101,15 +134,9 @@ export default function Celebration() {
                     width: size,
                     height: size,
                     borderRadius: size / 2,
-                    resizeMode: 'cover',
                 }}
             />
         );
-    };
-
-    const profileUrl = (item: any) => {
-        console.log("from celebration item:", item)
-        return getProfileImageUrl(user?.CustomerIdC, user?.CompIdN, item?.EmpIdN)
     };
 
     const renderCards = (list: any[], type: TabKey) => {
@@ -127,8 +154,12 @@ export default function Celebration() {
         return list.map((item: any) => (
             <View key={item.EmpIdN} style={[styles.card, { backgroundColor: theme.cardBackground, shadowColor: theme.text }]}>
                 <View style={[styles.iconContainer, { backgroundColor: theme.inputBg }]}>
-                    <ProfileImage uri={profileUrl(item)} size={60} />
-
+                    <ProfileImage
+                        customerIdC={user?.CustomerIdC}
+                        compIdN={user?.CompIdN}
+                        empIdN={item.EmpIdN}
+                        size={60}
+                    />
 
                 </View>
                 <View style={styles.detailsContainer}>

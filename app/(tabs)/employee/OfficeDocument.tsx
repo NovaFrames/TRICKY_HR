@@ -1,6 +1,6 @@
 import Header from '@/components/Header';
-import { API_ENDPOINTS } from '@/constants/api';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { getDomainUrl } from '@/services/urldomain';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -33,7 +33,7 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
     const { user } = useUser();
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(false);
-    const [downloading, setDownloading] = useState<string | null>(null);
+    const [domain, setDomain] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
@@ -62,11 +62,19 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
         }
     };
 
+    useEffect(() => {
+        const fetchDomain = async () => {
+            const domainUrl = await getDomainUrl();
+            setDomain(domainUrl || null);
+        };
+        fetchDomain();
+    }, [user]);
+
     const constructDownloadUrl = (fileName: string) => {
         const customerId = user?.CustomerIdC || 'kevit';
         const companyId = user?.CompIdN || '1';
         const empId = user?.EmpIdN || '1';
-        return `${API_ENDPOINTS.CompanyUrl}/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`;
+        return `${domain}/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`;
     };
 
     const handleDownloadedFile = async (url: string, shouldShare: boolean = false) => {

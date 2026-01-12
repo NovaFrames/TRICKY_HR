@@ -1,114 +1,139 @@
-import axios from 'axios';
-import { API_ENDPOINTS } from './api';
+import { getDomainUrl } from "@/services/urldomain";
+import axios from "axios";
 
 export interface APIResponse {
-    Status: 'success' | 'error';
-    Error?: string;
-    data?: any;
-    IdN?: number;
-    EnableCurrency?: boolean;
-    Currency?: Array<{ IdN: number; NameC: string }>;
+  Status: "success" | "error";
+  Error?: string;
+  data?: any;
+  IdN?: number;
+  EnableCurrency?: boolean;
+  Currency?: Array<{ IdN: number; NameC: string }>;
 }
 
 export interface TravelExpense {
-    TravelAmountN: number;
-    PNRC: string;
-    DestinationC: string;
-    BoardintPointC: string;
-    TravelByN: number;
+  TravelAmountN: number;
+  PNRC: string;
+  DestinationC: string;
+  BoardintPointC: string;
+  TravelByN: number;
 }
 
 export interface ClaimData {
-    ClaimAmtN: number;
-    DescC: string;
-    AllownIdN: number;
-    CurrencyIdN: number;
-    FromDateD: string;
-    ToDateD: string;
-    ClaimExpenseDtl1: TravelExpense[];
+  ClaimAmtN: number;
+  DescC: string;
+  AllownIdN: number;
+  CurrencyIdN: number;
+  FromDateD: string;
+  ToDateD: string;
+  ClaimExpenseDtl1: TravelExpense[];
 }
 
 export interface DocumentFile {
-    uri: string;
-    type: string;
-    name: string;
+  uri: string;
+  type: string;
+  name: string;
 }
 
-const BASE_URL = API_ENDPOINTS.CompanyUrl;
-
+/**
+ * Axios instance WITHOUT baseURL
+ */
 const api = axios.create({
-    baseURL: BASE_URL,
-    timeout: 30000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+  timeout: 30000,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 export const ClaimAPI = {
-    // Get claim types and currency list
-    getClaimList: async (token: string): Promise<APIResponse> => {
-        try {
-            const response = await api.post<APIResponse>(`${API_ENDPOINTS.CompanyUrl}/WebApi/GetEClaimList`, {
-                TokenC: token
-            });
-            
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching claim list:', error);
-            throw error;
+  /**
+   * Get claim types & currency list
+   */
+  getClaimList: async (token: string): Promise<APIResponse> => {
+    try {
+      const domainUrl = await getDomainUrl();
+
+      const response = await api.post<APIResponse>(
+        `${domainUrl}/WebApi/GetEClaimList`,
+        {
+          TokenC: token,
         }
-    },
+      );
 
-    // Submit claim data
-    updateClaim: async (token: string, claimData: ClaimData): Promise<APIResponse> => {
-        try {
-            const data = {
-                TokenC: token,
-                ...claimData
-            };
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching claim list:", error);
+      throw error;
+    }
+  },
 
-            console.log("Submitting claim data: ", data);
-            const response = await api.post<APIResponse>(`${API_ENDPOINTS.CompanyUrl}/WebApi/UpdateClaim`, data);
-            return response.data;
-        } catch (error) {
-            console.error('Error submitting claim:', error);
-            throw error;
+  /**
+   * Submit claim data
+   */
+  updateClaim: async (
+    token: string,
+    claimData: ClaimData
+  ): Promise<APIResponse> => {
+    try {
+      const domainUrl = await getDomainUrl();
+
+      const payload = {
+        TokenC: token,
+        ...claimData,
+      };
+
+      console.log("Submitting claim data:", payload);
+
+      const response = await api.post<APIResponse>(
+        `${domainUrl}/WebApi/UpdateClaim`,
+        payload
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error submitting claim:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload claim documents
+   */
+  updateClaimDoc: async (
+    token: string,
+    claimId: number,
+    files: DocumentFile[]
+  ): Promise<APIResponse> => {
+    try {
+      const domainUrl = await getDomainUrl();
+
+      const formData = new FormData();
+      formData.append("TokenC", token);
+      formData.append("IdN", claimId.toString());
+
+      files.forEach((file, index) => {
+        formData.append(`File[${index}]`, {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        } as any);
+      });
+
+      const response = await axios.post<APIResponse>(
+        `${domainUrl}/WebApi/UpdateClaimDoc`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
-    },
+      );
 
-    // Upload claim documents
-    updateClaimDoc: async (token: string, claimId: number, files: DocumentFile[]): Promise<APIResponse> => {
-        try {
-            const formData = new FormData();
-            formData.append('TokenC', token || '');
-            formData.append('IdN', claimId.toString());
-
-            // Add files to form data
-            files.forEach((file, index) => {
-                const fileData: any = {
-                    uri: file.uri,
-                    type: file.type,
-                    name: file.name
-                };
-                formData.append(`File[${index}]`, fileData);
-            });
-
-            const response = await axios.post<APIResponse>(
-                `${API_ENDPOINTS.CompanyUrl}/WebApi/UpdateClaimDoc`,
-                formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                }
-            );
-
-            return response.data;
-        } catch (error) {
-            console.error('Error uploading documents:', error);
-            throw error;
-        }
-    },
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading documents:", error);
+      throw error;
+    }
+  },
 };
 
 export default ClaimAPI;

@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
+import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -83,13 +84,15 @@ export default function ApprovalDetails() {
     try {
       setLoading(true);
 
+      const domainUrl = await getDomainUrl();
+
       const endpoint =
         activeTab === "Approved"
           ? API_ENDPOINTS.SUP_DETAPPROVE_URL
           : API_ENDPOINTS.SUP_GETREJECT_URL;
 
       const response = await axios.post(
-        `${API_ENDPOINTS.CompanyUrl}${endpoint}`,
+        `${domainUrl}${endpoint}`,
         { TokenC: user?.TokenC }
       );
 

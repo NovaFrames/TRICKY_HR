@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/constants/api";
 import axios from "axios";
+import { getDomainUrl } from "./urldomain";
 
 /**
  * Safely parses known server date formats
@@ -90,8 +91,10 @@ export const getServerTime = async (
     return toDotNetDate(overrideDate);
   }
 
+  const domainUrl = await getDomainUrl();
+
   const response = await axios.post(
-    `${API_ENDPOINTS.CompanyUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
+    `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
     { TokenC: token }
   );
 

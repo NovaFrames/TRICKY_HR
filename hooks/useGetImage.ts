@@ -1,29 +1,31 @@
-import { API_ENDPOINTS } from "@/constants/api";
+import { getDomainUrl } from "@/services/urldomain";
 
-const BASE_URL = API_ENDPOINTS.CompanyUrl;
+export const getCompanyLogoUrl = async (
+  customerIdC?: string | null,
+  compIdN?: string | number | null
+): Promise<string | undefined> => {
+  if (!customerIdC || !compIdN) return undefined;
 
-export const useCompanyLogo = (
-    customerIdC?: string | null,
-    compIdN?: string | number | null
-) => {
-    const safeCustomerId = encodeURIComponent(customerIdC ?? '');
-    const safeCompId = encodeURIComponent(String(compIdN ?? ''));
+  const domainUrl = await getDomainUrl();
 
-    if (!safeCustomerId || !safeCompId) return undefined;
+  const safeCustomerId = encodeURIComponent(customerIdC);
+  const safeCompId = encodeURIComponent(String(compIdN));
 
-    return `${BASE_URL}/kevit-Customer/${safeCustomerId}/COMPLOGO/${safeCompId}.jpg`;
+  return `${domainUrl}/kevit-Customer/${safeCustomerId}/COMPLOGO/${safeCompId}.jpg`;
 };
 
-export const getProfileImageUrl = (
+export const getProfileImageUrl = async (
   customerIdC?: string | null,
   compIdN?: string | number | null,
   empIdN?: string | number | null
-) => {
+): Promise<string | undefined> => {
   if (!customerIdC || !compIdN || !empIdN) return undefined;
+
+  const domainUrl = await getDomainUrl();
 
   const safeCustomerIdC = encodeURIComponent(customerIdC);
   const safeCompIdN = encodeURIComponent(String(compIdN));
   const safeEmpIdN = encodeURIComponent(String(empIdN));
 
-  return `${BASE_URL}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`;
+  return `${domainUrl}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`;
 };
