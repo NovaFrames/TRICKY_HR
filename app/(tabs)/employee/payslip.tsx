@@ -1,9 +1,12 @@
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Stack } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useTheme } from '../../../context/ThemeContext';
 import ApiService, { PaySlip } from '../../../services/ApiService';
 
@@ -12,6 +15,7 @@ export default function PayslipScreen() {
     const [payslips, setPayslips] = useState<PaySlip[]>([]);
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
+    const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
     useEffect(() => {
         loadPayslips();
@@ -37,22 +41,67 @@ export default function PayslipScreen() {
         }
     };
 
-    const handleDownload = async (item: PaySlip) => {
+    const handleDownloadedFile = async (url: string, shouldShare: boolean = false) => {
+        try {
+            if (!url) throw new Error('Download URL is empty');
+
+            const fileName = `PaySlip_${new Date().getTime()}.pdf`;
+            const fileUri = FileSystem.documentDirectory + fileName;
+
+            // 1. If explicit "Download" on Android -> Use Storage Access Framework
+            if (!shouldShare && Platform.OS === 'android') {
+                const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+                if (permissions.granted) {
+                    const downloadRes = await FileSystem.downloadAsync(url, fileUri);
+                    if (downloadRes.status !== 200) throw new Error('Failed to download temp file');
+
+                    const base64 = await FileSystem.readAsStringAsync(downloadRes.uri, { encoding: FileSystem.EncodingType.Base64 });
+                    const createdUri = await FileSystem.StorageAccessFramework.createFileAsync(permissions.directoryUri, fileName, 'application/pdf');
+                    await FileSystem.writeAsStringAsync(createdUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+
+                    Alert.alert('Success', 'File saved successfully.');
+                    return;
+                } else {
+                    return; // User cancelled
+                }
+            }
+
+            // 2. Default logic (iOS or Sharing)
+            const downloadRes = await FileSystem.downloadAsync(url, fileUri);
+            if (downloadRes.status === 200) {
+                if (shouldShare) {
+                    const isAvailable = await Sharing.isAvailableAsync();
+                    if (isAvailable) {
+                        await Sharing.shareAsync(downloadRes.uri, {
+                            mimeType: 'application/pdf',
+                            dialogTitle: 'Download Payslip',
+                            UTI: 'com.adobe.pdf'
+                        });
+                    }
+                } else {
+                    Alert.alert('Success', 'File downloaded successfully.');
+                }
+            } else {
+                throw new Error(`Download failed with status: ${downloadRes.status}`);
+            }
+
+        } catch (error: any) {
+            console.error('Download Error', error);
+            Alert.alert('Error', error?.message || 'Download failed');
+        }
+    };
+
+    const handleViewPdf = async (item: PaySlip) => {
         try {
             setDownloading(true);
             const response = await ApiService.downloadPaySlip(item);
             if (response.success && response.url) {
-                const supported = await Linking.canOpenURL(response.url);
-                if (supported) {
-                    await Linking.openURL(response.url);
-                } else {
-                    Alert.alert('Error', 'Cannot open this URL: ' + response.url);
-                }
+                setViewingUrl(response.url);
             } else {
-                Alert.alert('Error', response.error || 'Failed to generate download link');
+                Alert.alert('Error', response.error || 'Failed to generate payslip link');
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to download payslip');
+            Alert.alert('Error', 'Failed to open payslip');
         } finally {
             setDownloading(false);
         }
@@ -80,7 +129,7 @@ export default function PayslipScreen() {
                 <Text style={[styles.dateText, { color: theme.text }]}>{payPeriod}</Text>
                 <TouchableOpacity
                     style={styles.downloadButton}
-                    onPress={() => handleDownload(item)}
+                    onPress={() => handleViewPdf(item)}
                     disabled={downloading}
                 >
                     <Ionicons name="document-text-outline" size={20} color={theme.primary || "#00A3E0"} />
@@ -112,6 +161,50 @@ export default function PayslipScreen() {
                     showsVerticalScrollIndicator={false}
                 />
             )}
+
+            {/* PDF Viewer Modal */}
+            <Modal
+                visible={!!viewingUrl}
+                transparent={true}
+                onRequestClose={() => setViewingUrl(null)}
+                animationType="slide"
+            >
+                <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
+                    <View style={styles.viewerHeader}>
+                        <TouchableOpacity onPress={() => setViewingUrl(null)} style={styles.closeButton}>
+                            <Ionicons name="close" size={24} color="white" />
+                        </TouchableOpacity>
+                        <Text style={{ color: 'white', fontWeight: 'bold', flex: 1, textAlign: 'center' }}>Payslip Preview</Text>
+
+                        <View style={{ flexDirection: 'row' }}>
+                            <TouchableOpacity onPress={() => viewingUrl && handleDownloadedFile(viewingUrl, true)} style={styles.iconButton}>
+                                <Ionicons name="share-social-outline" size={24} color="white" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => viewingUrl && handleDownloadedFile(viewingUrl, false)} style={styles.iconButton}>
+                                <Ionicons name="download-outline" size={24} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        {viewingUrl && (
+                            <WebView
+                                source={{
+                                    uri: Platform.OS === 'android'
+                                        ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingUrl)}`
+                                        : viewingUrl
+                                }}
+                                style={{ flex: 1 }}
+                                startInLoadingState={true}
+                                renderLoading={() => (
+                                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                                        <ActivityIndicator size="large" color={theme.primary} />
+                                    </View>
+                                )}
+                            />
+                        )}
+                    </View>
+                </SafeAreaView>
+            </Modal>
 
             {downloading && (
                 <View style={styles.loadingOverlay}>
@@ -186,5 +279,19 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 10,
         fontSize: 14
+    },
+    viewerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+    },
+    closeButton: {
+        padding: 8,
+    },
+    iconButton: {
+        padding: 8,
+        marginLeft: 8
     }
 });

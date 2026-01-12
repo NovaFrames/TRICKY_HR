@@ -1,3 +1,4 @@
+import AppModal from '@/components/common/AppModal';
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +9,6 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
-    Modal,
     Platform,
     SectionList,
     StyleSheet,
@@ -187,10 +187,6 @@ export default function CalendarScreen() {
                 <Text style={[styles.detailLabel, { color: theme.placeholder }]}>Desc:</Text>
                 <Text style={[styles.detailValue, { color: theme.text }]}>{item.DescC}</Text>
             </View>
-            <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: theme.placeholder }]}>Remarks:</Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>{item.RemarksC}</Text>
-            </View>
         </View>
     );
 
@@ -254,54 +250,36 @@ export default function CalendarScreen() {
             )}
 
             {/* Detail Modal */}
-            <Modal
-                animationType="slide"
-                transparent={true}
+            {/* Detail Modal using AppModal */}
+            <AppModal
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                onClose={() => setModalVisible(false)}
+                title="Leave Details"
+                subtitle={`As on ${detailDateStr}`}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-                        <View style={[styles.modalHeader, { borderBottomColor: theme.inputBorder }]}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>
-                                Leave Details as on {detailDateStr}
-                            </Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                <Ionicons name="close" size={24} color={theme.text} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {detailLoading ? (
-                            <View style={styles.center}>
-                                <ActivityIndicator size="large" color={theme.primary} />
-                            </View>
-                        ) : (
-                            <SectionList
-                                sections={detailData}
-                                keyExtractor={(item, index) => index.toString()}
-                                renderItem={renderDetailItem}
-                                renderSectionHeader={({ section: { title } }) => (
-                                    <View style={[styles.sectionHeader, { backgroundColor: theme.inputBg }]}>
-                                        <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
-                                    </View>
-                                )}
-                                ListEmptyComponent={
-                                    <Text style={[styles.noDataText, { color: theme.placeholder, textAlign: 'center', marginTop: 20 }]}>
-                                        No details available
-                                    </Text>
-                                }
-                                contentContainerStyle={styles.modalListContent}
-                            />
-                        )}
-                        <TouchableOpacity
-                            style={[styles.closeButton, { backgroundColor: theme.primary }]}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </TouchableOpacity>
+                {detailLoading ? (
+                    <View style={styles.center}>
+                        <ActivityIndicator size="large" color={theme.primary} />
                     </View>
-                </View>
-            </Modal>
+                ) : (
+                    <SectionList
+                        sections={detailData}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={renderDetailItem}
+                        renderSectionHeader={({ section: { title } }) => (
+                            <View style={[styles.sectionHeader, { backgroundColor: theme.inputBg }]}>
+                                <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
+                            </View>
+                        )}
+                        ListEmptyComponent={
+                            <Text style={[styles.noDataText, { color: theme.placeholder, textAlign: 'center', margin: 20 }]}>
+                                No details available
+                            </Text>
+                        }
+                        contentContainerStyle={styles.modalListContent}
+                    />
+                )}
+            </AppModal>
         </View>
     );
 }
