@@ -298,6 +298,7 @@ export default function ExitRequestScreen() {
                                 mode="date"
                                 display="default"
                                 onChange={handleDateChange}
+                                minimumDate={new Date()}
                             />
                         )}
                     </View>
