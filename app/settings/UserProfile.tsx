@@ -16,6 +16,7 @@ import {
     Alert,
     Animated,
     Dimensions,
+    Easing,
     FlatList,
     Modal,
     Platform,
@@ -92,20 +93,21 @@ const CollapsibleCard = ({
     const rotateAnim = React.useRef(new Animated.Value(isOpen ? 1 : 0)).current;
 
     useEffect(() => {
+        animatedOpacity.stopAnimation();
+        animatedTranslate.stopAnimation();
+
+        const easing = Easing.out(Easing.cubic);
         Animated.parallel([
             Animated.timing(animatedOpacity, {
                 toValue: isOpen ? 1 : 0,
-                duration: 200,
+                duration: 180,
+                easing,
                 useNativeDriver: true,
             }),
             Animated.timing(animatedTranslate, {
                 toValue: isOpen ? 0 : -8,
-                duration: 200,
-                useNativeDriver: true,
-            }),
-            Animated.timing(rotateAnim, {
-                toValue: isOpen ? 1 : 0,
-                duration: 200,
+                duration: 180,
+                easing,
                 useNativeDriver: true,
             }),
         ]).start();
@@ -121,7 +123,17 @@ const CollapsibleCard = ({
             {/* Header */}
             <TouchableOpacity
                 style={styles.collapsibleHeader}
-                onPress={onToggle}
+                onPress={() => {
+                    const nextOpen = !isOpen;
+                    rotateAnim.stopAnimation();
+                    Animated.timing(rotateAnim, {
+                        toValue: nextOpen ? 1 : 0,
+                        duration: 180,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: true,
+                    }).start();
+                    onToggle();
+                }}
                 activeOpacity={0.7}
             >
                 <View style={styles.collapsibleHeaderLeft}>
@@ -339,16 +351,36 @@ const SelectionRow = ({
     value,
     onPress,
     theme,
+    placeholder = 'Select',
 }: {
     label: string;
     value: string;
     onPress: () => void;
     theme: any;
+    placeholder?: string;
 }) => (
     <TouchableOpacity style={styles.editRow} onPress={onPress}>
         <Text style={[styles.detailLabel, { color: theme.textLight }]}>{label}</Text>
-        <View style={[styles.selectionInput, { backgroundColor: theme.inputBg }]}>
-            <Text style={{ color: theme.text }}>{value}</Text>
+        <View
+            style={[
+                styles.selectionInput,
+                { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
+            ]}
+        >
+            <Text
+                style={[
+                    styles.selectionValueText,
+                    {
+                        color:
+                            !value || value === '-' || value.toLowerCase().includes('select')
+                                ? theme.textLight
+                                : theme.text,
+                    },
+                ]}
+                numberOfLines={1}
+            >
+                {value || placeholder}
+            </Text>
             <Ionicons name="chevron-down" size={20} color={theme.textLight} />
         </View>
     </TouchableOpacity>
@@ -1563,8 +1595,13 @@ export default function UserProfile() {
                                         <Text style={[styles.detailLabel, { color: theme.textLight }]}>
                                             Nation
                                         </Text>
-                                        <View style={[styles.selectionInput, { backgroundColor: theme.inputBg }]}>
-                                            <Text style={{ color: theme.text }}>
+                                        <View
+                                            style={[
+                                                styles.selectionInput,
+                                                { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
+                                            ]}
+                                        >
+                                            <Text style={[styles.selectionValueText, { color: theme.text }]} numberOfLines={1}>
                                                 {nations.find(n => n.NationIdN === child.HidNationIdN)?.NationNameC || 'Select Nation'}
                                             </Text>
                                             <Ionicons name="chevron-down" size={20} color={theme.textLight} />
@@ -1990,6 +2027,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderColor: '#ccc',
     },
+    selectionValueText: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '600',
+        marginRight: 8,
+    },
     dateValueRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -2008,14 +2051,15 @@ const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
+        justifyContent: 'flex-end',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 16,
+        paddingBottom: 20,
     },
     modalContent: {
         width: '100%',
         maxHeight: '80%',
-        borderRadius: 16,
+        borderRadius: 18,
         padding: 20,
     },
     modalTitle: {
