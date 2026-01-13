@@ -1,10 +1,10 @@
+import CenterModalSelection from '@/components/common/CenterModalSelection';
 import Header from '@/components/Header';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import ApiService, { markMobileAttendance } from '@/services/ApiService';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -44,6 +44,7 @@ export default function Attendance() {
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [location, setLocation] = useState<{ latitude: number; longitude: number; address?: string } | null>(null);
+    const [showProjectModal, setShowProjectModal] = useState(false);
 
     /* ---------------- CLOCK ---------------- */
     useEffect(() => {
@@ -243,19 +244,17 @@ export default function Attendance() {
                 {/* FORM SECTION */}
                 <View style={[styles.formCard, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
                     <Text style={[styles.fieldLabel, { color: theme.textLight }]}>PROJECT / SITE</Text>
-                    <View style={[styles.pickerWrapper, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
-                        <Picker
-                            selectedValue={selectedProject}
-                            onValueChange={setSelectedProject}
-                            style={{ color: theme.text, height: 50 }}
-                            dropdownIconColor={theme.primary}
-                        >
-                            <Picker.Item label="Select Project" value="" color={theme.placeholder} />
-                            {projects.map(p => (
-                                <Picker.Item key={p.IdN} label={p.NameC} value={String(p.IdN)} color={theme.text} />
-                            ))}
-                        </Picker>
-                    </View>
+                    <TouchableOpacity
+                        style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                        onPress={() => setShowProjectModal(true)}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="briefcase-outline" size={20} color={theme.primary} />
+                        <Text style={[styles.selectorText, { color: selectedProject ? theme.text : theme.placeholder }]}>
+                            {selectedProject ? projects.find(p => String(p.IdN) === selectedProject)?.NameC : 'Select Project'}
+                        </Text>
+                        <Ionicons name="chevron-down" size={20} color={theme.text + '80'} />
+                    </TouchableOpacity>
 
                     <Text style={[styles.fieldLabel, { color: theme.textLight, marginTop: 16 }]}>REMARKS</Text>
                     <TextInput
@@ -355,6 +354,16 @@ export default function Attendance() {
                     )}
                 </TouchableOpacity>
             </ScrollView>
+
+            {/* Project Selection Modal */}
+            <CenterModalSelection
+                visible={showProjectModal}
+                onClose={() => setShowProjectModal(false)}
+                title="Select Project"
+                options={projects.map(p => ({ label: p.NameC, value: String(p.IdN) }))}
+                selectedValue={selectedProject}
+                onSelect={(val: string | number) => setSelectedProject(String(val))}
+            />
         </View>
     );
 }
@@ -415,6 +424,21 @@ const styles = StyleSheet.create({
         height: 50,
         justifyContent: 'center',
         overflow: 'hidden',
+    },
+    selectorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 12,
+        borderWidth: 1.5,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        gap: 12,
+    },
+    selectorText: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '500',
     },
     remarksInput: {
         borderWidth: 1,

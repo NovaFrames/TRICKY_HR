@@ -1,9 +1,9 @@
 import { ThemeType } from '@/theme/theme';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import CenterModalSelection from '../common/CenterModalSelection';
 
 interface ClaimDetailsSectionProps {
     theme: ThemeType;
@@ -49,103 +49,130 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
     onToDateChange,
     onDescriptionChange,
     formatDate
-}) => (
-    <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
-        <Text style={[styles.title, { color: theme.primary }]}>Claim Details</Text>
+}) => {
+    const [showClaimModal, setShowClaimModal] = useState(false);
+    const [showCurrencyModal, setShowCurrencyModal] = useState(false);
 
-        <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>Claim Name *</Text>
-            <View style={[styles.pickerContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
-                <Picker
-                    selectedValue={selectedClaim}
-                    onValueChange={onClaimChange}
-                    style={[styles.picker, { color: theme.text }]}
-                    dropdownIconColor={theme.text}
-                >
-                    {claimNames.map((name, index) => (
-                        <Picker.Item key={index} label={name || 'Select Claim Name'} value={index} color={isDark ? '#fff' : '#000'} />
-                    ))}
-                </Picker>
-            </View>
-        </View>
+    return (
+        <>
+            <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
+                <Text style={[styles.title, { color: theme.primary }]}>Claim Details</Text>
 
-        {currencyStatus && (
-            <View style={styles.inputContainer}>
-                <Text style={[styles.label, { color: theme.text }]}>Currency *</Text>
-                <View style={[styles.pickerContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
-                    <Picker
-                        selectedValue={selectedCurrency}
-                        onValueChange={onCurrencyChange}
-                        style={[styles.picker, { color: theme.text }]}
-                        dropdownIconColor={theme.text}
+                <View style={styles.inputContainer}>
+                    <Text style={[styles.label, { color: theme.text }]}>Claim Name *</Text>
+                    <TouchableOpacity
+                        style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                        onPress={() => setShowClaimModal(true)}
+                        activeOpacity={0.7}
                     >
-                        {currencyNames.map((name, index) => (
-                            <Picker.Item key={index} label={name || 'Select Currency'} value={index} color={isDark ? '#fff' : '#000'} />
-                        ))}
-                    </Picker>
+                        <Ionicons name="pricetag-outline" size={20} color={theme.primary} />
+                        <Text style={[styles.selectorText, { color: selectedClaim > 0 ? theme.text : theme.placeholder }]}>
+                            {claimNames[selectedClaim] || 'Select Claim Name'}
+                        </Text>
+                        <Ionicons name="chevron-down" size={20} color={theme.text + '80'} />
+                    </TouchableOpacity>
+                </View>
+
+                {currencyStatus && (
+                    <View style={styles.inputContainer}>
+                        <Text style={[styles.label, { color: theme.text }]}>Currency *</Text>
+                        <TouchableOpacity
+                            style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                            onPress={() => setShowCurrencyModal(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="cash-outline" size={20} color={theme.primary} />
+                            <Text style={[styles.selectorText, { color: selectedCurrency > 0 ? theme.text : theme.placeholder }]}>
+                                {currencyNames[selectedCurrency] || 'Select Currency'}
+                            </Text>
+                            <Ionicons name="chevron-down" size={20} color={theme.text + '80'} />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                <View style={styles.row}>
+                    <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
+                        <Text style={[styles.label, { color: theme.text }]}>From Date *</Text>
+                        <TouchableOpacity
+                            style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                            onPress={onFromDatePress}
+                        >
+                            <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(fromDate)}</Text>
+                            <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={[styles.inputContainer, { flex: 1, marginLeft: 10 }]}>
+                        <Text style={[styles.label, { color: theme.text }]}>To Date *</Text>
+                        <TouchableOpacity
+                            style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                            onPress={onToDatePress}
+                        >
+                            <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(toDate)}</Text>
+                            <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {showFromDatePicker && (
+                    <DateTimePicker
+                        value={fromDate}
+                        mode="date"
+                        display="default"
+                        onChange={onFromDateChange}
+                        maximumDate={new Date()}
+                    />
+                )}
+
+                {showToDatePicker && (
+                    <DateTimePicker
+                        value={toDate}
+                        mode="date"
+                        display="default"
+                        onChange={onToDateChange}
+                        maximumDate={new Date()}
+                    />
+                )}
+
+                <View style={styles.inputContainer}>
+                    <Text style={[styles.label, { color: theme.text }]}>Description *</Text>
+                    <TextInput
+                        style={[styles.textInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+                        value={description}
+                        onChangeText={onDescriptionChange}
+                        placeholder="Enter description"
+                        placeholderTextColor={theme.placeholder}
+                        multiline
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                    />
                 </View>
             </View>
-        )}
 
-        <View style={styles.row}>
-            <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
-                <Text style={[styles.label, { color: theme.text }]}>From Date *</Text>
-                <TouchableOpacity
-                    style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                    onPress={onFromDatePress}
-                >
-                    <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(fromDate)}</Text>
-                    <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
-                </TouchableOpacity>
-            </View>
-
-            <View style={[styles.inputContainer, { flex: 1, marginLeft: 10 }]}>
-                <Text style={[styles.label, { color: theme.text }]}>To Date *</Text>
-                <TouchableOpacity
-                    style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                    onPress={onToDatePress}
-                >
-                    <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(toDate)}</Text>
-                    <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
-                </TouchableOpacity>
-            </View>
-        </View>
-
-        {showFromDatePicker && (
-            <DateTimePicker
-                value={fromDate}
-                mode="date"
-                display="default"
-                onChange={onFromDateChange}
-                maximumDate={new Date()}
+            {/* Claim Name Modal */}
+            <CenterModalSelection
+                visible={showClaimModal}
+                onClose={() => setShowClaimModal(false)}
+                title="Select Claim Name"
+                options={claimNames.map((name, index) => ({ label: name || 'Select Claim Name', value: index }))}
+                selectedValue={selectedClaim}
+                onSelect={(val: number) => onClaimChange(val)}
             />
-        )}
 
-        {showToDatePicker && (
-            <DateTimePicker
-                value={toDate}
-                mode="date"
-                display="default"
-                onChange={onToDateChange}
-                maximumDate={new Date()}
-            />
-        )}
-
-        <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>Description *</Text>
-            <TextInput
-                style={[styles.textInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={description}
-                onChangeText={onDescriptionChange}
-                placeholder="Enter description"
-                placeholderTextColor={theme.placeholder}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-            />
-        </View>
-    </View>
-);
+            {/* Currency Modal */}
+            {currencyStatus && (
+                <CenterModalSelection
+                    visible={showCurrencyModal}
+                    onClose={() => setShowCurrencyModal(false)}
+                    title="Select Currency"
+                    options={currencyNames.map((name, index) => ({ label: name || 'Select Currency', value: index }))}
+                    selectedValue={selectedCurrency}
+                    onSelect={(val: number) => onCurrencyChange(val)}
+                />
+            )}
+        </>
+    );
+};
 
 const styles = StyleSheet.create({
     section: {
@@ -172,13 +199,20 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 8,
     },
-    pickerContainer: {
-        borderWidth: 1,
-        borderRadius: 4,
-        overflow: 'hidden',
+    selectorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1.5,
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        gap: 12,
     },
-    picker: {
-        height: 50,
+    selectorText: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '500',
     },
     row: {
         flexDirection: 'row',

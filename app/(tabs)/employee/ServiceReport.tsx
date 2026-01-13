@@ -6,9 +6,7 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    FlatList,
     Image,
-    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -21,6 +19,7 @@ import ClientSignatureModal from '../../../components/ServiceReport/ClientSignat
 import SelectServiceStatusModal from '../../../components/ServiceReport/SelectServiceStatusModal';
 import SelectServiceTypeModal from '../../../components/ServiceReport/SelectServiceTypeModal';
 import ServiceDetailsModal from '../../../components/ServiceReport/ServiceDetailsModal';
+import CenterModalSelection from '../../../components/common/CenterModalSelection';
 import { useTheme } from '../../../context/ThemeContext';
 import ApiService from '../../../services/ApiService';
 
@@ -55,7 +54,6 @@ export default function ServiceReport() {
     const [clients, setClients] = useState<Client[]>([]);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [showClientModal, setShowClientModal] = useState(false);
-    const [clientSearch, setClientSearch] = useState('');
 
     // Service types and status
     const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
@@ -288,10 +286,6 @@ export default function ServiceReport() {
         }
     };
 
-    const filteredClients = clients.filter(client =>
-        client.NameC.toLowerCase().includes(clientSearch.toLowerCase())
-    );
-
     const getSelectedServiceTypeNames = () => {
         return serviceTypes
             .filter(st => selectedServiceTypes.includes(st.IdN))
@@ -341,13 +335,15 @@ export default function ServiceReport() {
                     <Text style={[styles.label, { color: theme.text }]}>Select Client Name</Text>
 
                     <TouchableOpacity
-                        style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                        style={[styles.selectorContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
                         onPress={() => setShowClientModal(true)}
+                        activeOpacity={0.7}
                     >
-                        <Text style={[styles.inputText, { color: selectedClient ? theme.text : theme.placeholder }]}>
-                            {selectedClient ? selectedClient.NameC : '--Select--'}
+                        <Ionicons name="person-outline" size={20} color={theme.primary} />
+                        <Text style={[styles.selectorText, { color: selectedClient ? theme.text : theme.placeholder }]}>
+                            {selectedClient ? selectedClient.NameC : 'Select Client'}
                         </Text>
-                        <Ionicons name="chevron-down" size={20} color={theme.placeholder} />
+                        <Ionicons name="chevron-down" size={20} color={theme.text + '80'} />
                     </TouchableOpacity>
 
                     {selectedClient && (
@@ -594,50 +590,17 @@ export default function ServiceReport() {
             </ScrollView>
 
             {/* Client Selection Modal */}
-            <Modal visible={showClientModal} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-                        <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>Select Client</Text>
-                            <TouchableOpacity onPress={() => setShowClientModal(false)}>
-                                <Ionicons name="close" size={24} color={theme.text} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={[styles.searchContainer, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
-                            <Ionicons name="search" size={20} color={theme.placeholder} />
-                            <TextInput
-                                style={[styles.searchInput, { color: theme.text }]}
-                                placeholder="Search clients..."
-                                placeholderTextColor={theme.placeholder}
-                                value={clientSearch}
-                                onChangeText={setClientSearch}
-                            />
-                        </View>
-
-                        <FlatList
-                            data={filteredClients}
-                            keyExtractor={(item) => item.IdN.toString()}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[styles.clientItem, { borderBottomColor: theme.inputBorder }]}
-                                    onPress={() => {
-                                        setSelectedClient(item);
-                                        setShowClientModal(false);
-                                        setClientSearch('');
-                                    }}
-                                >
-                                    <Text style={[styles.clientName, { color: theme.text }]}>{item.NameC}</Text>
-                                    <Text style={[styles.clientEmail, { color: theme.placeholder }]}>{item.EmailIdC}</Text>
-                                </TouchableOpacity>
-                            )}
-                            ListEmptyComponent={
-                                <Text style={[styles.emptyText, { color: theme.placeholder }]}>No clients found</Text>
-                            }
-                        />
-                    </View>
-                </View>
-            </Modal>
+            <CenterModalSelection
+                visible={showClientModal}
+                onClose={() => setShowClientModal(false)}
+                title="Select Client"
+                options={clients.map(client => ({ label: `${client.NameC} (${client.EmailIdC})`, value: client.IdN }))}
+                selectedValue={selectedClient?.IdN}
+                onSelect={(val: number) => {
+                    const client = clients.find(c => c.IdN === val);
+                    if (client) setSelectedClient(client);
+                }}
+            />
 
             {/* Service Type Modal */}
             <SelectServiceTypeModal
@@ -776,6 +739,21 @@ const styles = StyleSheet.create({
     clientEmail: {
         fontSize: 13,
         marginTop: 8,
+    },
+    selectorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        gap: 12,
+    },
+    selectorText: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '500',
     },
     signatureRow: {
         flexDirection: 'row',
