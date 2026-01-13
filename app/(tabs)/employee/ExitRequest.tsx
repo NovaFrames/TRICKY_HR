@@ -1,7 +1,9 @@
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { XMLParser } from 'fast-xml-parser';
 import React, { useEffect, useState } from 'react';
 import {
@@ -249,48 +251,156 @@ export default function ExitRequestScreen() {
         return (
             <View style={[styles.center, { backgroundColor: theme.background }]}>
                 <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.text }]}>Loading Exit Request...</Text>
             </View>
         );
     }
 
+    // Helper to get status color
+    const getStatusColor = () => {
+        if (exitData.EmpIdN) return '#FF9500'; // Pending/Submitted
+        return theme.primary;
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <Header title="Exit Request" />
-
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
                 }
+                showsVerticalScrollIndicator={false}
             >
-                <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+                {/* Status Banner */}
+                <LinearGradient
+                    colors={exitData.EmpIdN ? ['#FF9500', '#FF6B00'] : [theme.primary, theme.primary + 'CC']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.statusBanner}
+                >
+                    <View style={styles.statusContent}>
+                        <Ionicons
+                            name={exitData.EmpIdN ? "time-outline" : "document-text-outline"}
+                            size={32}
+                            color="#fff"
+                        />
+                        <View style={styles.statusTextContainer}>
+                            <Text style={styles.statusTitle}>
+                                {exitData.EmpIdN ? 'Exit Request Submitted' : 'New Exit Request'}
+                            </Text>
+                            <Text style={styles.statusSubtitle}>
+                                {exitData.EmpIdN ? 'Pending Approval' : 'Fill in the details below'}
+                            </Text>
+                        </View>
+                    </View>
+                </LinearGradient>
 
-                    {/* Read Only Fields */}
-                    <View style={styles.row}>
-                        <Text style={[styles.label, { color: theme.text }]}>Notice Period (Policy)</Text>
-                        <Text style={[styles.value, { color: theme.text }]}>{exitData.RegNoticePeriodN || 0}</Text>
+                {/* Exit Type Badge */}
+                <View style={[styles.badgeContainer, { backgroundColor: theme.cardBackground }]}>
+                    <View style={[styles.badge, { backgroundColor: theme.primary + '20' }]}>
+                        <Ionicons name="exit-outline" size={16} color={theme.primary} />
+                        <Text style={[styles.badgeText, { color: theme.primary }]}>
+                            {exitData.StatusC || 'Resigned'}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Policy Information Section */}
+                <View style={[styles.sectionCard, { backgroundColor: theme.cardBackground }]}>
+                    <View style={styles.sectionHeader}>
+                        <Ionicons name="information-circle" size={24} color={theme.primary} />
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Policy Information</Text>
                     </View>
 
-                    <View style={styles.row}>
-                        <Text style={[styles.label, { color: theme.text }]}>Revoke Days</Text>
-                        <Text style={[styles.value, { color: theme.text }]}>{exitData.RevokeDaysN || 1}</Text>
+                    <View style={styles.infoGrid}>
+                        <View style={[styles.infoItem, { borderColor: theme.inputBorder }]}>
+                            <Ionicons name="calendar-outline" size={20} color={theme.primary} />
+                            <View style={styles.infoContent}>
+                                <Text style={[styles.infoLabel, { color: theme.text + 'AA' }]}>Notice Period</Text>
+                                <Text style={[styles.infoValue, { color: theme.text }]}>
+                                    {exitData.RegNoticePeriodN || 0} days
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={[styles.infoItem, { borderColor: theme.inputBorder }]}>
+                            <Ionicons name="refresh-outline" size={20} color={theme.primary} />
+                            <View style={styles.infoContent}>
+                                <Text style={[styles.infoLabel, { color: theme.text + 'AA' }]}>Revoke Days</Text>
+                                <Text style={[styles.infoValue, { color: theme.text }]}>
+                                    {exitData.RevokeDaysN || 1} days
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={[styles.infoItem, { borderColor: theme.inputBorder }]}>
+                            <Ionicons name="alert-circle-outline" size={20} color={theme.primary} />
+                            <View style={styles.infoContent}>
+                                <Text style={[styles.infoLabel, { color: theme.text + 'AA' }]}>Short Fall Days</Text>
+                                <Text style={[styles.infoValue, { color: theme.text }]}>
+                                    {exitData.ShortFallDaysN || 0} days
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={[styles.infoItem, { borderColor: theme.inputBorder }]}>
+                            <Ionicons name="shield-checkmark-outline" size={20} color={theme.primary} />
+                            <View style={styles.infoContent}>
+                                <Text style={[styles.infoLabel, { color: theme.text + 'AA' }]}>Waive Notice</Text>
+                                <Text style={[styles.infoValue, { color: theme.text }]}>
+                                    {exitData.RegWaiveN === 1 ? 'Waive' : 'Recover'}
+                                </Text>
+                            </View>
+                        </View>
                     </View>
 
-                    <View style={styles.row}>
-                        <Text style={[styles.label, { color: theme.text }]}>Date of Declaration</Text>
-                        <Text style={[styles.value, { color: theme.text }]}>{formatDate(exitData.ResDeclareD) || new Date().toDateString()}</Text>
+                    <View style={[styles.dateRow, { borderTopColor: theme.inputBorder }]}>
+                        <Ionicons name="flag-outline" size={20} color={theme.primary} />
+                        <View style={styles.dateContent}>
+                            <Text style={[styles.infoLabel, { color: theme.text + 'AA' }]}>Date of Declaration</Text>
+                            <Text style={[styles.infoValue, { color: theme.text }]}>
+                                {formatDate(exitData.ResDeclareD) || new Date().toDateString()}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Exit Details Section */}
+                <View style={[styles.sectionCard, { backgroundColor: theme.cardBackground }]}>
+                    <View style={styles.sectionHeader}>
+                        <Ionicons name="create-outline" size={24} color={theme.primary} />
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Exit Details</Text>
                     </View>
 
-                    {/* Date Picker */}
+                    {/* Last Working Date */}
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.text }]}>Last Working Date</Text>
+                        <Text style={[styles.inputLabel, { color: theme.text }]}>
+                            <Ionicons name="calendar" size={16} color={theme.primary} /> Last Working Date
+                        </Text>
                         <TouchableOpacity
-                            style={[styles.dateButton, { borderColor: theme.inputBorder, backgroundColor: isReadOnly ? theme.background : theme.inputBg }]}
+                            style={[
+                                styles.dateButton,
+                                {
+                                    borderColor: theme.inputBorder,
+                                    backgroundColor: isReadOnly ? theme.background : theme.inputBg
+                                }
+                            ]}
                             onPress={() => !isReadOnly && setShowDatePicker(true)}
                             disabled={isReadOnly}
+                            activeOpacity={0.7}
                         >
-                            <Text style={{ color: theme.text }}>{selectedDate.toLocaleDateString()}</Text>
+                            <Ionicons name="calendar-outline" size={20} color={theme.primary} />
+                            <Text style={[styles.dateText, { color: theme.text }]}>
+                                {selectedDate.toLocaleDateString('en-US', {
+                                    weekday: 'short',
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                })}
+                            </Text>
+                            {!isReadOnly && <Ionicons name="chevron-down" size={20} color={theme.text + '80'} />}
                         </TouchableOpacity>
                         {showDatePicker && (
                             <DateTimePicker
@@ -303,34 +413,24 @@ export default function ExitRequestScreen() {
                         )}
                     </View>
 
-                    <View style={styles.row}>
-                        <Text style={[styles.label, { color: theme.text }]}>Short Fall Days</Text>
-                        <Text style={[styles.value, { color: theme.text }]}>{exitData.ShortFallDaysN || 0}</Text>
-                    </View>
-
-                    <View style={styles.row}>
-                        <Text style={[styles.label, { color: theme.text }]}>Last Working Date (Policy)</Text>
-                        <Text style={[styles.value, { color: theme.text }]}>
-                            {/* Assuming this is calculated or same as declaration for now if not provided */}
-                            {formatDate(exitData.ResExitDateD) || new Date().toDateString()}
-                        </Text>
-                    </View>
-
-                    <View style={styles.row}>
-                        <Text style={[styles.label, { color: theme.text }]}>Exit Type</Text>
-                        {/* Default to Resigned if empty, as per screenshot */}
-                        <Text style={[styles.value, { color: theme.text }]}>{exitData.StatusC || 'Resigned'}</Text>
-                    </View>
-
-                    {/* Picker */}
+                    {/* Exit Reason */}
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.text }]}>Exit Reason</Text>
-                        <View style={[styles.pickerContainer, { borderColor: theme.inputBorder, backgroundColor: isReadOnly ? theme.background : theme.inputBg }]}>
+                        <Text style={[styles.inputLabel, { color: theme.text }]}>
+                            <Ionicons name="list" size={16} color={theme.primary} /> Exit Reason *
+                        </Text>
+                        <View style={[
+                            styles.pickerContainer,
+                            {
+                                borderColor: theme.inputBorder,
+                                backgroundColor: isReadOnly ? theme.background : theme.inputBg
+                            }
+                        ]}>
+                            <Ionicons name="clipboard-outline" size={20} color={theme.primary} style={styles.pickerIcon} />
                             <Picker
                                 enabled={!isReadOnly}
                                 selectedValue={selectedReason}
                                 onValueChange={(itemValue) => setSelectedReason(itemValue)}
-                                style={{ color: theme.text }}
+                                style={[styles.picker, { color: theme.text }]}
                                 dropdownIconColor={theme.text}
                             >
                                 <Picker.Item label="Select Reason" value={0} />
@@ -341,48 +441,66 @@ export default function ExitRequestScreen() {
                         </View>
                     </View>
 
-                    <View style={styles.row}>
-                        <Text style={[styles.label, { color: theme.text }]}>Waive Notice Period</Text>
-                        <Text style={[styles.value, { color: theme.text }]}>
-                            {/* Map RegWaiveN to text if needed. User screenshot says 'Recover'. */}
-                            {exitData.RegWaiveN === 1 ? 'Waive' : 'Recover'}
-                        </Text>
-                    </View>
-
-                    {/* Notes */}
+                    {/* Exit Notes */}
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: theme.text }]}>Exit Notes</Text>
-                        <TextInput
-                            style={[styles.textArea, {
+                        <Text style={[styles.inputLabel, { color: theme.text }]}>
+                            <Ionicons name="document-text" size={16} color={theme.primary} /> Exit Notes
+                        </Text>
+                        <View style={[
+                            styles.textAreaContainer,
+                            {
                                 borderColor: theme.inputBorder,
-                                backgroundColor: theme.inputBg,
-                                color: theme.text
-                            }]}
-                            multiline
-                            numberOfLines={4}
-                            editable={!isReadOnly}
-                            value={notes}
-                            onChangeText={setNotes}
-                            placeholder={isReadOnly ? "No notes provided" : "Enter notes..."}
-                            placeholderTextColor={theme.placeholder}
-                        />
+                                backgroundColor: isReadOnly ? theme.background : theme.inputBg,
+                            }
+                        ]}>
+                            <TextInput
+                                style={[styles.textArea, { color: theme.text }]}
+                                multiline
+                                numberOfLines={4}
+                                editable={!isReadOnly}
+                                value={notes}
+                                onChangeText={setNotes}
+                                placeholder={isReadOnly ? "No notes provided" : "Enter your exit notes here..."}
+                                placeholderTextColor={theme.placeholder}
+                                textAlignVertical="top"
+                            />
+                        </View>
                     </View>
 
+                    {/* Policy Last Working Date (Read-only) */}
+                    <View style={[styles.policyDateContainer, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}>
+                        <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
+                        <View style={styles.policyDateContent}>
+                            <Text style={[styles.policyDateLabel, { color: theme.text + 'AA' }]}>
+                                Last Working Date (As per Policy)
+                            </Text>
+                            <Text style={[styles.policyDateValue, { color: theme.text }]}>
+                                {formatDate(exitData.ResExitDateD) || new Date().toDateString()}
+                            </Text>
+                        </View>
+                    </View>
                 </View>
+
+                {/* Bottom Spacing */}
+                <View style={{ height: 20 }} />
             </ScrollView>
 
             {/* Footer Buttons */}
             <View style={[styles.footer, { backgroundColor: theme.cardBackground, borderTopColor: theme.inputBorder }]}>
                 {exitData.EmpIdN ? (
                     <TouchableOpacity
-                        style={[styles.button, { backgroundColor: '#FF3B30' }]} // Red color for Revoke
+                        style={[styles.button, styles.revokeButton]}
                         onPress={handleRevoke}
                         disabled={submitLoading}
+                        activeOpacity={0.8}
                     >
                         {submitLoading ? (
                             <ActivityIndicator color="#fff" size="small" />
                         ) : (
-                            <Text style={styles.buttonText}>Revoke</Text>
+                            <>
+                                <Ionicons name="close-circle" size={20} color="#fff" />
+                                <Text style={styles.buttonText}>Revoke Request</Text>
+                            </>
                         )}
                     </TouchableOpacity>
                 ) : (
@@ -390,11 +508,15 @@ export default function ExitRequestScreen() {
                         style={[styles.button, { backgroundColor: theme.primary }]}
                         onPress={() => handleSubmit()}
                         disabled={submitLoading}
+                        activeOpacity={0.8}
                     >
                         {submitLoading ? (
                             <ActivityIndicator color="#fff" size="small" />
                         ) : (
-                            <Text style={styles.buttonText}>Submit</Text>
+                            <>
+                                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                                <Text style={styles.buttonText}>Submit Request</Text>
+                            </>
                         )}
                     </TouchableOpacity>
                 )}
@@ -412,71 +534,260 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        fontWeight: '500',
+    },
     scrollContent: {
         padding: 16,
+        paddingBottom: 24,
     },
-    card: {
-        borderRadius: 8,
-        padding: 16,
-        elevation: 2,
+
+    // Status Banner
+    statusBanner: {
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 16,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
-    row: {
+    statusContent: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#ccc', // fallback
+        alignItems: 'center',
+        gap: 16,
     },
-    label: {
+    statusTextContainer: {
+        flex: 1,
+    },
+    statusTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#fff',
+        marginBottom: 4,
+    },
+    statusSubtitle: {
+        fontSize: 14,
+        color: '#fff',
+        opacity: 0.9,
+    },
+
+    // Badge
+    badgeContainer: {
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 6,
+    },
+    badgeText: {
         fontSize: 14,
         fontWeight: '600',
+    },
+
+    // Section Card
+    sectionCard: {
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 16,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3.84,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 20,
+        paddingBottom: 12,
+        borderBottomWidth: 2,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+
+    // Info Grid
+    infoGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginBottom: 12,
+    },
+    infoItem: {
+        flex: 1,
+        minWidth: '45%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        backgroundColor: 'rgba(0,0,0,0.02)',
+    },
+    infoContent: {
         flex: 1,
     },
-    value: {
-        fontSize: 14,
-        fontWeight: '400',
-        textAlign: 'right',
+    infoLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    infoValue: {
+        fontSize: 16,
+        fontWeight: '700',
+    },
+
+    // Date Row
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingTop: 16,
+        marginTop: 12,
+        borderTopWidth: 1,
+    },
+    dateContent: {
         flex: 1,
     },
+
+    // Input Group
     inputGroup: {
-        marginTop: 16,
+        marginBottom: 20,
     },
+    inputLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+        marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+
+    // Date Button
     dateButton: {
-        padding: 12,
-        borderRadius: 4,
-        borderWidth: 1,
-        marginTop: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        gap: 12,
     },
+    dateText: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '500',
+    },
+
+    // Picker
     pickerContainer: {
-        borderWidth: 1,
-        borderRadius: 4,
-        marginTop: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderRadius: 12,
+        overflow: 'hidden',
+        paddingLeft: 12,
+    },
+    pickerIcon: {
+        marginRight: 8,
+    },
+    picker: {
+        flex: 1,
+        height: 50,
+    },
+
+    // Text Area
+    textAreaContainer: {
+        borderWidth: 1.5,
+        borderRadius: 12,
         overflow: 'hidden',
     },
     textArea: {
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: 8,
-        marginTop: 8,
-        height: 100,
-        textAlignVertical: 'top',
+        padding: 14,
+        fontSize: 15,
+        minHeight: 120,
+        maxHeight: 200,
     },
+
+    // Policy Date Container
+    policyDateContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginTop: 12,
+    },
+    policyDateContent: {
+        flex: 1,
+    },
+    policyDateLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    policyDateValue: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+
+    // Footer
     footer: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
         padding: 16,
         borderTopWidth: 1,
-        gap: 12,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
     },
     button: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 4,
-        minWidth: 100,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 32,
+        paddingVertical: 14,
+        borderRadius: 12,
+        minWidth: 180,
+        gap: 8,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    revokeButton: {
+        backgroundColor: '#FF3B30',
     },
     buttonText: {
         color: '#fff',
-        fontWeight: 'bold',
+        fontWeight: '700',
+        fontSize: 16,
     },
 });

@@ -89,12 +89,14 @@ export default function SettingsScreen() {
                     },
                 },
                 {
-                    label: 'Security',
-                    description: 'Update your security information',
+                    label: 'Change Password',
+                    description: 'Update your password',
                     icon: <MaterialIcons name="lock" />,
                     color: '#f59e0b',
                     type: 'action',
-                    onPress: () => { },
+                    onPress: () => {
+                        router.push('/settings/ChangePassword');
+                    },
                 },
             ],
         },
@@ -205,33 +207,33 @@ export default function SettingsScreen() {
                             >
                                 {item.description}
                             </Text>
-                        ):(
+                        ) : (
                             <View style={styles.themeBadgeSection}>
-                            <View style={styles.inlineColorRow}>
-                                {THEME_COLORS.map((color, index) => {
-                                    const isSelected = theme.primary === color.value;
-                                    return (
-                                        <View key={index} style={{ alignItems: 'center', gap: 6, }}>
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={[
-                                                    styles.inlineColorCircle,
-                                                    { backgroundColor: color.value },
-                                                    isSelected && styles.inlineSelectedCircle
-                                                ]}
-                                                onPress={() => setPrimaryColor(color.value)}
-                                            >
-                                                {isSelected && <Feather name="check" size={14} color="#FFF" />}
-                                            </TouchableOpacity>
-                                            <Text>{color.label}</Text>
-                                        </View>
-                                    );
-                                })}
+                                <View style={styles.inlineColorRow}>
+                                    {THEME_COLORS.map((color, index) => {
+                                        const isSelected = theme.primary === color.value;
+                                        return (
+                                            <View key={index} style={{ alignItems: 'center', gap: 6, }}>
+                                                <TouchableOpacity
+                                                    key={index}
+                                                    style={[
+                                                        styles.inlineColorCircle,
+                                                        { backgroundColor: color.value },
+                                                        isSelected && styles.inlineSelectedCircle
+                                                    ]}
+                                                    onPress={() => setPrimaryColor(color.value)}
+                                                >
+                                                    {isSelected && <Feather name="check" size={14} color="#FFF" />}
+                                                </TouchableOpacity>
+                                                <Text>{color.label}</Text>
+                                            </View>
+                                        );
+                                    })}
+                                </View>
                             </View>
-                        </View>
                         )}
                     </View>
-  
+
                 </View>
                 {rightElement}
             </TouchableOpacity>
