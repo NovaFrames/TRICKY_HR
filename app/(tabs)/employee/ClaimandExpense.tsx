@@ -19,7 +19,6 @@ import TravelExpensesSection from '@/components/claim/TravelExpensesSection';
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import ApiService, { ClaimData, TravelExpense } from '@/services/ApiService';
-import { getServerTime } from '@/services/ServerTime';
 import {
     ActivityIndicator,
     Alert,
@@ -460,8 +459,14 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
                 return `${month}/${day}/${date.getFullYear()}`;
             };
 
-            const fromDateStr = await getServerTime(user?.TokenC || '', fromDate);
-            const toDateStr = await getServerTime(user?.TokenC || '', toDate);
+            const fromDateStr = await ApiService.getServerTime(
+                user?.TokenC || '',
+                fromDate
+            );
+            const toDateStr = await ApiService.getServerTime(
+                user?.TokenC || '',
+                toDate
+            );
 
             // Prepare claim data
             const claimData: ClaimData = {

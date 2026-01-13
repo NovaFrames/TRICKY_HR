@@ -5,9 +5,8 @@ import { formatDateForApi, formatDisplayDate } from '@/constants/timeFormat';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
-import { getDomainUrl } from '@/services/urldomain';
+import ApiService from '@/services/ApiService';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -18,7 +17,6 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { API_ENDPOINTS } from '../../../constants/api';
 
 /* ---------------- TYPES ---------------- */
 
@@ -111,27 +109,20 @@ export default function MobileAttenRpt() {
         setAttendance([]);
 
         try {
-            const payload = {
-                TokenC: user.TokenC,
-                FromDate: formatDateForApi(safeFromDateForApi(fromDate)),
-                ToDate: formatDateForApi(toDate),
-                Type: 0,
-            };
-
-            const domainUrl = await getDomainUrl();
-
-            const res = await axios.post(
-                `${domainUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`,
-                payload
+            const result = await ApiService.getMobileAttendanceReport(
+                user.TokenC,
+                formatDateForApi(safeFromDateForApi(fromDate)),
+                formatDateForApi(toDate),
+                0
             );
 
-            if (res.data?.Status === 'success' && Array.isArray(res.data.data)) {
-                const filteredData = res.data.data.filter((record: AttendanceRecord) =>
+            if (result.success && Array.isArray(result.data)) {
+                const filteredData = result.data.filter((record: AttendanceRecord) =>
                     isRecordInDateRange(record.DateC, fromDate, toDate)
                 );
                 setAttendance(filteredData);
             } else {
-                Alert.alert('Info', res.data?.Error || 'No attendance records found.');
+                Alert.alert('Info', result.error || 'No attendance records found.');
             }
         } catch (err: any) {
             console.error('Attendance API error:', err);

@@ -1,17 +1,14 @@
 import Header from '@/components/Header';
-import { API_ENDPOINTS } from '@/constants/api';
 import { formatDateForApi, formatDisplayDate } from '@/constants/timeFormat';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
-import { getServerTime } from '@/services/ServerTime';
-import { getDomainUrl } from '@/services/urldomain';
+import ApiService from '@/services/ApiService';
 import {
     Ionicons,
     MaterialIcons
 } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
@@ -505,20 +502,9 @@ export default function UserProfile() {
     /* -------------------- API -------------------- */
     const fetchUserData = async () => {
         try {
-            const domainUrl = await getDomainUrl();
             if (!user?.TokenC) return;
-
-            const res = await axios.post(
-                `${domainUrl}${API_ENDPOINTS.PROFILE_URL}`,
-                {
-                    TokenC: user.TokenC,
-                    BlnEmpMaster: true,
-                    ViewReject: false,
-                },
-                { headers: { 'Content-Type': 'application/json' } }
-            );
-
-            setUserData(res.data?.data || []);
+            const result = await ApiService.getUserProfile(user.TokenC);
+            setUserData(result.data || []);
         } catch (err: any) {
             console.error('Profile API Error:', err?.response?.data || err.message);
         } finally {
@@ -540,7 +526,7 @@ export default function UserProfile() {
 
         // Convert using server
         try {
-            return await getServerTime(token, value);
+            return await ApiService.getServerTime(token, value);
         } catch {
             return fallback;
         }
@@ -600,10 +586,7 @@ export default function UserProfile() {
                         MaritalN: formData.MaritalN,
                         BloodTypeN: formData.BloodTypeN,
 
-                        MarriedDateD: await formatServerDateSafe(
-                            token,
-                            formData.MarriedDateD
-                        ),
+                        MarriedDateD: formData.MarriedDateD ? formatApiDateSafe(formData.MarriedDateD, '01/01/1900') : '01/01/1900',
 
                         SpouseNameC: formData.SpouseNameC || '',
                         SpousePhNoC: formData.SpousePhNoC || '',
@@ -615,15 +598,8 @@ export default function UserProfile() {
                         PassportNoC: formData.PassportNoC || '',
                         IssuePlaceC: formData.IssuePlaceC || '',
 
-                        IssueDateD: await formatServerDateSafe(
-                            token,
-                            formData.IssueDateD,
-                        ),
-
-                        ExpiryDateD: await formatServerDateSafe(
-                            token,
-                            formData.ExpiryDateD,
-                        ),
+                        IssueDateD: formData.IssueDateD ? formatApiDateSafe(formData.IssueDateD, '') : '',
+                        ExpiryDateD: formData.ExpiryDateD ? formatApiDateSafe(formData.ExpiryDateD, '') : '',
 
                         SameCurrentAddN: sameAddress ? 1 : 0,
                     },
@@ -633,10 +609,7 @@ export default function UserProfile() {
                     children.map(async (child) => ({
                         EmpIdN: profile.EmpIdN,
                         NameC: child.NameC || '',
-                        BDateD: await formatServerDateSafe(
-                            token,
-                            child.BDateD,
-                        ),
+                        BDateD: child.BDateD ? formatApiDateSafe(child.BDateD, '') : '',
                         HidNationIdN: child.HidNationIdN || 0,
                         StatusN: child.StatusN || '',
                     }))
@@ -650,20 +623,14 @@ export default function UserProfile() {
                 })),
             };
 
-            const domainUrl = await getDomainUrl();
+            const result = await ApiService.updateUserProfile(payload);
 
-            const res = await axios.post(
-                `${domainUrl}${API_ENDPOINTS.UPLOADPRO_URL}`,
-                payload,
-                { headers: { 'Content-Type': 'application/json' } }
-            );
-
-            if (res.data?.Status === 'success') {
+            if (result.success) {
                 setIsEditing(false);
                 await fetchUserData();
                 Alert.alert('Success', 'Profile updated successfully!');
             } else {
-                Alert.alert('Profile Update', res.data?.Error || 'Update failed.');
+                Alert.alert('Profile Update', result.error || 'Update failed.');
             }
         } catch (err: any) {
             Alert.alert(

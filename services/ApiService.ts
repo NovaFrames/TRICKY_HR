@@ -80,39 +80,6 @@ export const faceRegApi = async ({
   }
 };
 
-export const attendanceEnrolApi = async ({
-  projectId,
-  latLon,
-  imageFile,
-  userToken,
-  empId,
-}: any) => {
-  const formData = new FormData();
-  formData.append("TokenC", String(userToken));
-  formData.append("DateD", new Date().toISOString());
-  formData.append("EmpIdN", String(empId));
-  formData.append("ProjectIdN", String(projectId));
-  formData.append("GPRSC", latLon || "17.23232,37.45435454");
-
-  if (imageFile) {
-    formData.append("MobilePht", {
-      uri: imageFile.uri,
-      name: imageFile.name || "attendance.jpg",
-      type: imageFile.type || "image/jpeg",
-    } as any);
-  }
-
-  try {
-    // Assuming /EmployeeAttendance is correct endpoint relative to WebApi
-    const response = await api.post("/EmployeeAttendance", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response?.data ?? null;
-  } catch (error) {
-    throw error;
-  }
-};
-
 export interface AttendanceResponse {
   success: boolean;
   message?: string;
@@ -166,6 +133,72 @@ const parseServerDate = (serverDateTime?: string) => {
   }
 
   return formatParts(new Date());
+};
+
+const parseServerTimeToUTC = (dateInput: string | Date): number => {
+  if (dateInput instanceof Date) {
+    if (Number.isNaN(dateInput.getTime())) {
+      throw new Error("Invalid Date object");
+    }
+    return Date.UTC(
+      dateInput.getUTCFullYear(),
+      dateInput.getUTCMonth(),
+      dateInput.getUTCDate(),
+      dateInput.getUTCHours(),
+      dateInput.getUTCMinutes(),
+      dateInput.getUTCSeconds()
+    );
+  }
+
+  if (typeof dateInput === "string" && dateInput.includes("/Date(")) {
+    const timestamp = Number(dateInput.replace(/\D/g, ""));
+    if (Number.isFinite(timestamp)) {
+      return timestamp;
+    }
+  }
+
+  const dmy = typeof dateInput === "string"
+    ? dateInput.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+    : null;
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    return Date.UTC(+year, +month - 1, +day);
+  }
+
+  const textDate = typeof dateInput === "string"
+    ? dateInput.match(
+        /^(\d{1,2}) ([A-Za-z]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2})$/
+      )
+    : null;
+
+  if (textDate) {
+    const [, day, mon, year, hh, mm, ss] = textDate;
+    const monthIndex = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ].indexOf(mon);
+
+    if (monthIndex !== -1) {
+      return Date.UTC(+year, monthIndex, +day, +hh, +mm, +ss);
+    }
+  }
+
+  throw new Error(`Invalid date format: ${String(dateInput)}`);
+};
+
+const toDotNetDate = (dateInput: string | Date): string => {
+  const utcTimestamp = parseServerTimeToUTC(dateInput);
+  return `/Date(${utcTimestamp})/`;
 };
 
 export const markMobileAttendance = async (
@@ -2022,6 +2055,158 @@ class ApiService {
     }
   }
 
+  async getMobileAttendanceReport(
+    token: string,
+    fromDate: string,
+    toDate: string,
+    type = 0
+  ): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      if (!token) {
+        return { success: false, error: "Token not available" };
+      }
+
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) {
+        return { success: false, error: "Domain not available" };
+      }
+
+      const payload = {
+        TokenC: token,
+        FromDate: fromDate,
+        ToDate: toDate,
+        Type: type,
+      };
+
+      const response = await axios.post(
+        `${domainUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`,
+        payload
+      );
+
+      if (response.data?.Status === "success") {
+        return { success: true, data: response.data.data || [] };
+      }
+
+      return {
+        success: false,
+        error: response.data?.Error || "No attendance records found.",
+      };
+    } catch (error: any) {
+      console.error("getMobileAttendanceReport error:", error);
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
+  async getServerTime(
+    token: string,
+    overrideDate?: string | Date
+  ): Promise<string> {
+    if (overrideDate) {
+      return toDotNetDate(overrideDate);
+    }
+
+    const domainUrl = await getDomainUrl();
+    if (!domainUrl) {
+      throw new Error("Domain not available");
+    }
+
+    const response = await axios.post(
+      `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
+      { TokenC: token }
+    );
+
+    return toDotNetDate(response.data);
+  }
+
+  async getRawServerTime(token: string): Promise<string> {
+    const domainUrl = await getDomainUrl();
+    if (!domainUrl) {
+      throw new Error("Domain not available");
+    }
+
+    const response = await axios.post(
+      `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
+      { TokenC: token }
+    );
+
+    if (typeof response.data === "string") {
+      return response.data;
+    }
+
+    return String(response.data ?? "");
+  }
+
+  async getUserProfile(token: string): Promise<{
+    success: boolean;
+    data?: any[];
+    error?: string;
+  }> {
+    try {
+      if (!token) {
+        return { success: false, error: "Token not available" };
+      }
+
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) {
+        return { success: false, error: "Domain not available" };
+      }
+
+      const response = await axios.post(
+        `${domainUrl}${API_ENDPOINTS.PROFILE_URL}`,
+        {
+          TokenC: token,
+          BlnEmpMaster: true,
+          ViewReject: false,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      return { success: true, data: response.data?.data || [] };
+    } catch (error: any) {
+      console.error("getUserProfile error:", error);
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
+  async updateUserProfile(payload: any): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) {
+        return { success: false, error: "Domain not available" };
+      }
+
+      const response = await axios.post(
+        `${domainUrl}${API_ENDPOINTS.UPLOADPRO_URL}`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      if (response.data?.Status === "success") {
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: response.data?.Error || "Update failed.",
+      };
+    } catch (error: any) {
+      console.error("updateUserProfile error:", error);
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
   async getClaimList(token: string): Promise<APIResponse> {
     try {
       const domainUrl = await getDomainUrl();
@@ -2029,8 +2214,8 @@ class ApiService {
         throw new Error("Domain not available");
       }
 
-      const response = await api.post<APIResponse>(
-        `${domainUrl}/WebApi/GetEClaimList`,
+      const response = await axios.post<APIResponse>(
+        `${domainUrl}/${API_ENDPOINTS.GETCLAIM_LIST}`,
         { TokenC: token }
       );
 
@@ -2056,7 +2241,7 @@ class ApiService {
       console.log("Submitting claim data:", payload);
 
       const response = await api.post<APIResponse>(
-        `${domainUrl}/WebApi/UpdateClaim`,
+        `${domainUrl}/${API_ENDPOINTS.UPDATE_CLAIM}`,
         payload
       );
 
@@ -2091,7 +2276,7 @@ class ApiService {
       });
 
       const response = await axios.post<APIResponse>(
-        `${domainUrl}/WebApi/UpdateClaimDoc`,
+        `${domainUrl}/${API_ENDPOINTS.UPDATECLAIM_DOC}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );

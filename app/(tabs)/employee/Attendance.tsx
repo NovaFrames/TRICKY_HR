@@ -3,7 +3,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import ApiService, { markMobileAttendance } from '@/services/ApiService';
-import { getRawServerTime } from '@/services/ServerTime';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -150,7 +149,7 @@ export default function Attendance() {
                 return;
             }
             const mode = attendanceType === 'Check-in' ? 0 : 1;
-            const serverDate = await getRawServerTime(token);
+            const serverDate = await ApiService.getRawServerTime(token);
 
             const res = await markMobileAttendance(
                 token,

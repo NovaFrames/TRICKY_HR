@@ -128,6 +128,11 @@ export const API_ENDPOINTS = {
 
   //server time
   SERVERTIME_URL: "/WebApi2/GetServerTime",
+
+  //Claim List
+  GETCLAIM_LIST: '/WebApi2/GetEClaimList',
+  UPDATE_CLAIM: '/WebApi2/UpdateClaim',
+  UPDATECLAIM_DOC: '/WebApi2/UpdateClaimDoc',
 };
 
 export const API = () => API_ENDPOINTS;
