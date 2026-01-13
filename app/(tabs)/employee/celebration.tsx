@@ -1,13 +1,11 @@
 import Header from "@/components/Header";
-import { API_ENDPOINTS } from "@/constants/api";
 import { formatDisplayDate } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { getProfileImageUrl } from "@/hooks/useGetImage";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
-import { getDomainUrl } from "@/services/urldomain";
+import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -24,11 +22,6 @@ import {
 /* -------------------- TABS -------------------- */
 type TabKey = 'birthday' | 'wedding' | 'work';
 
-type Props = {
-    uri?: string;
-    size?: number;
-};
-
 export default function Celebration() {
     const { theme } = useTheme();
     const { user } = useUser();
@@ -42,23 +35,12 @@ export default function Celebration() {
 
     const fetchCelebration = async () => {
         try {
-            const payload = {
-                TokenC: user?.TokenC,
-                Type: 1,
-            };
-
-            const domainUrl = await getDomainUrl();
-
-            const response = await axios.post(
-                `${domainUrl}${API_ENDPOINTS.CELEBRATION}`,
-                payload
-            );
-
-            if (response.data.Status === "success") {
-                setData(response.data.DashData?.[0] ?? {});
-            } else {
+            if (!user?.TokenC) {
                 setData({});
+                return;
             }
+            const responseData = await ApiService.getCelebrationData(user.TokenC, 1);
+            setData(responseData);
         } catch (err) {
             console.error("Celebration API error:", err);
             setData({});

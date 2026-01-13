@@ -346,6 +346,41 @@ export interface AttendanceProject {
   ProjectNameC: string;
 }
 
+export interface TravelExpense {
+  TravelAmountN: number;
+  PNRC: string;
+  DestinationC: string;
+  BoardintPointC: string;
+  TravelByN: number;
+}
+
+export interface ClaimData {
+  ClaimAmtN: number;
+  DescC: string;
+  AllownIdN: number;
+  CurrencyIdN: number;
+  FromDateD: string;
+  ToDateD: string;
+  ClaimExpenseDtl1: TravelExpense[];
+}
+
+export interface APIResponse {
+  Status: "success" | "error";
+  Error?: string;
+  data?: any;
+  IdN?: number;
+  EnableCurrency?: boolean;
+  Currency?: Array<{ IdN: number; NameC: string }>;
+}
+
+
+
+export interface DocumentFile {
+  uri: string;
+  type: string;
+  name: string;
+}
+
 class ApiService {
   private static instance: ApiService;
   private token: string | null = null;
@@ -480,11 +515,7 @@ class ApiService {
     }
   }
 
-  async getLeaveApprovalDetails({
-    IdN,
-  }: {
-    IdN: number;
-  }): Promise<{
+  async getLeaveApprovalDetails({ IdN }: { IdN: number }): Promise<{
     success: boolean;
     data?: LeaveBalanceResponse;
     error?: string;
@@ -560,9 +591,7 @@ class ApiService {
     }
   }
 
-  async applyLeave(
-    leaveData: LeaveApplicationData
-  ): Promise<{
+  async applyLeave(leaveData: LeaveApplicationData): Promise<{
     success: boolean;
     data?: LeaveApplicationResponse;
     error?: string;
@@ -643,9 +672,7 @@ class ApiService {
     }
   }
 
-  async submitSurrender(
-    surrenderData: SurrenderData
-  ): Promise<{
+  async submitSurrender(surrenderData: SurrenderData): Promise<{
     success: boolean;
     data?: LeaveApplicationResponse;
     error?: string;
@@ -1991,6 +2018,137 @@ class ApiService {
       return [];
     } catch (error) {
       console.error("getAttendanceProjectList error:", error);
+      return [];
+    }
+  }
+
+  async getClaimList(token: string): Promise<APIResponse> {
+    try {
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) {
+        throw new Error("Domain not available");
+      }
+
+      const response = await api.post<APIResponse>(
+        `${domainUrl}/WebApi/GetEClaimList`,
+        { TokenC: token }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching claim list:", error);
+      throw error;
+    }
+  }
+
+  async updateClaim(token: string, claimData: ClaimData): Promise<APIResponse> {
+    try {
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) {
+        throw new Error("Domain not available");
+      }
+
+      const payload = {
+        TokenC: token,
+        ...claimData,
+      };
+
+      console.log("Submitting claim data:", payload);
+
+      const response = await api.post<APIResponse>(
+        `${domainUrl}/WebApi/UpdateClaim`,
+        payload
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error submitting claim:", error);
+      throw error;
+    }
+  }
+
+  async updateClaimDoc(
+    token: string,
+    claimId: number,
+    files: DocumentFile[]
+  ): Promise<APIResponse> {
+    try {
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) {
+        throw new Error("Domain not available");
+      }
+
+      const formData = new FormData();
+      formData.append("TokenC", token);
+      formData.append("IdN", claimId.toString());
+
+      files.forEach((file, index) => {
+        formData.append(`File[${index}]`, {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        } as any);
+      });
+
+      const response = await axios.post<APIResponse>(
+        `${domainUrl}/WebApi/UpdateClaimDoc`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading documents:", error);
+      throw error;
+    }
+  }
+
+  async getCelebrationData(token: string, type = 1): Promise<any> {
+    try {
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) return {};
+
+      const payload = {
+        TokenC: token,
+        Type: type,
+      };
+
+      const response = await axios.post(
+        `${domainUrl}${API_ENDPOINTS.CELEBRATION}`,
+        payload
+      );
+
+      if (response.data?.Status === "success") {
+        return response.data?.DashData?.[0] ?? {};
+      }
+
+      return {};
+    } catch (error) {
+      console.error("getCelebrationData error:", error);
+      return {};
+    }
+  }
+
+  async getHolidayList(token: string, year: string): Promise<any[]> {
+    try {
+      if (!token) return [];
+
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) return [];
+
+      const payload = {
+        TokenC: token,
+        Year: year,
+      };
+
+      const response = await axios.post(
+        `${domainUrl}${API_ENDPOINTS.HOLIDAY}`,
+        payload
+      );
+
+      return response.data?.Holiday ?? [];
+    } catch (error) {
+      console.error("getHolidayList error:", error);
       return [];
     }
   }

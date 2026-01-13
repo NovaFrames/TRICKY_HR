@@ -1,4 +1,3 @@
-import { ClaimAPI, ClaimData, TravelExpense } from '@/constants/claimapi';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +18,7 @@ import TravelExpensesSection from '@/components/claim/TravelExpensesSection';
 
 import Header from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
+import ApiService, { ClaimData, TravelExpense } from '@/services/ApiService';
 import { getServerTime } from '@/services/ServerTime';
 import {
     ActivityIndicator,
@@ -135,7 +135,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
     const fetchClaimList = async (): Promise<void> => {
         try {
             setLoading(true);
-            const data = await ClaimAPI.getClaimList(user?.TokenC || '');
+            const data = await ApiService.getClaimList(user?.TokenC || '');
 
             if (data.Status === 'success') {
                 // Process claim names
@@ -475,7 +475,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
             };
 
             // Submit claim
-            const result = await ClaimAPI.updateClaim(user?.TokenC || '', claimData);
+            const result = await ApiService.updateClaim(user?.TokenC || '', claimData);
 
             if (result.Status === 'success' && result.IdN) {
                 const claimId = result.IdN;
@@ -488,7 +488,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
                 }));
 
                 // Upload documents
-                const uploadResult = await ClaimAPI.updateClaimDoc(user?.TokenC || '', claimId, filesForUpload);
+                const uploadResult = await ApiService.updateClaimDoc(user?.TokenC || '', claimId, filesForUpload);
 
                 if (uploadResult.Status === 'success') {
                     resetFullForm();

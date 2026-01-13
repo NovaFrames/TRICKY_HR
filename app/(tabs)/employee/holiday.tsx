@@ -1,11 +1,9 @@
 import Header from "@/components/Header";
-import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
-import { getDomainUrl } from "@/services/urldomain";
+import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -52,19 +50,11 @@ export default function Holiday() {
 
     const fetchHoliday = async () => {
         try {
-            const payload = {
-                TokenC: user?.TokenC,
-                Year: selectedYear,
-            };
-
-            const domainUrl = await getDomainUrl();
-
-            const response = await axios.post(
-                `${domainUrl}${API_ENDPOINTS.HOLIDAY}`,
-                payload
+            const data = await ApiService.getHolidayList(
+                user?.TokenC || "",
+                selectedYear
             );
-
-            setHolidayData(response.data?.Holiday ?? []);
+            setHolidayData(data);
         } catch (error) {
             console.error("Holiday API error:", error);
             setHolidayData([]);
