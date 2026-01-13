@@ -87,24 +87,29 @@ const CollapsibleCard = ({
     onToggle: () => void;
     theme: any;
 }) => {
-    const animatedHeight = React.useRef(new Animated.Value(0)).current;
-    const rotateAnim = React.useRef(new Animated.Value(0)).current;
-    const [measuredHeight, setMeasuredHeight] = useState(0);
+    const animatedOpacity = React.useRef(new Animated.Value(isOpen ? 1 : 0)).current;
+    const animatedTranslate = React.useRef(new Animated.Value(isOpen ? 0 : -8)).current;
+    const rotateAnim = React.useRef(new Animated.Value(isOpen ? 1 : 0)).current;
 
     useEffect(() => {
         Animated.parallel([
-            Animated.timing(animatedHeight, {
-                toValue: isOpen ? measuredHeight : 0,
-                duration: 300,
-                useNativeDriver: false,
+            Animated.timing(animatedOpacity, {
+                toValue: isOpen ? 1 : 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            Animated.timing(animatedTranslate, {
+                toValue: isOpen ? 0 : -8,
+                duration: 200,
+                useNativeDriver: true,
             }),
             Animated.timing(rotateAnim, {
                 toValue: isOpen ? 1 : 0,
-                duration: 300,
-                useNativeDriver: false,
+                duration: 200,
+                useNativeDriver: true,
             }),
         ]).start();
-    }, [isOpen, measuredHeight]);
+    }, [isOpen]);
 
     const rotateIcon = rotateAnim.interpolate({
         inputRange: [0, 1],
@@ -130,38 +135,27 @@ const CollapsibleCard = ({
                         {title}
                     </Text>
                 </View>
+
                 <Animated.View style={{ transform: [{ rotate: rotateIcon }] }}>
                     <Ionicons name="chevron-down" size={24} color={theme.primary} />
                 </Animated.View>
             </TouchableOpacity>
 
-            {/* Animated visible container */}
-            <Animated.View style={{ height: animatedHeight, overflow: 'hidden' }}>
-                <View style={styles.collapsibleContent}>{children}</View>
-            </Animated.View>
-
-            {/* Hidden measurement container */}
-            <View
-                style={{
-                    position: 'absolute',
-                    opacity: 0,
-                    zIndex: -1,
-                    left: 0,
-                    right: 0,
-                }}
-                pointerEvents="none"
-                onLayout={(e) => {
-                    const h = e.nativeEvent.layout.height;
-                    if (h > 0 && measuredHeight !== h) {
-                        setMeasuredHeight(h);
-                    }
-                }}
-            >
-                <View style={styles.collapsibleContent}>{children}</View>
-            </View>
+            {/* Content */}
+            {isOpen && (
+                <Animated.View
+                    style={{
+                        opacity: animatedOpacity,
+                        transform: [{ translateY: animatedTranslate }],
+                    }}
+                >
+                    <View style={styles.collapsibleContent}>{children}</View>
+                </Animated.View>
+            )}
         </View>
     );
 };
+
 
 // Reusable component for edit mode array sections
 const EditArraySection = ({
@@ -229,6 +223,137 @@ const EditArraySection = ({
     </View>
 );
 
+const DetailRow = ({
+    label,
+    value,
+    withDivider = true,
+    theme,
+}: {
+    label: string;
+    value: string | number;
+    withDivider?: boolean;
+    theme: any;
+}) => (
+    <>
+        <View style={styles.detailRow}>
+            <Text style={[styles.detailLabel, { color: theme.textLight }]}>
+                {label}
+            </Text>
+            <Text style={[styles.detailValue, { color: theme.text }]}>
+                {value}
+            </Text>
+        </View>
+        {withDivider && (
+            <View
+                style={[styles.divider, { backgroundColor: `${theme.textLight}20` }]}
+            />
+        )}
+    </>
+);
+
+const EditableRow = ({
+    label,
+    value,
+    onChangeText,
+    editable = true,
+    keyboardType = 'default',
+    placeholder = '-',
+    multiline = false,
+    theme,
+}: {
+    label: string;
+    value: string;
+    onChangeText: (text: string) => void;
+    editable?: boolean;
+    keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'numeric';
+    placeholder?: string;
+    multiline?: boolean;
+    theme: any;
+}) => (
+    <View style={styles.editRow}>
+        <Text style={[styles.detailLabel, { color: theme.textLight }]}>{label}</Text>
+        <TextInput
+            value={value}
+            onChangeText={onChangeText}
+            editable={editable}
+            keyboardType={keyboardType}
+            placeholder={placeholder}
+            placeholderTextColor={theme.textLight}
+            multiline={multiline}
+            style={[
+                styles.input,
+                {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                    minHeight: multiline ? 80 : 40,
+                    textAlignVertical: multiline ? 'top' : 'center',
+                },
+                !editable && styles.inputDisabled,
+            ]}
+        />
+    </View>
+);
+
+const DateRow = ({
+    label,
+    value,
+    onPress,
+    placeholder = 'Select date',
+    theme,
+}: {
+    label: string;
+    value: string;
+    onPress: () => void;
+    placeholder?: string;
+    theme: any;
+}) => (
+    <TouchableOpacity style={styles.editRow} onPress={onPress} activeOpacity={0.7}>
+        <Text style={[styles.detailLabel, { color: theme.textLight }]}>{label}</Text>
+        <View
+            style={[
+                styles.selectionInput,
+                {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                },
+            ]}
+        >
+            <View style={styles.dateValueRow}>
+                <Ionicons name="calendar-outline" size={18} color={theme.primary} />
+                <Text
+                    style={[
+                        styles.dateValueText,
+                        { color: value ? theme.text : theme.textLight },
+                    ]}
+                >
+                    {value || placeholder}
+                </Text>
+            </View>
+        </View>
+    </TouchableOpacity>
+);
+
+const SelectionRow = ({
+    label,
+    value,
+    onPress,
+    theme,
+}: {
+    label: string;
+    value: string;
+    onPress: () => void;
+    theme: any;
+}) => (
+    <TouchableOpacity style={styles.editRow} onPress={onPress}>
+        <Text style={[styles.detailLabel, { color: theme.textLight }]}>{label}</Text>
+        <View style={[styles.selectionInput, { backgroundColor: theme.inputBg }]}>
+            <Text style={{ color: theme.text }}>{value}</Text>
+            <Ionicons name="chevron-down" size={20} color={theme.textLight} />
+        </View>
+    </TouchableOpacity>
+);
+
 export default function UserProfile() {
     const { theme } = useTheme();
     const { user } = useUser();
@@ -266,6 +391,7 @@ export default function UserProfile() {
     const [showNationalityModal, setShowNationalityModal] = useState(false);
     const [showChildNationModal, setShowChildNationModal] = useState(false);
     const [childIndexForNation, setChildIndexForNation] = useState(0);
+    const [editDenied, setEditDenied] = useState<boolean>(false);
     const [datePickerState, setDatePickerState] = useState<{
         visible: boolean;
         target:
@@ -505,6 +631,7 @@ export default function UserProfile() {
             if (!user?.TokenC) return;
             const result = await ApiService.getUserProfile(user.TokenC);
             setUserData(result.data || []);
+            setEditDenied(result.EditDenied || false);
         } catch (err: any) {
             console.error('Profile API Error:', err?.response?.data || err.message);
         } finally {
@@ -644,8 +771,9 @@ export default function UserProfile() {
 
 
     useEffect(() => {
+        if (!user?.TokenC) return;
         fetchUserData();
-    }, [user]);
+    }, [user?.TokenC]);
 
     useProtectedBack({
         home: '/home',
@@ -658,7 +786,7 @@ export default function UserProfile() {
     const nations: Nation[] = userData?.[0]?.nation || [];
 
     useEffect(() => {
-        if (!profile) return;
+        if (!profile || isEditing) return;
 
         // Initialize form data
         setFormData({
@@ -923,126 +1051,6 @@ export default function UserProfile() {
         );
     }
 
-    /* -------------------- UI HELPERS -------------------- */
-    const DetailRow = ({
-        label,
-        value,
-        withDivider = true,
-    }: {
-        label: string;
-        value: string | number;
-        withDivider?: boolean;
-    }) => (
-        <>
-            <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: theme.textLight }]}>
-                    {label}
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                    {value}
-                </Text>
-            </View>
-            {withDivider && <View style={[styles.divider, { backgroundColor: `${theme.textLight}20` }]} />}
-        </>
-    );
-
-    const EditableRow = ({
-        label,
-        value,
-        onChangeText,
-        editable = true,
-        keyboardType = 'default',
-        placeholder = '-',
-        multiline = false,
-    }: {
-        label: string;
-        value: string;
-        onChangeText: (text: string) => void;
-        editable?: boolean;
-        keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'numeric';
-        placeholder?: string;
-        multiline?: boolean;
-    }) => (
-        <View style={styles.editRow}>
-            <Text style={[styles.detailLabel, { color: theme.textLight }]}>{label}</Text>
-            <TextInput
-                value={value}
-                onChangeText={onChangeText}
-                editable={editable}
-                keyboardType={keyboardType}
-                placeholder={placeholder}
-                placeholderTextColor={theme.textLight}
-                multiline={multiline}
-                style={[
-                    styles.input,
-                    {
-                        backgroundColor: theme.inputBg,
-                        borderColor: theme.inputBorder,
-                        color: theme.text,
-                        minHeight: multiline ? 80 : 40,
-                        textAlignVertical: multiline ? 'top' : 'center',
-                    },
-                    !editable && styles.inputDisabled,
-                ]}
-            />
-        </View>
-    );
-
-    const DateRow = ({
-        label,
-        value,
-        onPress,
-        placeholder = 'Select date',
-    }: {
-        label: string;
-        value: string;
-        onPress: () => void;
-        placeholder?: string;
-    }) => (
-        <TouchableOpacity style={styles.editRow} onPress={onPress} activeOpacity={0.7}>
-            <Text style={[styles.detailLabel, { color: theme.textLight }]}>{label}</Text>
-            <View
-                style={[
-                    styles.selectionInput,
-                    {
-                        backgroundColor: theme.inputBg,
-                        borderColor: theme.inputBorder,
-                    },
-                ]}
-            >
-                <View style={styles.dateValueRow}>
-                    <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                    <Text
-                        style={[
-                            styles.dateValueText,
-                            { color: value ? theme.text : theme.textLight },
-                        ]}
-                    >
-                        {value || placeholder}
-                    </Text>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
-
-    const SelectionRow = ({
-        label,
-        value,
-        onPress,
-    }: {
-        label: string;
-        value: string;
-        onPress: () => void;
-    }) => (
-        <TouchableOpacity style={styles.editRow} onPress={onPress}>
-            <Text style={[styles.detailLabel, { color: theme.textLight }]}>{label}</Text>
-            <View style={[styles.selectionInput, { backgroundColor: theme.inputBg }]}>
-                <Text style={{ color: theme.text }}>{value}</Text>
-                <Ionicons name="chevron-down" size={20} color={theme.textLight} />
-            </View>
-        </TouchableOpacity>
-    );
-
     const ViewArraySection = ({
         title,
         data,
@@ -1071,7 +1079,10 @@ export default function UserProfile() {
     /* -------------------- RENDER -------------------- */
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.scrollContent}
+            >
                 <Header title="Profile" />
 
                 {/* Selection Modals */}
@@ -1127,26 +1138,35 @@ export default function UserProfile() {
                 </LinearGradient>
 
                 <View style={styles.actionRow}>
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: theme.primary }]}
-                        onPress={isEditing ? updateProfileData : () => setIsEditing(true)}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <>
-                                <Ionicons
-                                    name={isEditing ? 'save-outline' : 'create-outline'}
-                                    size={18}
-                                    color="#fff"
-                                />
-                                <Text style={styles.actionButtonText}>
-                                    {isEditing ? 'Save' : 'Edit'}
-                                </Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                    {!editDenied ? (
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                            onPress={isEditing ? updateProfileData : () => setIsEditing(true)}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <>
+                                    <Ionicons
+                                        name={isEditing ? 'save-outline' : 'create-outline'}
+                                        size={18}
+                                        color="#fff"
+                                    />
+                                    <Text style={styles.actionButtonText}>
+                                        {isEditing ? 'Save' : 'Edit'}
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={[styles.statusBadge, { backgroundColor: '#FEF3C7'}]}>
+                            <Ionicons name={'time-outline'} size={14} color={'#16A34A'} />
+                            <Text style={[styles.statusLabel, { color: "#16A34A"}]}>
+                                Approval Pending
+                            </Text>
+                        </View>
+                    )}
 
                     {isEditing &&
                         <TouchableOpacity
@@ -1176,31 +1196,31 @@ export default function UserProfile() {
                     onToggle={() => toggleSection('basic')}
                     theme={theme}
                 >
-                    <DetailRow label="Employee ID" value={profile.EmpIdN} />
+                    <DetailRow theme={theme} label="Employee ID" value={profile.EmpIdN} />
                     {isEditing ? (
                         <>
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Full Name"
                                 value={formData.EmpNameC}
                                 onChangeText={(text) => handleFieldChange('EmpNameC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Middle Name"
                                 value={formData.MiddleNameC}
                                 onChangeText={(text) => handleFieldChange('MiddleNameC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Last Name"
                                 value={formData.LastNameC}
                                 onChangeText={(text) => handleFieldChange('LastNameC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Email"
                                 value={formData.EmailIdC}
                                 keyboardType="email-address"
                                 onChangeText={(text) => handleFieldChange('EmailIdC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Phone"
                                 value={formData.PhNoC}
                                 keyboardType="phone-pad"
@@ -1209,11 +1229,11 @@ export default function UserProfile() {
                         </>
                     ) : (
                         <>
-                            <DetailRow label="Full Name" value={profile.EmpNameC} />
-                            <DetailRow label="Middle Name" value={profile.MiddleNameC || '-'} />
-                            <DetailRow label="Last Name" value={profile.LastNameC || '-'} />
-                            <DetailRow label="Email" value={profile.EmailIdC || '-'} />
-                            <DetailRow label="Phone" value={profile.PhNoC || '-'} withDivider={false} />
+                            <DetailRow theme={theme} label="Full Name" value={profile.EmpNameC} />
+                            <DetailRow theme={theme} label="Middle Name" value={profile.MiddleNameC || '-'} />
+                            <DetailRow theme={theme} label="Last Name" value={profile.LastNameC || '-'} />
+                            <DetailRow theme={theme} label="Email" value={profile.EmailIdC || '-'} />
+                            <DetailRow theme={theme} label="Phone" value={profile.PhNoC || '-'} withDivider={false} />
                         </>
                     )}
                 </CollapsibleCard>
@@ -1228,22 +1248,22 @@ export default function UserProfile() {
                 >
                     {isEditing ? (
                         <>
-                            <SelectionRow
+                            <SelectionRow theme={theme}
                                 label="Marital Status"
                                 value={maritalStatusLabel}
                                 onPress={() => setShowMaritalModal(true)}
                             />
-                            <SelectionRow
+                            <SelectionRow theme={theme}
                                 label="Blood Group"
                                 value={bloodGroupLabel}
                                 onPress={() => setShowBloodGroupModal(true)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Father's Name"
                                 value={formData.FatherNameC}
                                 onChangeText={(text) => handleFieldChange('FatherNameC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Mother's Name"
                                 value={formData.MotherNameC}
                                 onChangeText={(text) => handleFieldChange('MotherNameC', text)}
@@ -1251,10 +1271,10 @@ export default function UserProfile() {
                         </>
                     ) : (
                         <>
-                            <DetailRow label="Marital Status" value={maritalStatusLabel} />
-                            <DetailRow label="Blood Group" value={bloodGroupLabel} />
-                            <DetailRow label="Father's Name" value={profile.FatherNameC || '-'} />
-                            <DetailRow label="Mother's Name" value={profile.MotherNameC || '-'} withDivider={false} />
+                            <DetailRow theme={theme} label="Marital Status" value={maritalStatusLabel} />
+                            <DetailRow theme={theme} label="Blood Group" value={bloodGroupLabel} />
+                            <DetailRow theme={theme} label="Father's Name" value={profile.FatherNameC || '-'} />
+                            <DetailRow theme={theme} label="Mother's Name" value={profile.MotherNameC || '-'} withDivider={false} />
                         </>
                     )}
                 </CollapsibleCard>
@@ -1269,7 +1289,7 @@ export default function UserProfile() {
                 >
                     {isEditing ? (
                         <>
-                            <DateRow
+                            <DateRow theme={theme}
                                 label="Marital Date"
                                 value={formatDateValueForInput(formData.MarriedDateD)}
                                 placeholder="MM/DD/YYYY"
@@ -1280,18 +1300,18 @@ export default function UserProfile() {
                                     )
                                 }
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Spouse Name"
                                 value={formData.SpouseNameC}
                                 onChangeText={(text) => handleFieldChange('SpouseNameC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Spouse Phone"
                                 value={formData.SpousePhNoC}
                                 keyboardType="phone-pad"
                                 onChangeText={(text) => handleFieldChange('SpousePhNoC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Spouse Email"
                                 value={formData.SpouseEmailIdC}
                                 keyboardType="email-address"
@@ -1300,10 +1320,10 @@ export default function UserProfile() {
                         </>
                     ) : (
                         <>
-                            <DetailRow label="Marital Date" value={formatDisplayDate(profile.MarriedDateD) || '-'} />
-                            <DetailRow label="Spouse Name" value={profile.SpouseNameC || '-'} />
-                            <DetailRow label="Spouse Phone" value={profile.SpousePhNoC || '-'} />
-                            <DetailRow label="Spouse Email" value={profile.SpouseEmailIdC || '-'} withDivider={false} />
+                            <DetailRow theme={theme} label="Marital Date" value={formatDisplayDate(profile.MarriedDateD) || '-'} />
+                            <DetailRow theme={theme} label="Spouse Name" value={profile.SpouseNameC || '-'} />
+                            <DetailRow theme={theme} label="Spouse Phone" value={profile.SpousePhNoC || '-'} />
+                            <DetailRow theme={theme} label="Spouse Email" value={profile.SpouseEmailIdC || '-'} withDivider={false} />
                         </>
                     )}
                 </CollapsibleCard>
@@ -1318,38 +1338,38 @@ export default function UserProfile() {
                 >
                     {isEditing ? (
                         <>
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Current Door No"
                                 value={formData.CDoorNoC}
                                 onChangeText={(text) => handleFieldChange('CDoorNoC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Current Street"
                                 value={formData.CStreetC}
                                 onChangeText={(text) => handleFieldChange('CStreetC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Current Area"
                                 value={formData.CAreaC}
                                 onChangeText={(text) => handleFieldChange('CAreaC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Current City"
                                 value={formData.CCityC}
                                 onChangeText={(text) => handleFieldChange('CCityC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Current Pin Code"
                                 value={formData.CPinC}
                                 keyboardType="numeric"
                                 onChangeText={(text) => handleFieldChange('CPinC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Current State"
                                 value={formData.CStateC}
                                 onChangeText={(text) => handleFieldChange('CStateC', text)}
                             />
-                            <SelectionRow
+                            <SelectionRow theme={theme}
                                 label="Current Nation"
                                 value={nationality}
                                 onPress={() => setShowNationalityModal(true)}
@@ -1357,13 +1377,13 @@ export default function UserProfile() {
                         </>
                     ) : (
                         <>
-                            <DetailRow label="Current Door No" value={profile.CDoorNoC || '-'} />
-                            <DetailRow label="Current Street" value={profile.CStreetC || '-'} />
-                            <DetailRow label="Current Area" value={profile.CAreaC || '-'} />
-                            <DetailRow label="Current City" value={profile.CCityC || '-'} />
-                            <DetailRow label="Current Pin Code" value={profile.CPinC || '-'} />
-                            <DetailRow label="Current State" value={profile.CStateC || '-'} />
-                            <DetailRow label="Current Nation" value={nationality} withDivider={false} />
+                            <DetailRow theme={theme} label="Current Door No" value={profile.CDoorNoC || '-'} />
+                            <DetailRow theme={theme} label="Current Street" value={profile.CStreetC || '-'} />
+                            <DetailRow theme={theme} label="Current Area" value={profile.CAreaC || '-'} />
+                            <DetailRow theme={theme} label="Current City" value={profile.CCityC || '-'} />
+                            <DetailRow theme={theme} label="Current Pin Code" value={profile.CPinC || '-'} />
+                            <DetailRow theme={theme} label="Current State" value={profile.CStateC || '-'} />
+                            <DetailRow theme={theme} label="Current Nation" value={nationality} withDivider={false} />
                         </>
                     )}
                 </CollapsibleCard>
@@ -1389,44 +1409,44 @@ export default function UserProfile() {
                                     thumbColor="#fff"
                                 />
                             </View>
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Permanent Door No"
                                 value={formData.PDoorNoC}
                                 onChangeText={(text) => handleFieldChange('PDoorNoC', text)}
                                 editable={!sameAddress}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Permanent Street"
                                 value={formData.PStreetC}
                                 onChangeText={(text) => handleFieldChange('PStreetC', text)}
                                 editable={!sameAddress}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Permanent Area"
                                 value={formData.PAreaC}
                                 onChangeText={(text) => handleFieldChange('PAreaC', text)}
                                 editable={!sameAddress}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Permanent City"
                                 value={formData.PCityC}
                                 onChangeText={(text) => handleFieldChange('PCityC', text)}
                                 editable={!sameAddress}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Permanent Pin Code"
                                 value={formData.PPinC}
                                 keyboardType="numeric"
                                 onChangeText={(text) => handleFieldChange('PPinC', text)}
                                 editable={!sameAddress}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Permanent State"
                                 value={formData.PStateC}
                                 onChangeText={(text) => handleFieldChange('PStateC', text)}
                                 editable={!sameAddress}
                             />
-                            <DetailRow
+                            <DetailRow theme={theme}
                                 label="Permanent Nation"
                                 value={sameAddress ? nationality : permanentNationality}
                                 withDivider={false}
@@ -1434,13 +1454,13 @@ export default function UserProfile() {
                         </>
                     ) : (
                         <>
-                            <DetailRow label="Permanent Door No" value={profile.PDoorNoC || '-'} />
-                            <DetailRow label="Permanent Street" value={profile.PStreetC || '-'} />
-                            <DetailRow label="Permanent Area" value={profile.PAreaC || '-'} />
-                            <DetailRow label="Permanent City" value={profile.PCityC || '-'} />
-                            <DetailRow label="Permanent Pin Code" value={profile.PPinC || '-'} />
-                            <DetailRow label="Permanent State" value={profile.PStateC || '-'} />
-                            <DetailRow label="Permanent Nation" value={permanentNationality} withDivider={false} />
+                            <DetailRow theme={theme} label="Permanent Door No" value={profile.PDoorNoC || '-'} />
+                            <DetailRow theme={theme} label="Permanent Street" value={profile.PStreetC || '-'} />
+                            <DetailRow theme={theme} label="Permanent Area" value={profile.PAreaC || '-'} />
+                            <DetailRow theme={theme} label="Permanent City" value={profile.PCityC || '-'} />
+                            <DetailRow theme={theme} label="Permanent Pin Code" value={profile.PPinC || '-'} />
+                            <DetailRow theme={theme} label="Permanent State" value={profile.PStateC || '-'} />
+                            <DetailRow theme={theme} label="Permanent Nation" value={permanentNationality} withDivider={false} />
                         </>
                     )}
                 </CollapsibleCard>
@@ -1455,17 +1475,17 @@ export default function UserProfile() {
                 >
                     {isEditing ? (
                         <>
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Passport No"
                                 value={formData.PassportNoC}
                                 onChangeText={(text) => handleFieldChange('PassportNoC', text)}
                             />
-                            <EditableRow
+                            <EditableRow theme={theme}
                                 label="Issue Place"
                                 value={formData.IssuePlaceC}
                                 onChangeText={(text) => handleFieldChange('IssuePlaceC', text)}
                             />
-                            <DateRow
+                            <DateRow theme={theme}
                                 label="Issue Date"
                                 value={formatDateValueForInput(formData.IssueDateD)}
                                 placeholder="MM/DD/YYYY"
@@ -1476,7 +1496,7 @@ export default function UserProfile() {
                                     )
                                 }
                             />
-                            <DateRow
+                            <DateRow theme={theme}
                                 label="Expiry Date"
                                 value={formatDateValueForInput(formData.ExpiryDateD)}
                                 placeholder="MM/DD/YYYY"
@@ -1490,10 +1510,10 @@ export default function UserProfile() {
                         </>
                     ) : (
                         <>
-                            <DetailRow label="Passport No" value={profile.PassportNoC || '-'} />
-                            <DetailRow label="Issue Place" value={profile.IssuePlaceC || '-'} />
-                            <DetailRow label="Issue Date" value={formatDisplayDate(profile.IssueDateD) || '-'} />
-                            <DetailRow label="Expiry Date" value={formatDisplayDate(profile.ExpiryDateD) || '-'} withDivider={false} />
+                            <DetailRow theme={theme} label="Passport No" value={profile.PassportNoC || '-'} />
+                            <DetailRow theme={theme} label="Issue Place" value={profile.IssuePlaceC || '-'} />
+                            <DetailRow theme={theme} label="Issue Date" value={formatDisplayDate(profile.IssueDateD) || '-'} />
+                            <DetailRow theme={theme} label="Expiry Date" value={formatDisplayDate(profile.ExpiryDateD) || '-'} withDivider={false} />
                         </>
                     )}
                 </CollapsibleCard>
@@ -1512,12 +1532,12 @@ export default function UserProfile() {
                             data={children}
                             renderItem={(child, index) => (
                                 <>
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Name"
                                         value={child.NameC || ''}
                                         onChangeText={(text) => handleChildChange(index, 'NameC', text)}
                                     />
-                                    <DateRow
+                                    <DateRow theme={theme}
                                         label="Birth Date"
                                         value={formatDateValueForInput(child.BDateD)}
                                         placeholder="MM/DD/YYYY"
@@ -1528,7 +1548,7 @@ export default function UserProfile() {
                                             )
                                         }
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Status"
                                         value={child.StatusN || ''}
                                         onChangeText={(text) => handleChildChange(index, 'StatusN', text)}
@@ -1567,10 +1587,10 @@ export default function UserProfile() {
                                     <Text style={[styles.arrayItemIndex, { color: theme.primary }]}>
                                         Child {index + 1}
                                     </Text>
-                                    <DetailRow label="Name" value={child.NameC || '-'} />
-                                    <DetailRow label="Birth Date" value={formatDisplayDate(child.BDateD) || '-'} />
-                                    <DetailRow label="Status" value={child.StatusN || '-'} />
-                                    <DetailRow
+                                    <DetailRow theme={theme} label="Name" value={child.NameC || '-'} />
+                                    <DetailRow theme={theme} label="Birth Date" value={formatDisplayDate(child.BDateD) || '-'} />
+                                    <DetailRow theme={theme} label="Status" value={child.StatusN || '-'} />
+                                    <DetailRow theme={theme}
                                         label="Nation"
                                         value={nations.find(n => n.NationIdN === child.HidNationIdN)?.NationNameC || '-'}
                                         withDivider={false}
@@ -1595,19 +1615,19 @@ export default function UserProfile() {
                             data={education}
                             renderItem={(edu, index) => (
                                 <>
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Education"
                                         value={edu.EducationC || ''}
                                         multiline
                                         onChangeText={(text) => handleEducationChange(index, 'EducationC', text)}
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Center"
                                         value={edu.CenterC || ''}
                                         multiline
                                         onChangeText={(text) => handleEducationChange(index, 'CenterC', text)}
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Year"
                                         value={edu.YearN?.toString() || ''}
                                         keyboardType="numeric"
@@ -1630,9 +1650,9 @@ export default function UserProfile() {
                                     <Text style={[styles.arrayItemIndex, { color: theme.primary }]}>
                                         Education {index + 1}
                                     </Text>
-                                    <DetailRow label="Education" value={edu.EducationC || '-'} />
-                                    <DetailRow label="Center" value={edu.CenterC || '-'} />
-                                    <DetailRow label="Completed Year" value={edu.YearN || '-'} withDivider={false} />
+                                    <DetailRow theme={theme} label="Education" value={edu.EducationC || '-'} />
+                                    <DetailRow theme={theme} label="Center" value={edu.CenterC || '-'} />
+                                    <DetailRow theme={theme} label="Completed Year" value={edu.YearN || '-'} withDivider={false} />
                                 </>
                             )}
                         />
@@ -1653,12 +1673,12 @@ export default function UserProfile() {
                             data={family}
                             renderItem={(member, index) => (
                                 <>
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Name"
                                         value={member.NamesC || ''}
                                         onChangeText={(text) => handleFamilyChange(index, 'NamesC', text)}
                                     />
-                                    <DateRow
+                                    <DateRow theme={theme}
                                         label="Date of Birth"
                                         value={formatDateValueForInput(member.DateofBirthD)}
                                         placeholder="MM/DD/YYYY"
@@ -1669,23 +1689,23 @@ export default function UserProfile() {
                                             )
                                         }
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Relationship"
                                         value={member.RelationshipN || ''}
                                         onChangeText={(text) => handleFamilyChange(index, 'RelationshipN', text)}
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Occupation"
                                         value={member.OccupationC || ''}
                                         onChangeText={(text) => handleFamilyChange(index, 'OccupationC', text)}
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Phone"
                                         value={member.PhNoC || ''}
                                         keyboardType="phone-pad"
                                         onChangeText={(text) => handleFamilyChange(index, 'PhNoC', text)}
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Email"
                                         value={member.EmailIDC || ''}
                                         keyboardType="email-address"
@@ -1708,12 +1728,12 @@ export default function UserProfile() {
                                     <Text style={[styles.arrayItemIndex, { color: theme.primary }]}>
                                         Family Member {index + 1}
                                     </Text>
-                                    <DetailRow label="Name" value={member.NamesC || '-'} />
-                                    <DetailRow label="Date of Birth" value={formatDisplayDate(member.DateofBirthD) || '-'} />
-                                    <DetailRow label="Relationship" value={member.RelationshipN || '-'} />
-                                    <DetailRow label="Occupation" value={member.OccupationC || '-'} />
-                                    <DetailRow label="Phone" value={member.PhNoC || '-'} />
-                                    <DetailRow label="Email" value={member.EmailIDC || '-'} withDivider={false} />
+                                    <DetailRow theme={theme} label="Name" value={member.NamesC || '-'} />
+                                    <DetailRow theme={theme} label="Date of Birth" value={formatDisplayDate(member.DateofBirthD) || '-'} />
+                                    <DetailRow theme={theme} label="Relationship" value={member.RelationshipN || '-'} />
+                                    <DetailRow theme={theme} label="Occupation" value={member.OccupationC || '-'} />
+                                    <DetailRow theme={theme} label="Phone" value={member.PhNoC || '-'} />
+                                    <DetailRow theme={theme} label="Email" value={member.EmailIDC || '-'} withDivider={false} />
                                 </>
                             )}
                         />
@@ -1734,18 +1754,18 @@ export default function UserProfile() {
                             data={previousCompanies}
                             renderItem={(company, index) => (
                                 <>
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Company Name"
                                         value={company.CompNameC || ''}
                                         multiline
                                         onChangeText={(text) => handleCompanyChange(index, 'CompNameC', text)}
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Designation"
                                         value={company.DesignationC || ''}
                                         onChangeText={(text) => handleCompanyChange(index, 'DesignationC', text)}
                                     />
-                                    <DateRow
+                                    <DateRow theme={theme}
                                         label="From Date"
                                         value={formatDateValueForInput(company.FromDateD)}
                                         placeholder="MM/DD/YYYY"
@@ -1756,7 +1776,7 @@ export default function UserProfile() {
                                             )
                                         }
                                     />
-                                    <DateRow
+                                    <DateRow theme={theme}
                                         label="To Date"
                                         value={formatDateValueForInput(company.ToDateD)}
                                         placeholder="MM/DD/YYYY"
@@ -1767,12 +1787,12 @@ export default function UserProfile() {
                                             )
                                         }
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Experience"
                                         value={company.ExperienceN || ''}
                                         onChangeText={(text) => handleCompanyChange(index, 'ExperienceN', text)}
                                     />
-                                    <EditableRow
+                                    <EditableRow theme={theme}
                                         label="Description"
                                         value={company.DescC || ''}
                                         multiline
@@ -1795,12 +1815,12 @@ export default function UserProfile() {
                                     <Text style={[styles.arrayItemIndex, { color: theme.primary }]}>
                                         Company {index + 1}
                                     </Text>
-                                    <DetailRow label="Company Name" value={company.CompNameC || '-'} />
-                                    <DetailRow label="Designation" value={company.DesignationC || '-'} />
-                                    <DetailRow label="From Date" value={formatDisplayDate(company.FromDateD) || '-'} />
-                                    <DetailRow label="To Date" value={formatDisplayDate(company.ToDateD) || '-'} />
-                                    <DetailRow label="Experience" value={company.ExperienceN || '-'} />
-                                    <DetailRow label="Description" value={company.DescC || '-'} withDivider={false} />
+                                    <DetailRow theme={theme} label="Company Name" value={company.CompNameC || '-'} />
+                                    <DetailRow theme={theme} label="Designation" value={company.DesignationC || '-'} />
+                                    <DetailRow theme={theme} label="From Date" value={formatDisplayDate(company.FromDateD) || '-'} />
+                                    <DetailRow theme={theme} label="To Date" value={formatDisplayDate(company.ToDateD) || '-'} />
+                                    <DetailRow theme={theme} label="Experience" value={company.ExperienceN || '-'} />
+                                    <DetailRow theme={theme} label="Description" value={company.DescC || '-'} withDivider={false} />
                                 </>
                             )}
                         />
@@ -1860,6 +1880,19 @@ const styles = StyleSheet.create({
     profileSub: {
         fontSize: 14,
         color: 'rgba(255,255,255,0.9)',
+    },
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 4,
+        gap: 4,
+    },
+    statusLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
     },
     actionRow: {
         flexDirection: 'row',

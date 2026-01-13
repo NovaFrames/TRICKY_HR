@@ -1,6 +1,5 @@
-import { Feather } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Image, LayoutAnimation, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, LayoutAnimation, StyleSheet, Text, View } from 'react-native';
 
 import { useUser } from '@/context/UserContext';
 import { getProfileImageUrl } from '@/hooks/useGetImage';
@@ -93,7 +92,7 @@ export const IdCard: React.FC<IdCardProps> = ({
                     <TeamLeaders theme={theme} showHeader={false} />
                 </View>
 
-                <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
+                {/* <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: isTracking ? '#10B981' : '#CBD5E1', justifyContent: 'center', alignItems: 'center' }}>
                             <Feather name="map-pin" size={12} color="#fff" />
@@ -117,7 +116,7 @@ export const IdCard: React.FC<IdCardProps> = ({
                     >
                         <View style={[styles.toggleThumb, { backgroundColor: isTracking ? theme.primary : '#94A3B8' }]} />
                     </TouchableOpacity>
-                </View>
+                </View> */}
             </View>
         </View>
     );
