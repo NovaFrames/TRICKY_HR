@@ -26,16 +26,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomButton } from '../components/CustomButton';
 import { CustomInput } from '../components/CustomInput';
 import { useTheme } from '../context/ThemeContext';
-import { loginUser } from '../services/ApiService';
+import { loginUser, setBaseUrl } from '../services/ApiService';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
     const router = useRouter();
-    const [empCode, setEmpCode] = useState('10005');
-    const [password, setPassword] = useState('10005');
-    const [domainId, setDomainId] = useState('trickyhr');
-    const [domainUrl, setDomainUrl] = useState('hr.trickyhr.com')
+    const [empCode, setEmpCode] = useState('');
+    const [password, setPassword] = useState('');
+    const [domainId, setDomainId] = useState('');
+    const [domainUrl, setDomainUrl] = useState('')
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -88,43 +88,53 @@ export default function LoginScreen() {
     }, []);
 
     const handleLogin = async () => {
-    if (!empCode || !password || !domainId || !domainUrl) {
-        Alert.alert('Error', 'Please fill in all fields');
-        return;
-    }
-
-    setIsLoading(true);
-
-    try {
-        const response = await loginUser(empCode, password, domainId, domainUrl);
-
-        const token = response.TokenC || response.data?.TokenC;
-        const empId = response.data?.EmpIdN || response.EmpIdN;
-
-        if (!token) {
-            Alert.alert('Login Failed', 'Invalid credentials');
+        if (!empCode || !password || !domainId || !domainUrl) {
+            Alert.alert('Error', 'Please fill in all fields');
             return;
         }
 
-        await AsyncStorage.setItem('auth_token', token);
-        await AsyncStorage.setItem('emp_id', empId?.toString() ?? '');
+        setIsLoading(true);
 
-        // 🔥🔥🔥 THIS IS THE CRITICAL PART 🔥🔥🔥
-        const userData = {
-            ...(response.data || response),
-            domain_url: domainUrl.trim(),
-            domain_id: domainId.trim(),
-        };
+        try {
+            const response = await loginUser(empCode, password, domainId, domainUrl);
 
-        await setUser(userData);
+            const token = response.TokenC || response.data?.TokenC;
+            const empId = response.data?.EmpIdN || response.EmpIdN;
 
-        router.replace('/dashboard');
-    } catch (error: any) {
-        Alert.alert('Login Failed', error.message || 'Login error');
-    } finally {
-        setIsLoading(false);
-    }
-};
+            if (!token) {
+                Alert.alert('Login Failed', 'Invalid credentials');
+                return;
+            }
+
+            await AsyncStorage.setItem('auth_token', token);
+            await AsyncStorage.setItem('emp_id', empId?.toString() ?? '');
+            
+            // 🔥 Save domain_url separately for Axios
+            if (domainUrl) {
+                await AsyncStorage.setItem('domain_url', domainUrl);
+            }
+
+            if (domainId) {
+                await AsyncStorage.setItem('domain_id', domainId);
+            }
+
+            // 🔥🔥🔥 THIS IS THE CRITICAL PART 🔥🔥🔥
+            const userData = {
+                ...(response.data || response),
+                domain_url: domainUrl.trim(),
+                domain_id: domainId.trim(),
+            };
+
+            setBaseUrl(domainUrl);
+            await setUser(userData);
+
+            router.replace('/dashboard');
+        } catch (error: any) {
+            Alert.alert('Login Failed', error.message || 'Login error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
 
     // --- Animated Styles (Blob Design) ---

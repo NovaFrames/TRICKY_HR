@@ -6,6 +6,12 @@ import { getDomainUrl } from "./urldomain";
 
 let BASE_URL = "";
 
+const normalizeBaseUrl = (domainUrl: string) => {
+  const trimmed = domainUrl.trim();
+  if (!trimmed) return "";
+  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+};
+
 // Create an axios instance
 const api = axios.create({
   baseURL: BASE_URL,
@@ -17,12 +23,19 @@ const api = axios.create({
 const initializeBaseUrl = async () => {
   const domainUrl = await getDomainUrl();
   if (domainUrl) {
-    BASE_URL = domainUrl;
+    BASE_URL = normalizeBaseUrl(domainUrl);
     api.defaults.baseURL = BASE_URL;
   }
 };
 
 void initializeBaseUrl();
+
+export const setBaseUrl = (domainUrl: string) => {
+  const normalized = normalizeBaseUrl(domainUrl);
+  if (!normalized) return;
+  BASE_URL = normalized;
+  api.defaults.baseURL = BASE_URL;
+};
 
 export const loginUser = async (
   empCode: string,
