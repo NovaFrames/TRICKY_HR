@@ -19,7 +19,7 @@ import ApiService, {
     LeaveBalanceResponse
 } from '../../services/ApiService';
 import AppModal from '../common/AppModal';
-import BottomSelection from '../common/BottomSelection';
+import CenterModalSelection from '../common/CenterModalSelection';
 
 interface ApplyLeaveModalProps {
     visible: boolean;
@@ -341,13 +341,13 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                 />
             )}
 
-            <BottomSelection
+            <CenterModalSelection
                 visible={showLeaveTypeSelector}
                 onClose={() => setShowLeaveTypeSelector(false)}
                 title="Select Leave Type"
                 options={availableLeaves.map(l => ({ label: l.ReaNameC, value: l.ReaIdN }))}
                 selectedValue={selectedLeaveType?.ReaIdN}
-                onSelect={(val) => {
+                onSelect={(val: number) => {
                     const selected = availableLeaves.find(l => l.ReaIdN === val);
                     if (selected) {
                         setSelectedLeaveType(selected);

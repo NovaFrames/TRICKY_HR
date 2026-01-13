@@ -1,0 +1,155 @@
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import {
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
+
+interface Option {
+    label: string;
+    value: any;
+}
+
+interface CenterModalSelectionProps {
+    visible: boolean;
+    onClose: () => void;
+    onSelect: (value: any) => void;
+    options: Option[];
+    title?: string;
+    selectedValue?: any;
+}
+
+const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
+    visible,
+    onClose,
+    onSelect,
+    options,
+    title,
+    selectedValue,
+}) => {
+    const { theme } = useTheme();
+
+    if (!visible) return null;
+
+    return (
+        <Modal
+            transparent
+            visible={visible}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={styles.overlay}>
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={onClose}
+                    style={styles.backdrop}
+                />
+
+                <View style={[styles.modalContainer, { backgroundColor: theme.cardBackground }]}>
+                    {/* Header */}
+                    <View style={[styles.header, { borderBottomColor: theme.inputBorder }]}>
+                        <Text style={[styles.title, { color: theme.text }]}>
+                            {title || 'Select Option'}
+                        </Text>
+                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                            <Ionicons name="close" size={24} color={theme.icon} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Options List */}
+                    <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+                        {options.map((option, index) => {
+                            const isSelected = selectedValue === option.value;
+                            return (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                        styles.option,
+                                        isSelected && { backgroundColor: theme.primary + '10' }
+                                    ]}
+                                    onPress={() => {
+                                        onSelect(option.value);
+                                        onClose();
+                                    }}
+                                >
+                                    <Text style={[
+                                        styles.optionText,
+                                        { color: theme.text },
+                                        isSelected && { color: theme.primary, fontWeight: '700' }
+                                    ]}>
+                                        {option.label}
+                                    </Text>
+                                    {isSelected && (
+                                        <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
+                        <View style={{ height: 20 }} />
+                    </ScrollView>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
+const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    backdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContainer: {
+        width: '100%',
+        maxWidth: 400,
+        maxHeight: '70%',
+        borderRadius: 16,
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 20,
+        borderBottomWidth: 1,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    closeButton: {
+        padding: 4,
+    },
+    list: {
+        paddingHorizontal: 20,
+        paddingTop: 10,
+    },
+    option: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        marginVertical: 4,
+    },
+    optionText: {
+        fontSize: 16,
+    },
+});
+
+export default CenterModalSelection;

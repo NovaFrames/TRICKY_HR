@@ -42,11 +42,11 @@ export default function DynamicTable({
 
   /* ---------------- HEADER ---------------- */
   const renderHeader = () => (
-    <View style={[styles.row, styles.headerRow]}>
+    <View style={[styles.row, styles.headerRow, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
       {columns.map((col, i) => (
-        <View key={col.key} style={[styles.cell, { width: columnWidths[i] }]}>
+        <View key={col.key} style={[styles.cell, { width: columnWidths[i], borderColor: theme.inputBorder }]}>
           <Text
-            style={[styles.headerText, { color: theme.secondary, textAlign: align(col.align) }]}
+            style={[styles.headerText, { color: theme.text, textAlign: align(col.align) }]}
           >
             {col.label}
           </Text>
@@ -60,7 +60,10 @@ export default function DynamicTable({
     <View
       style={[
         styles.row,
-        { backgroundColor: index % 2 === 0 ? theme.cardBackground : theme.background },
+        {
+          backgroundColor: index % 2 === 0 ? theme.cardBackground : theme.background,
+          borderColor: theme.inputBorder
+        },
       ]}
     >
       {columns.map((col, i) => {
@@ -69,7 +72,7 @@ export default function DynamicTable({
           : item[col.key] ?? '';
 
         return (
-          <View key={col.key} style={[styles.cell, { width: columnWidths[i] }]}>
+          <View key={col.key} style={[styles.cell, { width: columnWidths[i], borderColor: theme.inputBorder }]}>
             <Text
               style={[styles.cellText, { color: theme.text, textAlign: align(col.align), flexWrap: 'wrap' }]}
             >
@@ -108,7 +111,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerRow: {
-    backgroundColor: '#f1f5f9',
     borderBottomWidth: 2,
   },
   cell: {
