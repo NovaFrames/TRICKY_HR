@@ -143,9 +143,9 @@ export default function SettingsScreen() {
     );
 
     const THEME_COLORS = [
-        { label: 'Orange', value: '#e46a23' },
-        { label: 'Indigo', value: '#6366F1' },
-        { label: 'Emerald', value: '#10B981' },
+        { label: 'Orange', color: '#e46a23' },
+        { label: 'Indigo', color: '#6366F1' },
+        { label: 'Emerald', color: '#10B981' },
     ];
 
     const SettingsItem = ({
@@ -211,17 +211,17 @@ export default function SettingsScreen() {
                             <View style={styles.themeBadgeSection}>
                                 <View style={styles.inlineColorRow}>
                                     {THEME_COLORS.map((color, index) => {
-                                        const isSelected = theme.primary === color.value;
+                                        const isSelected = theme.primary === color.color;
                                         return (
                                             <View key={index} style={{ alignItems: 'center', gap: 6, }}>
                                                 <TouchableOpacity
                                                     key={index}
                                                     style={[
                                                         styles.inlineColorCircle,
-                                                        { backgroundColor: color.value },
+                                                        { backgroundColor: color.color },
                                                         isSelected && styles.inlineSelectedCircle
                                                     ]}
-                                                    onPress={() => setPrimaryColor(color.value)}
+                                                    onPress={() => setPrimaryColor(color.color)}
                                                 >
                                                     {isSelected && <Feather name="check" size={14} color="#FFF" />}
                                                 </TouchableOpacity>
