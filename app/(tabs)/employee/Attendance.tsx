@@ -1,5 +1,5 @@
 import CenterModalSelection from '@/components/common/CenterModalSelection';
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
@@ -219,8 +219,10 @@ export default function Attendance() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16 }}>
-                <Header title="Mobile Attendance" />
+            <Header title="Mobile Attendance" />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{
+                paddingTop: HEADER_HEIGHT + 24, // header + status bar
+            }}>
 
                 {/* CLOCK SECTION */}
                 <View style={styles.clockHeader}>

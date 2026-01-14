@@ -1,10 +1,8 @@
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     PanResponder,
     RefreshControl,
@@ -156,84 +154,87 @@ export default function EmpRequestPage() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
-            <Stack.Screen options={{ headerShown: false }} />
+            {/* Fixed Header */}
             <Header title="Request Status" />
 
-            {/* Custom Tab Bar */}
-            <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
-                {routes.map((item, i) => (
-                    <TouchableOpacity
-                        key={item.key}
-                        style={[
-                            styles.tabItem,
-                            index === i && { borderBottomColor: theme.primary }
-                        ]}
-                        onPress={() => setIndex(i)}
-                    >
-                        <Text style={[
-                            styles.tabText,
-                            { color: index === i ? theme.primary : theme.textLight }
-                        ]}>
-                            {item.title}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
+            {/* Scrollable Content */}
+            <FlatList
+                data={filteredRequests ?? []}
+                keyExtractor={(item, index) =>
+                    `${item.StatusC?.trim() || 'UNKNOWN'}-${item.IdN}-${index}`
+                }
 
-            {/* Content Area with Swipe Support */}
-            <View style={{ flex: 1 }} {...panResponder.panHandlers}>
-                {loading && !refreshing ? (
-                    <View style={[styles.center, { backgroundColor: theme.background }]}>
-                        <ActivityIndicator size="large" color={theme.primary} />
-                        <Text style={[styles.loadingText, { color: theme.textLight }]}>
-                            Loading requests...
-                        </Text>
+                /* Push content below fixed header */
+                contentContainerStyle={{
+                    paddingTop: HEADER_HEIGHT + 24,
+                }}
+
+                /* Tabs (scroll WITH list) */
+                ListHeaderComponent={
+                    <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+                        {routes.map((item, i) => (
+                            <TouchableOpacity
+                                key={item.key}
+                                style={[
+                                    styles.tabItem,
+                                    index === i && { borderBottomColor: theme.primary },
+                                ]}
+                                onPress={() => setIndex(i)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.tabText,
+                                        { color: index === i ? theme.primary : theme.textLight },
+                                    ]}
+                                >
+                                    {item.title}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                ) : (
-                    <FlatList
-                        data={filteredRequests}
-                        keyExtractor={(item, index) =>
-                            `${item.StatusC?.trim() || 'UNKNOWN'}-${item.IdN}-${index}`
-                        }
-                        renderItem={({ item }) => (
-                            <RequestStatusItem
-                                item={item}
-                                onPress={() => {
-                                    setSelectedItem(item);
-                                    setModalVisible(true);
-                                }}
-                            />
-                        )}
-                        contentContainerStyle={styles.listContent}
-                        refreshControl={
-                            <RefreshControl
-                                refreshing={refreshing}
-                                onRefresh={onRefresh}
-                                colors={[theme.primary]}
-                                tintColor={theme.primary}
-                            />
-                        }
-                        ListEmptyComponent={
+                }
+
+                renderItem={({ item }) => (
+                    <RequestStatusItem
+                        item={item}
+                        onPress={() => {
+                            setSelectedItem(item);
+                            setModalVisible(true);
+                        }}
+                    />
+                )}
+
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[theme.primary]}
+                        tintColor={theme.primary}
+                    />
+                }
+
+                ListEmptyComponent={
+                    loading
+                        ? null
+                        : (
                             <View style={styles.emptyContainer}>
-                                <View style={[styles.emptyIconBox, { backgroundColor: theme.inputBg }]}>
-                                    <Ionicons
-                                        name="document-text-outline"
-                                        size={48}
-                                        color={theme.placeholder}
-                                    />
-                                </View>
+                                <Ionicons
+                                    name="document-text-outline"
+                                    size={48}
+                                    color={theme.placeholder}
+                                />
                                 <Text style={[styles.emptyTitle, { color: theme.text }]}>
                                     No {activeTabName} Requests
                                 </Text>
-                                <Text style={[styles.emptySubtitle, { color: theme.placeholder }]}>
-                                    When you have {activeTabName.toLowerCase()} requests, they will appear here.
-                                </Text>
                             </View>
-                        }
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
-            </View>
+                        )
+                }
+
+                showsVerticalScrollIndicator={false}
+
+                /* Swipe tabs */
+                {...panResponder.panHandlers}
+            />
 
             {modalVisible && selectedItem && (
                 <RequestModal
@@ -244,6 +245,7 @@ export default function EmpRequestPage() {
                 />
             )}
         </View>
+
     );
 }
 
@@ -273,10 +275,6 @@ const styles = StyleSheet.create({
     tabText: {
         fontSize: 14,
         fontWeight: '600',
-    },
-    listContent: {
-        paddingTop: 10,
-        paddingBottom: 120,
     },
     center: {
         flex: 1,
