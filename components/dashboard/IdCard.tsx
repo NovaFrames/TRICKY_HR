@@ -84,7 +84,7 @@ export const IdCard: React.FC<IdCardProps> = ({
                 </View>
 
                 {/* Integration of Supervisors list inside IdCard */}
-                <View style={{ borderTopWidth: 1, borderTopColor: theme.inputBorder, paddingTop: 12, marginBottom: 4, }}>
+                <View style={{ borderTopWidth: 1, borderTopColor: theme.inputBorder, paddingTop: 12, marginBottom: 4, alignItems:'center' }}>
                     <TeamLeaders theme={theme} showHeader={false} />
                 </View>
 
