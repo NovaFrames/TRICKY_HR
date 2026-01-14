@@ -1,6 +1,5 @@
 import Header from "@/components/Header";
 import RequestStatusItem from "@/components/RequestPage/RequestStatusItem";
-import SegmentTabs from "@/components/SegmentTabs";
 import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -9,20 +8,16 @@ import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  PanResponder,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
-import {
-  PanGestureHandler,
-  PanGestureHandlerGestureEvent,
-  State,
-} from 'react-native-gesture-handler';
-
 
 /* ---------------- TYPES ---------------- */
 
@@ -49,26 +44,12 @@ export default function ApprovalDetails() {
   const { from } = useLocalSearchParams<{ from?: string }>();
   const originFrom = typeof from === "string" ? from : "home";
 
-  const onSwipeEnd = (event: PanGestureHandlerGestureEvent) => {
-    if (event.nativeEvent.state !== State.END) return;
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: 'approved', title: 'APPROVED' },
+    { key: 'rejected', title: 'REJECTED' },
+  ]);
 
-    const { translationX } = event.nativeEvent;
-
-    // swipe left → Approved → Rejected
-    if (translationX < -60 && activeTab === 'Approved') {
-      setActiveTab('Rejected');
-    }
-
-    // swipe right → Rejected → Approved
-    if (translationX > 60 && activeTab === 'Rejected') {
-      setActiveTab('Approved');
-    }
-  };
-
-
-  const [activeTab, setActiveTab] = useState<"Approved" | "Rejected">(
-    "Approved"
-  );
   const [data, setData] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -85,9 +66,10 @@ export default function ApprovalDetails() {
       setLoading(true);
 
       const domainUrl = await getDomainUrl();
+      const currentTab = routes[index].key;
 
       const endpoint =
-        activeTab === "Approved"
+        currentTab === "approved"
           ? API_ENDPOINTS.SUP_DETAPPROVE_URL
           : API_ENDPOINTS.SUP_GETREJECT_URL;
 
@@ -111,11 +93,32 @@ export default function ApprovalDetails() {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, [index]);
+
+  /* ---------------- SWIPE GESTURES ---------------- */
+
+  // PanResponder for swipe gestures
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Determine if swipe is horizontal and significant enough
+        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dx > 50) {
+          // Swipe Right -> Previous Tab
+          setIndex(prev => Math.max(0, prev - 1));
+        } else if (gestureState.dx < -50) {
+          // Swipe Left -> Next Tab
+          setIndex(prev => Math.min(routes.length - 1, prev + 1));
+        }
+      },
+    })
+  ).current;
 
   /* ---------------- HELPERS ---------------- */
 
-  const TABS: Array<'Approved' | 'Rejected'> = ['Approved', 'Rejected'];
+  const activeTabName = routes[index].title;
 
   /* ---------------- RENDER ITEM ---------------- */
 
@@ -139,38 +142,44 @@ export default function ApprovalDetails() {
     />
   );
 
-  const renderListHeader = () => (
-    <View>
-      <Header title="Approval Requests" />
-
-      <SegmentTabs
-        tabs={TABS}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-      />
-    </View>
-  );
-
   /* ---------------- UI ---------------- */
 
   return (
+    <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+      <Header title="Approval Requests" />
 
-    <PanGestureHandler
-      onHandlerStateChange={onSwipeEnd}
-      activeOffsetX={[-30, 30]}
-      failOffsetY={[-30, 30]}
-    >
-      <View style={styles.container}>
+      {/* Custom Tab Bar */}
+      <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+        {routes.map((item, i) => (
+          <TouchableOpacity
+            key={item.key}
+            style={[
+              styles.tabItem,
+              index === i && { borderBottomColor: theme.primary }
+            ]}
+            onPress={() => setIndex(i)}
+          >
+            <Text style={[
+              styles.tabText,
+              { color: index === i ? theme.primary : theme.textLight }
+            ]}>
+              {item.title}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Content Area with Swipe Support */}
+      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
         {loading ? (
-          <View style={styles.center}>
+          <View style={[styles.center, { backgroundColor: theme.background }]}>
             <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.loadingText, { color: theme.placeholder }]}>
+            <Text style={[styles.loadingText, { color: theme.textLight }]}>
               Loading requests...
             </Text>
           </View>
         ) : (
           <FlatList
-            ListHeaderComponent={renderListHeader}
             data={data}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderItem}
@@ -186,21 +195,19 @@ export default function ApprovalDetails() {
                   />
                 </View>
                 <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                  No {activeTab} Requests
+                  No {activeTabName} Requests
                 </Text>
                 <Text style={[styles.emptySubtitle, { color: theme.placeholder }]}>
-                  When you have {activeTab.toLowerCase()} requests, they will appear here.
+                  When you have {activeTabName.toLowerCase()} requests, they will appear here.
                 </Text>
               </View>
             }
           />
         )}
       </View>
-    </PanGestureHandler>
+    </View>
   );
 }
-
-/* ---------------- SMALL COMPONENTS ---------------- */
 
 /* ---------------- STYLES ---------------- */
 
@@ -208,14 +215,32 @@ const createStyles = (theme: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.background,
     },
-
+    tabBar: {
+      flexDirection: 'row',
+      height: 50,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 1,
+    },
+    tabItem: {
+      flex: 1,
+      paddingVertical: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderBottomWidth: 3,
+      borderBottomColor: 'transparent',
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
     listContent: {
       paddingTop: 10,
       paddingBottom: 120,
     },
-
     center: {
       flex: 1,
       justifyContent: "center",
@@ -226,7 +251,6 @@ const createStyles = (theme: any) =>
       fontSize: 14,
       fontWeight: "600",
     },
-
     emptyContainer: {
       alignItems: "center",
       justifyContent: "center",

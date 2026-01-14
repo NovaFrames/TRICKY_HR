@@ -1,11 +1,12 @@
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
+    PanResponder,
     RefreshControl,
     StyleSheet,
     Text,
@@ -38,12 +39,14 @@ interface PendingApproval {
     FinalApproveC: string | null;
 }
 
-type TabType = 'your' | 'other';
-
 export default function PendingApproval() {
     const { theme } = useTheme();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<TabType>('your');
+    const [index, setIndex] = useState(0);
+    const [routes] = useState([
+        { key: 'your', title: 'YOUR PENDING' },
+        { key: 'other', title: 'OTHER PENDING' },
+    ]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -67,12 +70,13 @@ export default function PendingApproval() {
 
     useEffect(() => {
         fetchPendingApprovals();
-    }, [activeTab]);
+    }, [index]);
 
     const fetchPendingApprovals = async () => {
         setLoading(true);
         try {
-            if (activeTab === 'your') {
+            const currentTab = routes[index].key;
+            if (currentTab === 'your') {
                 const result = await ApiService.getYourPendingApprovals();
                 if (result.success && result.data) {
                     console.log('Your Pending Data:', JSON.stringify(result.data[0], null, 2));
@@ -101,6 +105,25 @@ export default function PendingApproval() {
         await fetchPendingApprovals();
         setRefreshing(false);
     };
+
+    // PanResponder for swipe gestures
+    const panResponder = useRef(
+        PanResponder.create({
+            onMoveShouldSetPanResponder: (evt, gestureState) => {
+                // Determine if swipe is horizontal and significant enough
+                return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+            },
+            onPanResponderRelease: (evt, gestureState) => {
+                if (gestureState.dx > 50) {
+                    // Swipe Right -> Previous Tab
+                    setIndex(prev => Math.max(0, prev - 1));
+                } else if (gestureState.dx < -50) {
+                    // Swipe Left -> Next Tab
+                    setIndex(prev => Math.min(routes.length - 1, prev + 1));
+                }
+            },
+        })
+    ).current;
 
     const formatDate = (dateString: string) => {
         if (!dateString) return '';
@@ -249,63 +272,41 @@ export default function PendingApproval() {
         </View>
     );
 
-    const renderHeader = () => (
-        <View style={styles.headerContainer}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.navBar}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                    <Ionicons name="arrow-back" size={24} color={theme.text} />
-                </TouchableOpacity>
-                <Text style={[styles.navTitle, { color: theme.text }]}>Pending Approval</Text>
-                <View style={styles.iconButton} />
-            </View>
-
-            {/* Tabs */}
-            <View style={[styles.tabContainer, { backgroundColor: theme.cardBackground }]}>
-                <TouchableOpacity
-                    style={[
-                        styles.tab,
-                        activeTab === 'your' && styles.activeTab,
-                        activeTab === 'your' && { borderBottomColor: theme.primary },
-                    ]}
-                    onPress={() => setActiveTab('your')}
-                >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            { color: activeTab === 'your' ? theme.primary : theme.placeholder },
-                        ]}
-                    >
-                        YOUR PENDING
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[
-                        styles.tab,
-                        activeTab === 'other' && styles.activeTab,
-                        activeTab === 'other' && { borderBottomColor: theme.primary },
-                    ]}
-                    onPress={() => setActiveTab('other')}
-                >
-                    <Text
-                        style={[
-                            styles.tabText,
-                            { color: activeTab === 'other' ? theme.primary : theme.placeholder },
-                        ]}
-                    >
-                        OTHER PENDING
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-
-    const currentData = activeTab === 'your' ? yourPendings : otherPendings;
+    const currentData = routes[index].key === 'your' ? yourPendings : otherPendings;
 
     if (loading && !refreshing) {
         return (
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
-                {renderHeader()}
+            <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View style={styles.navBar}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.navTitle, { color: theme.text }]}>Pending Approval</Text>
+                    <View style={styles.iconButton} />
+                </View>
+
+                {/* Custom Tab Bar */}
+                <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+                    {routes.map((item, i) => (
+                        <TouchableOpacity
+                            key={item.key}
+                            style={[
+                                styles.tabItem,
+                                index === i && { borderBottomColor: theme.primary }
+                            ]}
+                            onPress={() => setIndex(i)}
+                        >
+                            <Text style={[
+                                styles.tabText,
+                                { color: index === i ? theme.primary : theme.textLight }
+                            ]}>
+                                {item.title}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.primary} />
                     <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
@@ -315,25 +316,56 @@ export default function PendingApproval() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            {renderHeader()}
+        <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <View style={styles.navBar}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
+                </TouchableOpacity>
+                <Text style={[styles.navTitle, { color: theme.text }]}>Pending Approval</Text>
+                <View style={styles.iconButton} />
+            </View>
 
-            <FlatList
-                data={currentData}
-                keyExtractor={(item, index) => `${item.IdN}-${index}`}
-                renderItem={renderPendingItem}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={renderEmptyState}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                        colors={[theme.primary]}
-                        tintColor={theme.primary}
-                    />
-                }
-            />
+            {/* Custom Tab Bar */}
+            <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+                {routes.map((item, i) => (
+                    <TouchableOpacity
+                        key={item.key}
+                        style={[
+                            styles.tabItem,
+                            index === i && { borderBottomColor: theme.primary }
+                        ]}
+                        onPress={() => setIndex(i)}
+                    >
+                        <Text style={[
+                            styles.tabText,
+                            { color: index === i ? theme.primary : theme.textLight }
+                        ]}>
+                            {item.title}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
+            {/* Content Area with Swipe Support */}
+            <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+                <FlatList
+                    data={currentData}
+                    keyExtractor={(item, index) => `${item.IdN}-${index}`}
+                    renderItem={renderPendingItem}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={renderEmptyState}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={handleRefresh}
+                            colors={[theme.primary]}
+                            tintColor={theme.primary}
+                        />
+                    }
+                />
+            </View>
 
             {/* Approval Modal */}
             <PendingApprovalModal
@@ -357,16 +389,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    headerContainer: {
-        paddingTop: 10,
-        paddingBottom: 0,
-    },
     navBar: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingVertical: 12,
+        paddingTop: 16,
     },
     navTitle: {
         fontSize: 17,
@@ -380,21 +409,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    tabContainer: {
+    tabBar: {
         flexDirection: 'row',
-        marginTop: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        height: 50,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
     },
-    tab: {
+    tabItem: {
         flex: 1,
-        paddingVertical: 14,
+        paddingVertical: 12,
+        justifyContent: 'center',
         alignItems: 'center',
-        borderBottomWidth: 2,
+        borderBottomWidth: 3,
         borderBottomColor: 'transparent',
-    },
-    activeTab: {
-        borderBottomWidth: 2,
     },
     tabText: {
         fontSize: 13,

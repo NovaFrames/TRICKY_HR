@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, Touc
 import { useTheme } from '../../context/ThemeContext';
 import ApiService from '../../services/ApiService';
 import AppModal from '../common/AppModal';
-import BottomSelection from '../common/BottomSelection';
+import CenterModalSelection from '../common/CenterModalSelection';
 
 interface TimeRequestModalProps {
     visible: boolean;
@@ -274,7 +274,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                 />
             )}
 
-            <BottomSelection
+            <CenterModalSelection
                 visible={showProjectSelector}
                 onClose={() => setShowProjectSelector(false)}
                 title="Select Project"
@@ -282,7 +282,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                 selectedValue={formData.projectId}
                 onSelect={(val) => setFormData(prev => ({ ...prev, projectId: val }))}
             />
-            <BottomSelection
+            <CenterModalSelection
                 visible={showRequestTypeSelector}
                 onClose={() => setShowRequestTypeSelector(false)}
                 title="Select Request Type"

@@ -6,10 +6,11 @@ import { getProfileImageUrl } from "@/hooks/useGetImage";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Image,
+    PanResponder,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -17,10 +18,8 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-// import emptyProfile from "../../../assets/images/";
 
-/* -------------------- TABS -------------------- */
-type TabKey = 'birthday' | 'wedding' | 'work';
+/* -------------------- COMPONENT -------------------- */
 
 export default function Celebration() {
     const { theme } = useTheme();
@@ -29,7 +28,12 @@ export default function Celebration() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [activeTab, setActiveTab] = useState<TabKey>('birthday');
+    const [index, setIndex] = useState(0);
+    const [routes] = useState([
+        { key: 'birthday', title: 'BIRTHDAY', icon: 'gift-outline' },
+        { key: 'work', title: 'WORK ANNIVERSARY', icon: 'ribbon-outline' },
+        { key: 'wedding', title: 'WEDDING', icon: 'heart-outline' },
+    ]);
 
     useProtectedBack({ home: '/home' });
 
@@ -58,6 +62,25 @@ export default function Celebration() {
         setRefreshing(true);
         fetchCelebration();
     };
+
+    // PanResponder for swipe gestures
+    const panResponder = useRef(
+        PanResponder.create({
+            onMoveShouldSetPanResponder: (evt, gestureState) => {
+                // Determine if swipe is horizontal and significant enough
+                return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+            },
+            onPanResponderRelease: (evt, gestureState) => {
+                if (gestureState.dx > 50) {
+                    // Swipe Right -> Previous Tab
+                    setIndex(prev => Math.max(0, prev - 1));
+                } else if (gestureState.dx < -50) {
+                    // Swipe Left -> Next Tab
+                    setIndex(prev => Math.min(routes.length - 1, prev + 1));
+                }
+            },
+        })
+    ).current;
 
     if (loading) {
         return (
@@ -121,7 +144,7 @@ export default function Celebration() {
         );
     };
 
-    const renderCards = (list: any[], type: TabKey) => {
+    const renderCards = (list: any[], type: string) => {
         if (list.length === 0) {
             return (
                 <View style={styles.emptyContainer}>
@@ -181,62 +204,46 @@ export default function Celebration() {
         ));
     };
 
+    const currentTab = routes[index].key;
+
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
             <Header title="Celebrations" />
 
-            {/* ----------- TABS ----------- */}
-            <View style={[styles.tabContainer, { backgroundColor: theme.inputBg }]}>
-                {[
-                    { key: 'birthday', label: 'Birthday', icon: 'gift-outline' },
-                    { key: 'work', label: 'Work', icon: 'ribbon-outline' },
-                    { key: 'wedding', label: 'Wedding', icon: 'heart-outline' },
-                ].map(tab => (
+            {/* Custom Tab Bar */}
+            <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+                {routes.map((item, i) => (
                     <TouchableOpacity
-                        key={tab.key}
-                        onPress={() => setActiveTab(tab.key as TabKey)}
+                        key={item.key}
                         style={[
-                            styles.tab,
-                            activeTab === tab.key && {
-                                backgroundColor: theme.primary,
-                                elevation: 4,
-                                shadowColor: theme.primary,
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.3,
-                                shadowRadius: 4,
-                            },
+                            styles.tabItem,
+                            index === i && { borderBottomColor: theme.primary }
                         ]}
+                        onPress={() => setIndex(i)}
                     >
-                        <Ionicons
-                            name={tab.icon as any}
-                            size={18}
-                            color={activeTab === tab.key ? '#fff' : theme.textLight}
-                        />
-                        <Text
-                            style={[
-                                styles.tabText,
-                                {
-                                    color: activeTab === tab.key ? '#fff' : theme.textLight,
-                                }
-                            ]}
-                        >
-                            {tab.label}
+                        <Text style={[
+                            styles.tabText,
+                            { color: index === i ? theme.primary : theme.textLight }
+                        ]}>
+                            {item.title}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            {/* ----------- CONTENT ----------- */}
-            <ScrollView
-                contentContainerStyle={styles.content}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
-                }
-            >
-                {activeTab === 'birthday' && renderCards(birthdays, 'birthday')}
-                {activeTab === 'wedding' && renderCards(weddings, 'wedding')}
-                {activeTab === 'work' && renderCards(workAnniv, 'work')}
-            </ScrollView>
+            {/* Content Area with Swipe Support */}
+            <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+                <ScrollView
+                    contentContainerStyle={styles.content}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+                    }
+                >
+                    {currentTab === 'birthday' && renderCards(birthdays, 'birthday')}
+                    {currentTab === 'wedding' && renderCards(weddings, 'wedding')}
+                    {currentTab === 'work' && renderCards(workAnniv, 'work')}
+                </ScrollView>
+            </View>
         </View>
     );
 }
@@ -246,28 +253,31 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    tabContainer: {
+    tabBar: {
         flexDirection: 'row',
-        margin: 16,
-        borderRadius: 4,
-        padding: 6,
-        gap: 4,
+        height: 50,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
     },
-    tab: {
+    tabItem: {
         flex: 1,
-        flexDirection: 'row',
         paddingVertical: 12,
-        alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 4,
-        gap: 6,
+        alignItems: 'center',
+        borderBottomWidth: 3,
+        borderBottomColor: 'transparent',
     },
     tabText: {
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: '700',
+        letterSpacing: 0.3,
     },
     content: {
         paddingHorizontal: 16,
+        paddingTop: 16,
         paddingBottom: 30,
         gap: 12,
     },
