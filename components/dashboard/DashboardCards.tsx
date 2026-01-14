@@ -1,4 +1,4 @@
-import { useUser } from '@/context/UserContext';
+import { UserData, useUser } from '@/context/UserContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
@@ -47,7 +47,7 @@ export default function DashboardCards() {
     const { theme } = useTheme();
     const { user } = useUser();
 
-    const loginData = user || {};
+    const loginData: Partial<UserData> = user ?? {};
 
     const menuItems =
         Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0

@@ -108,7 +108,7 @@ export default function LoginScreen() {
 
             await AsyncStorage.setItem('auth_token', token);
             await AsyncStorage.setItem('emp_id', empId?.toString() ?? '');
-            
+
             // 🔥 Save domain_url separately for Axios
             if (domainUrl) {
                 await AsyncStorage.setItem('domain_url', domainUrl);
@@ -292,16 +292,6 @@ export default function LoginScreen() {
                                     />
                                 </Animated.View>
 
-                                <Animated.View style={itemStyle3}>
-                                    <CustomInput
-                                        placeholder="Domain ID"
-                                        value={domainId}
-                                        onChangeText={setDomainId}
-                                        autoCapitalize="none"
-                                        icon="server"
-                                    />
-                                </Animated.View>
-
                                 <Animated.View style={itemStyle4}>
                                     <CustomInput
                                         placeholder="Server URL"
@@ -309,6 +299,16 @@ export default function LoginScreen() {
                                         onChangeText={setDomainUrl}
                                         autoCapitalize="none"
                                         icon="link"
+                                    />
+                                </Animated.View>
+
+                                <Animated.View style={itemStyle3}>
+                                    <CustomInput
+                                        placeholder="Domain ID"
+                                        value={domainId}
+                                        onChangeText={setDomainId}
+                                        autoCapitalize="none"
+                                        icon="server"
                                     />
                                 </Animated.View>
 

@@ -2356,6 +2356,26 @@ class ApiService {
     }
   }
 
+  async getEmpDashBoardList(): Promise<any>{
+    try{
+
+      const domainUrl = await getDomainUrl();
+      if(!domainUrl) return [];
+
+      const payload = {
+        TokenC: this.token,
+      };
+
+      const response = await axios.post(
+        `${domainUrl}${API_ENDPOINTS.GET_EMPDASHBOARD_LIST}`, payload
+      );
+      return response.data?.supDataList;
+    } catch(error){
+      console.log('Get Emp Document List error: ', error);
+      return [];
+    }
+  }
+
   async changePassword(
     oldPassword: string,
     newPassword: string

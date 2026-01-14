@@ -69,10 +69,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             await AsyncStorage.multiRemove([
                 'user_data',
-                'domain_url',
                 'auth_token',
                 'emp_id',
-                'domain_id',
             ]);
         } catch (error) {
             console.error('Failed to logout', error);

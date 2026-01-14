@@ -1,15 +1,14 @@
+import ProfileImage from "@/components/common/ProfileImage";
 import Header from "@/components/Header";
 import { formatDisplayDate } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
-import { getProfileImageUrl } from "@/hooks/useGetImage";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
-    Image,
     PanResponder,
     RefreshControl,
     ScrollView,
@@ -93,56 +92,6 @@ export default function Celebration() {
     const birthdays = data?.DashBoardBirdth ?? [];
     const weddings = data?.DashBoardAnniversary ?? [];
     const workAnniv = data?.DashEmpService ?? [];
-
-    const ProfileImage = ({
-        customerIdC,
-        compIdN,
-        empIdN,
-        size = 60,
-    }: {
-        customerIdC?: string | null;
-        compIdN?: string | number | null;
-        empIdN?: string | number | null;
-        size?: number;
-    }) => {
-        const [uri, setUri] = useState<string>();
-        const [imageError, setImageError] = useState(false);
-
-        useEffect(() => {
-            let mounted = true;
-
-            const loadImage = async () => {
-                const url = await getProfileImageUrl(
-                    customerIdC,
-                    compIdN,
-                    empIdN
-                );
-                if (mounted) setUri(url);
-            };
-
-            loadImage();
-
-            return () => {
-                mounted = false;
-            };
-        }, [customerIdC, compIdN, empIdN]);
-
-        return (
-            <Image
-                source={
-                    !uri || imageError
-                        ? require('@/assets/images/emptyprofile.png')
-                        : { uri }
-                }
-                onError={() => setImageError(true)}
-                style={{
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                }}
-            />
-        );
-    };
 
     const renderCards = (list: any[], type: string) => {
         if (list.length === 0) {

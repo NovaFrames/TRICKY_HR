@@ -134,7 +134,10 @@ export const API_ENDPOINTS = {
   UPDATE_CLAIM: '/WebApi2/UpdateClaim',
   UPDATECLAIM_DOC: '/WebApi2/UpdateClaimDoc',
 
-  CHANGE_PASSWORD: '/Webapi2/ChangePassword'
+  CHANGE_PASSWORD: '/Webapi2/ChangePassword',
+
+  //Get Employee DashBoard List
+  GET_EMPDASHBOARD_LIST: '/WebApi2/GetEmpDashBoardList'
 };
 
 export const API = () => API_ENDPOINTS;

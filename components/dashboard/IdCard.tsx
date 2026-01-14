@@ -78,17 +78,13 @@ export const IdCard: React.FC<IdCardProps> = ({
                     </View>
                     <View style={styles.idCardInfo}>
                         <Text style={[styles.idName, { color: theme.text }]}>{empName}</Text>
-                        <Text style={[styles.idRole, { color: theme.placeholder }]}>{designation} • ID {empCode}</Text>
-                        <View style={{ marginTop: 8 }}>
-                            <View style={[styles.idBadge, { backgroundColor: theme.primary + '15' }]}>
-                                <Text style={[styles.idBadgeText, { color: theme.primary }]}>{company} - DEMO</Text>
-                            </View>
-                        </View>
+                        <Text style={[styles.idRole, { color: theme.placeholder }]}>ID: {empCode}</Text>
+                        <Text style={[styles.idRole, { color: theme.placeholder }]}>{designation}</Text>
                     </View>
                 </View>
 
                 {/* Integration of Supervisors list inside IdCard */}
-                <View style={{ borderTopWidth: 1, borderTopColor: theme.inputBorder, paddingTop: 12, marginBottom: 4, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ borderTopWidth: 1, borderTopColor: theme.inputBorder, paddingTop: 12, marginBottom: 4, }}>
                     <TeamLeaders theme={theme} showHeader={false} />
                 </View>
 
