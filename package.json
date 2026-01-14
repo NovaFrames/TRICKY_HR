@@ -23,6 +23,7 @@
     "expo": "~54.0.31",
     "expo-camera": "^17.0.10",
     "expo-constants": "~18.0.12",
+    "expo-dev-client": "~6.0.20",
     "expo-document-picker": "~14.0.8",
     "expo-face-detector": "^13.0.2",
     "expo-file-system": "~19.0.21",
