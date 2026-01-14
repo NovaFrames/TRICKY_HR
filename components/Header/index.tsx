@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Href, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 const HEADER_HEIGHT = 48;
@@ -48,7 +48,6 @@ export default function Header({ title }: { title: string }) {
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        top: Platform.OS === 'ios' ? 48 : 24,
         left: 0,
         right: 0,
         zIndex: 1000,

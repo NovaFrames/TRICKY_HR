@@ -6,7 +6,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { FC, useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import new components
 import ClaimDetailsSection from '@/components/claim/ClaimDetailsSection';
@@ -16,7 +15,7 @@ import DocumentsSection from '@/components/claim/DocumentsSection';
 import TravelExpenseModal from '@/components/claim/TravelExpenseModal';
 import TravelExpensesSection from '@/components/claim/TravelExpensesSection';
 
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import ApiService, { ClaimData, TravelExpense } from '@/services/ApiService';
 import {
@@ -531,11 +530,14 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
     }
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={{ flex: 1}}>
             {/* Header */}
             <Header title="Claim & Expense" />
 
-            <ScrollView style={styles.content}>
+            <ScrollView contentContainerStyle={{
+                paddingTop: HEADER_HEIGHT, // 👈 KEY LINE
+            }}
+                showsVerticalScrollIndicator={false} style={styles.content}>
                 <ClaimDetailsSection
                     theme={theme}
                     isDark={isDark}
@@ -631,7 +633,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
                 onCancel={() => setShowConfirmModal(false)}
                 onConfirm={confirmSubmit}
             />
-        </SafeAreaView>
+        </View>
     );
 };
 

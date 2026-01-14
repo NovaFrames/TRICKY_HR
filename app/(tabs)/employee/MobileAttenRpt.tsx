@@ -16,7 +16,6 @@ import {
     Text,
     View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 /* ---------------- TYPES ---------------- */
 
@@ -81,11 +80,11 @@ export default function MobileAttenRpt() {
     const [loading, setLoading] = useState(false);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
-    React.useEffect(()=>{
+    React.useEffect(() => {
         const date = new Date(fromDate);
         date.setDate(date.getDate() + 30);
         setToDate(date);
-    },[fromDate]);
+    }, [fromDate]);
 
     // Fetch report on mount
     React.useEffect(() => {
@@ -181,7 +180,7 @@ export default function MobileAttenRpt() {
     ];
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={{ flex: 1 }}>
             <Header title="Attendance Report" />
 
             {/* Modern Integrated Filter */}
@@ -242,7 +241,7 @@ export default function MobileAttenRpt() {
                     )}
                 </View>
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -352,8 +351,6 @@ const styles = StyleSheet.create({
     },
     tableContainer: {
         flex: 1,
-        paddingHorizontal: 12,
-        paddingBottom: 20,
     },
     loadingContainer: {
         flex: 1,

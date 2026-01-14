@@ -3,11 +3,13 @@ import 'react-native-reanimated';
 
 import { UserProvider } from '@/context/UserContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeProvider } from '../context/ThemeContext';
 
 export default function RootLayout() {
 
   return (
+    <SafeAreaView style={{flex:1}}>
     <GestureHandlerRootView style={{ flex: 1 }}>
     <UserProvider>
       <ThemeProvider>
@@ -19,5 +21,6 @@ export default function RootLayout() {
       </ThemeProvider>
     </UserProvider>
     </GestureHandlerRootView>
+    </SafeAreaView>
   );
 }

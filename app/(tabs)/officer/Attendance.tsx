@@ -1,6 +1,10 @@
+import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
+import Header from '@/components/Header';
 import { API_ENDPOINTS } from '@/constants/api';
 import { useTheme } from '@/context/ThemeContext';
 import { UserData, useUser } from '@/context/UserContext';
+import { useProtectedBack } from '@/hooks/useProtectedBack';
+import { getDomainUrl } from '@/services/urldomain';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
@@ -16,12 +20,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
-import Header from '@/components/Header';
-import { useProtectedBack } from '@/hooks/useProtectedBack';
-import { getDomainUrl } from '@/services/urldomain';
 
 
 // Types for Attendance Data
@@ -244,7 +242,7 @@ export default function AttendanceList() {
 
 
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <View style={[styles.safeArea]}>
             <View style={[styles.listContainer, { backgroundColor: theme.cardBackground, flex: 1 }]}>
                 {renderHeader()}
 
@@ -286,7 +284,7 @@ export default function AttendanceList() {
                     minimumDate={fromDate}
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 

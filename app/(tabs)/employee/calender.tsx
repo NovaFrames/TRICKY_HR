@@ -1,9 +1,8 @@
 import AppModal from '@/components/common/AppModal';
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -192,65 +191,82 @@ export default function CalendarScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Stack.Screen options={{ headerShown: false }} />
             <Header title="Calendar" />
 
-            {/* Modern Month Selector Card */}
-            <View style={styles.monthSelectorContainer}>
-                <TouchableOpacity
-                    style={[styles.monthSelector, { backgroundColor: theme.cardBackground }]}
-                    onPress={() => setShowDatePicker(true)}
-                    activeOpacity={0.7}
-                >
-                    <View style={styles.monthSelectorContent}>
-                        <View style={[styles.calendarIconBox, { backgroundColor: theme.primary + '15' }]}>
-                            <Ionicons name="calendar" size={24} color={theme.primary} />
-                        </View>
-                        <View style={styles.monthTextContainer}>
-                            <Text style={[styles.monthLabel, { color: theme.placeholder }]}>Selected Month</Text>
-                            <Text style={[styles.monthText, { color: theme.text }]}>{getMonthYearString()}</Text>
-                        </View>
-                    </View>
-                    <Ionicons name="chevron-down" size={20} color={theme.placeholder} />
-                </TouchableOpacity>
-            </View>
+            <FlatList
+                data={events}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={renderItem}
+                showsVerticalScrollIndicator={false}
 
-            {showDatePicker && (
-                <DateTimePicker
-                    value={selectedDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={handleDateChange}
-                />
-            )}
+                // 🔑 THIS FIXES HEADER OVERLAP
+                contentContainerStyle={{
+                    paddingTop: HEADER_HEIGHT + 12,
+                    paddingBottom: 24,
+                }}
 
-            {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                    <Text style={[styles.loadingText, { color: theme.placeholder }]}>Loading events...</Text>
-                </View>
-            ) : events.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <View style={[styles.emptyIconBox, { backgroundColor: theme.inputBg }]}>
-                        <Ionicons name="calendar-outline" size={64} color={theme.placeholder} />
-                    </View>
-                    <Text style={[styles.emptyTitle, { color: theme.text }]}>No Events Found</Text>
-                    <Text style={[styles.emptySubtitle, { color: theme.placeholder }]}>
-                        There are no calendar events for {getMonthYearString()}
-                    </Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={events}
-                    renderItem={renderItem}
-                    keyExtractor={(item, index) => index.toString()}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+                ListHeaderComponent={
+                    <>
+                        {/* Month Selector */}
+                        <View style={styles.monthSelectorContainer}>
+                            <TouchableOpacity
+                                style={[styles.monthSelector, { backgroundColor: theme.cardBackground }]}
+                                onPress={() => setShowDatePicker(true)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.monthSelectorContent}>
+                                    <View style={[styles.calendarIconBox, { backgroundColor: theme.primary + '15' }]}>
+                                        <Ionicons name="calendar" size={24} color={theme.primary} />
+                                    </View>
+                                    <View style={styles.monthTextContainer}>
+                                        <Text style={[styles.monthLabel, { color: theme.placeholder }]}>
+                                            Selected Month
+                                        </Text>
+                                        <Text style={[styles.monthText, { color: theme.text }]}>
+                                            {getMonthYearString()}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Ionicons name="chevron-down" size={20} color={theme.placeholder} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={selectedDate}
+                                mode="date"
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={handleDateChange}
+                            />
+                        )}
+
+                        {loading && (
+                            <View style={styles.center}>
+                                <ActivityIndicator size="large" color={theme.primary} />
+                                <Text style={[styles.loadingText, { color: theme.placeholder }]}>
+                                    Loading events...
+                                </Text>
+                            </View>
+                        )}
+
+                        {!loading && events.length === 0 && (
+                            <View style={styles.emptyContainer}>
+                                <View style={[styles.emptyIconBox, { backgroundColor: theme.inputBg }]}>
+                                    <Ionicons name="calendar-outline" size={64} color={theme.placeholder} />
+                                </View>
+                                <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                                    No Events Found
+                                </Text>
+                                <Text style={[styles.emptySubtitle, { color: theme.placeholder }]}>
+                                    There are no calendar events for {getMonthYearString()}
+                                </Text>
+                            </View>
+                        )}
+                    </>
+                }
+            />
 
             {/* Detail Modal */}
-            {/* Detail Modal using AppModal */}
             <AppModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
@@ -271,17 +287,12 @@ export default function CalendarScreen() {
                                 <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
                             </View>
                         )}
-                        ListEmptyComponent={
-                            <Text style={[styles.noDataText, { color: theme.placeholder, textAlign: 'center', margin: 20 }]}>
-                                No details available
-                            </Text>
-                        }
-                        contentContainerStyle={styles.modalListContent}
                     />
                 )}
             </AppModal>
         </View>
     );
+
 }
 
 const styles = StyleSheet.create({

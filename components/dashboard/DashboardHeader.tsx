@@ -2,7 +2,6 @@ import { useUser } from '@/context/UserContext';
 import { getCompanyLogoUrl } from '@/hooks/useGetImage';
 import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface DashboardHeaderProps {
     isDark: boolean;
@@ -43,7 +42,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 colors={isDark ? [theme.background || '#130b1d', theme.inputBg || '#1e293b'] : ['#FFFFFF', '#FFFFFF']}
                 style={[styles.headerBackground]}
             > */}
-            <SafeAreaView style={styles.safeArea}>
+            <View style={styles.safeArea}>
                 <View style={styles.header}>
                     <View style={{ flexDirection: 'column', alignItems: 'center' }}>
                         {/* Logo */}
@@ -77,7 +76,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 }}>
                     {user?.CompNameC}
                 </Text>
-            </SafeAreaView>
+            </View>
             {/* </LinearGradient> */}
         </View>
     );

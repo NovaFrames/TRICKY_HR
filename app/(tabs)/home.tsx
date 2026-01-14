@@ -58,15 +58,15 @@ export default function HomeScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                style={styles.scrollView}
-            >
-                <DashboardHeader isDark={isDark} theme={theme} />
-                {/* Dynamic Greeting Section */}
-                {/* <View style={styles.greetingSection}>
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    style={styles.scrollView}
+                >
+                    <DashboardHeader isDark={isDark} theme={theme} />
+                    {/* Dynamic Greeting Section */}
+                    {/* <View style={styles.greetingSection}>
                     <View>
                         <Text style={[styles.greetingLabel, { color: theme.text }]}>
                             {getGreeting()},
@@ -77,17 +77,17 @@ export default function HomeScreen() {
                     </View>
                 </View> */}
 
-                <View style={styles.menuContainer}>
-                    {/* <Text style={[styles.sectionHeader, { color: theme.text, marginBottom: 16 }]}>Quick Access</Text> */}
-                    <MenuGrid
-                        menuItems={menuItems}
-                        theme={theme}
-                        getMenuIcon={getMenuIcon}
-                    />
-                </View>
+                    <View style={styles.menuContainer}>
+                        {/* <Text style={[styles.sectionHeader, { color: theme.text, marginBottom: 16 }]}>Quick Access</Text> */}
+                        <MenuGrid
+                            menuItems={menuItems}
+                            theme={theme}
+                            getMenuIcon={getMenuIcon}
+                        />
+                    </View>
 
-            </ScrollView >
-        </View >
+                </ScrollView >
+            </View >
     );
 }
 
