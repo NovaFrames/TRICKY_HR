@@ -1,10 +1,9 @@
 import DatePicker from '@/components/DatePicker';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -16,9 +15,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
+import { BACK_FALLBACKS } from '@/components/Header';
 import { formatDateForApi, formatDisplayDate, formatTimeNumber } from '@/constants/timeFormat';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import TimeRequestModal from '../../../components/TimeManage/TimeRequestModal';
@@ -232,6 +233,16 @@ export default function TimeManage() {
         }
     };
 
+    const { from } = useLocalSearchParams<{ from?: string }>();
+
+    const handleBack = () => {
+        if (typeof from === 'string' && BACK_FALLBACKS[from]) {
+            router.replace(BACK_FALLBACKS[from]);
+            return;
+        }
+        router.back();
+    };
+
     /* ---------------- HEADER ---------------- */
 
     const renderHeader = () => (
@@ -239,7 +250,7 @@ export default function TimeManage() {
             <Stack.Screen options={{ headerShown: false }} />
 
             <View style={styles.navBar}>
-                <TouchableOpacity onPress={() => router.back()}>
+                <TouchableOpacity onPress={() => handleBack()}>
                     <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
 

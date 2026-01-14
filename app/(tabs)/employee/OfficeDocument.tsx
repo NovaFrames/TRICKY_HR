@@ -1,4 +1,4 @@
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { getDomainUrl } from '@/services/urldomain';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +14,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -199,25 +199,30 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
                 refreshing={loading}
                 onRefresh={fetchDocuments}
-                ListEmptyComponent={loading && !documents.length ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={theme.primary} />
-                        <Text style={[styles.loadingText, { color: theme.textLight }]}>Loading documents...</Text>
-                    </View>
-                ) : error ? (
-                    <View style={styles.errorContainer}>
-                        <Ionicons name="alert-circle-outline" size={40} color="#FF6B6B" />
-                        <Text style={styles.errorText}>{error}</Text>
-                        <TouchableOpacity
-                            style={[styles.retryButton, { backgroundColor: theme.primary }]}
-                            onPress={fetchDocuments}
-                        >
-                            <Text style={styles.retryButtonText}>Try Again</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : documents.length === 0 ? (
-                    renderEmptyState()
-                ) : null}
+
+                ListEmptyComponent={
+                    loading && !documents.length ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={theme.primary} />
+                            <Text style={[styles.loadingText, { color: theme.textLight }]}>
+                                Loading documents...
+                            </Text>
+                        </View>
+                    ) : error ? (
+                        <View style={styles.errorContainer}>
+                            <Ionicons name="alert-circle-outline" size={40} color="#FF6B6B" />
+                            <Text style={styles.errorText}>{error}</Text>
+                            <TouchableOpacity
+                                style={[styles.retryButton, { backgroundColor: theme.primary }]}
+                                onPress={fetchDocuments}
+                            >
+                                <Text style={styles.retryButtonText}>Try Again</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : documents.length === 0 ? (
+                        renderEmptyState()
+                    ) : null
+                }
             />
 
             <Modal
@@ -305,7 +310,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     listContent: {
-        padding: 16,
+        paddingTop: HEADER_HEIGHT+12,
     },
     documentItem: {
         flexDirection: 'row',

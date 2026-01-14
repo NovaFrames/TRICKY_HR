@@ -1,5 +1,5 @@
 // LeaveApply.tsx
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -230,6 +230,7 @@ const LeaveApply: React.FC = () => {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
 
+            <Header title="Leave Management" />
             {/* Leave List */}
             <ScrollView
                 style={styles.scrollView}
@@ -237,7 +238,6 @@ const LeaveApply: React.FC = () => {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Modern Header */}
-                <Header title="Leave Management" />
 
                 {formattedLeaves.map(renderLeaveCard)}
                 <View style={styles.bottomSpacer} />
@@ -324,8 +324,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
-        paddingBottom: 50, // Space for nav + FAB
+        paddingTop: HEADER_HEIGHT,
     },
     card: {
         borderRadius: 4,

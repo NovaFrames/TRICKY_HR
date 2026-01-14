@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 const HEADER_HEIGHT = 48;
 
-const BACK_FALLBACKS: Record<string, Href> = {
+export const BACK_FALLBACKS: Record<string, Href> = {
     home: '/home',
     settings: '/settings',
     dashboard: '/dashboard',

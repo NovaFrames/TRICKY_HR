@@ -1,8 +1,7 @@
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Stack } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -141,7 +140,6 @@ export default function PayslipScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Stack.Screen options={{ headerShown: false }} />
 
             <Header title="PaySlip" />
 
@@ -159,6 +157,7 @@ export default function PayslipScreen() {
                     renderItem={renderItem}
                     keyExtractor={(item, index) => item.PaySalIdN ? item.PaySalIdN.toString() : index.toString()}
                     showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{paddingTop:HEADER_HEIGHT}}
                 />
             )}
 

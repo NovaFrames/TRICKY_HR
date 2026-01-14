@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
@@ -98,79 +98,85 @@ export default function Holiday() {
 
     /* ---------------- UI ---------------- */
 
-    return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Header title="Holidays" />
+return (
+  <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <Header title="Holidays" />
 
-            {/* YEAR SWITCHER */}
-            <View style={[styles.yearSwitcher, { backgroundColor: theme.cardBackground }]}>
-                <TouchableOpacity
-                    onPress={() => changeYear("prev")}
-                >
-                    <Ionicons
-                        name="chevron-back"
-                        size={26}
-                        
-                    />
-                </TouchableOpacity>
+    <FlatList
+      data={holidayData}
+      renderItem={renderHolidayItem}
+      keyExtractor={(_, index) => index.toString()}
+      showsVerticalScrollIndicator={false}
 
-                <Text style={[styles.yearText, { color: theme.text }]}>
-                    {selectedYear}
-                </Text>
+      // 🔑 This handles the fixed header
+      contentContainerStyle={{
+        paddingTop: HEADER_HEIGHT
+      }}
 
-                <TouchableOpacity
-                    onPress={() => changeYear("next")}
-                >
-                    <Ionicons
-                        name="chevron-forward"
-                        size={26}
-                       
-                    />
-                </TouchableOpacity>
-            </View>
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={fetchHoliday}
+          colors={[theme.primary]}
+        />
+      }
 
-            {/* LIST */}
-            {loading ? (
-                <ActivityIndicator
-                    size="large"
-                    color={theme.primary}
-                    style={{ marginTop: 40 }}
-                />
-            ) : (
-                <FlatList
-                    data={holidayData}
-                    renderItem={renderHolidayItem}
-                    keyExtractor={(_, index) => index.toString()}
-                    contentContainerStyle={{ padding: 16 }}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={fetchHoliday}
-                            colors={[theme.primary]}
-                        />
-                    }
-                    ListEmptyComponent={
-                        <View style={styles.empty}>
-                            <Ionicons
-                                name="calendar-outline"
-                                size={64}
-                                color={theme.textLight}
-                            />
-                            <Text
-                                style={{
-                                    marginTop: 12,
-                                    color: theme.textLight,
-                                    fontSize: 16,
-                                }}
-                            >
-                                No holidays found for {selectedYear}
-                            </Text>
-                        </View>
-                    }
-                />
-            )}
-        </View>
-    );
+      ListHeaderComponent={
+        <>
+          {/* YEAR SWITCHER */}
+          <View
+            style={[
+              styles.yearSwitcher,
+              { backgroundColor: theme.cardBackground },
+            ]}
+          >
+            <TouchableOpacity onPress={() => changeYear('prev')}>
+              <Ionicons name="chevron-back" size={26} />
+            </TouchableOpacity>
+
+            <Text style={[styles.yearText, { color: theme.text }]}>
+              {selectedYear}
+            </Text>
+
+            <TouchableOpacity onPress={() => changeYear('next')}>
+              <Ionicons name="chevron-forward" size={26} />
+            </TouchableOpacity>
+          </View>
+
+          {loading && (
+            <ActivityIndicator
+              size="large"
+              color={theme.primary}
+              style={{ marginTop: 40 }}
+            />
+          )}
+        </>
+      }
+
+      ListEmptyComponent={
+        !loading ? (
+          <View style={styles.empty}>
+            <Ionicons
+              name="calendar-outline"
+              size={64}
+              color={theme.textLight}
+            />
+            <Text
+              style={{
+                marginTop: 12,
+                color: theme.textLight,
+                fontSize: 16,
+              }}
+            >
+              No holidays found for {selectedYear}
+            </Text>
+          </View>
+        ) : null
+      }
+    />
+  </View>
+);
+
 }
 
 /* ---------------- STYLES ---------------- */
