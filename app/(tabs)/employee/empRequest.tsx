@@ -172,7 +172,7 @@ export default function EmpRequestPage() {
 
                 /* Push content below fixed header */
                 contentContainerStyle={{
-                    paddingTop: HEADER_HEIGHT + 24,
+                    paddingTop: HEADER_HEIGHT + 6,
                 }}
 
                 /* Tabs (scroll WITH list) */

@@ -1,4 +1,4 @@
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
@@ -181,7 +181,7 @@ const empdocument: React.FC = () => {
             <Header title="Documents" />
 
             {/* Custom Tab Bar */}
-            <View style={{ height: 50 }}>
+            <View style={{ paddingTop: HEADER_HEIGHT + 6 }}>
                 <FlatList
                     data={routes}
                     horizontal

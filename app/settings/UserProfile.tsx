@@ -1,4 +1,4 @@
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { formatDateForApi, formatDisplayDate } from '@/constants/timeFormat';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
@@ -1111,11 +1111,12 @@ export default function UserProfile() {
     /* -------------------- RENDER -------------------- */
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <Header title="Profile" />
             <ScrollView
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={styles.scrollContent}
+                
             >
-                <Header title="Profile" />
 
                 {/* Selection Modals */}
                 <SelectionModal
@@ -1161,7 +1162,7 @@ export default function UserProfile() {
 
                 {/* PROFILE HEADER */}
                 <LinearGradient
-                    colors={[theme.primary, `${theme.primary}cc`]}
+                    colors={[theme.primary, theme.primary]}
                     style={styles.profileHeader}
                 >
                     <Ionicons name="person-circle" size={90} color="#fff" />
@@ -1885,8 +1886,7 @@ export default function UserProfile() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollContent: {
-        padding: 16,
-        paddingBottom: 40,
+        paddingTop: HEADER_HEIGHT+8,
     },
     emptyState: {
         flex: 1,

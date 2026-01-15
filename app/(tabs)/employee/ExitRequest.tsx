@@ -481,45 +481,45 @@ export default function ExitRequestScreen() {
                     </View>
                 </View>
 
+                {/* Footer Buttons */}
+                <View style={[styles.footer, { backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, shadowOpacity: 0, paddingBottom: 0 }]}>
+                    {exitData.EmpIdN ? (
+                        <TouchableOpacity
+                            style={[styles.button, styles.revokeButton]}
+                            onPress={handleRevoke}
+                            disabled={submitLoading}
+                            activeOpacity={0.8}
+                        >
+                            {submitLoading ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <>
+                                    <Ionicons name="close-circle" size={20} color="#fff" />
+                                    <Text style={styles.buttonText}>Revoke Request</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            style={[styles.button, { backgroundColor: theme.primary }]}
+                            onPress={() => handleSubmit()}
+                            disabled={submitLoading}
+                            activeOpacity={0.8}
+                        >
+                            {submitLoading ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <>
+                                    <Text style={styles.buttonText}>Submit</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
+                </View>
+
                 {/* Bottom Spacing */}
                 <View style={{ height: 20 }} />
             </ScrollView>
-
-            {/* Footer Buttons */}
-            <View style={[styles.footer, { backgroundColor: theme.cardBackground, borderTopColor: theme.inputBorder }]}>
-                {exitData.EmpIdN ? (
-                    <TouchableOpacity
-                        style={[styles.button, styles.revokeButton]}
-                        onPress={handleRevoke}
-                        disabled={submitLoading}
-                        activeOpacity={0.8}
-                    >
-                        {submitLoading ? (
-                            <ActivityIndicator color="#fff" size="small" />
-                        ) : (
-                            <>
-                                <Ionicons name="close-circle" size={20} color="#fff" />
-                                <Text style={styles.buttonText}>Revoke Request</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity
-                        style={[styles.button, { backgroundColor: theme.primary }]}
-                        onPress={() => handleSubmit()}
-                        disabled={submitLoading}
-                        activeOpacity={0.8}
-                    >
-                        {submitLoading ? (
-                            <ActivityIndicator color="#fff" size="small" />
-                        ) : (
-                            <>
-                                <Text style={styles.buttonText}>Submit</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                )}
-            </View>
         </View>
     );
 }
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     scrollContent: {
-        paddingTop:HEADER_HEIGHT+12
+        paddingTop: HEADER_HEIGHT + 12
     },
 
     // Status Banner
@@ -759,11 +759,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 16,
         borderTopWidth: 1,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
     },
     button: {
         flexDirection: 'row',

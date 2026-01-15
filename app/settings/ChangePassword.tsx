@@ -1,4 +1,4 @@
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useTheme } from '@/context/ThemeContext';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import ApiService from '@/services/ApiService';
@@ -126,7 +126,7 @@ export default function ChangePassword() {
                 >
                     {/* Header Banner */}
                     <LinearGradient
-                        colors={[theme.primary, theme.primary + 'CC']}
+                        colors={[theme.primary, theme.primary ]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.headerBanner}
@@ -231,19 +231,6 @@ export default function ChangePassword() {
                                 </TouchableOpacity>
                             </View>
                         </View>
-
-                        {/* Password Requirements Info */}
-                        <View style={[styles.infoBox, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}>
-                            <Ionicons name="information-circle" size={20} color={theme.primary} />
-                            <View style={styles.infoContent}>
-                                <Text style={[styles.infoTitle, { color: theme.primary }]}>Password Requirements:</Text>
-                                <Text style={[styles.infoText, { color: theme.text }]}>
-                                    • Use a strong password{'\n'}
-                                    • Avoid using common words{'\n'}
-                                    • Mix letters, numbers, and symbols
-                                </Text>
-                            </View>
-                        </View>
                     </View>
 
                     {/* Buttons */}
@@ -288,21 +275,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
-        paddingBottom: 32,
+        paddingTop: HEADER_HEIGHT + 8,
     },
 
     // Header Banner
     headerBanner: {
-        borderRadius: 16,
+        borderRadius: 4,
         padding: 24,
         marginBottom: 20,
         alignItems: 'center',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
     },
     bannerIcon: {
         width: 80,
@@ -332,11 +313,6 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 20,
         marginBottom: 20,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 3.84,
     },
 
     // Input Group
@@ -396,7 +372,8 @@ const styles = StyleSheet.create({
     // Buttons
     buttonContainer: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 6,
+        paddingHorizontal: 20,
     },
     button: {
         flex: 1,
