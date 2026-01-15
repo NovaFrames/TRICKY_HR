@@ -11,8 +11,14 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import ClaimModal from '../../../components/RequestPage/ClaimModal';
+import DocModal from '../../../components/RequestPage/DocModal';
+import LeaveModal from '../../../components/RequestPage/LeaveModal';
+import LeaveSurrenderModal from '../../../components/RequestPage/LeaveSurrenderModal';
+import ProfileModal from '../../../components/RequestPage/ProfileModal';
 import RequestModal from '../../../components/RequestPage/RequestModal';
 import RequestStatusItem from '../../../components/RequestPage/RequestStatusItem';
+import TimeModal from '../../../components/RequestPage/TimeModal';
 import { useTheme } from '../../../context/ThemeContext';
 import ApiService from '../../../services/ApiService';
 
@@ -237,12 +243,56 @@ export default function EmpRequestPage() {
             />
 
             {modalVisible && selectedItem && (
-                <RequestModal
-                    visible={modalVisible}
-                    item={selectedItem}
-                    onClose={() => setModalVisible(false)}
-                    onRefresh={() => fetchRequests(true)}
-                />
+                selectedItem.DescC?.toLowerCase().includes('claim') ? (
+                    <ClaimModal
+                        visible={modalVisible}
+                        item={selectedItem}
+                        onClose={() => setModalVisible(false)}
+                        onRefresh={() => fetchRequests(true)}
+                    />
+                ) : selectedItem.DescC?.toLowerCase().includes('profile') ? (
+                    <ProfileModal
+                        visible={modalVisible}
+                        item={selectedItem}
+                        onClose={() => setModalVisible(false)}
+                        onRefresh={() => fetchRequests(true)}
+                    />
+                ) : selectedItem.DescC?.toLowerCase().includes('time') ? (
+                    <TimeModal
+                        visible={modalVisible}
+                        item={selectedItem}
+                        onClose={() => setModalVisible(false)}
+                        onRefresh={() => fetchRequests(true)}
+                    />
+                ) : selectedItem.DescC?.toLowerCase().includes('document') ? (
+                    <DocModal
+                        visible={modalVisible}
+                        item={selectedItem}
+                        onClose={() => setModalVisible(false)}
+                        onRefresh={() => fetchRequests(true)}
+                    />
+                ) : selectedItem.DescC?.toLowerCase().includes('surrender') ? (
+                    <LeaveSurrenderModal
+                        visible={modalVisible}
+                        item={selectedItem}
+                        onClose={() => setModalVisible(false)}
+                        onRefresh={() => fetchRequests(true)}
+                    />
+                ) : selectedItem.DescC?.toLowerCase().includes('leave') ? (
+                    <LeaveModal
+                        visible={modalVisible}
+                        item={selectedItem}
+                        onClose={() => setModalVisible(false)}
+                        onRefresh={() => fetchRequests(true)}
+                    />
+                ) : (
+                    <RequestModal
+                        visible={modalVisible}
+                        item={selectedItem}
+                        onClose={() => setModalVisible(false)}
+                        onRefresh={() => fetchRequests(true)}
+                    />
+                )
             )}
         </View>
 

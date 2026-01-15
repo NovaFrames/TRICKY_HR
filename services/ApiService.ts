@@ -182,8 +182,8 @@ const parseServerTimeToUTC = (dateInput: string | Date): number => {
   const textDate =
     typeof dateInput === "string"
       ? dateInput.match(
-          /^(\d{1,2}) ([A-Za-z]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2})$/
-        )
+        /^(\d{1,2}) ([A-Za-z]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2})$/
+      )
       : null;
 
   if (textDate) {
@@ -524,7 +524,7 @@ class ApiService {
     }
   }
 
-  async getLeaveDetails(): Promise<{
+  async getLeaveBalance(): Promise<{
     success: boolean;
     data?: LeaveBalanceResponse;
     error?: string;
@@ -534,7 +534,7 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      console.log("getLeaveDetails Request Payload:", {
+      console.log("getLeaveBalance Request Payload:", {
         TokenC: this.token,
         EmpIdN: this.empId,
       });
@@ -1234,10 +1234,10 @@ class ApiService {
             date:
               doc.LastWriteTimeC && doc.LastWriteTimeC.includes("/Date(")
                 ? new Date(
-                    parseInt(
-                      doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, "$1")
-                    )
-                  ).toLocaleDateString()
+                  parseInt(
+                    doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, "$1")
+                  )
+                ).toLocaleDateString()
                 : doc.LastWriteTimeC || new Date().toLocaleDateString(),
             size: "Unknown",
             url: url,
@@ -1976,7 +1976,7 @@ class ApiService {
       // Convert status to Approval number: 1 = Approved, 2 = Rejected
       const approvalStatus =
         data.StatusC.toLowerCase() === "approved" ||
-        data.StatusC.toLowerCase() === "approve"
+          data.StatusC.toLowerCase() === "approve"
           ? 1
           : 2;
 
@@ -2356,11 +2356,11 @@ class ApiService {
     }
   }
 
-  async getEmpDashBoardList(): Promise<any>{
-    try{
+  async getEmpDashBoardList(): Promise<any> {
+    try {
 
       const domainUrl = await getDomainUrl();
-      if(!domainUrl) return [];
+      if (!domainUrl) return [];
 
       const payload = {
         TokenC: this.token,
@@ -2370,7 +2370,7 @@ class ApiService {
         `${domainUrl}${API_ENDPOINTS.GET_EMPDASHBOARD_LIST}`, payload
       );
       return response.data?.supDataList;
-    } catch(error){
+    } catch (error) {
       console.log('Get Emp Document List error: ', error);
       return [];
     }
@@ -2418,6 +2418,236 @@ class ApiService {
       return {
         success: false,
         error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
+  // Request Details APIs
+  async getEmployeeDocument(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.EMP_DOC_URL,
+        {
+          TokenC: this.token,
+          Id: id,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
+      };
+    }
+  }
+
+  async getTimeUpdate(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.TIME_URL,
+        {
+          TokenC: this.token,
+          Id: id,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
+      };
+    }
+  }
+
+  async getLeaveDetails(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.LEAVE_URL,
+        {
+          TokenC: this.token,
+          Id: id,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
+      };
+    }
+  }
+
+  async getLeaveSurrender(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.GET_SURRENDER_DETAILS,
+        {
+          TokenC: this.token,
+          Id: id,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
+      };
+    }
+  }
+
+  async getProfileUpdate(): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.PROFILE_URL,
+        {
+          TokenC: this.token,
+          blnEmpMaster: false,
+          ViewReject: false,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
+      };
+    }
+  }
+
+  async getClaimDetails(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.GETCLAIM_URL,
+        {
+          TokenC: this.token,
+          id: id,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
+      };
+    }
+  }
+
+  async getClaimDocuments(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.GETCLAIMDOC_URL,
+        {
+          TokenC: this.token,
+          Id: id,
+          FolderName: "/EmpPortal/ClaimDoc",
+          DocName: "ClaimDoc",
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
+      };
+    }
+  }
+
+  async getEmployeeDocuments(empId: number, folderName: string, docName: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.GETCLAIMDOC_URL,
+        {
+          TokenC: this.token,
+          Id: empId,
+          FolderName: folderName,
+          DocName: docName,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.Status === "success") {
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || "Network error",
       };
     }
   }

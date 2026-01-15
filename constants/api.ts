@@ -137,7 +137,13 @@ export const API_ENDPOINTS = {
   CHANGE_PASSWORD: '/Webapi2/ChangePassword',
 
   //Get Employee DashBoard List
-  GET_EMPDASHBOARD_LIST: '/WebApi2/GetEmpDashBoardList'
+  GET_EMPDASHBOARD_LIST: '/WebApi2/GetEmpDashBoardList',
+
+  EMP_DOC_URL: '/WebApi2/GetEmpPortalDocumentById',
+  TIME_URL: '/WebApi2/GetEmpTimeManageById',
+  LEAVE_URL: '/WebApi2/GetEmpLeaveManageById',
+  GETCLAIM_URL: '/WebApi2/GetEmpClaimById',
+  GETCLAIMDOC_URL: '/WebApi2/GetEmpDocumentShow',
 };
 
 export const API = () => API_ENDPOINTS;

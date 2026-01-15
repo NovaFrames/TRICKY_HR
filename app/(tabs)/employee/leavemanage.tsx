@@ -54,7 +54,7 @@ const LeaveApply: React.FC = () => {
     const loadLeaveData = async () => {
         try {
             setLoading(true);
-            const result = await ApiService.getLeaveDetails();
+            const result = await ApiService.getLeaveBalance();
 
             if (result.success && result.data) {
                 setLeaveData(result.data);
