@@ -1,7 +1,8 @@
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -300,23 +301,10 @@ export default function ServiceReport() {
             .join(', ');
     };
 
-    const renderHeader = () => (
-        <View style={styles.headerContainer}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.navBar}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                    <Ionicons name="arrow-back" size={24} color={theme.text} />
-                </TouchableOpacity>
-                <Text style={[styles.navTitle, { color: theme.text }]}>Service Report</Text>
-                <View style={styles.iconButton} />
-            </View>
-        </View>
-    );
-
     if (loading) {
         return (
             <View style={[styles.container, { backgroundColor: theme.background }]}>
-                {renderHeader()}
+                <Header title='Service Report' />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.primary} />
                     <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
@@ -327,7 +315,7 @@ export default function ServiceReport() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            {renderHeader()}
+            <Header title='Service Report' />
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Client Selection */}
@@ -698,6 +686,7 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+        paddingTop:HEADER_HEIGHT+12,
     },
     section: {
         paddingHorizontal: 16,

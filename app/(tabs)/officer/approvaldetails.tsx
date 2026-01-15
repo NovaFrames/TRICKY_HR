@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import Header, { HEADER_HEIGHT } from "@/components/Header";
 import RequestStatusItem from "@/components/RequestPage/RequestStatusItem";
 import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
@@ -148,6 +148,8 @@ export default function ApprovalDetails() {
     <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
       <Header title="Approval Requests" />
 
+      <View style={{paddingTop:HEADER_HEIGHT+4, flex:1}}>
+
       {/* Custom Tab Bar */}
       <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
         {routes.map((item, i) => (
@@ -204,6 +206,7 @@ export default function ApprovalDetails() {
             }
           />
         )}
+      </View>
       </View>
     </View>
   );

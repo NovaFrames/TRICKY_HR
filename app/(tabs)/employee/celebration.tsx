@@ -1,5 +1,5 @@
 import ProfileImage from "@/components/common/ProfileImage";
-import Header from "@/components/Header";
+import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { formatDisplayDate } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -159,6 +159,8 @@ export default function Celebration() {
         <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
             <Header title="Celebrations" />
 
+            <ScrollView contentContainerStyle={{paddingTop:HEADER_HEIGHT+4}}>
+
             {/* Custom Tab Bar */}
             <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
                 {routes.map((item, i) => (
@@ -193,6 +195,7 @@ export default function Celebration() {
                     {currentTab === 'work' && renderCards(workAnniv, 'work')}
                 </ScrollView>
             </View>
+            </ScrollView>
         </View>
     );
 }

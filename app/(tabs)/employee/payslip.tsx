@@ -157,7 +157,7 @@ export default function PayslipScreen() {
                     renderItem={renderItem}
                     keyExtractor={(item, index) => item.PaySalIdN ? item.PaySalIdN.toString() : index.toString()}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{paddingTop:HEADER_HEIGHT}}
+                    contentContainerStyle={{paddingTop:HEADER_HEIGHT+12}}
                 />
             )}
 

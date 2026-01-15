@@ -1,5 +1,5 @@
 import DynamicTable, { ColumnDef } from '@/components/DynamicTable';
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { API_ENDPOINTS } from '@/constants/api';
 import { useTheme } from '@/context/ThemeContext';
 import { UserData, useUser } from '@/context/UserContext';
@@ -136,7 +136,6 @@ export default function AttendanceList() {
 
     const renderHeader = () => (
         <View style={styles.headerWrapper}>
-            <Header title="Attendance List" />
 
             {/* Date Picker Card */}
             <View style={styles.datePickerSection}>
@@ -243,26 +242,30 @@ export default function AttendanceList() {
 
     return (
         <View style={[styles.safeArea]}>
+
             <View style={[styles.listContainer, { backgroundColor: theme.cardBackground, flex: 1 }]}>
-                {renderHeader()}
+                <Header title="Attendance List" />
+                <ScrollView contentContainerStyle={{paddingTop:HEADER_HEIGHT}}>
+                    {renderHeader()}
 
-                <View style={{ paddingHorizontal: 16, paddingTop: 8, flex: 1 }}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <DynamicTable
-                            data={shiftData}
-                            columns={shiftColumns}
-                            tableWidth={1400}
-                            theme={theme}
-                        />
-                    </ScrollView>
+                    <View style={{ paddingHorizontal: 16, paddingTop: 8, flex: 1 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            <DynamicTable
+                                data={shiftData}
+                                columns={shiftColumns}
+                                tableWidth={1400}
+                                theme={theme}
+                            />
+                        </ScrollView>
 
-                    {!shiftData.length && !loading && (
-                        <View style={styles.emptyState}>
-                            <Ionicons name="document-text-outline" size={64} color={theme.textLight} />
-                            <Text style={[styles.emptyText, { color: theme.textLight }]}>No records found</Text>
-                        </View>
-                    )}
-                </View>
+                        {!shiftData.length && !loading && (
+                            <View style={styles.emptyState}>
+                                <Ionicons name="document-text-outline" size={64} color={theme.textLight} />
+                                <Text style={[styles.emptyText, { color: theme.textLight }]}>No records found</Text>
+                            </View>
+                        )}
+                    </View>
+                </ScrollView>
             </View>
 
             {showFromPicker && (

@@ -1,3 +1,4 @@
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
@@ -8,6 +9,7 @@ import {
     FlatList,
     PanResponder,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -187,7 +189,29 @@ export default function PendingApproval() {
         setShowModal(true);
     };
 
-
+    const renderCustomTab = () => {
+        return (
+            <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+                {routes.map((item, i) => (
+                    <TouchableOpacity
+                        key={item.key}
+                        style={[
+                            styles.tabItem,
+                            index === i && { borderBottomColor: theme.primary }
+                        ]}
+                        onPress={() => setIndex(i)}
+                    >
+                        <Text style={[
+                            styles.tabText,
+                            { color: index === i ? theme.primary : theme.textLight }
+                        ]}>
+                            {item.title}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        )
+    }
 
     const renderPendingItem = ({ item, index }: { item: PendingApproval; index: number }) => {
         const isSelected = selectedIndex === index;
@@ -265,6 +289,7 @@ export default function PendingApproval() {
 
     const renderEmptyState = () => (
         <View style={styles.emptyContainer}>
+            {renderCustomTab()}
             <Ionicons name="document-text-outline" size={64} color={theme.placeholder} />
             <Text style={[styles.emptyText, { color: theme.placeholder }]}>
                 No pending approvals
@@ -278,84 +303,103 @@ export default function PendingApproval() {
         return (
             <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <View style={styles.navBar}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={24} color={theme.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.navTitle, { color: theme.text }]}>Pending Approval</Text>
-                    <View style={styles.iconButton} />
-                </View>
+                <Header title='Pending Approval' />
 
-                {/* Custom Tab Bar */}
-                <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
-                    {routes.map((item, i) => (
-                        <TouchableOpacity
-                            key={item.key}
-                            style={[
-                                styles.tabItem,
-                                index === i && { borderBottomColor: theme.primary }
-                            ]}
-                            onPress={() => setIndex(i)}
-                        >
-                            <Text style={[
-                                styles.tabText,
-                                { color: index === i ? theme.primary : theme.textLight }
-                            ]}>
-                                {item.title}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                <ScrollView contentContainerStyle={{ paddingTop: HEADER_HEIGHT + 4 }}>
 
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                    <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
-                </View>
+                    {/* Custom Tab Bar */}
+                    <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+                        {routes.map((item, i) => (
+                            <TouchableOpacity
+                                key={item.key}
+                                style={[
+                                    styles.tabItem,
+                                    index === i && { borderBottomColor: theme.primary }
+                                ]}
+                                onPress={() => setIndex(i)}
+                            >
+                                <Text style={[
+                                    styles.tabText,
+                                    { color: index === i ? theme.primary : theme.textLight }
+                                ]}>
+                                    {item.title}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={theme.primary} />
+                        <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
+                    </View>
+                </ScrollView>
             </View>
         );
     }
 
     return (
         <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.navBar}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                    <Ionicons name="arrow-back" size={24} color={theme.text} />
-                </TouchableOpacity>
-                <Text style={[styles.navTitle, { color: theme.text }]}>Pending Approval</Text>
-                <View style={styles.iconButton} />
-            </View>
+            {/* FIXED HEADER */}
+            <Header title="Pending Approval" />
 
-            {/* Custom Tab Bar */}
-            <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
+            {/* FIXED TAB BAR */}
+            <View
+                style={[
+                    styles.tabBar,
+                    {
+                        backgroundColor: theme.cardBackground,
+                        marginTop: HEADER_HEIGHT+4,
+                    },
+                ]}
+            >
                 {routes.map((item, i) => (
                     <TouchableOpacity
                         key={item.key}
                         style={[
                             styles.tabItem,
-                            index === i && { borderBottomColor: theme.primary }
+                            index === i && { borderBottomColor: theme.primary },
                         ]}
                         onPress={() => setIndex(i)}
                     >
-                        <Text style={[
-                            styles.tabText,
-                            { color: index === i ? theme.primary : theme.textLight }
-                        ]}>
+                        <Text
+                            style={[
+                                styles.tabText,
+                                { color: index === i ? theme.primary : theme.textLight },
+                            ]}
+                        >
                             {item.title}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            {/* Content Area with Swipe Support */}
+            {/* SCROLLABLE CONTENT */}
             <View style={{ flex: 1 }} {...panResponder.panHandlers}>
                 <FlatList
                     data={currentData}
                     keyExtractor={(item, index) => `${item.IdN}-${index}`}
                     renderItem={renderPendingItem}
-                    contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={renderEmptyState}
+
+                    // 🔑 THIS IS CRITICAL
+                    contentContainerStyle={{
+                        paddingTop: 12,
+                        paddingBottom: 24,
+                    }}
+
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Ionicons
+                                name="document-text-outline"
+                                size={64}
+                                color={theme.placeholder}
+                            />
+                            <Text style={[styles.emptyText, { color: theme.placeholder }]}>
+                                No pending approvals
+                            </Text>
+                        </View>
+                    }
+
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
@@ -367,7 +411,7 @@ export default function PendingApproval() {
                 />
             </View>
 
-            {/* Approval Modal */}
+            {/* MODAL */}
             <PendingApprovalModal
                 visible={showModal}
                 onClose={() => {
@@ -383,6 +427,7 @@ export default function PendingApproval() {
             />
         </View>
     );
+
 }
 
 const styles = StyleSheet.create({
@@ -439,10 +484,6 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 12,
         fontSize: 16,
-    },
-    listContent: {
-        padding: 16,
-        paddingBottom: 32,
     },
     pendingCard: {
         borderRadius: 12,

@@ -1,8 +1,8 @@
 import EmployeeLeaveBalance from '@/components/EmployeeList/EmployeeLeaveBalance';
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -10,7 +10,6 @@ import {
     FlatList,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
@@ -110,40 +109,6 @@ export default function EmployeeListScreen() {
         );
     };
 
-    const renderDesignationFilter = () => (
-        <View style={styles.filterContainer}>
-            <FlatList
-                horizontal
-                data={designations}
-                keyExtractor={(item) => item}
-                renderItem={({ item }) => {
-                    const isSelected = item === selectedDesignation;
-                    return (
-                        <TouchableOpacity
-                            style={[
-                                styles.filterChip,
-                                {
-                                    backgroundColor: isSelected ? theme.primary : theme.inputBg,
-                                    borderColor: isSelected ? theme.primary : theme.inputBorder
-                                }
-                            ]}
-                            onPress={() => setSelectedDesignation(item)}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={[
-                                styles.filterChipText,
-                                { color: isSelected ? '#fff' : theme.text }
-                            ]}>
-                                {item}
-                            </Text>
-                        </TouchableOpacity>
-                    );
-                }}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterList}
-            />
-        </View>
-    );
 
     const renderEmployee = ({ item, index }: { item: Employee; index: number }) => {
         return (
@@ -192,48 +157,27 @@ export default function EmployeeListScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Stack.Screen options={{ headerShown: false }} />
+        <View style={[styles.container]}>
             <Header title="Employee List" />
 
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-                <View style={[styles.searchBar, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
-                    <Ionicons name="search" size={20} color={theme.placeholder} style={styles.searchIcon} />
-                    <TextInput
-                        style={[styles.searchInput, { color: theme.text }]}
-                        placeholder="Search by name or code..."
-                        placeholderTextColor={theme.placeholder}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Ionicons name="close-circle" size={20} color={theme.placeholder} />
-                        </TouchableOpacity>
-                    )}
-                </View>
-            </View>
-
-            {/* Designation Filter */}
-            {renderDesignationFilter()}
-
-            {/* Stats Bar */}
-            <View style={[styles.statsBar, { backgroundColor: theme.inputBg }]}>
-                <View style={styles.statItem}>
-                    <Ionicons name="people" size={18} color={theme.primary} />
-                    <Text style={[styles.statText, { color: theme.text }]}>
-                        {filteredEmployees.length} Employees
-                    </Text>
-                </View>
-                {selectedDesignation !== 'All' && (
+            <View style={{ paddingTop: HEADER_HEIGHT }}>
+                {/* Stats Bar */}
+                <View style={[styles.statsBar, { backgroundColor: theme.inputBg }]}>
                     <View style={styles.statItem}>
-                        <Ionicons name="filter" size={16} color={theme.placeholder} />
-                        <Text style={[styles.statSubtext, { color: theme.placeholder }]}>
-                            Filtered
+                        <Ionicons name="people" size={18} color={theme.primary} />
+                        <Text style={[styles.statText, { color: theme.text }]}>
+                            {filteredEmployees.length} Employees
                         </Text>
                     </View>
-                )}
+                    {selectedDesignation !== 'All' && (
+                        <View style={styles.statItem}>
+                            <Ionicons name="filter" size={16} color={theme.placeholder} />
+                            <Text style={[styles.statSubtext, { color: theme.placeholder }]}>
+                                Filtered
+                            </Text>
+                        </View>
+                    )}
+                </View>
             </View>
 
             {/* Employee List */}
@@ -355,7 +299,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 10,
-        marginBottom: 8,
     },
     statItem: {
         flexDirection: 'row',

@@ -1,7 +1,8 @@
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -144,17 +145,7 @@ export default function EmpMobileRpt() {
 
     const renderHeader = () => (
         <View style={styles.headerWrapper}>
-            <View style={styles.headerContainer}>
-                <Stack.Screen options={{ headerShown: false }} />
-                <View style={styles.navBar}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={24} color={theme.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.navTitle, { color: theme.text }]}>Mobile Attendance Report</Text>
-                    <View style={styles.iconButton} />
-                </View>
-            </View>
-
+            
             {/* Date Picker Section */}
             <View style={styles.datePickerSection}>
                 <View style={[styles.dateCard, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
@@ -299,6 +290,9 @@ export default function EmpMobileRpt() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
+
+            <Header title='Mobile Attendance Report' />
+
             <FlatList
                 ListHeaderComponent={renderHeader}
                 data={attendanceData}
@@ -357,7 +351,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     listContent: {
-        paddingBottom: 20,
+        paddingTop: HEADER_HEIGHT,
     },
     headerWrapper: {
         backgroundColor: 'transparent',

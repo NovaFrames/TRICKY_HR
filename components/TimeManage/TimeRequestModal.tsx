@@ -156,11 +156,10 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({ visible, onClose, o
                             disabled={loading}
                         >
                             {loading ? (
-                                <ActivityIndicator size="small" color="#fff" />
+                                <ActivityIndicator size="large" color="#fff" />
                             ) : (
                                 <>
-                                    <Ionicons name="send" size={20} color="#fff" />
-                                    <Text style={styles.submitButtonText}>Submit Request</Text>
+                                    <Text style={styles.submitButtonText}>Submit</Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -363,7 +362,7 @@ const styles = StyleSheet.create({
     },
     submitButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '700',
         marginLeft: 8,
     },

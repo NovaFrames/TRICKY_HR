@@ -1,4 +1,4 @@
-import Header from '@/components/Header';
+import Header, { HEADER_HEIGHT } from '@/components/Header';
 import { useProtectedBack } from '@/hooks/useProtectedBack';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -514,8 +514,7 @@ export default function ExitRequestScreen() {
                             <ActivityIndicator color="#fff" size="small" />
                         ) : (
                             <>
-                                <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                                <Text style={styles.buttonText}>Submit Request</Text>
+                                <Text style={styles.buttonText}>Submit</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -540,8 +539,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     scrollContent: {
-        padding: 16,
-        paddingBottom: 24,
+        paddingTop:HEADER_HEIGHT+12
     },
 
     // Status Banner
