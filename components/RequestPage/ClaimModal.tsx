@@ -3,12 +3,16 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Modal,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import AppModal from '../../components/common/AppModal';
 import { useTheme } from '../../context/ThemeContext';
 import ApiService from '../../services/ApiService';
@@ -26,6 +30,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({ visible, onClose, item, onRefre
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [claimData, setClaimData] = useState<any>(null);
     const [documents, setDocuments] = useState<any[]>([]);
+    const [viewingDoc, setViewingDoc] = useState<{ url: string; name: string } | null>(null);
 
     if (!item) return null;
 
@@ -140,6 +145,41 @@ const ClaimModal: React.FC<ClaimModalProps> = ({ visible, onClose, item, onRefre
         );
     };
 
+    const handleViewDocument = async (fileName: string) => {
+        try {
+            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+
+            // Get user data for URL construction
+            const userDataStr = await AsyncStorage.getItem("user_data");
+            const userData = userDataStr ? JSON.parse(userDataStr) : null;
+
+            const companyId = userData?.CompIdN || userData?.CompanyId || "1";
+            const customerId = userData?.CustomerIdC || userData?.DomainId || "trickyhr";
+
+            // Get company URL
+            let companyUrl = await AsyncStorage.getItem('domain_url');
+            if (companyUrl && companyUrl.endsWith('/')) {
+                companyUrl = companyUrl.slice(0, -1);
+            }
+
+            const currentUser = ApiService.getCurrentUser();
+            const empId = item.EmpIdN || currentUser.empId;
+            const requestId = item.IdN || item.Id;
+
+            if (companyUrl) {
+                // URL Pattern: https://hr.trickyhr.com/kevit-Customer/{CustomerId}/{CompanyId}/EmpPortal/ClaimDoc/{EmpId}/{ClaimId}/{FileName}
+                const url = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/ClaimDoc/${empId}/${requestId}/${fileName}`;
+                console.log("Viewing URL:", url);
+                setViewingDoc({ url, name: fileName });
+            } else {
+                Alert.alert('Error', 'Missing company URL');
+            }
+        } catch (error) {
+            console.error('Error building document URL:', error);
+            Alert.alert('Error', 'Failed to open document');
+        }
+    };
+
     const getTravelTypeLabel = (type: number) => {
         const types = ['', 'Flight', 'Train', 'Bus', 'Taxi', 'Own Vehicle', 'Other'];
         return types[type] || 'Unknown';
@@ -235,16 +275,21 @@ const ClaimModal: React.FC<ClaimModalProps> = ({ visible, onClose, item, onRefre
                             const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
 
                             let iconName = 'document-outline';
+                            let iconColor = theme.primary;
+                            let iconBg = theme.primary + '20';
+
                             if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
                                 iconName = 'image-outline';
                             } else if (fileExtension === 'pdf') {
                                 iconName = 'document-text-outline';
+                                iconColor = '#DC2626';
+                                iconBg = '#FEE2E2';
                             }
 
                             return (
                                 <View key={index} style={[styles.documentItem, { backgroundColor: theme.inputBg }]}>
-                                    <View style={[styles.documentIcon, { backgroundColor: theme.primary + '20' }]}>
-                                        <Ionicons name={iconName as any} size={24} color={theme.primary} />
+                                    <View style={[styles.documentIcon, { backgroundColor: iconBg }]}>
+                                        <Ionicons name={iconName as any} size={28} color={iconColor} />
                                     </View>
                                     <View style={styles.documentInfo}>
                                         <Text style={[styles.documentName, { color: theme.text }]} numberOfLines={1}>
@@ -254,8 +299,11 @@ const ClaimModal: React.FC<ClaimModalProps> = ({ visible, onClose, item, onRefre
                                             {fileDate}
                                         </Text>
                                     </View>
-                                    <TouchableOpacity style={styles.downloadButton}>
-                                        <Ionicons name="download-outline" size={20} color={theme.primary} />
+                                    <TouchableOpacity
+                                        style={styles.viewButton}
+                                        onPress={() => handleViewDocument(fileName)}
+                                    >
+                                        <Ionicons name="eye-outline" size={22} color={theme.primary} />
                                     </TouchableOpacity>
                                 </View>
                             );
@@ -298,6 +346,43 @@ const ClaimModal: React.FC<ClaimModalProps> = ({ visible, onClose, item, onRefre
 
                 {renderContent()}
             </ScrollView>
+
+            <Modal
+                visible={!!viewingDoc}
+                transparent={true}
+                onRequestClose={() => setViewingDoc(null)}
+                animationType="slide"
+            >
+                <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }}>
+                    <View style={styles.viewerHeader}>
+                        <TouchableOpacity onPress={() => setViewingDoc(null)} style={styles.closeButton}>
+                            <Ionicons name="close" size={24} color="white" />
+                        </TouchableOpacity>
+                        <Text style={{ color: 'white', fontWeight: 'bold' }} numberOfLines={1}>
+                            {viewingDoc?.name}
+                        </Text>
+                        <View style={{ width: 40 }} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        {viewingDoc?.url && (
+                            <WebView
+                                source={{
+                                    uri: (Platform.OS === 'android' && !/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(viewingDoc.url))
+                                        ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingDoc.url)}`
+                                        : viewingDoc.url
+                                }}
+                                style={{ flex: 1 }}
+                                startInLoadingState={true}
+                                renderLoading={() => (
+                                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                                        <ActivityIndicator size="large" color={theme.primary} />
+                                    </View>
+                                )}
+                            />
+                        )}
+                    </View>
+                </SafeAreaView>
+            </Modal>
         </AppModal>
     );
 };
@@ -469,6 +554,19 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 14,
         fontWeight: '600',
+    },
+    viewButton: {
+        padding: 8,
+    },
+    viewerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    closeButton: {
+        padding: 8,
     },
 });
 
