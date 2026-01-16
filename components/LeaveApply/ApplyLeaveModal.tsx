@@ -185,7 +185,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                             ) : (
                                 <>
                                     <Icon name="send" size={20} color="#fff" />
-                                    <Text style={styles.submitButtonText}>Apply Leave</Text>
+                                    <Text style={styles.submitButtonText}>Submit</Text>
                                 </>
                             )}
                         </TouchableOpacity>

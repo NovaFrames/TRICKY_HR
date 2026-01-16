@@ -324,8 +324,8 @@ export default function LoginScreen() {
 
                             <Animated.View style={[styles.footer, formStyle]}>
                                 <Text style={styles.footerText}>
-                                    <Text style={{ color: '#FFFFFF90' }}>@created by </Text>
-                                    <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Novaframes</Text>
+                                    <Text style={{ color: '#00000090' }}>@created by </Text>
+                                    <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>Kevit Hisoft Solutions Pvt Ltd</Text>
                                 </Text>
                             </Animated.View>
 
@@ -402,8 +402,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     footerText: {
-        fontSize: 10,
-        fontWeight: '700',
+        fontSize: 8,
+        fontWeight: '900',
         letterSpacing: 2,
         textTransform: 'uppercase',
     },

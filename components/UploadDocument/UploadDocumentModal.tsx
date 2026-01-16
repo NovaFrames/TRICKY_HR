@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import AppModal from '../common/AppModal';
-import BottomSelection from '../common/BottomSelection';
+import CenterModalSelection from '../common/CenterModalSelection';
 
 interface UploadDocumentModalProps {
     visible: boolean;
@@ -225,7 +225,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                 </ScrollView>
             </AppModal>
 
-            <BottomSelection
+            <CenterModalSelection
                 visible={showTypeSelector}
                 onClose={() => setShowTypeSelector(false)}
                 title="Select Document Type"

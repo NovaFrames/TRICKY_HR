@@ -40,6 +40,7 @@ const LeaveApply: React.FC = () => {
     const [showApplyModal, setShowApplyModal] = useState(false);
     const [showSurrenderModal, setShowSurrenderModal] = useState(false);
     const [canSurrender, setCanSurrender] = useState(false);
+    const [isFabOpen, setIsFabOpen] = useState(false);
 
     useEffect(() => {
         loadLeaveData();
@@ -244,27 +245,63 @@ const LeaveApply: React.FC = () => {
             </ScrollView>
 
             {/* Floating Action Bar */}
-            <View style={[styles.floatingActionBar, { backgroundColor: theme.cardBackground }]}>
+            {isFabOpen && (
                 <TouchableOpacity
-                    style={[styles.fabButton, styles.fabSurrender, !canSurrender && styles.disabledButton]}
-                    onPress={() => canSurrender && setShowSurrenderModal(true)}
-                    activeOpacity={0.8}
-                    disabled={!canSurrender}
-                >
-                    <Icon name="history" size={20} color={canSurrender ? theme.primary : theme.icon} />
-                    <Text style={[styles.fabText, !canSurrender && styles.disabledText, { color: canSurrender ? theme.primary : theme.icon }]}>Surrender</Text>
-                </TouchableOpacity>
+                    style={styles.backdrop}
+                    activeOpacity={1}
+                    onPress={() => setIsFabOpen(false)}
+                />
+            )}
 
-                <View style={[styles.fabDivider, { backgroundColor: theme.inputBorder }]} />
+            {/* FAB Menu */}
+            {isFabOpen && (
+                <View style={styles.fabMenuContainer}>
+                    {/* Apply Leave Item */}
+                    <TouchableOpacity
+                        style={styles.fabMenuItem}
+                        onPress={() => {
+                            setIsFabOpen(false);
+                            setShowApplyModal(true);
+                        }}
+                        activeOpacity={0.8}
+                    >
+                        <View style={[styles.fabLabelContainer, { backgroundColor: theme.cardBackground }]}>
+                            <Text style={[styles.fabLabel, { color: theme.text }]}>Apply Leave</Text>
+                        </View>
+                        <View style={[styles.fabMiniButton, { backgroundColor: theme.primary }]}>
+                            <Icon name="add-circle-outline" size={24} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.fabButton, styles.fabApply, { backgroundColor: theme.primary }]}
-                    onPress={() => setShowApplyModal(true)}
-                >
-                    <Icon name="add-circle-outline" size={20} color="#fff" />
-                    <Text style={[styles.fabText, styles.fabTextPrimary]}>Apply Leave</Text>
-                </TouchableOpacity>
-            </View>
+                    {/* Surrender Item */}
+                    {canSurrender && (
+                        <TouchableOpacity
+                            style={styles.fabMenuItem}
+                            onPress={() => {
+                                setIsFabOpen(false);
+                                setShowSurrenderModal(true);
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.fabLabelContainer, { backgroundColor: theme.cardBackground }]}>
+                                <Text style={[styles.fabLabel, { color: theme.text }]}>Surrender</Text>
+                            </View>
+                            <View style={[styles.fabMiniButton, { backgroundColor: theme.cardBackground }]}>
+                                <Icon name="history" size={24} color={theme.primary} />
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            )}
+
+            {/* Main FAB */}
+            <TouchableOpacity
+                style={[styles.fab, { backgroundColor: theme.primary }]}
+                onPress={() => setIsFabOpen(!isFabOpen)}
+                activeOpacity={0.8}
+            >
+                <Icon name={isFabOpen ? "close" : "add"} size={32} color="#fff" />
+            </TouchableOpacity>
 
             {/* Modals */}
             {showApplyModal && (
@@ -397,55 +434,67 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     bottomSpacer: {
-        height: 20,
+        height: 80, // Increased spacer to account for FAB
     },
-    floatingActionBar: {
+    backdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        zIndex: 90,
+    },
+    fab: {
         position: 'absolute',
-        bottom: 24,
-        left: 20,
+        bottom: 40,
         right: 20,
-        borderRadius: 4,
-        flexDirection: 'row',
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         alignItems: 'center',
-        padding: 6,
+        justifyContent: 'center',
         elevation: 6,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        zIndex: 100,
     },
-    fabButton: {
-        flex: 1,
+    fabMenuContainer: {
+        position: 'absolute',
+        bottom: 90,
+        right: 20,
+        alignItems: 'flex-end',
+        zIndex: 99,
+    },
+    fabMenuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
+        marginBottom: 16,
+    },
+    fabLabelContainer: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
         borderRadius: 4,
+        marginRight: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
-    fabSurrender: {
-        backgroundColor: 'transparent',
-    },
-    fabApply: {
-        // backgroundColor: set via theme.primary
-    },
-    fabDivider: {
-        width: 1,
-        height: 24,
-        marginHorizontal: 4,
-    },
-    fabText: {
+    fabLabel: {
         fontSize: 14,
         fontWeight: '600',
-        marginLeft: 6,
     },
-    fabTextPrimary: {
-        color: '#fff',
-    },
-    disabledButton: {
-        opacity: 0.6,
-    },
-    disabledText: {
-        // color handled via prop
+    fabMiniButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
     },
 });
 

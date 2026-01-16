@@ -135,7 +135,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
                             ) : (
                                 <>
                                     <Icon name="check-circle" size={20} color="#fff" />
-                                    <Text style={styles.submitButtonText}>Submit Request</Text>
+                                    <Text style={styles.submitButtonText}>Submit</Text>
                                 </>
                             )}
                         </TouchableOpacity>
