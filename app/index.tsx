@@ -1,4 +1,5 @@
 import { useUser } from '@/context/UserContext';
+import { resolveWorkingDomain } from '@/utils/domainResolver';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -71,7 +72,7 @@ export default function LoginScreen() {
     useEffect(() => {
         const fetchStoredDomain = async () => {
             try {
-                const storedDomainUrl = await AsyncStorage.getItem('domain_url');
+                const storedDomainUrl = await AsyncStorage.getItem('_domain');
                 const storedDomainId = await AsyncStorage.getItem('domain_id');
                 if (storedDomainUrl) {
                     setDomainUrl(storedDomainUrl);
@@ -96,7 +97,21 @@ export default function LoginScreen() {
         setIsLoading(true);
 
         try {
-            const response = await loginUser(empCode, password, domainId, domainUrl);
+            // 🔥 Detect correct protocol
+            const workingDomain = await resolveWorkingDomain(
+                domainUrl,
+                empCode,
+                password,
+                domainId
+            );
+
+            // 🔥 Now login using confirmed URL
+            const response = await loginUser(
+                empCode,
+                password,
+                domainId,
+                workingDomain
+            );
 
             const token = response.TokenC || response.data?.TokenC;
             const empId = response.data?.EmpIdN || response.EmpIdN;
@@ -108,29 +123,26 @@ export default function LoginScreen() {
 
             await AsyncStorage.setItem('auth_token', token);
             await AsyncStorage.setItem('emp_id', empId?.toString() ?? '');
+            await AsyncStorage.setItem('domain_url', workingDomain);
+            await AsyncStorage.setItem('_domain', domainUrl);
+            await AsyncStorage.setItem('domain_id', domainId);
 
-            // 🔥 Save domain_url separately for Axios
-            if (domainUrl) {
-                await AsyncStorage.setItem('domain_url', domainUrl);
-            }
-
-            if (domainId) {
-                await AsyncStorage.setItem('domain_id', domainId);
-            }
-
-            // 🔥🔥🔥 THIS IS THE CRITICAL PART 🔥🔥🔥
             const userData = {
                 ...(response.data || response),
-                domain_url: domainUrl.trim(),
-                domain_id: domainId.trim(),
+                domain_url: workingDomain,
+                domain_id: domainId,
             };
 
-            setBaseUrl(domainUrl);
+            setBaseUrl(workingDomain);
             await setUser(userData);
 
             router.replace('/dashboard');
+
         } catch (error: any) {
-            Alert.alert('Login Failed', error.message || 'Login error');
+            Alert.alert(
+                'Login Failed',
+                error.message || 'Unable to connect to server'
+            );
         } finally {
             setIsLoading(false);
         }

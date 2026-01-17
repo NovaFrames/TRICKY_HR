@@ -530,7 +530,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
     }
 
     return (
-        <View style={{ flex: 1}}>
+        <View style={{ flex: 1, backgroundColor:theme.background}}>
             {/* Header */}
             <Header title="Claim & Expense" />
 

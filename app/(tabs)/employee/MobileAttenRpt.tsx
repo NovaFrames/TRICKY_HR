@@ -180,7 +180,7 @@ export default function MobileAttenRpt() {
     ];
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: theme.background }}>
             <Header title="Attendance Report" />
 
             {/* Modern Integrated Filter */}
@@ -222,13 +222,7 @@ export default function MobileAttenRpt() {
                 </View>
             ) : (
                 <View style={styles.tableContainer}>
-                    <DynamicTable
-                        data={attendance}
-                        columns={columns}
-                        tableWidth={tableWidth}
-                        theme={theme}
-                    />
-                    {!attendance.length && (
+                    {!attendance.length ? (
                         <View style={styles.emptyContainer}>
                             <View style={[styles.emptyIconWrapper, { backgroundColor: theme.cardBackground, shadowColor: theme.primary }]}>
                                 <Ionicons name="calendar-outline" size={50} color={theme.primary + '80'} />
@@ -238,6 +232,13 @@ export default function MobileAttenRpt() {
                                 Adjust the date range above to view your attendance records.
                             </Text>
                         </View>
+                    ) : (
+                        <DynamicTable
+                            data={attendance}
+                            columns={columns}
+                            tableWidth={tableWidth}
+                            theme={theme}
+                        />
                     )}
                 </View>
             )}

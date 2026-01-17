@@ -234,83 +234,85 @@ export default function ApprovalReqDetails() {
   /* ---------------- RENDER ---------------- */
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1 }}>
       <Header title="Approval/Reject Details" />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.name}>{approval.NameC}</Text>
-            <Text style={styles.code}>{approval.CodeC}</Text>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View>
+              <Text style={styles.name}>{approval.NameC}</Text>
+              <Text style={styles.code}>{approval.CodeC}</Text>
+            </View>
+
+            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+              <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+              <Text style={[styles.statusText, { color: statusInfo.color }]}>
+                {statusInfo.label}
+              </Text>
+            </View>
           </View>
 
-          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
-            <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
-            <Text style={[styles.statusText, { color: statusInfo.color }]}>
-              {statusInfo.label}
-            </Text>
-          </View>
+          <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />
+
+          <DetailItem
+            icon="document-text-outline"
+            label="REQUEST TYPE"
+            value={approval.DescC || "-"}
+          />
+          <DetailItem
+            icon="time-outline"
+            label="LEAVE TYPE"
+            value={approval.LvDescC || "-"}
+          />
+          <DetailItem
+            icon="calendar-outline"
+            label="APPLY DATE"
+            value={formatDisplayDate(approval.ApplyDateD)}
+          />
+          <DetailItem
+            icon="calendar-clear-outline"
+            label="APPROVE/REJECT DATE"
+            value={formatDisplayDate(approval.ApproveRejDateD)}
+          />
+          <DetailItem
+            icon="hourglass-outline"
+            label="DAYS"
+            value={approval.LeaveDaysN}
+          />
+          <DetailItem
+            icon="chatbubble-outline"
+            label="EMPLOYEE REMARKS"
+            value={approval.EmpRemarksC || "-"}
+          />
+          <DetailItem
+            icon="chatbubble-ellipses-outline"
+            label="APPROVE REMARKS"
+            value={approval.ApproveRemarkC || "-"}
+          />
         </View>
 
-        <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />
-
-        <DetailItem
-          icon="document-text-outline"
-          label="REQUEST TYPE"
-          value={approval.DescC || "-"}
-        />
-        <DetailItem
-          icon="time-outline"
-          label="LEAVE TYPE"
-          value={approval.LvDescC || "-"}
-        />
-        <DetailItem
-          icon="calendar-outline"
-          label="APPLY DATE"
-          value={formatDisplayDate(approval.ApplyDateD)}
-        />
-        <DetailItem
-          icon="calendar-clear-outline"
-          label="APPROVE/REJECT DATE"
-          value={formatDisplayDate(approval.ApproveRejDateD)}
-        />
-        <DetailItem
-          icon="hourglass-outline"
-          label="DAYS"
-          value={approval.LeaveDaysN}
-        />
-        <DetailItem
-          icon="chatbubble-outline"
-          label="EMPLOYEE REMARKS"
-          value={approval.EmpRemarksC || "-"}
-        />
-        <DetailItem
-          icon="chatbubble-ellipses-outline"
-          label="APPROVE REMARKS"
-          value={approval.ApproveRemarkC || "-"}
-        />
-      </View>
-
-      {/* TABLE */}
-      <View style={{ marginTop: 16 }}>
-        {approval.DescC === "LEAVE" ? (
-          loading ? (
-            <ActivityIndicator size="large" color={theme.primary} />
+        {/* TABLE */}
+        <View style={{ marginTop: 16 }}>
+          {approval.DescC === "LEAVE" ? (
+            loading ? (
+              <ActivityIndicator size="large" color={theme.primary} />
+            ) : (
+              <DynamicTable
+                data={formattedLeaves}
+                columns={ATTENDANCE_COLUMNS}
+                theme={theme}
+                tableWidth={600}
+              />
+            )
           ) : (
-            <DynamicTable
-              data={formattedLeaves}
-              columns={ATTENDANCE_COLUMNS}
-              theme={theme}
-              tableWidth={600}
-            />
-          )
-        ) : (
-          <Text style={styles.emptyText}>
-            No leave data available for this request.
-          </Text>
-        )}
-      </View>
-    </ScrollView>
+            <Text style={styles.emptyText}>
+              No leave data available for this request.
+            </Text>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -340,7 +342,7 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.background,
     },
     content: {
-      paddingTop:HEADER_HEIGHT,
+      paddingTop: HEADER_HEIGHT,
     },
     card: {
       backgroundColor: theme.cardBackground,

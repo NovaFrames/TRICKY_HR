@@ -104,7 +104,7 @@ export default function EmployeeListScreen() {
                         setShowBalanceModal(true);
                     }
                 },
-                { text: 'Cancel', style: 'cancel' }
+                { text: 'Cancel', style: 'default' }
             ]
         );
     };
@@ -157,7 +157,7 @@ export default function EmployeeListScreen() {
     };
 
     return (
-        <View style={[styles.container]}>
+        <View style={[styles.container, {backgroundColor:theme.background}]}>
             <Header title="Employee List" />
 
             <View style={{ paddingTop: HEADER_HEIGHT }}>
