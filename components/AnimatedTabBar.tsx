@@ -138,7 +138,7 @@ export function AnimatedTabBar({
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: 0,
+        bottom: -24,
         width,
     },
     svg: {

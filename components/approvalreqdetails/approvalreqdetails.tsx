@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 import DynamicTable, { ColumnDef } from "../DynamicTable";
-import Header from "../Header";
+import Header, { HEADER_HEIGHT } from "../Header";
 
 /* ---------------- TYPES ---------------- */
 
@@ -340,8 +340,7 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.background,
     },
     content: {
-      padding: 16,
-      paddingBottom: 28,
+      paddingTop:HEADER_HEIGHT,
     },
     card: {
       backgroundColor: theme.cardBackground,
