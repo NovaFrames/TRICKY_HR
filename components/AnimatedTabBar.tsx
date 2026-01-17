@@ -9,7 +9,6 @@ import Animated, {
     useSharedValue,
     withTiming
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
@@ -41,7 +40,6 @@ export function AnimatedTabBar({
 }: BottomTabBarProps) {
 
     const { theme, isDark } = useTheme();
-    const insets = useSafeAreaInsets();
 
     const curveX = useSharedValue(
         state.index * TAB_WIDTH + TAB_WIDTH / 2
@@ -93,7 +91,7 @@ export function AnimatedTabBar({
         isTabKey(activeRoute) ? iconMap[activeRoute] : 'ellipse';
 
     return (
-        <View style={[styles.container, { height: TAB_BAR_HEIGHT + insets.bottom, backgroundColor: theme.background }]}>
+        <View style={[styles.container, {backgroundColor: theme.background }]}>
             {/* SVG CURVE */}
             <Svg width={width} height={TAB_BAR_HEIGHT} style={styles.svg}>
                 <AnimatedPath
@@ -103,7 +101,7 @@ export function AnimatedTabBar({
             </Svg>
 
             {/* FLOATING CIRCLE */}
-            <Animated.View style={[styles.circle, circleStyle, { backgroundColor: theme.primary, bottom: insets.bottom + 15 }]}>
+            <Animated.View style={[styles.circle, circleStyle, { backgroundColor: theme.primary, bottom:10}]}>
                 <Ionicons name={activeIcon} size={28} color={theme.background} />
             </Animated.View>
 
@@ -138,8 +136,7 @@ export function AnimatedTabBar({
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: -24,
-        width,
+        bottom: 0,
     },
     svg: {
         position: 'absolute',
