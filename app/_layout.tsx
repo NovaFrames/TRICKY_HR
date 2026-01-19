@@ -1,8 +1,8 @@
-import { UserProvider, useUser } from '@/context/UserContext';
-import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { UserProvider, useUser } from "@/context/UserContext";
+import { SplashScreen, Stack, usePathname, useRouter } from "expo-router";
+import { useEffect, useRef } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,7 +26,8 @@ function RootNavigator() {
   const { user, isLoading } = useUser();
   const isAuthenticated = !!user;
 
-  console.log('Current Pathname: ', pathname);
+  console.log("Authenticated: ", isAuthenticated);
+  console.log("Current Pathname: ", pathname);
 
   useEffect(() => {
     if (!isLoading && !hidden.current) {
@@ -38,12 +39,12 @@ function RootNavigator() {
   useEffect(() => {
     if (isLoading) return;
 
-    if (!isAuthenticated && pathname === '/') {
-      router.replace('/auth/login');
+    if (!isAuthenticated && pathname === "/") {
+      router.replace("/auth/login");
     }
 
-    if (isAuthenticated && pathname.startsWith('/auth')) {
-      router.replace('/(tabs)/dashboard');
+    if (isAuthenticated && pathname.startsWith("/auth")) {
+      router.replace("/(tabs)/dashboard");
     }
   }, [isAuthenticated, isLoading, pathname]);
 

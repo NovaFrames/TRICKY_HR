@@ -18,6 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { CustomButton } from '../../../components/CustomButton';
 import { useTheme } from '../../../context/ThemeContext';
 import ApiService from '../../../services/ApiService';
 
@@ -484,36 +485,23 @@ export default function ExitRequestScreen() {
                 {/* Footer Buttons */}
                 <View style={[styles.footer, { backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, shadowOpacity: 0, paddingBottom: 0 }]}>
                     {exitData.EmpIdN ? (
-                        <TouchableOpacity
-                            style={[styles.button, styles.revokeButton]}
+                        <CustomButton
+                            title="Revoke Request"
+                            icon="close-circle"
                             onPress={handleRevoke}
+                            isLoading={submitLoading}
                             disabled={submitLoading}
-                            activeOpacity={0.8}
-                        >
-                            {submitLoading ? (
-                                <ActivityIndicator color="#fff" size="small" />
-                            ) : (
-                                <>
-                                    <Ionicons name="close-circle" size={20} color="#fff" />
-                                    <Text style={styles.buttonText}>Revoke Request</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
+                            style={[styles.button, styles.revokeButton]}
+                        />
                     ) : (
-                        <TouchableOpacity
-                            style={[styles.button, { backgroundColor: theme.primary }]}
+                        <CustomButton
+                            title="Submit"
+                            icon="send"
                             onPress={() => handleSubmit()}
+                            isLoading={submitLoading}
                             disabled={submitLoading}
-                            activeOpacity={0.8}
-                        >
-                            {submitLoading ? (
-                                <ActivityIndicator color="#fff" size="small" />
-                            ) : (
-                                <>
-                                    <Text style={styles.buttonText}>Submit</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
+                            style={[styles.button, { backgroundColor: theme.primary }]}
+                        />
                     )}
                 </View>
 
@@ -761,26 +749,18 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
     },
     button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
         paddingHorizontal: 32,
         paddingVertical: 14,
         borderRadius: 12,
         minWidth: 180,
-        gap: 8,
         elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
+        marginBottom: 0,
     },
     revokeButton: {
         backgroundColor: '#FF3B30',
-    },
-    buttonText: {
-        color: '#fff',
-        fontWeight: '700',
-        fontSize: 16,
     },
 });

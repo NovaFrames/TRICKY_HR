@@ -4,11 +4,11 @@ import {
     Modal,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
 } from 'react-native';
 import SignatureCanvas from 'react-native-signature-canvas';
 import { useTheme } from '../../context/ThemeContext';
+import { CustomButton } from '../CustomButton';
 
 interface ClientSignatureModalProps {
     visible: boolean;
@@ -100,27 +100,27 @@ export default function ClientSignatureModal({
 
                 {/* Action Buttons */}
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={[styles.button, styles.cancelButton]}
+                    <CustomButton
+                        title="Cancel"
+                        icon="close"
                         onPress={onClose}
-                    >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </TouchableOpacity>
+                        style={[styles.button, styles.cancelButton]}
+                    />
 
-                    <TouchableOpacity
-                        style={[styles.button, styles.clearButton]}
+                    <CustomButton
+                        title="Clear"
+                        icon="trash-outline"
                         onPress={handleClear}
-                    >
-                        <Text style={styles.clearButtonText}>Clear</Text>
-                    </TouchableOpacity>
+                        style={[styles.button, styles.clearButton]}
+                    />
 
-                    <TouchableOpacity
-                        style={[styles.button, styles.doneButton, { backgroundColor: theme.primary }]}
+                    <CustomButton
+                        title="Done"
+                        icon="checkmark-circle"
                         onPress={handleEnd}
                         disabled={!hasSignature}
-                    >
-                        <Text style={styles.doneButtonText}>Done</Text>
-                    </TouchableOpacity>
+                        style={[styles.button, styles.doneButton, { backgroundColor: theme.primary }]}
+                    />
                 </View>
             </View>
         </Modal>
@@ -158,33 +158,16 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
-        paddingVertical: 14,
         borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginBottom: 0,
     },
     cancelButton: {
         backgroundColor: '#F44336',
     },
-    cancelButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
     clearButton: {
         backgroundColor: '#9E9E9E',
     },
-    clearButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
     doneButton: {
         // backgroundColor set dynamically
-    },
-    doneButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '700',
     },
 });

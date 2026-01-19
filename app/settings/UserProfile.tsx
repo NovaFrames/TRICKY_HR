@@ -1,4 +1,5 @@
 import Header, { HEADER_HEIGHT } from '@/components/Header';
+import { CustomButton } from '@/components/CustomButton';
 import { formatDateForApi, formatDisplayDate } from '@/constants/timeFormat';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/context/UserContext';
@@ -192,13 +193,12 @@ const EditArraySection = ({
             <Text style={[styles.arraySectionTitle, { color: theme.text }]}>
                 {title}
             </Text>
-            <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: theme.primary }]}
+            <CustomButton
+                title="Add More"
+                icon="add"
                 onPress={onAdd}
-            >
-                <Ionicons name="add" size={18} color="#fff" />
-                <Text style={styles.addButtonText}>Add More</Text>
-            </TouchableOpacity>
+                style={[styles.addButton, { backgroundColor: theme.primary }]}
+            />
         </View>
 
         {data.length > 0 ? (
@@ -223,13 +223,12 @@ const EditArraySection = ({
         ) : (
             <View style={[styles.emptyArrayContainer, { backgroundColor: `${theme.primary}05` }]}>
                 <Text style={[styles.emptyArrayText, { color: theme.textLight }]}>{emptyMessage}</Text>
-                <TouchableOpacity
-                    style={[styles.addButton, { backgroundColor: theme.primary }]}
+                <CustomButton
+                    title="Add First Item"
+                    icon="add"
                     onPress={onAdd}
-                >
-                    <Ionicons name="add" size={18} color="#fff" />
-                    <Text style={styles.addButtonText}>Add First Item</Text>
-                </TouchableOpacity>
+                    style={[styles.addButton, { backgroundColor: theme.primary }]}
+                />
             </View>
         )}
     </View>
@@ -2105,17 +2104,10 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     addButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        height: 34,
         paddingHorizontal: 12,
-        paddingVertical: 6,
         borderRadius: 8,
-        gap: 6,
-    },
-    addButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
+        marginBottom: 0,
     },
     removeButton: {
         width: 28,

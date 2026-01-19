@@ -1,7 +1,8 @@
 import { ThemeType } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
+import { CustomButton } from '@/components/CustomButton';
 
 interface ConfirmationModalProps {
     visible: boolean;
@@ -26,18 +27,28 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ visible, totalAmo
                     Are you sure you want to submit this claim for ₹{totalAmount.toFixed(2)}?
                 </Text>
                 <View style={styles.buttons}>
-                    <TouchableOpacity
-                        style={[styles.button, styles.noButton, { backgroundColor: theme.inputBg }]}
+                    <CustomButton
+                        title="No, Review"
+                        icon="close"
                         onPress={onCancel}
-                    >
-                        <Text style={[styles.noButtonText, { color: theme.textLight }]}>No, Review</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.button, styles.yesButton, { backgroundColor: theme.primary }]}
+                        textColor={theme.textLight}
+                        iconColor={theme.textLight}
+                        style={[
+                            styles.button,
+                            styles.noButton,
+                            { backgroundColor: theme.inputBg },
+                        ]}
+                    />
+                    <CustomButton
+                        title="Yes, Submit"
+                        icon="checkmark-circle"
                         onPress={onConfirm}
-                    >
-                        <Text style={styles.yesButtonText}>Yes, Submit</Text>
-                    </TouchableOpacity>
+                        style={[
+                            styles.button,
+                            styles.yesButton,
+                            { backgroundColor: theme.primary },
+                        ]}
+                    />
                 </View>
             </View>
         </View>
@@ -78,22 +89,12 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
-        paddingVertical: 14,
         borderRadius: 4,
-        alignItems: 'center',
         marginHorizontal: 8,
+        marginBottom: 0,
     },
     noButton: {},
     yesButton: {},
-    noButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    yesButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-    },
 });
 
 export default ConfirmationModal;
