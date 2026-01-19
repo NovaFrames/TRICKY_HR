@@ -88,7 +88,7 @@ export default function ChangePassword() {
                             onPress: async () => {
                                 // Logout and redirect to login
                                 await ApiService.logout();
-                                router.replace('/');
+                                router.replace('../auth/login');
                             },
                         },
                     ]

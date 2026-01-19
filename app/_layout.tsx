@@ -1,26 +1,49 @@
-import { Stack } from 'expo-router';
-import 'react-native-reanimated';
-
-import { UserProvider } from '@/context/UserContext';
+import { UserProvider, useUser } from '@/context/UserContext';
+import { SplashScreen, Stack } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemeProvider } from '../context/ThemeContext';
+
+SplashScreen.preventAutoHideAsync();
+
+/* ---------------- ROOT ---------------- */
 
 export default function RootLayout() {
+  return (
+    <UserProvider>
+      <RootNavigator />
+    </UserProvider>
+  );
+}
+
+/* ---------------- NAVIGATION ---------------- */
+
+function RootNavigator() {
+  const hidden = useRef(false);
+  const { user, isLoading } = useUser();
+  const isAuthenticated = !!user;
+  console.log('isAuthenticated: ', isAuthenticated)
+
+  useEffect(() => {
+    if (!isLoading && !hidden.current) {
+      hidden.current = true;
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
+
+  if (isLoading) return null; // keep splash visible
 
   return (
-    <SafeAreaView style={{flex:1}}>
     <GestureHandlerRootView style={{ flex: 1 }}>
-    <UserProvider>
-      <ThemeProvider>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }}>
+          {!isAuthenticated ? (
+            <Stack.Screen name="auth/login" />   // ✅ CORRECT
+          ) : (
+            <Stack.Screen name="(tabs)" /> // ✅ CORRECT
+          )}
         </Stack>
-      </ThemeProvider>
-    </UserProvider>
+      </SafeAreaView>
     </GestureHandlerRootView>
-    </SafeAreaView>
   );
 }

@@ -24,14 +24,14 @@ import Animated, {
     withTiming
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CustomButton } from '../components/CustomButton';
-import { CustomInput } from '../components/CustomInput';
-import { useTheme } from '../context/ThemeContext';
-import { loginUser, setBaseUrl } from '../services/ApiService';
+import { CustomButton } from '../../components/CustomButton';
+import { CustomInput } from '../../components/CustomInput';
+import { useTheme } from '../../context/ThemeContext';
+import { loginUser, setBaseUrl } from '../../services/ApiService';
 
 const { width, height } = Dimensions.get('window');
 
-export default function LoginScreen() {
+export default function Login() {
     const router = useRouter();
     const [empCode, setEmpCode] = useState('');
     const [password, setPassword] = useState('');
@@ -136,7 +136,7 @@ export default function LoginScreen() {
             setBaseUrl(workingDomain);
             await setUser(userData);
 
-            router.replace('/dashboard');
+            router.replace('/(tabs)/dashboard');
 
         } catch (error: any) {
             Alert.alert(
