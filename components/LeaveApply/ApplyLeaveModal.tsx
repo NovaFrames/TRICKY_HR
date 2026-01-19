@@ -3,19 +3,19 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, {
-    AvailableLeaveType,
-    LeaveApplicationData,
-    LeaveBalanceResponse,
+  AvailableLeaveType,
+  LeaveApplicationData,
+  LeaveBalanceResponse,
 } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
 import CenterModalSelection from "../common/CenterModalSelection";
@@ -213,15 +213,23 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
           <View style={styles.footerRow}>
             <CustomButton
               title="Cancel"
-              isLoading={loading}
-              disabled={loading}
+              icon="close"
               onPress={onClose}
-              style={styles.cancelButton}
+              disabled={loading}
+              textColor={theme.text}
+              iconColor={theme.text}
+              style={[
+                styles.cancelButton,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
             />
 
             <CustomButton
               title="Submit"
-              icon="send"
+              icon="checkmark-circle-outline"
               isLoading={loading}
               disabled={loading}
               onPress={handleSubmit}
@@ -482,8 +490,8 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: 18,
     flexShrink: 1,
+    paddingHorizontal: 16,
   },
   formGroup: {
     marginBottom: 20,

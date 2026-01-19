@@ -2,17 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { Href, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
-    Platform,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
 const HEADER_HEIGHT =
-  56 + (Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0);
+  36 + (Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0);
 
 export const BACK_FALLBACKS: Record<string, Href> = {
   home: "/home",

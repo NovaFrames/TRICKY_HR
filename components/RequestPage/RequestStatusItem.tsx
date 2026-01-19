@@ -127,8 +127,7 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 12,
-    marginVertical: 4,
+    marginVertical: 1,
     borderRadius: 4,
     padding: 16,
     borderWidth: 1,
