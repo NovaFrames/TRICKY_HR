@@ -1,7 +1,9 @@
-import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
 import { SplashScreen, Stack, usePathname, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
+import { setBackgroundColorAsync } from "expo-system-ui";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -25,6 +27,7 @@ function RootNavigator() {
   const hidden = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   const { user, isLoading } = useUser();
   const isAuthenticated = !!user;
@@ -51,11 +54,24 @@ function RootNavigator() {
     }
   }, [isAuthenticated, isLoading, pathname]);
 
+  useEffect(() => {
+    void setBackgroundColorAsync(theme.background);
+  }, [theme.background]);
+
   if (isLoading) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: theme.background }}
+    >
+      <StatusBar style={theme.mode === "dark" ? "light" : "dark"} />
+
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: theme.background,
+        }}
+      >
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="auth/login" />
           <Stack.Screen name="(tabs)" />
