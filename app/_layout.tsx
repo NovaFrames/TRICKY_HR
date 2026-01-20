@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
 import { SplashScreen, Stack, usePathname, useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
@@ -10,9 +11,11 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <UserProvider>
-      <RootNavigator />
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <RootNavigator />
+      </UserProvider>
+    </ThemeProvider>
   );
 }
 

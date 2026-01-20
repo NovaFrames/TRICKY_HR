@@ -6,252 +6,246 @@ import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function Holiday() {
-    const { user } = useUser();
-    const { theme } = useTheme();
+  const { user } = useUser();
+  const { theme } = useTheme();
 
-    const [holidayData, setHolidayData] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [selectedYear, setSelectedYear] = useState(
-        new Date().getFullYear().toString()
+  const [holidayData, setHolidayData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(
+    new Date().getFullYear().toString(),
+  );
+
+  useProtectedBack({ home: "/home" });
+
+  /* ---------------- HELPERS ---------------- */
+
+  const parseDotNetDate = (dateStr: string) => {
+    const timestamp = Number(dateStr.replace(/[^0-9]/g, ""));
+    return new Date(timestamp);
+  };
+
+  const changeYear = (direction: "prev" | "next") => {
+    setSelectedYear((prev) => {
+      const year = Number(prev);
+      if (direction === "prev") return String(year - 1);
+      if (direction === "next") return String(year + 1);
+      return prev;
+    });
+  };
+
+  /* ---------------- API ---------------- */
+
+  const fetchHoliday = async () => {
+    try {
+      const data = await ApiService.getHolidayList(
+        user?.TokenC || "",
+        selectedYear,
+      );
+      setHolidayData(data);
+    } catch (error) {
+      console.error("Holiday API error:", error);
+      setHolidayData([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchHoliday();
+  }, [selectedYear]);
+
+  /* ---------------- RENDER ITEM ---------------- */
+
+  const renderHolidayItem = ({ item }: any) => {
+    const date = parseDotNetDate(item.HolidayDateD);
+
+    return (
+      <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+        <View style={[styles.dateBox, { backgroundColor: theme.primary }]}>
+          <Text style={styles.dateDay}>{date.getDate()}</Text>
+          <Text style={styles.dateMonth}>
+            {date.toLocaleString("default", { month: "short" })}
+          </Text>
+        </View>
+
+        <View style={styles.info}>
+          <Text style={[styles.name, { color: theme.text }]}>
+            {item.HolidayNameC}
+          </Text>
+          <Text style={[styles.day, { color: theme.textLight }]}>
+            {date.toLocaleString("default", { weekday: "long" })} •{" "}
+            {item.HolidayGrpNameC}
+          </Text>
+        </View>
+      </View>
     );
+  };
 
-    useProtectedBack({ home: "/home" });
+  /* ---------------- UI ---------------- */
 
-    /* ---------------- HELPERS ---------------- */
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Header title="Holidays" />
 
-    const parseDotNetDate = (dateStr: string) => {
-        const timestamp = Number(dateStr.replace(/[^0-9]/g, ""));
-        return new Date(timestamp);
-    };
-
-    const changeYear = (direction: "prev" | "next") => {
-        setSelectedYear((prev) => {
-            const year = Number(prev);
-            if (direction === "prev")
-                return String(year - 1);
-            if (direction === "next")
-                return String(year + 1);
-            return prev;
-        });
-    };
-
-    /* ---------------- API ---------------- */
-
-    const fetchHoliday = async () => {
-        try {
-            const data = await ApiService.getHolidayList(
-                user?.TokenC || "",
-                selectedYear
-            );
-            setHolidayData(data);
-        } catch (error) {
-            console.error("Holiday API error:", error);
-            setHolidayData([]);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
+      <FlatList
+        data={holidayData}
+        renderItem={renderHolidayItem}
+        keyExtractor={(_, index) => index.toString()}
+        showsVerticalScrollIndicator={false}
+        // 🔑 This handles the fixed header
+        contentContainerStyle={{
+          paddingTop: HEADER_HEIGHT,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={fetchHoliday}
+            colors={[theme.primary]}
+          />
         }
-    };
-
-    useEffect(() => {
-        setLoading(true);
-        fetchHoliday();
-    }, [selectedYear]);
-
-    /* ---------------- RENDER ITEM ---------------- */
-
-    const renderHolidayItem = ({ item }: any) => {
-        const date = parseDotNetDate(item.HolidayDateD);
-
-        return (
-            <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-                <View style={[styles.dateBox, { backgroundColor: theme.primary }]}>
-                    <Text style={styles.dateDay}>{date.getDate()}</Text>
-                    <Text style={styles.dateMonth}>
-                        {date.toLocaleString("default", { month: "short" })}
-                    </Text>
-                </View>
-
-                <View style={styles.info}>
-                    <Text style={[styles.name, { color: theme.text }]}>
-                        {item.HolidayNameC}
-                    </Text>
-                    <Text style={[styles.day, { color: theme.textLight }]}>
-                        {date.toLocaleString("default", { weekday: "long" })} •{" "}
-                        {item.HolidayGrpNameC}
-                    </Text>
-                </View>
-            </View>
-        );
-    };
-
-    /* ---------------- UI ---------------- */
-
-return (
-  <View style={[styles.container, { backgroundColor: theme.background }]}>
-    <Header title="Holidays" />
-
-    <FlatList
-      data={holidayData}
-      renderItem={renderHolidayItem}
-      keyExtractor={(_, index) => index.toString()}
-      showsVerticalScrollIndicator={false}
-
-      // 🔑 This handles the fixed header
-      contentContainerStyle={{
-        paddingTop: HEADER_HEIGHT
-      }}
-
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={fetchHoliday}
-          colors={[theme.primary]}
-        />
-      }
-
-      ListHeaderComponent={
-        <>
-          {/* YEAR SWITCHER */}
-          <View
-            style={[
-              styles.yearSwitcher,
-              { backgroundColor: theme.cardBackground },
-            ]}
-          >
-            <TouchableOpacity onPress={() => changeYear('prev')}>
-              <Ionicons name="chevron-back" size={26} />
-            </TouchableOpacity>
-
-            <Text style={[styles.yearText, { color: theme.text }]}>
-              {selectedYear}
-            </Text>
-
-            <TouchableOpacity onPress={() => changeYear('next')}>
-              <Ionicons name="chevron-forward" size={26} />
-            </TouchableOpacity>
-          </View>
-
-          {loading && (
-            <ActivityIndicator
-              size="large"
-              color={theme.primary}
-              style={{ marginTop: 40 }}
-            />
-          )}
-        </>
-      }
-
-      ListEmptyComponent={
-        !loading ? (
-          <View style={styles.empty}>
-            <Ionicons
-              name="calendar-outline"
-              size={64}
-              color={theme.textLight}
-            />
-            <Text
-              style={{
-                marginTop: 12,
-                color: theme.textLight,
-                fontSize: 16,
-              }}
+        ListHeaderComponent={
+          <>
+            {/* YEAR SWITCHER */}
+            <View
+              style={[
+                styles.yearSwitcher,
+                { backgroundColor: theme.cardBackground },
+              ]}
             >
-              No holidays found for {selectedYear}
-            </Text>
-          </View>
-        ) : null
-      }
-    />
-  </View>
-);
+              <TouchableOpacity onPress={() => changeYear("prev")}>
+                <Ionicons name="chevron-back" size={26} />
+              </TouchableOpacity>
 
+              <Text style={[styles.yearText, { color: theme.text }]}>
+                {selectedYear}
+              </Text>
+
+              <TouchableOpacity onPress={() => changeYear("next")}>
+                <Ionicons name="chevron-forward" size={26} />
+              </TouchableOpacity>
+            </View>
+
+            {loading && (
+              <ActivityIndicator
+                size="large"
+                color={theme.primary}
+                style={{ marginTop: 40 }}
+              />
+            )}
+          </>
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.empty}>
+              <Ionicons
+                name="calendar-outline"
+                size={64}
+                color={theme.textLight}
+              />
+              <Text
+                style={{
+                  marginTop: 12,
+                  color: theme.textLight,
+                  fontSize: 16,
+                }}
+              >
+                No holidays found for {selectedYear}
+              </Text>
+            </View>
+          ) : null
+        }
+      />
+    </View>
+  );
 }
 
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
+  container: {
+    flex: 1,
+  },
 
-    yearSwitcher: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginHorizontal: 16,
-        marginTop: 12,
-        marginBottom: 6,
-        paddingVertical: 14,
-        paddingHorizontal: 20,
-        borderRadius: 14,
-        elevation: 3,
-    },
+  yearSwitcher: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    elevation: 3,
+  },
 
-    yearText: {
-        fontSize: 20,
-        fontWeight: "700",
-        letterSpacing: 1,
-    },
+  yearText: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
 
-    card: {
-        flexDirection: "row",
-        padding: 14,
-        borderRadius: 4,
-        marginBottom: 2,
-        elevation: 2,
-    },
+  card: {
+    flexDirection: "row",
+    padding: 14,
+    borderRadius: 4,
+    marginBottom: 2,
+    elevation: 2,
+    marginHorizontal: 16,
+  },
 
-    dateBox: {
-        width: 62,
-        height: 62,
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-    },
+  dateBox: {
+    width: 62,
+    height: 62,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-    dateDay: {
-        color: "#fff",
-        fontSize: 22,
-        fontWeight: "bold",
-    },
+  dateDay: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
 
-    dateMonth: {
-        color: "#fff",
-        fontSize: 12,
-        textTransform: "uppercase",
-        marginTop: -2,
-    },
+  dateMonth: {
+    color: "#fff",
+    fontSize: 12,
+    textTransform: "uppercase",
+    marginTop: -2,
+  },
 
-    info: {
-        flex: 1,
-        marginLeft: 14,
-        justifyContent: "center",
-    },
+  info: {
+    flex: 1,
+    marginLeft: 14,
+    justifyContent: "center",
+  },
 
-    name: {
-        fontSize: 16,
-        fontWeight: "600",
-    },
+  name: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
 
-    day: {
-        fontSize: 13,
-        marginTop: 4,
-    },
+  day: {
+    fontSize: 13,
+    marginTop: 4,
+  },
 
-    empty: {
-        alignItems: "center",
-        marginTop: 80,
-    },
+  empty: {
+    alignItems: "center",
+    marginTop: 80,
+  },
 });
