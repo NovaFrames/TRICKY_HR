@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     paddingVertical: 14,
     paddingHorizontal: 20,
-    borderRadius: 14,
+    borderRadius: 4,
     elevation: 3,
   },
 
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   dateBox: {
     width: 62,
     height: 62,
-    borderRadius: 12,
+    borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
   },

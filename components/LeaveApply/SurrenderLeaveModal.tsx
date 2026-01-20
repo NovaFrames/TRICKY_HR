@@ -3,14 +3,14 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, { SurrenderData } from "../../services/ApiService";
@@ -326,9 +326,9 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     flex: 1,
-    height: 56,
+    height: "100%",
     marginBottom: 0,
-    padding: 10,
+    padding: 8,
   },
   cancelButton: {
     borderWidth: 1,

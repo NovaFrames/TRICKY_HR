@@ -3,13 +3,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
@@ -361,6 +361,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
 const styles = StyleSheet.create({
   scrollContent: {
     padding: 18,
+    paddingBottom: 24,
     flexShrink: 1,
   },
   formGroup: {
@@ -408,10 +409,10 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     flex: 1,
-    height: 56,
+    height: "100%",
     borderRadius: 4,
-    marginBottom: 0,
-    padding: 10,
+    marginBottom: 24,
+    padding: 8,
   },
   cancelButton: {
     borderWidth: 1,

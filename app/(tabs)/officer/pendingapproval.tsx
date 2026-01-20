@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   pendingCard: {
-    borderRadius: 12,
+    borderRadius: 4,
     padding: 16,
     marginBottom: 4,
     marginHorizontal: 16,
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
   typeContainer: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 4,
   },
   typeText: {
     fontSize: 12,
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   statusContainer: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 4,
   },
   statusText: {
     fontSize: 12,

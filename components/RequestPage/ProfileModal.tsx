@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: 4,
   },
   statusLabelText: {
     fontSize: 11,
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
   photoPlaceholder: {
     width: 80,
     height: 80,
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
   },
   childCard: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     marginBottom: 8,
   },
   childName: {
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   },
   eduCard: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     marginBottom: 8,
   },
   eduTitle: {

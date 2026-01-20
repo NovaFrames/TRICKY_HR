@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginHorizontal: 16,
         marginVertical: 12,
-        borderRadius: 12,
+        borderRadius: 4,
         padding: 4,
         elevation: 2,
         shadowColor: '#000',
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 10,
         alignItems: 'center',
-        borderRadius: 10,
+        borderRadius: 4,
     },
     tabText: {
         fontSize: 13,

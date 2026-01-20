@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: 4,
   },
   statusLabelText: {
     fontSize: 11,

@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
 
     gridItem: {
         alignItems: 'center',
-        borderRadius: 6,
+        borderRadius: 4,
         paddingVertical: 16,
         paddingHorizontal: 8,
         elevation: 3,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     gridIconBox: {
         width: 52,
         height: 52,
-        borderRadius: 8,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,

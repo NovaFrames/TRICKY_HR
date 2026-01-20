@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
         margin: 20,
         borderWidth: 2,
         borderStyle: 'dashed',
-        borderRadius: 8,
+        borderRadius: 4,
         overflow: 'hidden',
     },
     buttonContainer: {
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
-        borderRadius: 8,
+        borderRadius: 4,
         marginBottom: 0,
     },
     cancelButton: {

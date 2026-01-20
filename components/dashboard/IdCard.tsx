@@ -117,7 +117,7 @@ export const IdCard: React.FC<IdCardProps> = ({
 
         {/* <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: isTracking ? '#10B981' : '#CBD5E1', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: 24, height: 24, borderRadius: 4, backgroundColor: isTracking ? '#10B981' : '#CBD5E1', justifyContent: 'center', alignItems: 'center' }}>
                             <Feather name="map-pin" size={12} color="#fff" />
                         </View>
                         <View>
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   liveDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: 4,
     marginRight: 6,
   },
   liveText: {
@@ -267,14 +267,14 @@ const styles = StyleSheet.create({
   toggleTrack: {
     width: 48,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 4,
     padding: 2,
     justifyContent: "center",
   },
   toggleThumb: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,

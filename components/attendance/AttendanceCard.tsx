@@ -143,7 +143,7 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({ item, index, theme, typ
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: 16,
+        borderRadius: 4,
         padding: 16,
         marginBottom: 16,
         elevation: 1,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: 4,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     badge: {
         paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 12,
+        borderRadius: 4,
     },
     badgeText: {
         fontSize: 12,

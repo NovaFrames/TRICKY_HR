@@ -65,14 +65,14 @@ const styles = StyleSheet.create({
     toggleTrack: {
         width: 48,
         height: 28,
-        borderRadius: 14,
+        borderRadius: 4,
         padding: 2,
         justifyContent: 'center',
     },
     toggleThumb: {
         width: 24,
         height: 24,
-        borderRadius: 12,
+        borderRadius: 4,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,

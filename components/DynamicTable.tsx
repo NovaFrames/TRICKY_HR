@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 import {
   FlexAlignType,
   ScrollView,
@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
+} from "react-native";
 
 export type ColumnDef = {
   key: string;
@@ -31,22 +31,39 @@ export default function DynamicTable({
   tableWidth,
   theme,
 }: Props) {
-
   /* ---------- CALCULATE FIXED COLUMN WIDTHS ---------- */
   const columnWidths = useMemo(() => {
     const totalFlex = columns.reduce((s, c) => s + (c.flex ?? 1), 0);
-    return columns.map(col =>
-      Math.round(((col.flex ?? 1) / totalFlex) * tableWidth)
+    return columns.map((col) =>
+      Math.round(((col.flex ?? 1) / totalFlex) * tableWidth),
     );
   }, [columns, tableWidth]);
 
   /* ---------------- HEADER ---------------- */
   const renderHeader = () => (
-    <View style={[styles.row, styles.headerRow, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
+    <View
+      style={[
+        styles.row,
+        styles.headerRow,
+        {
+          backgroundColor: theme.cardBackground,
+          borderColor: theme.inputBorder,
+        },
+      ]}
+    >
       {columns.map((col, i) => (
-        <View key={col.key} style={[styles.cell, { width: columnWidths[i], borderColor: theme.inputBorder }]}>
+        <View
+          key={col.key}
+          style={[
+            styles.cell,
+            { width: columnWidths[i], borderColor: theme.inputBorder },
+          ]}
+        >
           <Text
-            style={[styles.headerText, { color: theme.text, textAlign: align(col.align) }]}
+            style={[
+              styles.headerText,
+              { color: theme.text, textAlign: align(col.align) },
+            ]}
           >
             {col.label}
           </Text>
@@ -61,20 +78,34 @@ export default function DynamicTable({
       style={[
         styles.row,
         {
-          backgroundColor: index % 2 === 0 ? theme.cardBackground : theme.background,
-          borderColor: theme.inputBorder
+          backgroundColor:
+            index % 2 === 0 ? theme.cardBackground : theme.background,
+          borderColor: theme.inputBorder,
         },
       ]}
     >
       {columns.map((col, i) => {
         const value = col.formatter
           ? col.formatter(item[col.key], item)
-          : item[col.key] ?? '';
+          : (item[col.key] ?? "");
 
         return (
-          <View key={col.key} style={[styles.cell, { width: columnWidths[i], borderColor: theme.inputBorder }]}>
+          <View
+            key={col.key}
+            style={[
+              styles.cell,
+              { width: columnWidths[i], borderColor: theme.inputBorder },
+            ]}
+          >
             <Text
-              style={[styles.cellText, { color: theme.text, textAlign: align(col.align), flexWrap: 'wrap' }]}
+              style={[
+                styles.cellText,
+                {
+                  color: theme.text,
+                  textAlign: align(col.align),
+                  flexWrap: "wrap",
+                },
+              ]}
             >
               {String(value)}
             </Text>
@@ -89,7 +120,7 @@ export default function DynamicTable({
       <View style={{ width: tableWidth }}>
         {renderHeader()}
         <SectionList
-          sections={[{ title: 'DATA', data }]}
+          sections={[{ title: "DATA", data }]}
           keyExtractor={(_, i) => i.toString()}
           renderItem={renderRow}
           renderSectionHeader={() => null}
@@ -101,30 +132,30 @@ export default function DynamicTable({
 }
 
 const align = (a?: FlexAlignType) =>
-  a === 'flex-end' ? 'right' : a === 'center' ? 'center' : 'left';
+  a === "flex-end" ? "right" : a === "center" ? "center" : "left";
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
     paddingVertical: 12,
   },
   headerRow: {
     borderBottomWidth: 2,
   },
   cell: {
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 10,
-    borderRightWidth: 1,
-    borderColor: '#e5e7eb',
+    // borderRightWidth: 1,
+    // borderColor: "#e5e7eb",
   },
   headerText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cellText: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });

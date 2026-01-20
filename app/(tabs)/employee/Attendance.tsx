@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1.5,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   faceGuide: {
     width: 180,
     height: 220,
-    borderRadius: 100,
+    borderRadius: 4,
     borderWidth: 2,
     borderStyle: "dashed",
   },

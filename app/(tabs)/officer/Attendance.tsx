@@ -11,14 +11,14 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 // Types for Attendance Data
@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
   },
   headerWrapper: {
     backgroundColor: "transparent",
+    borderRadius: 4,
   },
   headerContainer: {
     paddingTop: Platform.OS === "ios" ? 0 : 10,
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
   },
   dateCard: {
     flexDirection: "row",
-    borderRadius: 16,
+    borderRadius: 4,
     padding: 4,
     elevation: 4,
     shadowColor: "#000",
@@ -416,14 +417,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: 5,
     marginHorizontal: 16,
-    borderRadius: 10,
+    borderRadius: 4,
     padding: 4,
   },
   tabItem: {
     flex: 1,
     paddingVertical: 10,
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 4,
   },
   tabText: {
     fontSize: 13,

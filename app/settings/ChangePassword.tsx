@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   bannerIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: 4,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
@@ -375,8 +375,8 @@ const styles = StyleSheet.create({
 
   // Form Card
   formCard: {
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 4,
+    // padding: 20,
     marginBottom: 20,
   },
 
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderRadius: 12,
+    borderRadius: 4,
     paddingHorizontal: 12,
     height: 50,
   },
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: "row",
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1,
     marginTop: 8,
     gap: 12,
@@ -438,7 +438,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row-reverse",
     gap: 12,
-    paddingHorizontal: 20,
+    // paddingHorizontal: 20,
+    marginBottom: 20,
   },
   button: {
     flex: 1,

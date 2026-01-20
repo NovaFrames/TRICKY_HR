@@ -48,7 +48,7 @@ export default function ProfileImage({
                 {
                     width: size,
                     height: size,
-                    borderRadius: borderRadius ?? size / 2,
+                    borderRadius: 4,
                 },
                 style,
             ]}

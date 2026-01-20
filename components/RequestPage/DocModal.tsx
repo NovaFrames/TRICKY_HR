@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: 4,
   },
   statusLabelText: {
     fontSize: 11,
@@ -518,14 +518,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 4,
     marginBottom: 10,
     gap: 12,
   },
   documentIcon: {
     width: 52,
     height: 52,
-    borderRadius: 10,
+    borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
   },

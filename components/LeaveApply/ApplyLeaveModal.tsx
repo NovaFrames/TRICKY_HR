@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   radioCircle: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: 4,
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   radioInner: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: 4,
   },
   leaveTypeTextContainer: {
     flex: 1,
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   radioSelected: {
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   radioLabel: {
     fontSize: 15,

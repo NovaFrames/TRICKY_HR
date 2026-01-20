@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
 
   // Status Banner
   statusBanner: {
-    borderRadius: 16,
+    borderRadius: 4,
     padding: 20,
     marginBottom: 16,
     elevation: 4,
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
 
   // Badge
   badgeContainer: {
-    borderRadius: 12,
+    borderRadius: 4,
     padding: 12,
     marginBottom: 16,
     elevation: 2,
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 4,
     gap: 6,
   },
   badgeText: {
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
 
   // Section Card
   sectionCard: {
-    borderRadius: 16,
+    borderRadius: 4,
     padding: 20,
     marginBottom: 16,
     elevation: 3,
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1,
     backgroundColor: "rgba(0,0,0,0.02)",
   },
@@ -823,7 +823,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1.5,
     gap: 12,
   },
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderRadius: 12,
+    borderRadius: 4,
     paddingLeft: 12,
     paddingRight: 12,
     paddingVertical: 14,
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
   // Text Area
   textAreaContainer: {
     borderWidth: 1.5,
-    borderRadius: 12,
+    borderRadius: 4,
     overflow: "hidden",
   },
   textArea: {
@@ -872,7 +872,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1,
     marginTop: 12,
   },
@@ -894,14 +894,14 @@ const styles = StyleSheet.create({
   // Footer
   footer: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "flex-end",
     padding: 16,
     borderTopWidth: 1,
   },
   button: {
     paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 4,
     minWidth: 180,
     elevation: 3,
     shadowColor: "#000",

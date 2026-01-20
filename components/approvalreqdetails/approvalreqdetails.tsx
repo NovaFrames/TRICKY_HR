@@ -382,7 +382,7 @@ const createStyles = (theme: any) =>
     dot: {
       width: 6,
       height: 6,
-      borderRadius: 3,
+      borderRadius: 4,
     },
     divider: {
       height: 1,

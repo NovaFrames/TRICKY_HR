@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   screenTitle: { fontSize: 22, fontWeight: "700", marginBottom: 8 }, // Smaller title
   profileCard: { borderRadius: 4, padding: 12, elevation: 2 }, // Compact card
   profileContent: { flexDirection: "row", alignItems: "center" },
-  avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 }, // Smaller avatar
+  avatar: { width: 50, height: 50, borderRadius: 4, marginRight: 12 }, // Smaller avatar
   userInfo: { flex: 1 },
   userName: { fontSize: 18, fontWeight: "600" },
   userId: { fontSize: 13, marginTop: 2 },

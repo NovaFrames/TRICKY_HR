@@ -10,21 +10,21 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    Dimensions,
-    Easing,
-    FlatList,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  Easing,
+  FlatList,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -142,7 +142,11 @@ const CollapsibleCard = ({
     <View
       style={[
         styles.collapsibleCard,
-        { backgroundColor: theme.cardBackground },
+        {
+          backgroundColor: theme.cardBackground,
+          borderColor: theme.inputBorder,
+          borderWidth: 1,
+        },
       ]}
     >
       {/* Header */}
@@ -2347,7 +2351,7 @@ const styles = StyleSheet.create({
   profileHeader: {
     alignItems: "center",
     paddingVertical: 24,
-    borderRadius: 16,
+    borderRadius: 4,
     marginBottom: 20,
   },
   profileName: {
@@ -2383,7 +2387,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 999,
+    borderRadius: 4,
     gap: 8,
     marginLeft: 12,
   },
@@ -2393,9 +2397,9 @@ const styles = StyleSheet.create({
   },
   // Collapsible Card Styles
   collapsibleCard: {
-    borderRadius: 16,
-    marginBottom: 12,
-    elevation: 3,
+    borderRadius: 4,
+    marginBottom: 6,
+    elevation: 1,
     overflow: "hidden",
   },
   collapsibleHeader: {
@@ -2422,7 +2426,7 @@ const styles = StyleSheet.create({
   cardIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2448,7 +2452,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 4,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
@@ -2459,7 +2463,7 @@ const styles = StyleSheet.create({
   },
   selectionInput: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 4,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
@@ -2501,7 +2505,7 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "100%",
     maxHeight: "80%",
-    borderRadius: 18,
+    borderRadius: 4,
     padding: 20,
   },
   modalTitle: {
@@ -2516,7 +2520,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 4,
     marginBottom: 8,
   },
   modalItemText: {
@@ -2524,7 +2528,7 @@ const styles = StyleSheet.create({
   },
   modalCloseButton: {
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 4,
     alignItems: "center",
     marginTop: 16,
   },
@@ -2549,13 +2553,13 @@ const styles = StyleSheet.create({
   addButton: {
     height: 34,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     marginBottom: 0,
   },
   removeButton: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2563,7 +2567,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   arrayItemContainer: {
-    borderRadius: 12,
+    borderRadius: 4,
     padding: 12,
     marginBottom: 12,
   },
@@ -2579,7 +2583,7 @@ const styles = StyleSheet.create({
   },
   emptyArrayContainer: {
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 4,
     alignItems: "center",
   },
   emptyArrayText: {

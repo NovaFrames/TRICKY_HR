@@ -1,17 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableOpacityProps,
-    View,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableOpacityProps,
+  View,
 } from "react-native";
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 import { useTheme } from "../context/ThemeContext";
 
@@ -72,12 +72,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
                 style={{ marginRight: 8 }}
               />
             )}
-            <Text
-              style={[
-                styles.buttonText,
-                { color: textColor || "#fff" },
-              ]}
-            >
+            <Text style={[styles.buttonText, { color: textColor || "#fff" }]}>
               {title}
             </Text>
           </View>
@@ -89,7 +84,8 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    height: 54,
+    // height: 54,
+    padding: 16,
     borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",

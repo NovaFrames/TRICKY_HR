@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     right: 24,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
     elevation: 6,

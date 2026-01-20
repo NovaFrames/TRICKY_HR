@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: 4,
     borderWidth: 2,
     borderColor: "#F3F4F6", // Light gray border for better definition on white
   },

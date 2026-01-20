@@ -959,7 +959,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1.5,
     gap: 12,
   },
@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
   addButton: {
     height: 34,
     paddingHorizontal: 14,
-    borderRadius: 20,
+    borderRadius: 4,
     marginBottom: 0,
   },
   serviceDetailsList: {
@@ -1071,7 +1071,7 @@ const styles = StyleSheet.create({
   serviceDetailItem: {
     flexDirection: "row",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     alignItems: "center",
   },

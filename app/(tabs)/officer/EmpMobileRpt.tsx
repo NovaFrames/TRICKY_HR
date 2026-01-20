@@ -6,15 +6,15 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   },
   dateCard: {
     flexDirection: "row",
-    borderRadius: 12,
+    borderRadius: 4,
     padding: 4,
     elevation: 3,
     shadowColor: "#000",

@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     modalContent: {
         width: '100%',
         maxHeight: '70%',
-        borderRadius: 12,
+        borderRadius: 4,
         padding: 20,
         elevation: 5,
         shadowColor: '#000',
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     doneButton: {
         marginTop: 20,
         paddingVertical: 14,
-        borderRadius: 25,
+        borderRadius: 4,
         alignItems: 'center',
     },
     doneButtonText: {

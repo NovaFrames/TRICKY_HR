@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   emptyIconBox: {
     width: 100,
     height: 100,
-    borderRadius: 30,
+    borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,

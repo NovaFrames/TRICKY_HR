@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
     right: 20,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
   fabMiniButton: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
     elevation: 4,

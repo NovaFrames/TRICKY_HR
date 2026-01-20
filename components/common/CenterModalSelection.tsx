@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     maxHeight: "70%",
-    borderRadius: 16,
+    borderRadius: 4,
     elevation: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 16,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     marginVertical: 4,
   },
   optionText: {

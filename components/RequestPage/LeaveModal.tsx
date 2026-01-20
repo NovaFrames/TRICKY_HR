@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: 4,
   },
   statusLabelText: {
     fontSize: 11,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 16,
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
   },
   sectionTitle: {
