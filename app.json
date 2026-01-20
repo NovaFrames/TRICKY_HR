@@ -35,8 +35,7 @@
       },
 
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "backgroundColor": "#e46a23"
+      "predictiveBackGestureEnabled": false
     },
 
     "web": {

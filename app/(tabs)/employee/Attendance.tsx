@@ -383,7 +383,12 @@ export default function Attendance() {
             )}
           </View>
 
-          <View style={styles.cameraActions}>
+          <View
+            style={[
+              styles.cameraActions,
+              { backgroundColor: theme.cardBackground },
+            ]}
+          >
             {!capturedImage && permission?.granted ? (
               <CustomButton
                 title="CAPTURE IDENTITY"
