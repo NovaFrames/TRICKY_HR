@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
@@ -519,11 +519,9 @@ const styles = StyleSheet.create({
   footerButtons: {
     flexDirection: "row-reverse",
     gap: 12,
+    paddingBottom: 30,
   },
   actionButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 4,
     marginBottom: 0,
     padding: 10,
   },

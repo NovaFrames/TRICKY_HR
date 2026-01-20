@@ -9,12 +9,12 @@ import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 /* ---------------- TYPES ---------------- */
@@ -135,18 +135,18 @@ export default function MobileAttenRpt() {
 
   const columns: ColumnDef[] = [
     {
-      key: "ShiftCodeC",
-      label: "Shift",
-      flex: 0.9,
-      align: "center",
-      formatter: (v) => (typeof v === "string" ? v : "N/A"),
-    },
-    {
       key: "DateC",
       label: "Date",
       flex: 0.7,
       align: "center",
       formatter: (v) => formatDisplayDate(parseDateFromApi(String(v))),
+    },
+    {
+      key: "ShiftCodeC",
+      label: "Shift",
+      flex: 0.9,
+      align: "center",
+      formatter: (v) => (typeof v === "string" ? v : "N/A"),
     },
     { key: "PunchTimeC", label: "Time", flex: 0.5, align: "center" },
     {

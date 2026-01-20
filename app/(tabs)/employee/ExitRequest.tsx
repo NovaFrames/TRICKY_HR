@@ -2,7 +2,6 @@ import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { XMLParser } from "fast-xml-parser";
 import React, { useEffect, useState } from "react";
@@ -19,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { CustomButton } from "../../../components/CustomButton";
+import CenterModalSelection from "../../../components/common/CenterModalSelection";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
 
@@ -74,6 +74,7 @@ export default function ExitRequestScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedReason, setSelectedReason] = useState<number>(0);
   const [notes, setNotes] = useState("");
+  const [showReasonModal, setShowReasonModal] = useState(false);
 
   useProtectedBack({
     home: "/home",
@@ -510,9 +511,9 @@ export default function ExitRequestScreen() {
               <Ionicons name="list" size={16} color={theme.primary} /> Exit
               Reason *
             </Text>
-            <View
+            <TouchableOpacity
               style={[
-                styles.pickerContainer,
+                styles.pickerButton,
                 {
                   borderColor: theme.inputBorder,
                   backgroundColor: isReadOnly
@@ -520,6 +521,9 @@ export default function ExitRequestScreen() {
                     : theme.inputBg,
                 },
               ]}
+              onPress={() => !isReadOnly && setShowReasonModal(true)}
+              disabled={isReadOnly}
+              activeOpacity={0.7}
             >
               <Ionicons
                 name="clipboard-outline"
@@ -527,19 +531,18 @@ export default function ExitRequestScreen() {
                 color={theme.primary}
                 style={styles.pickerIcon}
               />
-              <Picker
-                enabled={!isReadOnly}
-                selectedValue={selectedReason}
-                onValueChange={(itemValue) => setSelectedReason(itemValue)}
-                style={[styles.picker, { color: theme.text }]}
-                dropdownIconColor={theme.text}
-              >
-                <Picker.Item label="Select Reason" value={0} />
-                {reasons.map((r) => (
-                  <Picker.Item key={r.IdN} label={r.NameC} value={r.IdN} />
-                ))}
-              </Picker>
-            </View>
+              <Text style={[styles.pickerText, { color: theme.text }]}>
+                {reasons.find((r) => r.IdN === selectedReason)?.NameC ||
+                  "Select Reason"}
+              </Text>
+              {!isReadOnly && (
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={theme.text + "80"}
+                />
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Exit Notes */}
@@ -642,6 +645,15 @@ export default function ExitRequestScreen() {
         {/* Bottom Spacing */}
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      <CenterModalSelection
+        visible={showReasonModal}
+        onClose={() => setShowReasonModal(false)}
+        title="Select Exit Reason"
+        options={reasons.map((r) => ({ label: r.NameC, value: r.IdN }))}
+        selectedValue={selectedReason}
+        onSelect={(val: number) => setSelectedReason(val)}
+      />
     </View>
   );
 }
@@ -822,20 +834,23 @@ const styles = StyleSheet.create({
   },
 
   // Picker
-  pickerContainer: {
+  pickerButton: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
     borderRadius: 12,
-    overflow: "hidden",
     paddingLeft: 12,
+    paddingRight: 12,
+    paddingVertical: 14,
+    gap: 8,
   },
   pickerIcon: {
-    marginRight: 8,
+    marginRight: 4,
   },
-  picker: {
+  pickerText: {
     flex: 1,
-    height: 50,
+    fontSize: 15,
+    fontWeight: "500",
   },
 
   // Text Area

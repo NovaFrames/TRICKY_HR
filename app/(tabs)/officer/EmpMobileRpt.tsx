@@ -1,3 +1,4 @@
+import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,6 +8,7 @@ import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Dimensions,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -45,6 +47,8 @@ export default function EmpMobileRpt() {
   const [toDate, setToDate] = useState(new Date());
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
+
+  const tableWidth = Math.max(1100, Dimensions.get("window").width);
 
   useProtectedBack({
     home: "/home",
@@ -168,6 +172,65 @@ export default function EmpMobileRpt() {
     }
   };
 
+  const columns: ColumnDef[] = [
+    {
+      key: "DateD",
+      label: "Date",
+      flex: 0.9,
+      align: "center",
+      formatter: (v) => formatDisplayDate(v as string),
+    },
+    {
+      key: "EmpNameC",
+      label: "Employee",
+      flex: 0.9,
+      align: "flex-start",
+      formatter: (v) => (v ? String(v) : "N/A"),
+    },
+    {
+      key: "EmpCodeC",
+      label: "Code",
+      flex: 0.6,
+      align: "center",
+      formatter: (v) => (v ? String(v) : "N/A"),
+    },
+    {
+      key: "ModeN",
+      label: "Mode",
+      flex: 0.5,
+      align: "center",
+      formatter: (v) => (Number(v) === 0 ? "IN" : "OUT"),
+    },
+    {
+      key: "PunchTimeC",
+      label: "Time",
+      flex: 0.7,
+      align: "center",
+      formatter: (v) => (v ? String(v) : "N/A"),
+    },
+    {
+      key: "ShiftCodeC",
+      label: "Shift",
+      flex: 0.7,
+      align: "center",
+      formatter: (v) => (v ? String(v) : "N/A"),
+    },
+    {
+      key: "ProjectNameC",
+      label: "Project",
+      flex: 1.2,
+      align: "flex-start",
+      formatter: (v) => (v ? String(v) : "N/A"),
+    },
+    {
+      key: "PunchLocC",
+      label: "Location",
+      flex: 1.4,
+      align: "flex-start",
+      formatter: (v) => (v ? String(v) : "N/A"),
+    },
+  ];
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Mobile Attendance Report" />
@@ -266,198 +329,12 @@ export default function EmpMobileRpt() {
               </Text>
             </View>
           ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={true}
-              style={styles.horizontalScroll}
-            >
-              <View style={[styles.table, { borderColor: theme.inputBorder }]}>
-                {/* Table Header */}
-                <View
-                  style={[
-                    styles.tableHeader,
-                    {
-                      backgroundColor: theme.cardBackground,
-                      borderColor: theme.inputBorder,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.dateColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Date
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.nameColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Employee
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.codeColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Code
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.modeColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Mode
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.timeColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Time
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.shiftColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Shift
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.projectColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Project
-                  </Text>
-                  <Text
-                    style={[
-                      styles.headerCell,
-                      styles.locationColumn,
-                      { color: theme.text },
-                    ]}
-                  >
-                    Location
-                  </Text>
-                </View>
-
-                {/* Table Rows */}
-                {attendanceData.map((item, index) => {
-                  const isCheckIn = item.ModeN === 0;
-                  const modeColor = isCheckIn ? "#4CAF50" : "#F44336";
-                  const modeText = isCheckIn ? "IN" : "OUT";
-
-                  return (
-                    <View
-                      key={`${item.EmpCodeC}-${index}`}
-                      style={[
-                        styles.tableRow,
-                        {
-                          backgroundColor:
-                            index % 2 === 0
-                              ? theme.background
-                              : theme.cardBackground,
-                          borderColor: theme.inputBorder,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.dateColumn,
-                          { color: theme.text },
-                        ]}
-                      >
-                        {formatDisplayDate(item.DateD)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.nameColumn,
-                          { color: theme.text },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {item.EmpNameC}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.codeColumn,
-                          { color: theme.placeholder },
-                        ]}
-                      >
-                        {item.EmpCodeC}
-                      </Text>
-                      <View style={[styles.cell, styles.modeColumn]}>
-                        <View
-                          style={[
-                            styles.modeBadge,
-                            { backgroundColor: modeColor + "20" },
-                          ]}
-                        >
-                          <Text style={[styles.modeText, { color: modeColor }]}>
-                            {modeText}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.timeColumn,
-                          { color: theme.text },
-                        ]}
-                      >
-                        {item.PunchTimeC || "N/A"}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.shiftColumn,
-                          { color: theme.text },
-                        ]}
-                      >
-                        {item.ShiftCodeC || "N/A"}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.projectColumn,
-                          { color: theme.text },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {item.ProjectNameC || "N/A"}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cell,
-                          styles.locationColumn,
-                          { color: theme.text },
-                        ]}
-                      >
-                        {item.PunchLocC || "N/A"}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </ScrollView>
+            <DynamicTable
+              data={attendanceData}
+              columns={columns}
+              tableWidth={tableWidth}
+              theme={theme}
+            />
           )}
         </View>
       </ScrollView>
@@ -538,76 +415,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingBottom: 16,
-  },
-  horizontalScroll: {
-    flex: 1,
-  },
-  table: {
-    borderWidth: 1,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  tableHeader: {
-    flexDirection: "row",
-    borderBottomWidth: 2,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-  },
-  headerCell: {
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
-    paddingHorizontal: 8,
-  },
-  cell: {
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
-    paddingHorizontal: 8,
-    justifyContent: "center",
-  },
-  // Column widths
-  dateColumn: {
-    width: 100,
-  },
-  nameColumn: {
-    width: 140,
-  },
-  codeColumn: {
-    width: 80,
-  },
-  modeColumn: {
-    width: 70,
-    alignItems: "center",
-  },
-  timeColumn: {
-    width: 80,
-  },
-  shiftColumn: {
-    width: 80,
-  },
-  projectColumn: {
-    width: 140,
-  },
-  locationColumn: {
-    width: 200,
-  },
-  modeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modeText: {
-    fontSize: 11,
-    fontWeight: "700",
   },
   emptyState: {
     alignItems: "center",
