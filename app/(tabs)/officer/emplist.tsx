@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   // Employee Card Styles
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingTop: 10,
   },
   employeeCard: {
     flexDirection: "row",
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 14,
     borderRadius: 4,
-    marginBottom: 10,
+    marginBottom: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

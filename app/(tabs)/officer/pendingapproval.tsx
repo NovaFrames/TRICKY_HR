@@ -270,10 +270,10 @@ export default function PendingApproval() {
             <Text style={[styles.employeeName, { color: theme.text }]}>
               {item.NameC || "N/A"}
             </Text>
-            <Text style={[styles.employeeCode, { color: theme.placeholder }]}>
+            <Text style={[styles.employeeCode, { color: theme.textLight }]}>
               Emp code: {item.CodeC || "N/A"}
             </Text>
-            <Text style={[styles.reqDate, { color: theme.placeholder }]}>
+            <Text style={[styles.reqDate, { color: theme.textLight }]}>
               Req Date: {item.ApplyDateD ? formatDate(item.ApplyDateD) : "N/A"}
             </Text>
           </View>
@@ -289,7 +289,7 @@ export default function PendingApproval() {
 
         {period && (
           <View style={styles.periodContainer}>
-            <Ionicons name="arrow-up" size={16} color={theme.placeholder} />
+            <Ionicons name="arrow-up" size={16} color={theme.textLight} />
             <Text style={[styles.period, { color: theme.text }]}>{period}</Text>
           </View>
         )}
@@ -303,7 +303,7 @@ export default function PendingApproval() {
 
         {item.EmpRemarksC && (
           <Text
-            style={[styles.remarks, { color: theme.placeholder }]}
+            style={[styles.remarks, { color: theme.textLight }]}
             numberOfLines={1}
           >
             Amount: ₹{item.EmpRemarksC}
@@ -355,7 +355,7 @@ export default function PendingApproval() {
 
   if (loading && !refreshing) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <Header title="Pending Approval" />
 
@@ -397,7 +397,7 @@ export default function PendingApproval() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* FIXED HEADER */}
       <Header title="Pending Approval" />
 

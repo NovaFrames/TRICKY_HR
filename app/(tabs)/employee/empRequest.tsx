@@ -3,13 +3,13 @@ import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    FlatList,
-    PanResponder,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  PanResponder,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import ClaimModal from "../../../components/RequestPage/ClaimModal";
 import DocModal from "../../../components/RequestPage/DocModal";
@@ -162,7 +162,7 @@ export default function EmpRequestPage() {
   const activeTabName = routes[index].title;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Fixed Header */}
       <Header title="Request Status" />
 

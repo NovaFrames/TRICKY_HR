@@ -5,21 +5,21 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import ApplyLeaveModal from "../../../components/LeaveApply/ApplyLeaveModal";
 import SurrenderLeaveModal from "../../../components/LeaveApply/SurrenderLeaveModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, {
-    AvailableLeaveType,
-    LeaveBalanceResponse,
-    LeaveType,
+  AvailableLeaveType,
+  LeaveBalanceResponse,
+  LeaveType,
 } from "../../../services/ApiService";
 
 interface FormattedLeaveType extends LeaveType {
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 4,
-    marginBottom: 16,
+    marginBottom: 4,
     padding: 16,
     elevation: 3,
     shadowColor: "#000",

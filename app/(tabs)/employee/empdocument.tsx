@@ -5,17 +5,17 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    FlatList,
-    Modal,
-    PanResponder,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Modal,
+  PanResponder,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -184,7 +184,7 @@ const empdocument: React.FC = () => {
   ).current;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Documents" />
 
       {/* Custom Tab Bar */}

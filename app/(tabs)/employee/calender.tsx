@@ -5,20 +5,20 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Platform,
-    SectionList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  SectionList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, {
-    CalendarEvent,
-    CalendarLeaveDetail,
+  CalendarEvent,
+  CalendarLeaveDetail,
 } from "../../../services/ApiService";
 
 export default function CalendarScreen() {
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   },
   eventCard: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 4,
     borderRadius: 4,
     overflow: "hidden",
     shadowColor: "#000",

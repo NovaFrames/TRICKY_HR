@@ -6,15 +6,15 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -219,7 +219,7 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
   const isImage = (url: string) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Office Documents" />
       <FlatList
         data={documents}

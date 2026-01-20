@@ -8,14 +8,14 @@ import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    PanResponder,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  PanResponder,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 /* -------------------- COMPONENT -------------------- */
@@ -174,7 +174,7 @@ export default function Celebration() {
   const currentTab = routes[index].key;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Celebrations" />
 
       <View style={[styles.body, { paddingTop: HEADER_HEIGHT + 4 }]}>
@@ -267,10 +267,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 4,
     alignItems: "center",
-    elevation: 3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     marginHorizontal: 16,
   },
   iconContainer: {

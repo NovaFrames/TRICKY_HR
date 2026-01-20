@@ -147,7 +147,7 @@ export default function ApprovalDetails() {
   /* ---------------- UI ---------------- */
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Approval Requests" />
 
       <View style={{ paddingTop: HEADER_HEIGHT + 4, flex: 1 }}>

@@ -87,7 +87,7 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({
           <Text style={[styles.title, { color: theme.text }]}>
             {description}
           </Text>
-          <Text style={[styles.date, { color: theme.placeholder }]}>
+          <Text style={[styles.date, { color: theme.textLight }]}>
             Requested on {formatDisplayDate(requestDate, { showTime: true })}
           </Text>
         </View>
@@ -107,9 +107,9 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({
           <Ionicons
             name="finger-print-outline"
             size={14}
-            color={theme.placeholder}
+            color={theme.textLight}
           />
-          <Text style={[styles.footerText, { color: theme.placeholder }]}>
+          <Text style={[styles.footerText, { color: theme.textLight }]}>
             EmpIdN: {item.CodeC || "N/A"}
           </Text>
         </View>

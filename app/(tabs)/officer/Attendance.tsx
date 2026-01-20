@@ -285,7 +285,7 @@ export default function AttendanceList() {
       <View
         style={[
           styles.listContainer,
-          { backgroundColor: theme.cardBackground, flex: 1 },
+          { backgroundColor: theme.background, flex: 1 },
         ]}
       >
         <Header title="Attendance List" />
