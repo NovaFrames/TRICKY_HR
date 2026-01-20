@@ -177,7 +177,7 @@ export default function Celebration() {
     <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
       <Header title="Celebrations" />
 
-      <ScrollView contentContainerStyle={{ paddingTop: HEADER_HEIGHT + 4 }}>
+      <View style={[styles.body, { paddingTop: HEADER_HEIGHT + 4 }]}>
         {/* Custom Tab Bar */}
         <View
           style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}
@@ -204,7 +204,7 @@ export default function Celebration() {
         </View>
 
         {/* Content Area with Swipe Support */}
-        <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+        <View style={styles.contentContainer} {...panResponder.panHandlers}>
           <ScrollView
             contentContainerStyle={styles.content}
             refreshControl={
@@ -220,7 +220,7 @@ export default function Celebration() {
             {currentTab === "work" && renderCards(workAnniv, "work")}
           </ScrollView>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -228,6 +228,9 @@ export default function Celebration() {
 /* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  body: {
     flex: 1,
   },
   tabBar: {
@@ -251,6 +254,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.3,
+  },
+  contentContainer: {
+    flex: 1,
   },
   content: {
     paddingTop: 4,

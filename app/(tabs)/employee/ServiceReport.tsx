@@ -5,15 +5,15 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import CenterModalSelection from "../../../components/common/CenterModalSelection";
 import { CustomButton } from "../../../components/CustomButton";
@@ -911,9 +911,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    marginHorizontal: 16,
   },
   section: {
-    paddingHorizontal: 16,
     marginBottom: 16,
   },
   label: {

@@ -46,8 +46,8 @@ export default function ApprovalDetails() {
 
   const [index, setIndex] = useState(0);
   const [routes] = useState([
-    { key: 'approved', title: 'APPROVED' },
-    { key: 'rejected', title: 'REJECTED' },
+    { key: "approved", title: "APPROVED" },
+    { key: "rejected", title: "REJECTED" },
   ]);
 
   const [data, setData] = useState<ApprovalItem[]>([]);
@@ -73,10 +73,9 @@ export default function ApprovalDetails() {
           ? API_ENDPOINTS.SUP_DETAPPROVE_URL
           : API_ENDPOINTS.SUP_GETREJECT_URL;
 
-      const response = await axios.post(
-        `${domainUrl}${endpoint}`,
-        { TokenC: user?.TokenC }
-      );
+      const response = await axios.post(`${domainUrl}${endpoint}`, {
+        TokenC: user?.TokenC,
+      });
 
       if (response.data?.Status === "success") {
         setData(response.data.data || []);
@@ -102,18 +101,21 @@ export default function ApprovalDetails() {
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         // Determine if swipe is horizontal and significant enough
-        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+        return (
+          Math.abs(gestureState.dx) > 20 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy)
+        );
       },
       onPanResponderRelease: (evt, gestureState) => {
         if (gestureState.dx > 50) {
           // Swipe Right -> Previous Tab
-          setIndex(prev => Math.max(0, prev - 1));
+          setIndex((prev) => Math.max(0, prev - 1));
         } else if (gestureState.dx < -50) {
           // Swipe Left -> Next Tab
-          setIndex(prev => Math.min(routes.length - 1, prev + 1));
+          setIndex((prev) => Math.min(routes.length - 1, prev + 1));
         }
       },
-    })
+    }),
   ).current;
 
   /* ---------------- HELPERS ---------------- */
@@ -148,65 +150,81 @@ export default function ApprovalDetails() {
     <View style={[styles.container, { backgroundColor: theme.inputBg }]}>
       <Header title="Approval Requests" />
 
-      <View style={{paddingTop:HEADER_HEIGHT+4, flex:1}}>
+      <View style={{ paddingTop: HEADER_HEIGHT + 4, flex: 1 }}>
+        {/* Custom Tab Bar */}
+        <View
+          style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}
+        >
+          {routes.map((item, i) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.tabItem,
+                index === i && { borderBottomColor: theme.primary },
+              ]}
+              onPress={() => setIndex(i)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: index === i ? theme.primary : theme.textLight },
+                ]}
+              >
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      {/* Custom Tab Bar */}
-      <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
-        {routes.map((item, i) => (
-          <TouchableOpacity
-            key={item.key}
-            style={[
-              styles.tabItem,
-              index === i && { borderBottomColor: theme.primary }
-            ]}
-            onPress={() => setIndex(i)}
-          >
-            <Text style={[
-              styles.tabText,
-              { color: index === i ? theme.primary : theme.textLight }
-            ]}>
-              {item.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Content Area with Swipe Support */}
-      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
-        {loading ? (
-          <View style={[styles.center, { backgroundColor: theme.background }]}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.loadingText, { color: theme.textLight }]}>
-              Loading requests...
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={data}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <View style={[styles.emptyIconBox, { backgroundColor: theme.inputBg }]}>
-                  <Ionicons
-                    name="document-text-outline"
-                    size={48}
-                    color={theme.placeholder}
-                  />
+        {/* Content Area with Swipe Support */}
+        <View
+          style={{ flex: 1, marginHorizontal: 16 }}
+          {...panResponder.panHandlers}
+        >
+          {loading ? (
+            <View
+              style={[styles.center, { backgroundColor: theme.background }]}
+            >
+              <ActivityIndicator size="large" color={theme.primary} />
+              <Text style={[styles.loadingText, { color: theme.textLight }]}>
+                Loading requests...
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={data}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={renderItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <View
+                    style={[
+                      styles.emptyIconBox,
+                      { backgroundColor: theme.inputBg },
+                    ]}
+                  >
+                    <Ionicons
+                      name="document-text-outline"
+                      size={48}
+                      color={theme.placeholder}
+                    />
+                  </View>
+                  <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                    No {activeTabName} Requests
+                  </Text>
+                  <Text
+                    style={[styles.emptySubtitle, { color: theme.placeholder }]}
+                  >
+                    When you have {activeTabName.toLowerCase()} requests, they
+                    will appear here.
+                  </Text>
                 </View>
-                <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                  No {activeTabName} Requests
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: theme.placeholder }]}>
-                  When you have {activeTabName.toLowerCase()} requests, they will appear here.
-                </Text>
-              </View>
-            }
-          />
-        )}
-      </View>
+              }
+            />
+          )}
+        </View>
       </View>
     </View>
   );
@@ -220,10 +238,10 @@ const createStyles = (theme: any) =>
       flex: 1,
     },
     tabBar: {
-      flexDirection: 'row',
+      flexDirection: "row",
       height: 50,
       elevation: 2,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.1,
       shadowRadius: 1,
@@ -231,14 +249,14 @@ const createStyles = (theme: any) =>
     tabItem: {
       flex: 1,
       paddingVertical: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       borderBottomWidth: 3,
-      borderBottomColor: 'transparent',
+      borderBottomColor: "transparent",
     },
     tabText: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     listContent: {
       paddingTop: 10,

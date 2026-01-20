@@ -19,13 +19,13 @@ import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService, { ClaimData, TravelExpense } from "@/services/ApiService";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 export interface TravelExpenseItem {
@@ -587,7 +587,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: HEADER_HEIGHT, // 👈 KEY LINE
+          paddingTop: HEADER_HEIGHT + 6, // 👈 KEY LINE
         }}
         showsVerticalScrollIndicator={false}
         style={styles.content}
@@ -723,6 +723,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    marginHorizontal: 16,
   },
   submitButton: {
     marginHorizontal: 15,

@@ -8,15 +8,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ChangePassword() {
@@ -340,6 +340,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: HEADER_HEIGHT + 8,
+    marginHorizontal: 16,
   },
 
   // Header Banner
