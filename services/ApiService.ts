@@ -41,7 +41,7 @@ export const loginUser = async (
   empCode: string,
   password: string,
   domainId: string,
-  domainUrl: string
+  domainUrl: string,
 ) => {
   try {
     const response = await axios.post(`${domainUrl}/${API_ENDPOINTS.LOGIN}`, {
@@ -85,7 +85,7 @@ export const faceRegApi = async ({
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
-      }
+      },
     );
     return response?.data ?? null;
   } catch (error) {
@@ -159,7 +159,7 @@ const parseServerTimeToUTC = (dateInput: string | Date): number => {
       dateInput.getUTCDate(),
       dateInput.getUTCHours(),
       dateInput.getUTCMinutes(),
-      dateInput.getUTCSeconds()
+      dateInput.getUTCSeconds(),
     );
   }
 
@@ -182,8 +182,8 @@ const parseServerTimeToUTC = (dateInput: string | Date): number => {
   const textDate =
     typeof dateInput === "string"
       ? dateInput.match(
-        /^(\d{1,2}) ([A-Za-z]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2})$/
-      )
+          /^(\d{1,2}) ([A-Za-z]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2})$/,
+        )
       : null;
 
   if (textDate) {
@@ -224,7 +224,7 @@ export const markMobileAttendance = async (
   location: { latitude: number; longitude: number; address?: string },
   imageUri: string,
   remark: string,
-  serverDateTime: string
+  serverDateTime: string,
 ): Promise<AttendanceResponse> => {
   const domainUrl = await getDomainUrl();
   if (!domainUrl) {
@@ -508,7 +508,7 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -534,10 +534,10 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      console.log("getLeaveBalance Request Payload:", {
-        TokenC: this.token,
-        EmpIdN: this.empId,
-      });
+      // console.log("getLeaveBalance Request Payload:", {
+      //   TokenC: this.token,
+      //   EmpIdN: this.empId,
+      // });
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.GET_LEAVE_DETAILS,
@@ -545,7 +545,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -571,10 +571,10 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      console.log("getLeaveDetails Request Payload:", {
-        TokenC: this.token,
-        EmpIdN: IdN,
-      });
+      // console.log("getLeaveDetails Request Payload:", {
+      //   TokenC: this.token,
+      //   EmpIdN: IdN,
+      // });
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.GET_LEAVE_BALANCE_DETAILS,
@@ -582,7 +582,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: IdN,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -603,7 +603,7 @@ class ApiService {
     toDate: string,
     reaGrpIdN: number,
     thrsN: number = 0,
-    unit: number = 1
+    unit: number = 1,
   ): Promise<{ success: boolean; leaveDays?: number; error?: string }> {
     try {
       if (!this.token) {
@@ -621,7 +621,7 @@ class ApiService {
           THrsN: thrsN,
           unit: unit,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -658,11 +658,11 @@ class ApiService {
           TokenC: this.token,
           lap: leaveData,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
-      console.log(this.token);
-      console.log(this.empId);
-      console.log(leaveData);
+      // console.log(this.token);
+      // console.log(this.empId);
+      // console.log(leaveData);
       const status = response.data.Status
         ? response.data.Status.toLowerCase()
         : "";
@@ -702,7 +702,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -739,7 +739,7 @@ class ApiService {
           TokenC: this.token,
           data: surrenderData,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       return {
@@ -768,7 +768,7 @@ class ApiService {
           TokenC: this.token,
           Id: surrenderId,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -785,7 +785,7 @@ class ApiService {
   }
 
   async cancelLeave(
-    payload: any
+    payload: any,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
@@ -798,18 +798,18 @@ class ApiService {
         Tokenc: this.token, // Add lowercase Key as requested
       };
 
-      console.log(
-        "Cancel Leave Request Payload:",
-        JSON.stringify(requestPayload)
-      );
+      // console.log(
+      //   "Cancel Leave Request Payload:",
+      //   JSON.stringify(requestPayload),
+      // );
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.SAVE_APPROVAL,
         requestPayload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log("Cancel Leave Response:", JSON.stringify(response.data));
+      // console.log("Cancel Leave Response:", JSON.stringify(response.data));
 
       if (response.data.Status === "success") {
         return { success: true, data: response.data };
@@ -830,7 +830,7 @@ class ApiService {
     requestType: string = "Lev",
     fromDate?: Date,
     toDate?: Date,
-    remarks: string = "Cancelled by user"
+    remarks: string = "Cancelled by user",
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token || !this.empId) {
@@ -861,23 +861,23 @@ class ApiService {
         RemarksC: remarks,
       };
 
-      console.log("Delete Request Payload:", JSON.stringify(payload, null, 2));
-      console.log(
-        "Delete Request Endpoint:",
-        BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY
-      );
+      // console.log("Delete Request Payload:", JSON.stringify(payload, null, 2));
+      // console.log(
+      //   "Delete Request Endpoint:",
+      //   BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY,
+      // );
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log("Delete Request Response Status:", response.status);
-      console.log(
-        "Delete Request Response Data:",
-        JSON.stringify(response.data, null, 2)
-      );
+      // console.log("Delete Request Response Status:", response.status);
+      // console.log(
+      //   "Delete Request Response Data:",
+      //   JSON.stringify(response.data, null, 2),
+      // );
 
       // Check for success in the response
       const status = response.data.Status || response.data.status;
@@ -912,11 +912,11 @@ class ApiService {
         console.error("Error Response Status:", error.response.status);
         console.error(
           "Error Response Data:",
-          JSON.stringify(error.response.data)
+          JSON.stringify(error.response.data),
         );
         console.error(
           "Error Response Headers:",
-          JSON.stringify(error.response.headers)
+          JSON.stringify(error.response.headers),
         );
 
         // Extract error message from response
@@ -964,7 +964,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1005,7 +1005,7 @@ class ApiService {
 
   // Time Management
   async submitTimeRequest(
-    payload: TimeRequestPayload
+    payload: TimeRequestPayload,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
@@ -1018,7 +1018,7 @@ class ApiService {
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.UPDATE_TIME,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1036,7 +1036,7 @@ class ApiService {
 
   async getTimeManageList(
     fromDate: string,
-    toDate: string
+    toDate: string,
   ): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
       if (!this.token) {
@@ -1053,7 +1053,7 @@ class ApiService {
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.GET_TIME_MANAGE_LIST,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1074,7 +1074,7 @@ class ApiService {
 
   async downloadTimeReport(
     fromDate: string,
-    toDate: string
+    toDate: string,
   ): Promise<{
     success: boolean;
     url?: string;
@@ -1098,7 +1098,7 @@ class ApiService {
       const userDataStr = await AsyncStorage.getItem("user_data");
       const userData = userDataStr ? JSON.parse(userDataStr) : null;
 
-      console.log("User data for download:", userData);
+      // console.log("User data for download:", userData);
 
       // Use fallback values if user data is missing
       const empId = this.empId;
@@ -1106,7 +1106,7 @@ class ApiService {
       const customerId = userData?.CustomerIdC || userData?.DomainId || "kevit";
       const companyUrl = BASE_URL; // Base URL is constant for now
 
-      console.log("Download parameters:", { empId, companyId, customerId });
+      // console.log("Download parameters:", { empId, companyId, customerId });
 
       // Build payload exactly as requested
       const payload = {
@@ -1118,26 +1118,26 @@ class ApiService {
         OrderBy: 1,
       };
 
-      console.log("Download Report Payload:", payload);
+      // console.log("Download Report Payload:", payload);
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.DOWNLOAD_REPORT,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log("Download Report Response Status:", response.data.Status);
-      console.log(
-        "Download Report Full Response:",
-        JSON.stringify(response.data)
-      );
+      // console.log("Download Report Response Status:", response.data.Status);
+      // console.log(
+      //   "Download Report Full Response:",
+      //   JSON.stringify(response.data),
+      // );
 
       if (response.data.Status === "success") {
         // Construct URL manually
         // Pattern: https://hr.trickyhr.com/kevit-Customer/{customerId}/{companyId}/EmpPortal/TMSReport/{empId}.pdf
 
         const downloadUrl = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/TMSReport/${empId}.pdf`;
-        console.log("Generated download URL:", downloadUrl);
+        // console.log("Generated download URL:", downloadUrl);
 
         return {
           success: true,
@@ -1199,11 +1199,11 @@ class ApiService {
           FolderName: category === "All" ? "" : category,
           DocName: "All", // Required parameter
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log("Get Documents Request - Category:", category);
-      console.log("Get Documents Response:", response.data);
+      // console.log("Get Documents Request - Category:", category);
+      // console.log("Get Documents Response:", response.data);
 
       if (response.data.Status === "success") {
         // The C# backend returns documents in the 'data' or 'xx' field
@@ -1223,7 +1223,7 @@ class ApiService {
           // If it includes full path, we might need adjustment, but assuming simple name per example.
 
           const url = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/${this.empId}/EmpDocuments/${folderName}/${fileName}`;
-          console.log("Generated document URL:", url);
+          // console.log("Generated document URL:", url);
 
           return {
             id: `${doc.DocIdN || "doc"}_${index}`,
@@ -1234,10 +1234,10 @@ class ApiService {
             date:
               doc.LastWriteTimeC && doc.LastWriteTimeC.includes("/Date(")
                 ? new Date(
-                  parseInt(
-                    doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, "$1")
-                  )
-                ).toLocaleDateString()
+                    parseInt(
+                      doc.LastWriteTimeC.replace(/\/Date\((-?\d+)\)\//, "$1"),
+                    ),
+                  ).toLocaleDateString()
                 : doc.LastWriteTimeC || new Date().toLocaleDateString(),
             size: "Unknown",
             url: url,
@@ -1267,7 +1267,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1284,7 +1284,7 @@ class ApiService {
   }
 
   async downloadPaySlip(
-    paySlip: PaySlip
+    paySlip: PaySlip,
   ): Promise<{ success: boolean; url?: string; error?: string }> {
     try {
       if (!this.token) {
@@ -1330,7 +1330,7 @@ class ApiService {
             PayPeriod: payPeriod,
             PayTypeC: paySlip.PayTypeC,
           },
-          { headers: this.getHeaders() }
+          { headers: this.getHeaders() },
         );
       } catch (e) {
         console.log("Trigger PDF gen error (ignoring if URL works):", e);
@@ -1380,7 +1380,7 @@ class ApiService {
         } as any);
       }
 
-      console.log("Uploading document...");
+      // console.log("Uploading document...");
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.UPLOAD_DOCUMENT,
@@ -1397,10 +1397,10 @@ class ApiService {
             // React Native FormData needs to remain as is
             return data;
           },
-        }
+        },
       );
 
-      console.log("Upload response:", response.data);
+      // console.log("Upload response:", response.data);
 
       if (response.data.Status === "success") {
         return { success: true, data: response.data };
@@ -1422,7 +1422,7 @@ class ApiService {
 
   // --- Office Documents ---
   async getOfficeDocuments(
-    folderName: string = "OfficeDoc"
+    folderName: string = "OfficeDoc",
   ): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
       if (!this.token) {
@@ -1436,7 +1436,7 @@ class ApiService {
           Id: this.empId,
           FolderName: folderName,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1483,7 +1483,7 @@ class ApiService {
 
   async getCalendarEvents(
     month: number,
-    year: number
+    year: number,
   ): Promise<{ success: boolean; data?: CalendarEvent[]; error?: string }> {
     try {
       if (!this.token) {
@@ -1497,7 +1497,7 @@ class ApiService {
           Year: year,
           Month: month,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1514,7 +1514,7 @@ class ApiService {
   }
 
   async getCalendarDetails(
-    dateStr: string
+    dateStr: string,
   ): Promise<{ success: boolean; data?: any[]; error?: string }> {
     // dateStr should be formatted as "MMM dd yyyy"
     try {
@@ -1528,7 +1528,7 @@ class ApiService {
           TokenC: this.token,
           StartDate: dateStr,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1559,7 +1559,7 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1578,7 +1578,7 @@ class ApiService {
   async getAttendanceReport(
     fromDate: string,
     toDate: string,
-    type: number = 0
+    type: number = 0,
   ): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
       if (!this.token) {
@@ -1592,15 +1592,15 @@ class ApiService {
         Type: 1, // 1 for all records
       };
 
-      console.log("Attendance Report Payload:", payload);
+      // console.log("Attendance Report Payload:", payload);
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.GET_MOBILE_ATTENDANCE_REPORT,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log("Attendance Report Response Status:", response.data.Status);
+      // console.log("Attendance Report Response Status:", response.data.Status);
 
       if (response.data.Status === "success") {
         return { success: true, data: response.data.data || [] };
@@ -1634,10 +1634,10 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log("Client List Response Status:", response.data.Status);
+      // console.log("Client List Response Status:", response.data.Status);
 
       if (response.data.Status === "success") {
         return {
@@ -1715,7 +1715,7 @@ class ApiService {
         } as any);
       }
 
-      console.log("Submitting Service Report...");
+      // console.log("Submitting Service Report...");
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.SUBMIT_SERVICE_REPORT,
@@ -1725,10 +1725,10 @@ class ApiService {
             "Content-Type": "multipart/form-data",
             Token: this.token || "",
           },
-        }
+        },
       );
 
-      console.log("Service Report Response Status:", response.data.Status);
+      // console.log("Service Report Response Status:", response.data.Status);
 
       if (response.data.Status === "success") {
         return { success: true };
@@ -1764,13 +1764,13 @@ class ApiService {
           EmpIdN: this.empId,
           Type: 0,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log(
-        "Your Pending Approvals Response Status:",
-        response.data.Status
-      );
+      // console.log(
+      //   "Your Pending Approvals Response Status:",
+      //   response.data.Status,
+      // );
 
       if (response.data.Status === "success") {
         return {
@@ -1809,13 +1809,13 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log(
-        "Other Pending Approvals Response Status:",
-        response.data.Status
-      );
+      // console.log(
+      //   "Other Pending Approvals Response Status:",
+      //   response.data.Status,
+      // );
 
       if (response.data.Status === "success") {
         return {
@@ -1854,7 +1854,7 @@ class ApiService {
           TokenC: this.token,
           where: whereClause,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       // C# returns { Error, data, FileList }
@@ -1879,7 +1879,7 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       // C# returns { Error, reason }
@@ -1893,7 +1893,7 @@ class ApiService {
   }
 
   async updateExitRequest(
-    data: any
+    data: any,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (!this.token) await this.loadCredentials();
@@ -1904,12 +1904,12 @@ class ApiService {
         ...data,
       };
 
-      console.log("Update Exit Request Payload:", JSON.stringify(payload));
+      // console.log("Update Exit Request Payload:", JSON.stringify(payload));
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.UPDATE_EXIT_REQUEST,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       // C# returns { Error }
@@ -1937,7 +1937,7 @@ class ApiService {
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.REVOKE_EXIT_REQUEST,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       // C# returns { Status, Error }
@@ -1976,7 +1976,7 @@ class ApiService {
       // Convert status to Approval number: 1 = Approved, 2 = Rejected
       const approvalStatus =
         data.StatusC.toLowerCase() === "approved" ||
-          data.StatusC.toLowerCase() === "approve"
+        data.StatusC.toLowerCase() === "approve"
           ? 1
           : 2;
 
@@ -1998,21 +1998,21 @@ class ApiService {
         ClaimExpenseDtl1: data.ClaimExpenseDtl1 || [],
       };
 
-      console.log(
-        "Update Pending Approval Payload:",
-        JSON.stringify(payload, null, 2)
-      );
+      // console.log(
+      //   "Update Pending Approval Payload:",
+      //   JSON.stringify(payload, null, 2),
+      // );
 
       const response = await axios.post(
         BASE_URL + API_ENDPOINTS.SAVE_APPROVAL,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
-      console.log(
-        "Update Pending Approval Response:",
-        JSON.stringify(response.data, null, 2)
-      );
+      // console.log(
+      //   "Update Pending Approval Response:",
+      //   JSON.stringify(response.data, null, 2),
+      // );
 
       if (response.data.Status === "success") {
         return { success: true };
@@ -2027,7 +2027,7 @@ class ApiService {
       if (error.response) {
         console.error(
           "Error Response:",
-          JSON.stringify(error.response.data, null, 2)
+          JSON.stringify(error.response.data, null, 2),
         );
       }
       return {
@@ -2044,7 +2044,7 @@ class ApiService {
       const domainUrl = await getDomainUrl();
       if (!domainUrl) return [];
 
-      console.log("TokenC:", data.token);
+      // console.log("TokenC:", data.token);
 
       const formData = new FormData();
       formData.append("TokenC", data.token);
@@ -2054,7 +2054,7 @@ class ApiService {
       const res = await axios.post(
         `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
 
       if (res.data?.Status === "success") {
@@ -2072,7 +2072,7 @@ class ApiService {
     token: string,
     fromDate: string,
     toDate: string,
-    type = 0
+    type = 0,
   ): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {
       if (!token) {
@@ -2093,7 +2093,7 @@ class ApiService {
 
       const response = await axios.post(
         `${domainUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`,
-        payload
+        payload,
       );
 
       if (response.data?.Status === "success") {
@@ -2115,7 +2115,7 @@ class ApiService {
 
   async getServerTime(
     token: string,
-    overrideDate?: string | Date
+    overrideDate?: string | Date,
   ): Promise<string> {
     if (overrideDate) {
       return toDotNetDate(overrideDate);
@@ -2128,7 +2128,7 @@ class ApiService {
 
     const response = await axios.post(
       `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
-      { TokenC: token }
+      { TokenC: token },
     );
 
     return toDotNetDate(response.data);
@@ -2142,7 +2142,7 @@ class ApiService {
 
     const response = await axios.post(
       `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
-      { TokenC: token }
+      { TokenC: token },
     );
 
     if (typeof response.data === "string") {
@@ -2175,7 +2175,7 @@ class ApiService {
           BlnEmpMaster: true,
           ViewReject: false,
         },
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json" } },
       );
 
       return {
@@ -2205,7 +2205,7 @@ class ApiService {
       const response = await axios.post(
         `${domainUrl}${API_ENDPOINTS.UPLOADPRO_URL}`,
         payload,
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json" } },
       );
 
       if (response.data?.Status === "success") {
@@ -2234,7 +2234,7 @@ class ApiService {
 
       const response = await axios.post<APIResponse>(
         `${domainUrl}/${API_ENDPOINTS.GETCLAIM_LIST}`,
-        { TokenC: token }
+        { TokenC: token },
       );
 
       return response.data;
@@ -2256,11 +2256,11 @@ class ApiService {
         ...claimData,
       };
 
-      console.log("Submitting claim data:", payload);
+      // console.log("Submitting claim data:", payload);
 
       const response = await api.post<APIResponse>(
         `${domainUrl}/${API_ENDPOINTS.UPDATE_CLAIM}`,
-        payload
+        payload,
       );
 
       return response.data;
@@ -2273,7 +2273,7 @@ class ApiService {
   async updateClaimDoc(
     token: string,
     claimId: number,
-    files: DocumentFile[]
+    files: DocumentFile[],
   ): Promise<APIResponse> {
     try {
       const domainUrl = await getDomainUrl();
@@ -2296,7 +2296,7 @@ class ApiService {
       const response = await axios.post<APIResponse>(
         `${domainUrl}/${API_ENDPOINTS.UPDATECLAIM_DOC}`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
 
       return response.data;
@@ -2318,7 +2318,7 @@ class ApiService {
 
       const response = await axios.post(
         `${domainUrl}${API_ENDPOINTS.CELEBRATION}`,
-        payload
+        payload,
       );
 
       if (response.data?.Status === "success") {
@@ -2346,7 +2346,7 @@ class ApiService {
 
       const response = await axios.post(
         `${domainUrl}${API_ENDPOINTS.HOLIDAY}`,
-        payload
+        payload,
       );
 
       return response.data?.Holiday ?? [];
@@ -2358,7 +2358,6 @@ class ApiService {
 
   async getEmpDashBoardList(): Promise<any> {
     try {
-
       const domainUrl = await getDomainUrl();
       if (!domainUrl) return [];
 
@@ -2367,18 +2366,19 @@ class ApiService {
       };
 
       const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.GET_EMPDASHBOARD_LIST}`, payload
+        `${domainUrl}${API_ENDPOINTS.GET_EMPDASHBOARD_LIST}`,
+        payload,
       );
       return response.data?.supDataList;
     } catch (error) {
-      console.log('Get Emp Document List error: ', error);
+      console.log("Get Emp Document List error: ", error);
       return [];
     }
   }
 
   async changePassword(
     oldPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (!this.token) {
@@ -2403,7 +2403,7 @@ class ApiService {
       const response = await axios.post(
         `${domainUrl}${API_ENDPOINTS.CHANGE_PASSWORD}`,
         payload,
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data?.Status === "success") {
@@ -2423,7 +2423,9 @@ class ApiService {
   }
 
   // Request Details APIs
-  async getEmployeeDocument(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getEmployeeDocument(
+    id: number,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2435,7 +2437,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2451,7 +2453,9 @@ class ApiService {
     }
   }
 
-  async getTimeUpdate(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getTimeUpdate(
+    id: number,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2463,7 +2467,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2479,7 +2483,9 @@ class ApiService {
     }
   }
 
-  async getLeaveDetails(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getLeaveDetails(
+    id: number,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2491,7 +2497,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2507,7 +2513,9 @@ class ApiService {
     }
   }
 
-  async getLeaveSurrender(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getLeaveSurrender(
+    id: number,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2519,7 +2527,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2535,7 +2543,11 @@ class ApiService {
     }
   }
 
-  async getProfileUpdate(): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getProfileUpdate(): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2548,7 +2560,7 @@ class ApiService {
           blnEmpMaster: false,
           ViewReject: false,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2564,7 +2576,9 @@ class ApiService {
     }
   }
 
-  async getClaimDetails(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getClaimDetails(
+    id: number,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2576,7 +2590,7 @@ class ApiService {
           TokenC: this.token,
           id: id,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2592,7 +2606,9 @@ class ApiService {
     }
   }
 
-  async getClaimDocuments(id: number): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getClaimDocuments(
+    id: number,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2606,7 +2622,7 @@ class ApiService {
           FolderName: "/EmpPortal/ClaimDoc",
           DocName: "ClaimDoc",
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2622,7 +2638,11 @@ class ApiService {
     }
   }
 
-  async getEmployeeDocuments(empId: number, folderName: string, docName: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getEmployeeDocuments(
+    empId: number,
+    folderName: string,
+    docName: string,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -2636,7 +2656,7 @@ class ApiService {
           FolderName: folderName,
           DocName: docName,
         },
-        { headers: this.getHeaders() }
+        { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {

@@ -33,7 +33,7 @@
         "backgroundImage": "./assets/images/splash-icon.png",
         "monochromeImage": "./assets/images/splash-icon.png"
       },
-
+      "userInterfaceStyle": "automatic",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

@@ -5,15 +5,15 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -21,9 +21,9 @@ import { WebView } from "react-native-webview";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import { BACK_FALLBACKS } from "@/components/Header";
 import {
-    formatDateForApi,
-    formatDisplayDate,
-    formatTimeNumber,
+  formatDateForApi,
+  formatDisplayDate,
+  formatTimeNumber,
 } from "@/constants/timeFormat";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import TimeRequestModal from "../../../components/TimeManage/TimeRequestModal";
@@ -157,7 +157,7 @@ export default function TimeManage() {
         formatDateForApi(toDate),
       );
       if (res?.success) setTimeData(res.data || []);
-      console.log("timemanageData: ", res.data);
+      // console.log("timemanageData: ", res.data);
     } finally {
       setLoading(false);
     }
@@ -181,7 +181,7 @@ export default function TimeManage() {
       const fileUri = FileSystem.documentDirectory + fileName;
 
       // Log details
-      console.log("Starting download from URL:", url);
+      // console.log("Starting download from URL:", url);
 
       // 1. If explicit "Download" on Android -> Use Storage Access Framework to save to user's folder
       if (!shouldShare && Platform.OS === "android") {
@@ -278,7 +278,7 @@ export default function TimeManage() {
     setDownloading(true);
 
     try {
-      console.log("Downloading report for sharing:", dates);
+      // console.log("Downloading report for sharing:", dates);
       const result = await ApiService.downloadTimeReport(
         dates.fromDateStr,
         dates.toDateStr,
@@ -307,7 +307,7 @@ export default function TimeManage() {
     setDownloading(true);
 
     try {
-      console.log("Downloading report for viewing:", dates);
+      // console.log("Downloading report for viewing:", dates);
       const result = await ApiService.downloadTimeReport(
         dates.fromDateStr,
         dates.toDateStr,

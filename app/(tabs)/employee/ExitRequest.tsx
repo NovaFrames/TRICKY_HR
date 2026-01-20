@@ -7,16 +7,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { XMLParser } from "fast-xml-parser";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { CustomButton } from "../../../components/CustomButton";
 import { useTheme } from "../../../context/ThemeContext";
@@ -210,7 +210,7 @@ export default function ExitRequestScreen() {
       };
 
       const result = await ApiService.updateExitRequest(payload);
-      console.log("Update Exit Request Response:", result);
+      // console.log("Update Exit Request Response:", result);
       if (result.success) {
         Alert.alert("Success", "Exit request updated successfully");
         fetchInitialData();

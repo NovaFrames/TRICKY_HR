@@ -4,16 +4,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    PanResponder,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  PanResponder,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import PendingApprovalModal from "../../../components/PendingApproval/PendingApprovalModal";
 import { useTheme } from "../../../context/ThemeContext";
@@ -82,10 +82,10 @@ export default function PendingApproval() {
       if (currentTab === "your") {
         const result = await ApiService.getYourPendingApprovals();
         if (result.success && result.data) {
-          console.log(
-            "Your Pending Data:",
-            JSON.stringify(result.data[0], null, 2),
-          );
+          // console.log(
+          //   "Your Pending Data:",
+          //   JSON.stringify(result.data[0], null, 2),
+          // );
           setYourPendings(result.data);
         } else {
           Alert.alert(

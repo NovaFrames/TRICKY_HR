@@ -1,15 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -226,7 +226,7 @@ const DocModal: React.FC<DocModalProps> = ({
       if (companyUrl) {
         // URL Pattern: https://hr.trickyhr.com/kevit-Customer/{CustomerId}/{CompanyId}/{EmpId}/EmpDocuments/{FolderName}/{FileName}
         const url = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/${empId}/EmpPortalDocuments/${folderName}/${fileName}`;
-        console.log("Viewing URL:", url);
+        // console.log("Viewing URL:", url);
         setViewingDoc({ url, name: fileName });
       } else {
         Alert.alert("Error", "Missing company URL");

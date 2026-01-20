@@ -1,6 +1,13 @@
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
-import { SplashScreen, Stack, usePathname, useRouter } from "expo-router";
+import * as NavigationBar from "expo-navigation-bar";
+import {
+  SplashScreen,
+  Stack,
+  useFocusEffect,
+  usePathname,
+  useRouter,
+} from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { setBackgroundColorAsync } from "expo-system-ui";
 import { useEffect, useRef } from "react";
@@ -44,6 +51,14 @@ function RootNavigator() {
       });
     }
   }, [isLoading]);
+
+  useEffect(() => {
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+  }, [isDark, theme.background]);
+
+  useFocusEffect(() => {
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+  });
 
   useEffect(() => {
     if (isLoading) return;

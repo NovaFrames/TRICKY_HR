@@ -113,8 +113,8 @@ export default function Attendance() {
         token, // ✅ PASS AS OBJECT
       });
 
-      console.log("Projects:", projectList);
-      console.log("UserToken:", token);
+      // console.log("Projects:", projectList);
+      // console.log("UserToken:", token);
 
       setProjects(projectList);
     } catch (error) {
