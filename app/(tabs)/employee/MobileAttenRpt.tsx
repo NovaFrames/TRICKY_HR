@@ -120,6 +120,7 @@ export default function MobileAttenRpt() {
           isRecordInDateRange(record.DateC, fromDate, toDate),
         );
         setAttendance(filteredData);
+        console.log("Attendance Data: ", filteredData);
       } else {
         Alert.alert("Info", result.error || "No attendance records found.");
       }

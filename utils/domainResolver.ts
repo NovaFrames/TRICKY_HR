@@ -5,7 +5,7 @@ export const resolveWorkingDomain = async (
   rawInput: string,
   empCode: string,
   password: string,
-  domainId: string
+  domainId?: string
 ): Promise<string> => {
   let cleaned = rawInput.trim();
 
@@ -19,11 +19,15 @@ export const resolveWorkingDomain = async (
 
   for (const baseUrl of candidates) {
     try {
-      await axios.post(`${baseUrl}/${API_ENDPOINTS.LOGIN}`, {
-        EmpCode: empCode,
-        Password: password,
-        DomainId: domainId,
-      }, { timeout: 6000 });
+      await axios.post(
+        `${baseUrl}/${API_ENDPOINTS.LOGIN}`,
+        {
+          EmpCode: empCode,
+          Password: password,
+          ...(domainId ? { DomainId: domainId } : {}),
+        },
+        { timeout: 6000 },
+      );
 
       // ✅ This URL works
       return baseUrl;

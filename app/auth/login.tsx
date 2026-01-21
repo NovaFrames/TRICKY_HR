@@ -4,23 +4,23 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Dimensions,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableWithoutFeedback,
-    View,
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import Animated, {
-    Easing,
-    interpolate,
-    interpolateColor,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CustomButton } from "../../components/CustomButton";
@@ -97,7 +97,10 @@ export default function Login() {
     fetchStoredDomain();
   }, []);
 
-  const showSnackbar = (message: string, type: "info" | "error" | "success" = "info") => {
+  const showSnackbar = (
+    message: string,
+    type: "info" | "error" | "success" = "info",
+  ) => {
     setSnackbar({ visible: true, message, type });
   };
 
@@ -115,12 +118,13 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
-    if (!empCode || !password || !domainId || !domainUrl) {
-      showSnackbar("Please fill in all fields", "error");
+    if (!empCode || !password || !domainUrl) {
+      showSnackbar("Please fill in all required fields", "error");
       return;
     }
 
     setIsLoading(true);
+    const normalizedDomainId = domainId.trim();
 
     try {
       // 🔥 Detect correct protocol
@@ -128,22 +132,25 @@ export default function Login() {
         domainUrl,
         empCode,
         password,
-        domainId,
+        normalizedDomainId || undefined,
       );
 
       // 🔥 Now login using confirmed URL
       const response = await loginUser(
         empCode,
         password,
-        domainId,
         workingDomain,
+        normalizedDomainId || undefined,
       );
 
       const token = response.TokenC || response.data?.TokenC;
       const empId = response.data?.EmpIdN || response.EmpIdN;
 
       if (!token) {
-        showSnackbar("Invalid credentials. Please check your details.", "error");
+        showSnackbar(
+          "Invalid credentials. Please check your details.",
+          "error",
+        );
         return;
       }
 
@@ -151,12 +158,16 @@ export default function Login() {
       await AsyncStorage.setItem("emp_id", empId?.toString() ?? "");
       await AsyncStorage.setItem("domain_url", workingDomain);
       await AsyncStorage.setItem("_domain", domainUrl);
-      await AsyncStorage.setItem("domain_id", domainId);
+      if (normalizedDomainId) {
+        await AsyncStorage.setItem("domain_id", normalizedDomainId);
+      } else {
+        await AsyncStorage.removeItem("domain_id");
+      }
 
       const userData = {
         ...(response.data || response),
         domain_url: workingDomain,
-        domain_id: domainId,
+        domain_id: normalizedDomainId || undefined,
       };
 
       setBaseUrl(workingDomain);
@@ -418,14 +429,14 @@ export default function Login() {
                 </Animated.View>
               </Animated.View>
 
-                <Animated.View style={[styles.footer, formStyle]}>
-                  <Text style={styles.footerText}>
+              <Animated.View style={[styles.footer, formStyle]}>
+                <Text style={styles.footerText}>
                   <Text style={{ color: theme.textLight }}>@created by </Text>
                   <Text style={{ color: theme.text, fontWeight: "900" }}>
                     Kevit Hisoft Solutions Pvt Ltd
                   </Text>
-                  </Text>
-                </Animated.View>
+                </Text>
+              </Animated.View>
             </SafeAreaView>
           </TouchableWithoutFeedback>
         </ScrollView>
@@ -435,9 +446,7 @@ export default function Login() {
         visible={snackbar.visible}
         message={snackbar.message}
         type={snackbar.type}
-        onDismiss={() =>
-          setSnackbar((prev) => ({ ...prev, visible: false }))
-        }
+        onDismiss={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
       />
     </View>
   );

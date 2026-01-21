@@ -40,14 +40,14 @@ export const setBaseUrl = (domainUrl: string) => {
 export const loginUser = async (
   empCode: string,
   password: string,
-  domainId: string,
   domainUrl: string,
+  domainId?: string,
 ) => {
   try {
     const response = await axios.post(`${domainUrl}/${API_ENDPOINTS.LOGIN}`, {
       EmpCode: empCode,
       Password: password,
-      DomainId: domainId,
+      ...(domainId ? { DomainId: domainId } : {}),
     });
     return response?.data ?? null;
   } catch (error) {

@@ -39,8 +39,8 @@ function RootNavigator() {
   const { user, isLoading } = useUser();
   const isAuthenticated = !!user;
 
-  console.log("Authenticated: ", isAuthenticated);
-  console.log("Current Pathname: ", pathname);
+  // console.log("Authenticated: ", isAuthenticated);
+  // console.log("Current Pathname: ", pathname);
 
   useEffect(() => {
     if (!isLoading && !hidden.current) {

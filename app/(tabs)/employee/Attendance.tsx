@@ -51,12 +51,63 @@ export default function Attendance() {
     address?: string;
   } | null>(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const formatAddress = (a: Location.LocationGeocodedAddress) => {
+    const parts = [
+      a.name,
+      a.street,
+      a.district,
+      a.city,
+      a.subregion,
+      a.region,
+      a.postalCode,
+      a.country,
+    ]
+      .map((part) => (part || "").trim())
+      .filter(Boolean);
+    return parts.join(", ");
+  };
+
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const distanceMeters = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ) => {
+    const earthRadius = 6371000;
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadius * c;
+  };
+
+  const parseProjectCoords = (project: any) => {
+    const raw = project?.GPRSC || project?.GPRS;
+    if (!raw) return null;
+    const [latStr, lonStr] = String(raw).split(",");
+    const latitude = Number((latStr || "").trim());
+    const longitude = Number((lonStr || "").trim());
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return null;
+    }
+    return { latitude, longitude };
+  };
 
   /* ---------------- CLOCK ---------------- */
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    console.log("Current location: ", location);
+  }, [location]);
 
   /* ---------------- PERMISSIONS ---------------- */
   useEffect(() => {
@@ -94,7 +145,7 @@ export default function Attendance() {
             prev
               ? {
                   ...prev,
-                  address: `${a.street || ""} ${a.city || ""} ${a.region || ""}`,
+                  address: formatAddress(a),
                 }
               : null,
           );
@@ -114,7 +165,6 @@ export default function Attendance() {
       });
 
       // console.log("Projects:", projectList);
-      // console.log("UserToken:", token);
 
       setProjects(projectList);
     } catch (error) {
@@ -142,6 +192,12 @@ export default function Attendance() {
   };
 
   /* ---------------- SUBMIT ---------------- */
+  const resetForm = () => {
+    setSelectedProject("");
+    setRemarks("");
+    setCapturedImage(null);
+  };
+
   const handleSubmit = async () => {
     if (!selectedProject) return Alert.alert("Required", "Select project");
     if (!capturedImage) return Alert.alert("Required", "Capture your photo");
@@ -155,6 +211,36 @@ export default function Attendance() {
         Alert.alert("Session Error", "Please sign in again");
         return;
       }
+      const project = projects.find(
+        (p) => String(p.IdN) === String(selectedProject),
+      );
+      if (!project) {
+        Alert.alert("Required", "Selected project not found");
+        return;
+      }
+      const projectCoords = parseProjectCoords(project);
+      if (!projectCoords) {
+        Alert.alert("Required", "Project location not available");
+        return;
+      }
+      const distance = distanceMeters(
+        Number(location.latitude),
+        Number(location.longitude),
+        Number(projectCoords.latitude),
+        Number(projectCoords.longitude),
+      );
+
+      console.log(distance, "distance");
+
+      if (distance > 100) {
+        Alert.alert(
+          "Location Mismatch",
+          `You are ${Math.round(distance)} meters away from the project location`,
+        );
+        resetForm();
+        return;
+      }
+
       const mode = attendanceType === "Check-in" ? 0 : 1;
       const serverDate = await ApiService.getRawServerTime(token);
 
@@ -170,6 +256,7 @@ export default function Attendance() {
       );
 
       if (res.success) {
+        resetForm();
         Alert.alert("Success", "Attendance marked", [
           { text: "OK", onPress: () => router.back() },
         ]);
