@@ -28,7 +28,7 @@
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
 
       "adaptiveIcon": {
-        "backgroundColor": "#e46a23",
+        "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/splash-icon.png",
         "backgroundImage": "./assets/images/splash-icon.png",
         "monochromeImage": "./assets/images/splash-icon.png"
@@ -51,9 +51,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#e46a23",
+          "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#e46a23"
+            "backgroundColor": "#121212"
           }
         }
       ],
@@ -68,7 +68,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5a4662ee-ee8d-4f50-9702-b7170cf65228"
+        "projectId": "fa2cbd24-b4f3-47f2-a00d-4f09d6ec6433"
       }
     }
   }

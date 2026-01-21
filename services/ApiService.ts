@@ -2358,6 +2358,12 @@ class ApiService {
 
   async getEmpDashBoardList(): Promise<any> {
     try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      if (!this.token) return [];
+
       const domainUrl = await getDomainUrl();
       if (!domainUrl) return [];
 
