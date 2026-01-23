@@ -422,6 +422,7 @@ export default function Login() {
                 <Animated.View style={itemStyle5}>
                   <CustomButton
                     title="Sign In"
+                    icon="log-in-outline"
                     onPress={handleLogin}
                     isLoading={isLoading}
                     style={styles.actionButton}

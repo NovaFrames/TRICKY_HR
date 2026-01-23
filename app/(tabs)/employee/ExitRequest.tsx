@@ -628,16 +628,14 @@ export default function ExitRequestScreen() {
               onPress={handleRevoke}
               isLoading={submitLoading}
               disabled={submitLoading}
-              style={[styles.button, styles.revokeButton]}
             />
           ) : (
             <CustomButton
               title="Submit"
-              icon="send"
+              icon="checkmark-circle"
               onPress={() => handleSubmit()}
               isLoading={submitLoading}
               disabled={submitLoading}
-              style={[styles.button, { backgroundColor: theme.primary }]}
             />
           )}
         </View>
@@ -894,22 +892,11 @@ const styles = StyleSheet.create({
   // Footer
   footer: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "center",
     padding: 16,
     borderTopWidth: 1,
   },
-  button: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 4,
-    minWidth: 180,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    marginBottom: 0,
-  },
+
   revokeButton: {
     backgroundColor: "#FF3B30",
   },

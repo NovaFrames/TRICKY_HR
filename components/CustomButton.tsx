@@ -16,7 +16,7 @@ import Animated, {
 import { useTheme } from "../context/ThemeContext";
 
 interface CustomButtonProps extends TouchableOpacityProps {
-  title: string;
+  title?: string;
   icon?: keyof typeof Ionicons.glyphMap; // ✅ proper typing
   isLoading?: boolean;
   textColor?: string;
@@ -64,17 +64,18 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
           <ActivityIndicator color={indicatorColor || "#fff"} />
         ) : (
           <View style={styles.content}>
+            {title && (
+              <Text style={[styles.buttonText, { color: textColor || "#fff" }]}>
+                {title}
+              </Text>
+            )}
             {icon && (
               <Ionicons
                 name={icon}
                 size={20}
                 color={iconColor || textColor || "#fff"}
-                style={{ marginRight: 8 }}
               />
             )}
-            <Text style={[styles.buttonText, { color: textColor || "#fff" }]}>
-              {title}
-            </Text>
           </View>
         )}
       </TouchableOpacity>
@@ -84,8 +85,9 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    // height: 54,
-    padding: 16,
+    alignSelf: "center", // 👈 KEY LINE
+    paddingHorizontal: 20, // instead of big padding
+    paddingVertical: 10,
     borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
@@ -99,6 +101,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
   },
   buttonText: {
     fontSize: 16,

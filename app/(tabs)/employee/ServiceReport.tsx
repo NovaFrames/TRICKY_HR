@@ -531,12 +531,7 @@ export default function ServiceReport() {
               <Text style={[styles.label, { color: theme.text }]}>
                 Service Details
               </Text>
-              <CustomButton
-                title="Add"
-                icon="add"
-                onPress={handleAddServiceDetail}
-                style={[styles.addButton, { backgroundColor: theme.primary }]}
-              />
+              <CustomButton icon="add" onPress={handleAddServiceDetail} />
             </View>
 
             {serviceDetails.length > 0 && (
@@ -781,14 +776,14 @@ export default function ServiceReport() {
           {/* Submit Button */}
           <CustomButton
             title="SUBMIT"
-            icon="send"
+            icon="checkmark-circle"
             onPress={handleSubmit}
             isLoading={submitting}
             disabled={submitting}
             style={[styles.submitButton, { backgroundColor: theme.primary }]}
           />
 
-          <View style={{ height: 40 }} />
+          <View style={{ height: 20 }} />
         </ScrollView>
 
         {/* Client Selection Modal */}
@@ -998,8 +993,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   submitButton: {
-    marginHorizontal: 16,
-    paddingVertical: 16,
     marginTop: 10,
     marginBottom: 0,
   },
@@ -1059,12 +1052,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  addButton: {
-    height: 34,
-    paddingHorizontal: 14,
-    borderRadius: 4,
-    marginBottom: 0,
-  },
+
   serviceDetailsList: {
     gap: 12,
   },

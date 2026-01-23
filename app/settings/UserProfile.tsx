@@ -10,7 +10,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -1289,26 +1288,16 @@ export default function UserProfile() {
 
         <View style={styles.actionRow}>
           {!editDenied ? (
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: theme.primary }]}
-              onPress={isEditing ? updateProfileData : () => setIsEditing(true)}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons
-                    name={isEditing ? "save-outline" : "create-outline"}
-                    size={18}
-                    color="#fff"
-                  />
-                  <Text style={styles.actionButtonText}>
-                    {isEditing ? "Save" : "Edit"}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+            <>
+              <CustomButton
+                onPress={
+                  isEditing ? updateProfileData : () => setIsEditing(true)
+                }
+                disabled={isSaving}
+                title={isEditing ? "Save" : "Edit"}
+                icon={isEditing ? "save-outline" : "create-outline"}
+              />
+            </>
           ) : (
             <View style={[styles.statusBadge, { backgroundColor: "#FEF3C7" }]}>
               <Ionicons name={"time-outline"} size={14} color={"#16A34A"} />
@@ -1319,19 +1308,12 @@ export default function UserProfile() {
           )}
 
           {isEditing && (
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                { backgroundColor: theme.primary || "#dc2626" },
-              ]}
+            <CustomButton
+              title="Cancel"
+              icon="close"
               onPress={() => setIsEditing(false)}
               disabled={isSaving}
-            >
-              <>
-                <Ionicons name="close" size={18} color="#fff" />
-                <Text style={styles.actionButtonText}>Cancel</Text>
-              </>
-            </TouchableOpacity>
+            />
           )}
         </View>
 
@@ -2381,6 +2363,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     marginBottom: 16,
+    gap: 12,
   },
   actionButton: {
     flexDirection: "row",
