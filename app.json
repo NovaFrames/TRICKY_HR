@@ -6,7 +6,6 @@
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "trickyhr",
-    "userInterfaceStyle": "light",
     "newArchEnabled": true,
 
     "updates": {
