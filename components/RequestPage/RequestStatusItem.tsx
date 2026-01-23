@@ -7,11 +7,13 @@ import { useTheme } from "../../context/ThemeContext";
 interface RequestStatusItemProps {
   item: any;
   onPress?: () => void;
+  status?: boolean;
 }
 
 const RequestStatusItem: React.FC<RequestStatusItemProps> = ({
   item,
   onPress,
+  status = true,
 }) => {
   const { theme, isDark } = useTheme();
 
@@ -92,12 +94,20 @@ const RequestStatusItem: React.FC<RequestStatusItemProps> = ({
           </Text>
         </View>
 
-        <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
-          <Ionicons name={statusInfo.icon} size={14} color={statusInfo.color} />
-          <Text style={[styles.statusLabel, { color: statusInfo.color }]}>
-            {statusInfo.label}
-          </Text>
-        </View>
+        {status && (
+          <View
+            style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
+          >
+            <Ionicons
+              name={statusInfo.icon}
+              size={14}
+              color={statusInfo.color}
+            />
+            <Text style={[styles.statusLabel, { color: statusInfo.color }]}>
+              {statusInfo.label}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />

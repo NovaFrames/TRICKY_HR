@@ -1,3 +1,4 @@
+import Alert from "@/components/common/AppAlert";
 import { formatDisplayDate, formatTimeNumber } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
@@ -14,7 +15,6 @@ import {
   Text,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
 import DynamicTable, { ColumnDef } from "../DynamicTable";
 import Header, { HEADER_HEIGHT } from "../Header";
 
@@ -65,16 +65,20 @@ export default function ApprovalReqDetails() {
     typeof parentFrom === "string" ? parentFrom : undefined;
 
   const approvalDetailsBackTarget: Href = parentFromParam
-    ? { pathname: "/(tabs)/officer/approvaldetails", params: { from: parentFromParam } }
+    ? {
+        pathname: "/(tabs)/officer/approvaldetails",
+        params: { from: parentFromParam },
+      }
     : "/(tabs)/officer/approvaldetails";
 
   useProtectedBack({
     approvaldetails: approvalDetailsBackTarget,
   });
 
-
   const [loading, setLoading] = useState(false);
-  const [formattedLeaves, setFormattedLeaves] = useState<FormattedLeaveType[]>([]);
+  const [formattedLeaves, setFormattedLeaves] = useState<FormattedLeaveType[]>(
+    [],
+  );
 
   /* ---------------- PARSE PARAM ---------------- */
 
@@ -95,11 +99,32 @@ export default function ApprovalReqDetails() {
     { key: "ReaGrpNameC", label: "Leave", flex: 2 },
     { key: "EligibleN", label: "Eligible", align: "center" },
     { key: "BFN", label: "B/F", align: "center", formatter: formatTimeNumber },
-    { key: "CreditN", label: "Credit", align: "center", formatter: formatTimeNumber },
+    {
+      key: "CreditN",
+      label: "Credit",
+      align: "center",
+      formatter: formatTimeNumber,
+    },
     { key: "ALEarnN", label: "Earn", align: "center" },
-    { key: "ALTotalN", label: "Total", align: "center", formatter: formatTimeNumber },
-    { key: "TakenN", label: "Taken", align: "center", formatter: formatTimeNumber },
-    { key: "BalanceN", label: "Balance", flex: 1.32, align: "center", formatter: formatTimeNumber },
+    {
+      key: "ALTotalN",
+      label: "Total",
+      align: "center",
+      formatter: formatTimeNumber,
+    },
+    {
+      key: "TakenN",
+      label: "Taken",
+      align: "center",
+      formatter: formatTimeNumber,
+    },
+    {
+      key: "BalanceN",
+      label: "Balance",
+      flex: 1.32,
+      align: "center",
+      formatter: formatTimeNumber,
+    },
   ];
 
   /* ---------------- API ---------------- */
@@ -128,12 +153,11 @@ export default function ApprovalReqDetails() {
       -----------------------------------*/
       if (Array.isArray(rawData)) {
         tableData = rawData[0]?.EmpLeaveApply ?? [];
-      }
+      } else if (typeof rawData === "string") {
 
       /* ----------------------------------
          CASE 2: API returned XML string
       -----------------------------------*/
-      else if (typeof rawData === "string") {
         const parser = new XMLParser({
           ignoreAttributes: false,
           parseTagValue: true,
@@ -142,8 +166,7 @@ export default function ApprovalReqDetails() {
         const json = parser.parse(rawData);
 
         const table =
-          json?.NewDataSet?.Table &&
-            Array.isArray(json.NewDataSet.Table)
+          json?.NewDataSet?.Table && Array.isArray(json.NewDataSet.Table)
             ? json.NewDataSet.Table
             : json?.NewDataSet?.Table
               ? [json.NewDataSet.Table]
@@ -167,7 +190,6 @@ export default function ApprovalReqDetails() {
     }
   };
 
-
   /* ---------------- IMPORTANT FIX ---------------- */
   /* Re-run EVERY TIME screen is focused */
 
@@ -176,7 +198,7 @@ export default function ApprovalReqDetails() {
       if (!approval?.IdN) return;
 
       loadLeaveData(approval.IdN);
-    }, [approval?.IdN])
+    }, [approval?.IdN]),
   );
 
   /* ---------------- FORMATTER ---------------- */
@@ -236,8 +258,10 @@ export default function ApprovalReqDetails() {
   return (
     <View style={{ flex: 1 }}>
       <Header title="Approval/Reject Details" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View>
@@ -245,15 +269,21 @@ export default function ApprovalReqDetails() {
               <Text style={styles.code}>{approval.CodeC}</Text>
             </View>
 
-            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
-              <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
+            >
+              <View
+                style={[styles.dot, { backgroundColor: statusInfo.color }]}
+              />
               <Text style={[styles.statusText, { color: statusInfo.color }]}>
                 {statusInfo.label}
               </Text>
             </View>
           </View>
 
-          <View style={[styles.divider, { backgroundColor: theme.inputBorder }]} />
+          <View
+            style={[styles.divider, { backgroundColor: theme.inputBorder }]}
+          />
 
           <DetailItem
             icon="document-text-outline"
@@ -330,7 +360,11 @@ const getStatusInfo = (status: string) => {
       label: status?.toUpperCase() || "REJECTED",
     };
   }
-  return { color: "#D97706", bg: "#FEF3C7", label: status?.toUpperCase() || "PENDING" };
+  return {
+    color: "#D97706",
+    bg: "#FEF3C7",
+    label: status?.toUpperCase() || "PENDING",
+  };
 };
 
 /* ---------------- STYLES ---------------- */
@@ -340,6 +374,7 @@ const createStyles = (theme: any) =>
     container: {
       flex: 1,
       backgroundColor: theme.background,
+      paddingHorizontal: 16,
     },
     content: {
       paddingTop: HEADER_HEIGHT,

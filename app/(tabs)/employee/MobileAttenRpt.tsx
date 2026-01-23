@@ -1,3 +1,4 @@
+import Alert from "@/components/common/AppAlert";
 import DatePicker from "@/components/DatePicker";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
@@ -6,6 +7,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
+import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -15,7 +17,6 @@ import {
   Text,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
 
 /* ---------------- TYPES ---------------- */
 
@@ -115,12 +116,22 @@ export default function MobileAttenRpt() {
         0,
       );
 
+      const customerId = user?.CustomerIdC || "kevit";
+      const companyId = user?.CompIdN || "1";
+
+      const domainUrl = await getDomainUrl();
+
       if (result.success && Array.isArray(result.data)) {
         const filteredData = result.data.filter((record: AttendanceRecord) =>
           isRecordInDateRange(record.DateC, fromDate, toDate),
         );
-        setAttendance(filteredData);
-        console.log("Attendance Data: ", filteredData);
+        const withImages = filteredData.map(
+          (row: AttendanceRecord, i: number) => ({
+            ...row,
+            ImageUrl: `${domainUrl}/kevit-Customer/${customerId}/${companyId}/${row.EmpIdN}/MobileAtten/${row.DateC}.jpg?timestamp=${Date.now()}`,
+          }),
+        );
+        setAttendance(withImages);
       } else {
         Alert.alert("Info", result.error || "No attendance records found.");
       }
@@ -160,8 +171,8 @@ export default function MobileAttenRpt() {
     {
       key: "ProjectNameC",
       label: "Project",
-      flex: 0.9,
-      align: "flex-start",
+      flex: 0.8,
+      align: "center",
       formatter: (v) => (v ? String(v) : "General"),
     },
     {
@@ -170,6 +181,12 @@ export default function MobileAttenRpt() {
       flex: 1,
       align: "flex-start",
       formatter: (v) => (v ? String(v) : "N/A"),
+    },
+    {
+      key: "ImageUrl",
+      label: "Photo",
+      flex: 0.5,
+      align: "center",
     },
     {
       key: "RemarkC",

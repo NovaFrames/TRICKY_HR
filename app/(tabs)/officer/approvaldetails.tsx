@@ -78,6 +78,7 @@ export default function ApprovalDetails() {
       });
 
       if (response.data?.Status === "success") {
+        console.log(response.data.data);
         setData(response.data.data || []);
       } else {
         setData([]);
@@ -131,6 +132,7 @@ export default function ApprovalDetails() {
         DescC: item.DescC ? `${item.NameC} • ${item.DescC}` : item.NameC,
         applyDateD: item.ApplyDateD,
       }}
+      status={false}
       onPress={() =>
         router.push({
           pathname: "/(tabs)/officer/approvalreqdetails",

@@ -1,4 +1,5 @@
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
@@ -43,7 +44,7 @@ interface RequestsState {
 
 export default function EmpRequestPage() {
   const { theme } = useTheme();
-
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [index, setIndex] = useState(0);
@@ -205,7 +206,7 @@ export default function EmpRequestPage() {
         renderItem={({ item }) => (
           <View style={{ flex: 1, paddingHorizontal: 16 }}>
             <RequestStatusItem
-              item={item}
+              item={{ ...item, CodeC: user?.EmpCodeC }}
               onPress={() => {
                 setSelectedItem(item);
                 setModalVisible(true);
