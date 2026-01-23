@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import {
   FlexAlignType,
+  Image,
   ScrollView,
   SectionList,
   StyleSheet,
@@ -88,27 +89,40 @@ export default function DynamicTable({
         const value = col.formatter
           ? col.formatter(item[col.key], item)
           : (item[col.key] ?? "");
+        const showImage = isImageValue(value);
 
         return (
           <View
             key={col.key}
             style={[
               styles.cell,
-              { width: columnWidths[i], borderColor: theme.inputBorder },
+              {
+                width: columnWidths[i],
+                borderColor: theme.inputBorder,
+                alignItems: showImage ? col.align ?? "flex-start" : undefined,
+              },
             ]}
           >
-            <Text
-              style={[
-                styles.cellText,
-                {
-                  color: theme.text,
-                  textAlign: align(col.align),
-                  flexWrap: "wrap",
-                },
-              ]}
-            >
-              {String(value)}
-            </Text>
+            {showImage ? (
+              <Image
+                source={{ uri: value }}
+                style={styles.cellImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text
+                style={[
+                  styles.cellText,
+                  {
+                    color: theme.text,
+                    textAlign: align(col.align),
+                    flexWrap: "wrap",
+                  },
+                ]}
+              >
+                {String(value)}
+              </Text>
+            )}
           </View>
         );
       })}
@@ -134,6 +148,16 @@ export default function DynamicTable({
 const align = (a?: FlexAlignType) =>
   a === "flex-end" ? "right" : a === "center" ? "center" : "left";
 
+const isImageValue = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:image/")
+  );
+};
+
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
@@ -157,5 +181,10 @@ const styles = StyleSheet.create({
   cellText: {
     fontSize: 11,
     fontWeight: "500",
+  },
+  cellImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
   },
 });

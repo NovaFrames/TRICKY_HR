@@ -1,6 +1,9 @@
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import { formatDateForApi } from "@/constants/timeFormat";
+import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
+import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
@@ -29,6 +32,9 @@ interface AttendanceRecord {
   PunchTimeC: string;
   PunchLocC: string;
   RemarkC: string;
+  ImageUrl?: string;
+  DateC?: string;
+  EmpIdN?: number;
 }
 
 export default function EmpMobileRpt() {
@@ -47,6 +53,7 @@ export default function EmpMobileRpt() {
   const [toDate, setToDate] = useState(new Date());
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
+  const { user } = useUser();
 
   const tableWidth = Math.max(1100, Dimensions.get("window").width);
 
@@ -98,12 +105,12 @@ export default function EmpMobileRpt() {
   };
 
   // Format date for API (MM/dd/yyyy)
-  const formatDateForApi = (d: Date) => {
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
+  // const formatDateForApi = (d: Date) => {
+  //   const day = String(d.getDate()).padStart(2, "0");
+  //   const month = String(d.getMonth() + 1).padStart(2, "0");
+  //   const year = d.getFullYear();
+  //   return `${month}/${day}/${year}`;
+  // };
 
   const fetchAttendanceReport = async () => {
     setLoading(true);
@@ -119,8 +126,21 @@ export default function EmpMobileRpt() {
         0,
       );
 
+      // console.log(result, "result");
+
+      const customerId = user?.CustomerIdC || "kevit";
+      const companyId = user?.CompIdN || "1";
+
+      const domainUrl = await getDomainUrl();
+
       if (result.success && result.data) {
-        setAttendanceData(result.data);
+        const withImages = result.data.map(
+          (row: AttendanceRecord, i: number) => ({
+            ...row,
+            ImageUrl: `${domainUrl}/kevit-Customer/${customerId}/${companyId}/${row.EmpIdN}/MobileAtten/${row.DateC}.jpg?timestamp=${Date.now()}`,
+          }),
+        );
+        setAttendanceData(withImages);
         // console.log("Attendance data loaded:", result.data.length, "records");
       } else {
         console.error("Failed to fetch attendance report:", result.error);
@@ -176,9 +196,16 @@ export default function EmpMobileRpt() {
     {
       key: "DateD",
       label: "Date",
-      flex: 0.9,
+      flex: 0.6,
       align: "center",
       formatter: (v) => formatDisplayDate(v as string),
+    },
+    {
+      key: "PunchTimeC",
+      label: "Time",
+      flex: 0.7,
+      align: "center",
+      formatter: (v) => (v ? String(v) : "N/A"),
     },
     {
       key: "EmpNameC",
@@ -186,6 +213,12 @@ export default function EmpMobileRpt() {
       flex: 0.9,
       align: "flex-start",
       formatter: (v) => (v ? String(v) : "N/A"),
+    },
+    {
+      key: "ImageUrl",
+      label: "Photo",
+      flex: 0.5,
+      align: "center",
     },
     {
       key: "EmpCodeC",
@@ -200,13 +233,6 @@ export default function EmpMobileRpt() {
       flex: 0.5,
       align: "center",
       formatter: (v) => (Number(v) === 0 ? "IN" : "OUT"),
-    },
-    {
-      key: "PunchTimeC",
-      label: "Time",
-      flex: 0.7,
-      align: "center",
-      formatter: (v) => (v ? String(v) : "N/A"),
     },
     {
       key: "ShiftCodeC",

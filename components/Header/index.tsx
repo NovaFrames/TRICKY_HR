@@ -19,6 +19,7 @@ export const BACK_FALLBACKS: Record<string, Href> = {
   settings: "/settings",
   dashboard: "/dashboard",
   approvaldetails: "/officer/approvaldetails",
+  employeelist: "/officer/emplist",
 };
 
 export default function Header({ title }: { title: string }) {

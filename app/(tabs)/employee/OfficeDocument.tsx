@@ -4,12 +4,13 @@ import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Modal,
+  PanResponder,
   Platform,
   StyleSheet,
   Text,
@@ -25,41 +26,71 @@ import ApiService from "../../../services/ApiService";
 interface Document {
   NameC: string;
   LastWriteTimeC: string;
-  FolderName: string;
+  FolderNameC: string;
+  FileNameC?: string;
+  IconC?: string;
+}
+
+interface DocumentRoute {
+  key: string;
+  title: string;
+  folderName: string | null;
 }
 
 const OfficeDocument: React.FC<any> = ({ navigation }) => {
   const { theme } = useTheme();
   const { user } = useUser();
+  const [index, setIndex] = useState(0);
+  const routes: DocumentRoute[] = [
+    { key: "office", title: "Office Docs", folderName: null },
+    { key: "company", title: "Company Policiesx", folderName: null },
+  ];
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [domain, setDomain] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetchDocumentsByTab(index);
+  }, [index]);
+
+  const fetchDocumentsByTab = async (tabIndex: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      let result;
+
+      if (tabIndex === 0) {
+        // Office Docs tab
+        result = await ApiService.getOfficeDocuments("OfficeDoc");
+      } else {
+        // ALL Docs tab (different API)
+        result = await ApiService.getCompanyPolicies("CompanyPolicies");
+      }
+      if (result?.success && Array.isArray(result.data)) {
+        setDocuments(result.data);
+        setFilteredDocuments(result.data); // no filtering
+      } else {
+        setDocuments([]);
+        setFilteredDocuments([]);
+        setError("No documents found");
+      }
+    } catch (e: any) {
+      setError(e.message || "Failed to load documents");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useProtectedBack({
     home: "/home",
   });
 
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
-
-  const fetchDocuments = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await ApiService.getOfficeDocuments("OfficeDoc");
-      if (result.success && result.data) {
-        setDocuments(result.data);
-      } else {
-        setError(result.error || "Failed to fetch documents");
-      }
-    } catch (error: any) {
-      setError(error.message || "Error fetching documents");
-    } finally {
-      setLoading(false);
-    }
+  const fetchDocuments = () => {
+    return fetchDocumentsByTab;
   };
 
   useEffect(() => {
@@ -71,10 +102,17 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
   }, [user]);
 
   const constructDownloadUrl = (fileName: string) => {
+    // console.log("File Name: ", fileName);
     const customerId = user?.CustomerIdC || "kevit";
     const companyId = user?.CompIdN || "1";
+    // console.log(
+    //   "View Url: ",
+    //   `${domain}/kevit-Customer/${customerId}/CompanyPolicies/${fileName}`,
+    // );
     const empId = user?.EmpIdN || "1";
-    return `${domain}/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`;
+    return index === 0
+      ? `${domain}/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`
+      : `${domain}/kevit-Customer/${customerId}/CompanyPolicies/${fileName}`;
   };
 
   const handleDownloadedFile = async (
@@ -211,48 +249,110 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
         No documents found
       </Text>
       <Text style={[styles.emptySubText, { color: theme.textLight }]}>
-        There are no office documents available at the moment.
+        {`No ${routes[index]?.title.toLowerCase()} documents`}
       </Text>
     </View>
   );
 
+  useEffect(() => {
+    console.log("Current Index: ", index);
+  }, [index]);
+
   const isImage = (url: string) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
+  const isHtml = (url: string) => /\.(html|htm)$/i.test(url);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return (
+          Math.abs(gestureState.dx) > 20 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy)
+        );
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dx > 50) {
+          setIndex((prev) => Math.max(0, prev - 1));
+        } else if (gestureState.dx < -50) {
+          setIndex((prev) => Math.min(routes.length - 1, prev + 1));
+        }
+      },
+    }),
+  ).current;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Office Documents" />
-      <FlatList
-        data={documents}
-        renderItem={renderDocumentItem}
-        keyExtractor={(item, index) => `${item.NameC}-${index}`}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        refreshing={loading}
-        onRefresh={fetchDocuments}
-        ListEmptyComponent={
-          loading && !documents.length ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <Text style={[styles.loadingText, { color: theme.textLight }]}>
-                Loading documents...
-              </Text>
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle-outline" size={40} color="#FF6B6B" />
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity
-                style={[styles.retryButton, { backgroundColor: theme.primary }]}
-                onPress={fetchDocuments}
+      <View style={{ paddingTop: HEADER_HEIGHT + 6 }}>
+        <FlatList
+          data={routes}
+          horizontal
+          keyExtractor={(item) => item.key}
+          contentContainerStyle={styles.tabList}
+          renderItem={({ item, index: i }) => (
+            <TouchableOpacity
+              style={[
+                styles.tabItem,
+                index === i && { borderBottomColor: theme.primary },
+              ]}
+              onPress={() => setIndex(i)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: index === i ? theme.primary : theme.textLight },
+                ]}
               >
-                <Text style={styles.retryButtonText}>Try Again</Text>
-              </TouchableOpacity>
-            </View>
-          ) : documents.length === 0 ? (
-            renderEmptyState()
-          ) : null
-        }
-      />
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
+      <View
+        style={{ flex: 1, paddingHorizontal: 16 }}
+        {...panResponder.panHandlers}
+      >
+        <FlatList
+          data={filteredDocuments}
+          renderItem={renderDocumentItem}
+          keyExtractor={(item, index) => `${item.NameC}-${index}`}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={fetchDocuments}
+          ListEmptyComponent={
+            loading && !documents.length ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.textLight }]}>
+                  Loading documents...
+                </Text>
+              </View>
+            ) : error ? (
+              <View style={styles.errorContainer}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={40}
+                  color="#FF6B6B"
+                />
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.retryButton,
+                    { backgroundColor: theme.primary },
+                  ]}
+                  onPress={fetchDocuments}
+                >
+                  <Text style={styles.retryButtonText}>Try Again</Text>
+                </TouchableOpacity>
+              </View>
+            ) : filteredDocuments.length === 0 ? (
+              renderEmptyState()
+            ) : null
+          }
+        />
+      </View>
 
       <Modal
         visible={!!viewingUrl}
@@ -280,27 +380,37 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
               Document Preview
             </Text>
 
-            <View style={{ flexDirection: "row", gap: 16 }}>
-              <TouchableOpacity
-                onPress={() =>
-                  viewingUrl && handleDownloadedFile(viewingUrl, false)
-                }
-              >
-                <Ionicons name="download-outline" size={24} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => viewingUrl && handleShareFromPreview(viewingUrl)}
-              >
-                <Ionicons name="share-social-outline" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
+            {index === 0 && (
+              <View style={{ flexDirection: "row", gap: 16 }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    viewingUrl && handleDownloadedFile(viewingUrl, false)
+                  }
+                >
+                  <Ionicons name="download-outline" size={24} color="white" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                    viewingUrl && handleShareFromPreview(viewingUrl)
+                  }
+                >
+                  <Ionicons
+                    name="share-social-outline"
+                    size={24}
+                    color="white"
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
           <View style={{ flex: 1 }}>
             {viewingUrl && (
               <WebView
                 source={{
                   uri:
-                    Platform.OS === "android" && !isImage(viewingUrl)
+                    Platform.OS === "android" &&
+                    !isImage(viewingUrl) &&
+                    !isHtml(viewingUrl)
                       ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingUrl)}`
                       : viewingUrl,
                 }}
@@ -368,8 +478,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   listContent: {
-    paddingTop: HEADER_HEIGHT + 12,
-    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
+    flexGrow: 1,
+  },
+  tabBar: {
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+  },
+  tabItem: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    borderBottomWidth: 3,
+    borderBottomColor: "transparent",
+  },
+  tabList: {
+    flexGrow: 1,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    width: "100%",
   },
   documentItem: {
     flexDirection: "row",

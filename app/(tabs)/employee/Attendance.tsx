@@ -8,7 +8,7 @@ import ApiService, { markMobileAttendance } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -24,10 +24,18 @@ import {
 
 const { width } = Dimensions.get("window");
 
-export default function Attendance() {
+interface AttendanceProps {
+  propEmpIdN?: number | string;
+}
+
+const Attendance = () => {
   const { theme } = useTheme();
   const { user } = useUser();
   const router = useRouter();
+
+  const { propEmpIdN } = useLocalSearchParams<{ propEmpIdN?: string }>();
+
+  const empId = propEmpIdN ?? user?.EmpIdN ?? user?.EmpId;
 
   useEffect(() => {
     console.log("Attendance Rendered & domain_url:", user?.domain_url);
@@ -51,6 +59,8 @@ export default function Attendance() {
     address?: string;
   } | null>(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<"front" | "back">("front");
+
   const formatAddress = (a: Location.LocationGeocodedAddress) => {
     const parts = [
       a.name,
@@ -105,9 +115,9 @@ export default function Attendance() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    console.log("Current location: ", location);
-  }, [location]);
+  // useEffect(() => {
+  //   console.log("Current location: ", location);
+  // }, [location]);
 
   /* ---------------- PERMISSIONS ---------------- */
   useEffect(() => {
@@ -118,6 +128,7 @@ export default function Attendance() {
   useProtectedBack({
     home: "/home",
     dashboard: "/dashboard",
+    employeelist: "/officer/emplist",
   });
 
   /* ---------------- LOCATION ---------------- */
@@ -196,7 +207,13 @@ export default function Attendance() {
     setSelectedProject("");
     setRemarks("");
     setCapturedImage(null);
+    setCameraFacing("front");
   };
+
+  useEffect(() => {
+    console.log("propEmpIdN: ", propEmpIdN);
+    console.log("empId: ", empId);
+  }, [empId]);
 
   const handleSubmit = async () => {
     if (!selectedProject) return Alert.alert("Required", "Select project");
@@ -206,7 +223,7 @@ export default function Attendance() {
     setSubmitting(true);
     try {
       const token = user?.TokenC || user?.Token;
-      const empId = user?.EmpIdN || user?.EmpId;
+
       if (!token || !empId) {
         Alert.alert("Session Error", "Please sign in again");
         return;
@@ -243,7 +260,7 @@ export default function Attendance() {
 
       const mode = attendanceType === "Check-in" ? 0 : 1;
       const serverDate = await ApiService.getRawServerTime(token);
-
+      const createdUser = user?.EmpIdN;
       const res = await markMobileAttendance(
         token,
         empId,
@@ -253,6 +270,7 @@ export default function Attendance() {
         capturedImage,
         remarks,
         serverDate,
+        createdUser,
       );
 
       if (res.success) {
@@ -420,12 +438,30 @@ export default function Attendance() {
           style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}
         >
           <View style={styles.cameraFrame}>
+            {permission?.granted && !capturedImage && (
+              <TouchableOpacity
+                style={styles.switchCameraBtn}
+                onPress={() =>
+                  setCameraFacing((prev) =>
+                    prev === "front" ? "back" : "front",
+                  )
+                }
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="camera-reverse-outline"
+                  size={22}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+            )}
+
             {capturedImage ? (
               <Image source={{ uri: capturedImage }} style={styles.preview} />
             ) : permission?.granted ? (
               <CameraView
                 ref={cameraRef}
-                facing="front"
+                facing={cameraFacing}
                 style={styles.preview}
               />
             ) : (
@@ -547,7 +583,9 @@ export default function Attendance() {
       />
     </View>
   );
-}
+};
+
+export default Attendance;
 
 /* ---------------- STYLES ---------------- */
 const styles = StyleSheet.create({
@@ -641,6 +679,15 @@ const styles = StyleSheet.create({
     height: 280,
     width: "100%",
     backgroundColor: "#000",
+  },
+  switchCameraBtn: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    padding: 10,
+    borderRadius: 24,
+    zIndex: 10,
   },
   preview: { width: "100%", height: "100%" },
   cameraOverlay: {

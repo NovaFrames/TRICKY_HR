@@ -46,7 +46,6 @@ export const API_ENDPOINTS = {
 
   SUBMIT_SURRENDER: "/WebApi2/UpdateEmpSurrender",
 
-
   // Medical Documents
   UPLOAD_MEDICAL_DOC: "/WebApi2/UploadMedicalDoc",
 
@@ -78,6 +77,9 @@ export const API_ENDPOINTS = {
 
   // Office Documents
   GET_OFFICE_DOCUMENTS: "/WebApi2/GetEmpDocumentsGridList",
+
+  // Company policy list
+  GET_COMPANY_POLICIES_LIST: "/WebApi2/GetCompanypoliciesList",
 
   // Payslip
   GET_PAYSLIP_LIST: "/WebApi2/GetEmpPaySalList",
@@ -111,7 +113,6 @@ export const API_ENDPOINTS = {
   PEND_CLAIM_URL: "/WebApi2/GetSup_ClaimById",
   PEND_DOC_URL: "/WebApi2/GetSup_EmpDocumentById",
   PEND_PROFILE_URL: "/WebApi2/GetSup_EmpProfileByEmpId",
-  
 
   // Approval Details
   SUP_DETAPPROVE_URL: "/WebApi2/GetApprovaledDetails",
@@ -130,20 +131,20 @@ export const API_ENDPOINTS = {
   SERVERTIME_URL: "/WebApi2/GetServerTime",
 
   //Claim List
-  GETCLAIM_LIST: '/WebApi2/GetEClaimList',
-  UPDATE_CLAIM: '/WebApi2/UpdateClaim',
-  UPDATECLAIM_DOC: '/WebApi2/UpdateClaimDoc',
+  GETCLAIM_LIST: "/WebApi2/GetEClaimList",
+  UPDATE_CLAIM: "/WebApi2/UpdateClaim",
+  UPDATECLAIM_DOC: "/WebApi2/UpdateClaimDoc",
 
-  CHANGE_PASSWORD: '/Webapi2/ChangePassword',
+  CHANGE_PASSWORD: "/Webapi2/ChangePassword",
 
   //Get Employee DashBoard List
-  GET_EMPDASHBOARD_LIST: '/WebApi2/GetEmpDashBoardList',
+  GET_EMPDASHBOARD_LIST: "/WebApi2/GetEmpDashBoardList",
 
-  EMP_DOC_URL: '/WebApi2/GetEmpPortalDocumentById',
-  TIME_URL: '/WebApi2/GetEmpTimeManageById',
-  LEAVE_URL: '/WebApi2/GetEmpLeaveManageById',
-  GETCLAIM_URL: '/WebApi2/GetEmpClaimById',
-  GETCLAIMDOC_URL: '/WebApi2/GetEmpDocumentShow',
+  EMP_DOC_URL: "/WebApi2/GetEmpPortalDocumentById",
+  TIME_URL: "/WebApi2/GetEmpTimeManageById",
+  LEAVE_URL: "/WebApi2/GetEmpLeaveManageById",
+  GETCLAIM_URL: "/WebApi2/GetEmpClaimById",
+  GETCLAIMDOC_URL: "/WebApi2/GetEmpDocumentShow",
 };
 
 export const API = () => API_ENDPOINTS;

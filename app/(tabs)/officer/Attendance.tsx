@@ -42,6 +42,9 @@ export interface AttendanceOther {
   TOutN: number;
 }
 
+const normalizeDate = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12);
+
 export default function AttendanceList() {
   const { theme } = useTheme();
   const { user } = useUser();
@@ -52,13 +55,11 @@ export default function AttendanceList() {
   });
 
   // Date states
-  const [fromDate, setFromDate] = useState(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1); // 1st of current month
-  });
-  const [toDate, setToDate] = useState(new Date());
-  const [showFromPicker, setShowFromPicker] = useState(false);
-  const [showToPicker, setShowToPicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() =>
+    normalizeDate(new Date()),
+  );
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [shiftData, setShiftData] = useState<AttendanceShift[]>([]);
@@ -68,12 +69,13 @@ export default function AttendanceList() {
 
   useEffect(() => {
     fetchAttendance();
-  }, [fromDate, toDate]);
+  }, [selectedDate]);
 
   const formatDateForApi = (d: Date) => {
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const year = d.getFullYear();
+    const local = normalizeDate(d);
+    const month = String(local.getMonth() + 1).padStart(2, "0");
+    const day = String(local.getDate()).padStart(2, "0");
+    const year = local.getFullYear();
     return `${month}/${day}/${year}`;
   };
 
@@ -100,11 +102,11 @@ export default function AttendanceList() {
 
     if (!token || !domainUrl) return;
 
-    if (fromDate > toDate) {
-      Alert.alert(
-        "Invalid Date Range",
-        "From date cannot be greater than To date.",
-      );
+    const today = normalizeDate(new Date());
+
+    if (selectedDate > today) {
+      Alert.alert("Invalid Date", "Future dates are not allowed");
+      setSelectedDate(today);
       return;
     }
 
@@ -113,15 +115,15 @@ export default function AttendanceList() {
       const url = `${domainUrl}${API_ENDPOINTS.ATTENDANCE_LIST}`;
       const payload = {
         TokenC: token,
-        FDate: formatDateForApi(fromDate),
-        TDate: formatDateForApi(toDate),
+        FDate: formatDateForApi(selectedDate),
+        TDate: formatDateForApi(selectedDate),
       };
 
       const response = await axios.post(url, payload);
 
       if (response.data.Status === "success") {
         const data = response.data.data || [];
-        // console.log('Attendance Data:', data);
+        // console.log("Attendance Data:", data);
         setShiftData(data);
       } else {
         setShiftData([]);
@@ -134,18 +136,12 @@ export default function AttendanceList() {
     }
   };
 
-  const onChangeFrom = (event: any, selectedDate?: Date) => {
-    setShowFromPicker(false);
-    if (selectedDate) {
-      setFromDate(selectedDate);
-    }
-  };
+  const onChangeDate = (_: any, selected?: Date) => {
+    setShowDatePicker(false);
+    if (!selected) return;
 
-  const onChangeTo = (event: any, selectedDate?: Date) => {
-    setShowToPicker(false);
-    if (selectedDate) {
-      setToDate(selectedDate);
-    }
+    const newDate = normalizeDate(selected);
+    setSelectedDate(newDate);
   };
 
   const renderHeader = () => (
@@ -163,10 +159,10 @@ export default function AttendanceList() {
         >
           <TouchableOpacity
             style={styles.dateInput}
-            onPress={() => setShowFromPicker(true)}
+            onPress={() => setShowDatePicker(true)}
           >
             <Text style={[styles.dateLabel, { color: theme.textLight }]}>
-              From Date
+              Date
             </Text>
             <View style={styles.dateRow}>
               <Ionicons
@@ -175,30 +171,7 @@ export default function AttendanceList() {
                 color={theme.primary}
               />
               <Text style={[styles.dateValue, { color: theme.text }]}>
-                {formatDisplayDate(fromDate)}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <View
-            style={[styles.dateDivider, { backgroundColor: theme.inputBorder }]}
-          />
-
-          <TouchableOpacity
-            style={styles.dateInput}
-            onPress={() => setShowToPicker(true)}
-          >
-            <Text style={[styles.dateLabel, { color: theme.textLight }]}>
-              To Date
-            </Text>
-            <View style={styles.dateRow}>
-              <Ionicons
-                name="calendar-outline"
-                size={18}
-                color={theme.primary}
-              />
-              <Text style={[styles.dateValue, { color: theme.text }]}>
-                {formatDisplayDate(toDate)}
+                {formatDisplayDate(selectedDate)}
               </Text>
             </View>
           </TouchableOpacity>
@@ -292,6 +265,19 @@ export default function AttendanceList() {
         <ScrollView contentContainerStyle={{ paddingTop: HEADER_HEIGHT }}>
           {renderHeader()}
 
+          <Text
+            style={{
+              textAlign: "center",
+              marginTop: 8,
+              color: theme.textLight,
+            }}
+          >
+            Showing attendance on{" "}
+            <Text style={{ fontWeight: "700" }}>
+              {formatDisplayDate(selectedDate)}
+            </Text>
+          </Text>
+
           <View style={{ paddingHorizontal: 16, paddingTop: 8, flex: 1 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <DynamicTable
@@ -318,23 +304,13 @@ export default function AttendanceList() {
         </ScrollView>
       </View>
 
-      {showFromPicker && (
+      {showDatePicker && (
         <DateTimePicker
-          value={fromDate}
+          value={selectedDate}
           mode="date"
           display="default"
-          onChange={onChangeFrom}
+          onChange={onChangeDate}
           maximumDate={new Date()}
-        />
-      )}
-      {showToPicker && (
-        <DateTimePicker
-          value={toDate}
-          mode="date"
-          display="default"
-          onChange={onChangeTo}
-          maximumDate={new Date()}
-          minimumDate={fromDate}
         />
       )}
     </View>
@@ -408,10 +384,6 @@ const styles = StyleSheet.create({
   dateValue: {
     fontSize: 14,
     fontWeight: "700",
-  },
-  dateDivider: {
-    width: 1,
-    height: "50%",
   },
   tabsContainer: {
     flexDirection: "row",

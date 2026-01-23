@@ -225,6 +225,7 @@ export const markMobileAttendance = async (
   imageUri: string,
   remark: string,
   serverDateTime: string,
+  createdUser: number,
 ): Promise<AttendanceResponse> => {
   const domainUrl = await getDomainUrl();
   if (!domainUrl) {
@@ -250,7 +251,7 @@ export const markMobileAttendance = async (
   formData.append("PunchLocC", location.address || "");
   formData.append("RemarkC", remark || "");
   formData.append("ProjectIdN", projectId.toString());
-  formData.append("CreatedByN", empId.toString());
+  formData.append("CreatedByN", createdUser.toString());
 
   try {
     const response = await axios.post(url, formData, {
@@ -1440,6 +1441,38 @@ class ApiService {
       );
 
       if (response.data.Status === "success") {
+        return { success: true, data: response.data.data };
+      } else {
+        return { success: false, error: response.data.Error };
+      }
+    } catch (error: any) {
+      console.log("Error fetching office documents", error);
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
+  async getCompanyPolicies(
+    folderName: string = "CompanyPolicies",
+  ): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const response = await axios.post(
+        BASE_URL + API_ENDPOINTS.GET_COMPANY_POLICIES_LIST,
+        {
+          TokenC: this.token,
+          Id: this.empId,
+          FolderName: folderName,
+        },
+        { headers: this.getHeaders() },
+      );
+
+      if (response.data.Error === "ok") {
         return { success: true, data: response.data.data };
       } else {
         return { success: false, error: response.data.Error };

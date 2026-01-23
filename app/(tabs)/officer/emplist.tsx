@@ -5,13 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { Employee } from "../../../services/ApiService";
@@ -59,6 +59,7 @@ export default function EmployeeListScreen() {
         const sorted = response.data.sort((a, b) =>
           a.CodeC.localeCompare(b.CodeC),
         );
+
         setAllEmployees(sorted);
 
         // Get unique designations
@@ -108,6 +109,18 @@ export default function EmployeeListScreen() {
           onPress: () => {
             setSelectedEmployee(employee);
             setShowBalanceModal(true);
+          },
+        },
+        {
+          text: "Put Attendance",
+          onPress: () => {
+            router.push({
+              pathname: "/(tabs)/employee/Attendance",
+              params: {
+                propEmpIdN: employee.EmpIdN,
+                from: "employeelist",
+              },
+            });
           },
         },
         { text: "Cancel", style: "default" },
