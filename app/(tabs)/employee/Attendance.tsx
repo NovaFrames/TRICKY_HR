@@ -250,9 +250,13 @@ const Attendance = () => {
       console.log(distance, "distance");
 
       if (distance > 100) {
+        const distanceDisplay =
+          distance >= 1000
+            ? `${(distance / 1000).toFixed(1)} km`
+            : `${Math.round(distance)} meters`;
         Alert.alert(
           "Location Mismatch",
-          `You are ${Math.round(distance)} meters away from the project location`,
+          `You are ${distanceDisplay} away from the project location`,
         );
         resetForm();
         return;
