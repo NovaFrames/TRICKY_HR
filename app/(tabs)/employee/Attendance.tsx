@@ -109,6 +109,20 @@ const Attendance = () => {
     return { latitude, longitude };
   };
 
+  const getProjectLocationText = (project: any) => {
+    if (!project) return "";
+    const parts = [
+      project.AddressC,
+      project.CompAddress1C,
+      project.CompAddress2C,
+    ]
+      .map((part: unknown) => String(part || "").trim())
+      .filter(Boolean);
+    if (parts.length) return parts.join(", ");
+    const coords = project?.GPRSC || project?.GPRS;
+    return coords ? String(coords).trim() : "";
+  };
+
   /* ---------------- CLOCK ---------------- */
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -337,6 +351,11 @@ const Attendance = () => {
     </View>
   );
 
+  const selectedProjectData = selectedProject
+    ? projects.find((p) => String(p.IdN) === selectedProject)
+    : null;
+  const selectedProjectLocation = getProjectLocationText(selectedProjectData);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Mobile Attendance" />
@@ -399,16 +418,31 @@ const Attendance = () => {
               size={20}
               color={theme.primary}
             />
-            <Text
-              style={[
-                styles.selectorText,
-                { color: selectedProject ? theme.text : theme.placeholder },
-              ]}
-            >
-              {selectedProject
-                ? projects.find((p) => String(p.IdN) === selectedProject)?.NameC
-                : "Select Project"}
-            </Text>
+            {selectedProject ? (
+              <View style={styles.selectorTextBlock}>
+                <Text
+                  style={[styles.selectorText, { color: theme.text }]}
+                  numberOfLines={1}
+                >
+                  {selectedProjectData?.NameC}
+                </Text>
+                {selectedProjectLocation ? (
+                  <Text
+                    style={[
+                      styles.selectorSubText,
+                      { color: theme.placeholder },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {selectedProjectLocation}
+                  </Text>
+                ) : null}
+              </View>
+            ) : (
+              <Text style={[styles.selectorText, { color: theme.placeholder }]}>
+                Select Project
+              </Text>
+            )}
             <Ionicons name="chevron-down" size={20} color={theme.text + "80"} />
           </TouchableOpacity>
 
@@ -581,6 +615,7 @@ const Attendance = () => {
         options={projects.map((p) => ({
           label: p.NameC,
           value: String(p.IdN),
+          subLabel: getProjectLocationText(p),
         }))}
         selectedValue={selectedProject}
         onSelect={(val: string | number) => setSelectedProject(String(val))}
@@ -661,6 +696,14 @@ const styles = StyleSheet.create({
   selectorText: {
     flex: 1,
     fontSize: 15,
+    fontWeight: "500",
+  },
+  selectorTextBlock: {
+    flex: 1,
+  },
+  selectorSubText: {
+    fontSize: 12,
+    marginTop: 4,
     fontWeight: "500",
   },
   remarksInput: {

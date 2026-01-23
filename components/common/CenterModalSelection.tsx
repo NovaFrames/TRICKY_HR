@@ -15,6 +15,7 @@ import { useTheme } from "../../context/ThemeContext";
 interface Option {
   label: string;
   value: any;
+  subLabel?: string;
 }
 
 interface CenterModalSelectionProps {
@@ -108,15 +109,29 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
                     onClose();
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      { color: theme.text },
-                      isSelected && { color: theme.primary, fontWeight: "700" },
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
+                  <View style={styles.optionTextBlock}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        { color: theme.text },
+                        isSelected && { color: theme.primary, fontWeight: "700" },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {option.label}
+                    </Text>
+                    {option.subLabel ? (
+                      <Text
+                        style={[
+                          styles.optionSubText,
+                          { color: theme.textLight },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {option.subLabel}
+                      </Text>
+                    ) : null}
+                  </View>
                   {isSelected && (
                     <Ionicons
                       name="checkmark-circle"
@@ -186,6 +201,15 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
+  },
+  optionTextBlock: {
+    flex: 1,
+    marginRight: 12,
+  },
+  optionSubText: {
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: "500",
   },
 });
 
