@@ -6,13 +6,13 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { Employee } from "../../../services/ApiService";
 

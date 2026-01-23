@@ -1,7 +1,7 @@
+import Alert from "@/components/common/AppAlert";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -79,7 +79,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
       [
         { text: "No", style: "cancel" },
         {
-          text: "Yes, Cancel",
+          text: "Yes",
           style: "destructive",
           onPress: async () => {
             setLoading(true);

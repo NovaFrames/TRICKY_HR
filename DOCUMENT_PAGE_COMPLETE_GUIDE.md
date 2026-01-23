@@ -17,6 +17,7 @@ FolderName: category === 'All' ? '' : category,
 ## Step 2: Update app/(tabs)/employee/empdocument.tsx
 
 ### Find the fetchDocuments function (around line 66-78):
+Note: use `Alert` from `@/components/common/AppAlert` instead of `react-native`.
 
 ### Current Code:
 ```typescript

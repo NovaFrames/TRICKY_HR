@@ -9,12 +9,12 @@ import { XMLParser } from "fast-xml-parser";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import DynamicTable, { ColumnDef } from "../DynamicTable";
 import Header, { HEADER_HEIGHT } from "../Header";
 

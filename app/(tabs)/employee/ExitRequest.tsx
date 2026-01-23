@@ -7,7 +7,6 @@ import { XMLParser } from "fast-xml-parser";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   RefreshControl,
   ScrollView,
@@ -17,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import { CustomButton } from "../../../components/CustomButton";
 import CenterModalSelection from "../../../components/common/CenterModalSelection";
 import { useTheme } from "../../../context/ThemeContext";

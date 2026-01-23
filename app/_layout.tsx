@@ -1,3 +1,4 @@
+import { AlertProvider } from "@/components/common/AppAlert";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
 import * as NavigationBar from "expo-navigation-bar";
@@ -21,9 +22,11 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <UserProvider>
-        <RootNavigator />
-      </UserProvider>
+      <AlertProvider>
+        <UserProvider>
+          <RootNavigator />
+        </UserProvider>
+      </AlertProvider>
     </ThemeProvider>
   );
 }

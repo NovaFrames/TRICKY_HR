@@ -6,7 +6,6 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import CenterModalSelection from "../../../components/common/CenterModalSelection";
 import { CustomButton } from "../../../components/CustomButton";
 import AttenderSignatureModal from "../../../components/ServiceReport/AttenderSignatureModal";

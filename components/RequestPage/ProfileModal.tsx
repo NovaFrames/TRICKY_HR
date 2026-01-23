@@ -1,8 +1,8 @@
+import Alert from "@/components/common/AppAlert";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -137,7 +137,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       [
         { text: "No", style: "cancel" },
         {
-          text: "Yes, Cancel",
+          text: "Yes",
           style: "destructive",
           onPress: async () => {
             setLoading(true);

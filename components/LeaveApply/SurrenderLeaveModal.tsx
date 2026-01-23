@@ -4,7 +4,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, { SurrenderData } from "../../services/ApiService";
 import AppModal from "../common/AppModal";

@@ -1,9 +1,9 @@
 // UploadDocumentModal.tsx
+import Alert from "@/components/common/AppAlert";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import React, { useState } from "react";
 import {
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -129,7 +129,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
       Alert.alert("Upload in Progress", "Are you sure you want to cancel?", [
         { text: "No", style: "cancel" },
         {
-          text: "Yes, Cancel",
+          text: "Yes",
           onPress: () => {
             resetForm();
             onClose();

@@ -20,13 +20,13 @@ import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService, { ClaimData, TravelExpense } from "@/services/ApiService";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 
 export interface TravelExpenseItem {
   type: number;

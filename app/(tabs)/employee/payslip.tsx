@@ -6,7 +6,6 @@ import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     Platform,
@@ -16,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import { WebView } from "react-native-webview";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { PaySlip } from "../../../services/ApiService";

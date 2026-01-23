@@ -1,11 +1,11 @@
+import Alert from "@/components/common/AppAlert";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
@@ -79,7 +79,7 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
       [
         { text: "No", style: "cancel" },
         {
-          text: "Yes, Cancel",
+          text: "Yes",
           style: "destructive",
           onPress: async () => {
             setLoading(true);

@@ -10,7 +10,6 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   RefreshControl,
   ScrollView,
@@ -19,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
 

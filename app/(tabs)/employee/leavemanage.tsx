@@ -6,13 +6,13 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/components/common/AppAlert";
 import ApplyLeaveModal from "../../../components/LeaveApply/ApplyLeaveModal";
 import SurrenderLeaveModal from "../../../components/LeaveApply/SurrenderLeaveModal";
 import { useTheme } from "../../../context/ThemeContext";
@@ -48,7 +48,6 @@ const LeaveApply: React.FC = () => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showSurrenderModal, setShowSurrenderModal] = useState(false);
   const [canSurrender, setCanSurrender] = useState(false);
-  const [isFabOpen, setIsFabOpen] = useState(false);
 
   useEffect(() => {
     loadLeaveData();
@@ -274,85 +273,44 @@ const LeaveApply: React.FC = () => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Floating Action Bar */}
-      {isFabOpen && (
+      {/* Action Buttons */}
+      <View style={styles.actionBar}>
         <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={() => setIsFabOpen(false)}
-        />
-      )}
+          style={[
+            styles.actionButton,
+            styles.actionButtonLeft,
+            { backgroundColor: theme.primary },
+          ]}
+          onPress={() => setShowApplyModal(true)}
+          activeOpacity={0.8}
+        >
+          <Icon name="add-circle-outline" size={20} color="#fff" />
+          <Text style={[styles.actionButtonText, { color: "#fff" }]}>
+            Apply Leave
+          </Text>
+        </TouchableOpacity>
 
-      {/* FAB Menu */}
-      {isFabOpen && (
-        <View style={styles.fabMenuContainer}>
-          {/* Apply Leave Item */}
-          <TouchableOpacity
-            style={styles.fabMenuItem}
-            onPress={() => {
-              setIsFabOpen(false);
-              setShowApplyModal(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View
-              style={[
-                styles.fabLabelContainer,
-                { backgroundColor: theme.cardBackground },
-              ]}
-            >
-              <Text style={[styles.fabLabel, { color: theme.text }]}>
-                Apply Leave
-              </Text>
-            </View>
-            <View
-              style={[styles.fabMiniButton, { backgroundColor: theme.primary }]}
-            >
-              <Icon name="add-circle-outline" size={24} color="#fff" />
-            </View>
-          </TouchableOpacity>
-
-          {/* Surrender Item */}
-          {canSurrender && (
-            <TouchableOpacity
-              style={styles.fabMenuItem}
-              onPress={() => {
-                setIsFabOpen(false);
-                setShowSurrenderModal(true);
-              }}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.fabLabelContainer,
-                  { backgroundColor: theme.cardBackground },
-                ]}
-              >
-                <Text style={[styles.fabLabel, { color: theme.text }]}>
-                  Surrender
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.fabMiniButton,
-                  { backgroundColor: theme.cardBackground },
-                ]}
-              >
-                <Icon name="history" size={24} color={theme.primary} />
-              </View>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
-      {/* Main FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
-        onPress={() => setIsFabOpen(!isFabOpen)}
-        activeOpacity={0.8}
-      >
-        <Icon name={isFabOpen ? "close" : "add"} size={32} color="#fff" />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            styles.actionButtonSecondary,
+            { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder },
+            !canSurrender && styles.actionButtonDisabled,
+          ]}
+          onPress={() => {
+            if (canSurrender) {
+              setShowSurrenderModal(true);
+            }
+          }}
+          activeOpacity={0.8}
+          disabled={!canSurrender}
+        >
+          <Icon name="history" size={20} color={theme.primary} />
+          <Text style={[styles.actionButtonText, { color: theme.text }]}>
+            Surrender
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Modals */}
       {showApplyModal && (
@@ -486,67 +444,41 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   bottomSpacer: {
-    height: 80, // Increased spacer to account for FAB
+    height: 100,
   },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    zIndex: 90,
-  },
-  fab: {
+  actionBar: {
     position: "absolute",
-    bottom: 40,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    zIndex: 100,
+    left: 16,
+    right: 16,
+    bottom: 24,
+    flexDirection: "row",
   },
-  fabMenuContainer: {
-    position: "absolute",
-    bottom: 90,
-    right: 20,
-    alignItems: "flex-end",
-    zIndex: 99,
-  },
-  fabMenuItem: {
+  actionButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-  },
-  fabLabelContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    marginRight: 12,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  fabLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  fabMiniButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 4,
-    alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 4,
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
+  },
+  actionButtonLeft: {
+    marginRight: 12,
+  },
+  actionButtonSecondary: {
+    borderWidth: 1,
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });
 
