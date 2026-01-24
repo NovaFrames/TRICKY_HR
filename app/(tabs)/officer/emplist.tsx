@@ -57,6 +57,8 @@ export default function EmployeeListScreen() {
           a.CodeC.localeCompare(b.CodeC),
         );
 
+        console.log("sorted: ", sorted);
+
         setAllEmployees(sorted);
 
         // Get unique designations
@@ -97,30 +99,35 @@ export default function EmployeeListScreen() {
   };
 
   const handleEmployeePress = (employee: Employee) => {
+    const buttons = [
+      {
+        text: "View Balance",
+        onPress: () => {
+          setSelectedEmployee(employee);
+          setShowBalanceModal(true);
+        },
+      },
+    ];
+
+    if (employee.AllowEmpAttToSupN) {
+      buttons.push({
+        text: "Put Attendance",
+        onPress: () => {
+          router.push({
+            pathname: "/(tabs)/employee/Attendance",
+            params: {
+              propEmpIdN: employee.EmpIdN,
+              from: "employeelist",
+            },
+          });
+        },
+      });
+    }
+
     ConfirmModal.alert(
       employee.NameC,
       `Code: ${employee.CodeC}\nDesignation: ${employee.DescC}`,
-      [
-        {
-          text: "View Balance",
-          onPress: () => {
-            setSelectedEmployee(employee);
-            setShowBalanceModal(true);
-          },
-        },
-        {
-          text: "Put Attendance",
-          onPress: () => {
-            router.push({
-              pathname: "/(tabs)/employee/Attendance",
-              params: {
-                propEmpIdN: employee.EmpIdN,
-                from: "employeelist",
-              },
-            });
-          },
-        },
-      ],
+      buttons,
     );
   };
 
@@ -382,7 +389,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     marginRight: 12,
-    gap:12
+    gap: 12
   },
   employeeInfo: {
     flex: 1,

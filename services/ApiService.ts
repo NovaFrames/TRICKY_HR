@@ -355,6 +355,7 @@ export interface Employee {
   EmpIdN: number;
   DescC: string; // Designation
   ImageUrl?: string;
+  AllowEmpAttToSupN: boolean;
 }
 
 export interface TimeRequestPayload {
