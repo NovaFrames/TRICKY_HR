@@ -104,14 +104,12 @@ export default function ClientSignatureModal({
                         title="Cancel"
                         icon="close"
                         onPress={onClose}
-                        style={[styles.button, styles.cancelButton]}
                     />
 
                     <CustomButton
                         title="Clear"
                         icon="trash-outline"
                         onPress={handleClear}
-                        style={[styles.button, styles.clearButton]}
                     />
 
                     <CustomButton
@@ -119,7 +117,6 @@ export default function ClientSignatureModal({
                         icon="checkmark-circle"
                         onPress={handleEnd}
                         disabled={!hasSignature}
-                        style={[styles.button, styles.doneButton, { backgroundColor: theme.primary }]}
                     />
                 </View>
             </View>
