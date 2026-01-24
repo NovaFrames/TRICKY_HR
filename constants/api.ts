@@ -80,6 +80,7 @@ export const API_ENDPOINTS = {
 
   // Company policy list
   GET_COMPANY_POLICIES_LIST: "/WebApi2/GetCompanypoliciesList",
+  COMP_POLICIES_UPDATE: "/WebApi2/CompPoliciesUpdate",
 
   // Payslip
   GET_PAYSLIP_LIST: "/WebApi2/GetEmpPaySalList",

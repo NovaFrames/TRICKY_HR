@@ -1,5 +1,5 @@
-import ConfirmModal from "@/components/common/ConfirmModal";
 import CenterModalSelection from "@/components/common/CenterModalSelection";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { CustomButton } from "@/components/CustomButton";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
@@ -414,13 +414,17 @@ const Attendance = () => {
         {/* CLOCK SECTION */}
         <View style={styles.clockHeader}>
           <Text style={[styles.timeText, { color: theme.text }]}>
-            {currentTime.toLocaleTimeString("en-GB", {
-              hour: "2-digit",
+            {/* {currentTime.toLocaleTimeString("en-US", {
+              hour: "numeric",
               minute: "2-digit",
-            })}
-            <Text style={{ fontSize: 18, fontWeight: "400" }}>
+              hour12: true,
+            })} */}
+            {/* <Text style={{ fontSize: 18, fontWeight: "400" }}>
               :{currentTime.getSeconds().toString().padStart(2, "0")}
-            </Text>
+            </Text> */}
+            {currentTime.toLocaleTimeString("en-US", {
+              hour12: true,
+            })}
           </Text>
           <Text style={[styles.dateText, { color: theme.placeholder }]}>
             {currentTime.toLocaleDateString("en-GB", {

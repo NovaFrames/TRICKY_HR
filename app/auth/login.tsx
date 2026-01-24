@@ -23,11 +23,17 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
 import { CustomButton } from "../../components/CustomButton";
 import { CustomInput } from "../../components/CustomInput";
+import Modal from "../../components/common/SingleModal";
 import Snackbar from "../../components/common/Snackbar";
 import { useTheme } from "../../context/ThemeContext";
-import { loginUser, setBaseUrl } from "../../services/ApiService";
+import {
+  compPoliciesUpdate,
+  loginUser,
+  setBaseUrl,
+} from "../../services/ApiService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -46,6 +52,18 @@ export default function Login() {
     message: "",
     type: "info" as "info" | "error" | "success",
   });
+  const [policyModalVisible, setPolicyModalVisible] = useState(false);
+  const [policyUrl, setPolicyUrl] = useState("");
+  const [policyId, setPolicyId] = useState<number | null>(null);
+  const [policyAcceptLoading, setPolicyAcceptLoading] = useState(false);
+  const [pendingLogin, setPendingLogin] = useState<{
+    token: string;
+    empId: string;
+    domainUrl: string;
+    workingDomain: string;
+    domainId?: string;
+    userData: any;
+  } | null>(null);
 
   const { theme } = useTheme();
 
@@ -78,7 +96,7 @@ export default function Login() {
     startAnimation();
   }, []);
 
-  const { setUser } = useUser();
+  const { setUser, logout } = useUser();
 
   useEffect(() => {
     const fetchStoredDomain = async () => {
@@ -119,6 +137,70 @@ export default function Login() {
     return "Unable to connect to server";
   };
 
+  const buildPolicyUrl = (baseUrl: string, filePath: string) => {
+    if (!filePath) return "";
+    if (/^https?:\/\//i.test(filePath)) return filePath;
+    const trimmedBase = baseUrl.endsWith("/")
+      ? baseUrl.slice(0, -1)
+      : baseUrl;
+    const trimmedPath = filePath.startsWith("/") ? filePath : `/${filePath}`;
+    return `${trimmedBase}${trimmedPath}`;
+  };
+
+  const finalizeLogin = async (payload: {
+    token: string;
+    empId: string;
+    domainUrl: string;
+    workingDomain: string;
+    domainId?: string;
+    userData: any;
+  }) => {
+    const { token, empId, domainUrl, workingDomain, domainId, userData } =
+      payload;
+
+    await AsyncStorage.setItem("auth_token", token);
+    await AsyncStorage.setItem("emp_id", empId || "");
+    await AsyncStorage.setItem("domain_url", workingDomain);
+    await AsyncStorage.setItem("_domain", domainUrl);
+    if (domainId) {
+      await AsyncStorage.setItem("domain_id", domainId);
+    } else {
+      await AsyncStorage.removeItem("domain_id");
+    }
+
+    setBaseUrl(workingDomain);
+    await setUser(userData);
+    router.replace("/(tabs)/dashboard");
+  };
+
+  const handlePolicyDecline = async () => {
+    setPolicyModalVisible(false);
+    setPolicyUrl("");
+    setPolicyId(null);
+    setPendingLogin(null);
+    setPolicyAcceptLoading(false);
+    await logout();
+    showSnackbar("Policy not accepted. Please sign in again.", "error");
+  };
+
+  const handlePolicyAccept = async () => {
+    if (!pendingLogin || !policyId) return;
+    setPolicyAcceptLoading(true);
+    try {
+      await compPoliciesUpdate(
+        pendingLogin.workingDomain,
+        pendingLogin.token,
+        policyId,
+      );
+      setPolicyModalVisible(false);
+      await finalizeLogin(pendingLogin);
+    } catch (error: any) {
+      showSnackbar(resolveErrorMessage(error), "error");
+    } finally {
+      setPolicyAcceptLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     if (!empCode || !password || !domainUrl) {
       showSnackbar("Please fill in all required fields", "error");
@@ -145,8 +227,9 @@ export default function Login() {
         normalizedDomainId || undefined,
       );
 
-      const token = response.TokenC || response.data?.TokenC;
-      const empId = response.data?.EmpIdN || response.EmpIdN;
+      console.log(response);
+      const token = response.data.data?.TokenC;
+      const empId = response.data.data?.EmpIdN;
 
       if (!token) {
         showSnackbar(
@@ -156,26 +239,46 @@ export default function Login() {
         return;
       }
 
-      await AsyncStorage.setItem("auth_token", token);
-      await AsyncStorage.setItem("emp_id", empId?.toString() ?? "");
-      await AsyncStorage.setItem("domain_url", workingDomain);
-      await AsyncStorage.setItem("_domain", domainUrl);
-      if (normalizedDomainId) {
-        await AsyncStorage.setItem("domain_id", normalizedDomainId);
-      } else {
-        await AsyncStorage.removeItem("domain_id");
-      }
-
       const userData = {
-        ...(response.data || response),
+        ...(response.data.data || response),
         domain_url: workingDomain,
         domain_id: normalizedDomainId || undefined,
       };
 
-      setBaseUrl(workingDomain);
-      await setUser(userData);
+      const policyFileName = response.data?.PoliciseFileName;
+      const policyIdValue = Number(response.data?.PoliciseId || 0);
+      const hasPolicy =
+        policyIdValue > 0 &&
+        typeof policyFileName === "string" &&
+        policyFileName.trim();
 
-      router.replace("/(tabs)/dashboard");
+      if (hasPolicy) {
+        const resolvedPolicyUrl = buildPolicyUrl(
+          workingDomain,
+          policyFileName,
+        );
+        setPendingLogin({
+          token,
+          empId: empId?.toString() ?? "",
+          domainUrl,
+          workingDomain,
+          domainId: normalizedDomainId || undefined,
+          userData,
+        });
+        setPolicyId(policyIdValue);
+        setPolicyUrl(resolvedPolicyUrl);
+        setPolicyModalVisible(true);
+        return;
+      }
+
+      await finalizeLogin({
+        token,
+        empId: empId?.toString() ?? "",
+        domainUrl,
+        workingDomain,
+        domainId: normalizedDomainId || undefined,
+        userData,
+      });
     } catch (error: any) {
       showSnackbar(resolveErrorMessage(error), "error");
     } finally {
@@ -455,6 +558,57 @@ export default function Login() {
         type={snackbar.type}
         onDismiss={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
       />
+      <Modal
+        visible={policyModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handlePolicyDecline}
+      >
+        <SafeAreaView
+          style={[
+            styles.policyModal,
+            { backgroundColor: theme.background },
+          ]}
+        >
+          <View style={styles.policyHeader}>
+            <Text style={[styles.policyTitle, { color: theme.text }]}>
+              Company Policy
+            </Text>
+          </View>
+          <View style={styles.policyBody}>
+            {policyUrl ? (
+              <WebView
+                source={{ uri: policyUrl }}
+                style={{ flex: 1 }}
+                startInLoadingState={true}
+              />
+            ) : (
+              <View style={styles.policyEmpty}>
+                <Text style={[styles.policyEmptyText, { color: theme.text }]}>
+                  Policy file not available.
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.policyActions}>
+            <CustomButton
+              title="Decline & Logout"
+              onPress={handlePolicyDecline}
+              disabled={policyAcceptLoading}
+              style={[
+                styles.policyButton,
+                { backgroundColor: theme.textLight, shadowColor: theme.text },
+              ]}
+            />
+            <CustomButton
+              title="Accept & Continue"
+              onPress={handlePolicyAccept}
+              isLoading={policyAcceptLoading}
+              style={styles.policyButton}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -529,5 +683,43 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: "uppercase",
     textAlign: "center"
+  },
+  policyModal: {
+    flex: 1,
+  },
+  policyHeader: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 8,
+    alignItems: "center",
+  },
+  policyTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  policyBody: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  policyActions: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 12,
+  },
+  policyButton: {
+    width: "100%",
+    marginBottom: 0,
+  },
+  policyEmpty: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  policyEmptyText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

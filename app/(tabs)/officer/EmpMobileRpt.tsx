@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { formatDateForApi } from "@/constants/timeFormat";
@@ -18,7 +19,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
 
@@ -45,12 +45,16 @@ export default function EmpMobileRpt() {
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
 
   // Date states
-  const [fromDate, setFromDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30); // 30 days ago
-    return d;
-  });
-  const [toDate, setToDate] = useState(new Date());
+  const today = new Date();
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(today.getDate() - 10);
+  const [fromDate, setFromDate] = useState(tenDaysAgo);
+  const [toDate, setToDate] = useState(today);
+
+  React.useEffect(() => {
+    setToDate(new Date());
+  }, [fromDate]);
+
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const { user } = useUser();

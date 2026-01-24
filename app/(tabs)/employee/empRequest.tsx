@@ -167,79 +167,75 @@ export default function EmpRequestPage() {
       {/* Fixed Header */}
       <Header title="Request Status" />
 
-      {/* Scrollable Content */}
-      <FlatList
-        data={filteredRequests ?? []}
-        keyExtractor={(item, index) =>
-          `${item.StatusC?.trim() || "UNKNOWN"}-${item.IdN}-${index}`
-        }
-        /* Push content below fixed header */
-        contentContainerStyle={{
-          paddingTop: HEADER_HEIGHT + 6,
-        }}
-        /* Tabs (scroll WITH list) */
-        ListHeaderComponent={
-          <View
-            style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}
-          >
-            {routes.map((item, i) => (
-              <TouchableOpacity
-                key={item.key}
+      <View style={{ paddingTop: HEADER_HEIGHT + 6, flex: 1 }}>
+        {/* Fixed Tabs */}
+        <View
+          style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}
+        >
+          {routes.map((item, i) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.tabItem,
+                index === i && { borderBottomColor: theme.primary },
+              ]}
+              onPress={() => setIndex(i)}
+            >
+              <Text
                 style={[
-                  styles.tabItem,
-                  index === i && { borderBottomColor: theme.primary },
+                  styles.tabText,
+                  { color: index === i ? theme.primary : theme.textLight },
                 ]}
-                onPress={() => setIndex(i)}
               >
-                <Text
-                  style={[
-                    styles.tabText,
-                    { color: index === i ? theme.primary : theme.textLight },
-                  ]}
-                >
-                  {item.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        }
-        renderItem={({ item }) => (
-          <View style={{ flex: 1, paddingHorizontal: 16 }}>
-            <RequestStatusItem
-              item={{ ...item, CodeC: user?.EmpCodeC }}
-              onPress={() => {
-                setSelectedItem(item);
-                setModalVisible(true);
-              }}
-            />
-          </View>
-        )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[theme.primary]}
-            tintColor={theme.primary}
-          />
-        }
-        ListEmptyComponent={
-          loading ? null : (
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="document-text-outline"
-                size={48}
-                color={theme.placeholder}
-              />
-              <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                No {activeTabName} Requests
+                {item.title}
               </Text>
-            </View>
-          )
-        }
-        showsVerticalScrollIndicator={false}
-        /* Swipe tabs */
-        {...panResponder.panHandlers}
-      />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Scrollable Content */}
+        <View style={{ flex: 1, paddingHorizontal: 16 }} {...panResponder.panHandlers}>
+          <FlatList
+            data={filteredRequests ?? []}
+            keyExtractor={(item, index) =>
+              `${item.StatusC?.trim() || "UNKNOWN"}-${item.IdN}-${index}`
+            }
+            contentContainerStyle={{ paddingTop: 8, paddingBottom: 16 }}
+            renderItem={({ item }) => (
+              <RequestStatusItem
+                item={{ ...item, CodeC: user?.EmpCodeC }}
+                onPress={() => {
+                  setSelectedItem(item);
+                  setModalVisible(true);
+                }}
+              />
+            )}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[theme.primary]}
+                tintColor={theme.primary}
+              />
+            }
+            ListEmptyComponent={
+              loading ? null : (
+                <View style={styles.emptyContainer}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={48}
+                    color={theme.placeholder}
+                  />
+                  <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                    No {activeTabName} Requests
+                  </Text>
+                </View>
+              )
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      </View>
 
       {modalVisible &&
         selectedItem &&

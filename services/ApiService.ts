@@ -49,6 +49,32 @@ export const loginUser = async (
       Password: password,
       ...(domainId ? { DomainId: domainId } : {}),
     });
+    return response ?? null;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const compPoliciesUpdate = async (
+  domainUrl: string,
+  token: string,
+  policyId: number,
+) => {
+  try {
+    const normalized = normalizeBaseUrl(domainUrl);
+    const response = await axios.post(
+      `${normalized}${API_ENDPOINTS.COMP_POLICIES_UPDATE}`,
+      {
+        TokenC: token,
+        PoliciseId: policyId,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Token: token,
+        },
+      },
+    );
     return response?.data ?? null;
   } catch (error) {
     throw error;
