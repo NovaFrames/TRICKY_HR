@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -131,7 +131,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   }, [visible, item]);
 
   const handleCancelRequest = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Cancel Request",
       "Are you sure you want to cancel this profile update request?",
       [
@@ -173,20 +173,20 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               );
 
               if (result.success) {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Success",
                   "Profile update request cancelled successfully",
                 );
                 onClose();
                 onRefresh?.();
               } else {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Error",
                   result.error || "Failed to cancel profile request.",
                 );
               }
             } catch (error: any) {
-              Alert.alert(
+              ConfirmModal.alert(
                 "Error",
                 error.message || "An unexpected error occurred.",
               );

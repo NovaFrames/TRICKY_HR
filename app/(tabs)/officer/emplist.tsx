@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import ProfileImage from "@/components/common/ProfileImage";
 import EmployeeLeaveBalance from "@/components/EmployeeList/EmployeeLeaveBalance";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
@@ -65,11 +65,11 @@ export default function EmployeeListScreen() {
         );
         setDesignations(["All", ...uniqueDesignations]);
       } else {
-        Alert.alert("Error", response.error || "Failed to fetch employee list");
+        ConfirmModal.alert("Error", response.error || "Failed to fetch employee list");
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "An unexpected error occurred");
+      ConfirmModal.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export default function EmployeeListScreen() {
   };
 
   const handleEmployeePress = (employee: Employee) => {
-    Alert.alert(
+    ConfirmModal.alert(
       employee.NameC,
       `Code: ${employee.CodeC}\nDesignation: ${employee.DescC}`,
       [

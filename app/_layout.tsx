@@ -1,4 +1,5 @@
-import { AlertProvider } from "@/components/common/AppAlert";
+import { ConfirmModalProvider } from "@/components/common/ConfirmModal";
+import { ModalManagerProvider } from "@/components/common/ModalManager";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
 import * as NavigationBar from "expo-navigation-bar";
@@ -22,11 +23,13 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <AlertProvider>
-        <UserProvider>
-          <RootNavigator />
-        </UserProvider>
-      </AlertProvider>
+      <ModalManagerProvider>
+        <ConfirmModalProvider>
+          <UserProvider>
+            <RootNavigator />
+          </UserProvider>
+        </ConfirmModalProvider>
+      </ModalManagerProvider>
     </ThemeProvider>
   );
 }

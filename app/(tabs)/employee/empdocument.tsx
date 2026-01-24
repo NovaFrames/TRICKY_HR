@@ -4,26 +4,15 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Modal,
-  PanResponder,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import Alert from "@/components/common/AppAlert";
+import { ActivityIndicator, Dimensions, FlatList, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import DocumentCard from "../../../components/UploadDocument/DocumentCard";
 import UploadDocumentModal from "../../../components/UploadDocument/UploadDocumentModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
-
+import Modal from "@/components/common/SingleModal";
 interface Document {
   id: string;
   name: string;
@@ -32,11 +21,8 @@ interface Document {
   size: string;
   url?: string;
 }
-
 type DocumentType = string;
-
 const initialLayout = { width: Dimensions.get("window").width };
-
 const empdocument: React.FC = () => {
   const { theme } = useTheme();
   const [index, setIndex] = useState(0);
@@ -46,7 +32,6 @@ const empdocument: React.FC = () => {
     { key: "proof", title: "PROOF" },
     { key: "birth", title: "BIRTH CERTIFICATE" },
   ]);
-
   const [documents, setDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,22 +40,17 @@ const empdocument: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
-
   const flatListRefs = useRef<{ [key: string]: FlatList | null }>({});
-
   useProtectedBack({
     home: "/home",
   });
-
   useEffect(() => {
     fetchDocuments();
   }, []);
-
   useEffect(() => {
     // Refetch documents when tab changes
     fetchDocuments();
   }, [index]);
-
   const fetchDocuments = async () => {
     try {
       setLoading(true);
@@ -79,23 +59,20 @@ const empdocument: React.FC = () => {
       const folderName =
         currentTab === "all" ? "All" : currentTab.toUpperCase();
       const docs = await ApiService.getDocuments(folderName);
-
       setDocuments(docs);
       setFilteredDocuments(docs); // API already filters by category
     } catch (error) {
-      Alert.alert("Error", "Failed to load documents");
+      ConfirmModal.alert("Error", "Failed to load documents");
       console.error("Error fetching documents:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-
   const filterDocumentsByTab = () => {
     // API handles filtering now
     setFilteredDocuments(documents);
   };
-
   const handleUpload = async (data: {
     name: string;
     type: DocumentType;
@@ -109,19 +86,18 @@ const empdocument: React.FC = () => {
     try {
       setUploading(true);
       const result = await ApiService.uploadDocument(data);
-
       if (result.success) {
-        Alert.alert("Success", "Document uploaded successfully");
+        ConfirmModal.alert("Success", "Document uploaded successfully");
         setModalVisible(false);
         fetchDocuments(); // Refresh list
       } else {
-        Alert.alert(
+        ConfirmModal.alert(
           "Upload Failed",
           result.error || "Failed to upload document",
         );
       }
     } catch (error: any) {
-      Alert.alert(
+      ConfirmModal.alert(
         "Upload Failed",
         error.message || "Failed to upload document",
       );
@@ -129,15 +105,13 @@ const empdocument: React.FC = () => {
       setUploading(false);
     }
   };
-
   const handleDocumentPress = (document: Document) => {
     if (document.url) {
       setViewingDoc(document);
     } else {
-      Alert.alert("Info", "Preview not available for this document.");
+      ConfirmModal.alert("Info", "Preview not available for this document.");
     }
   };
-
   const handleShare = async (document: Document) => {
     if (!document.url) return;
     try {
@@ -149,19 +123,17 @@ const empdocument: React.FC = () => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri);
       } else {
-        Alert.alert("Error", "Sharing is not available on this device");
+        ConfirmModal.alert("Error", "Sharing is not available on this device");
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to share document");
+      ConfirmModal.alert("Error", "Failed to share document");
     }
   };
-
   const handleRefresh = () => {
     setRefreshing(true);
     fetchDocuments();
   };
-
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -182,11 +154,9 @@ const empdocument: React.FC = () => {
       },
     }),
   ).current;
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Documents" />
-
       {/* Custom Tab Bar */}
       <View style={{ paddingTop: HEADER_HEIGHT + 6 }}>
         <FlatList
@@ -216,7 +186,6 @@ const empdocument: React.FC = () => {
           contentContainerStyle={{ paddingHorizontal: 10 }}
         />
       </View>
-
       {/* Content Area with Swipe Support */}
       <View
         style={{ flex: 1, paddingHorizontal: 16 }}
@@ -264,7 +233,6 @@ const empdocument: React.FC = () => {
           />
         )}
       </View>
-
       {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.primary }]}
@@ -277,7 +245,6 @@ const empdocument: React.FC = () => {
           <Icon name="add" size={28} color="#FFFFFF" />
         )}
       </TouchableOpacity>
-
       {/* Upload Modal */}
       <UploadDocumentModal
         visible={modalVisible}
@@ -285,7 +252,6 @@ const empdocument: React.FC = () => {
         onUpload={handleUpload}
         uploading={uploading}
       />
-
       {/* Document Viewer Modal */}
       <Modal
         visible={!!viewingDoc}
@@ -337,7 +303,6 @@ const empdocument: React.FC = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -423,5 +388,4 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
 });
-
 export default empdocument;

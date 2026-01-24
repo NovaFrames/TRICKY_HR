@@ -1,5 +1,5 @@
 // UploadDocumentModal.tsx
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import React, { useState } from "react";
@@ -56,19 +56,19 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
 
   const validateForm = (): boolean => {
     if (!documentName.trim()) {
-      Alert.alert("Error", "Document name is required");
+      ConfirmModal.alert("Error", "Document name is required");
       return false;
     }
     if (!documentType) {
-      Alert.alert("Error", "Please select a document type");
+      ConfirmModal.alert("Error", "Please select a document type");
       return false;
     }
     if (remarks.trim().length < 11) {
-      Alert.alert("Error", "Remarks should be more than 10 characters");
+      ConfirmModal.alert("Error", "Remarks should be more than 10 characters");
       return false;
     }
     if (!selectedFile) {
-      Alert.alert("Error", "Please select a file to upload");
+      ConfirmModal.alert("Error", "Please select a file to upload");
       return false;
     }
     return true;
@@ -83,7 +83,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
       if (result.canceled) return;
       const file = result.assets ? result.assets[0] : (result as any);
       if (file.size && file.size > 10 * 1024 * 1024) {
-        Alert.alert("Error", "File size should be less than 10MB");
+        ConfirmModal.alert("Error", "File size should be less than 10MB");
         return;
       }
       setSelectedFile({
@@ -93,7 +93,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
         size: file.size,
       });
     } catch (err) {
-      Alert.alert("Error", "Failed to pick document");
+      ConfirmModal.alert("Error", "Failed to pick document");
     }
   };
 
@@ -126,7 +126,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
 
   const handleClose = () => {
     if (uploading) {
-      Alert.alert("Upload in Progress", "Are you sure you want to cancel?", [
+      ConfirmModal.alert("Upload in Progress", "Are you sure you want to cancel?", [
         { text: "No", style: "cancel" },
         {
           text: "Yes",

@@ -1,30 +1,20 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import {
-    ActivityIndicator,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
-
+import Modal from "@/components/common/SingleModal";
 interface DocModalProps {
   visible: boolean;
   onClose: () => void;
   item: any;
   onRefresh?: () => void;
 }
-
 const DocModal: React.FC<DocModalProps> = ({
   visible,
   onClose,
@@ -40,11 +30,8 @@ const DocModal: React.FC<DocModalProps> = ({
     url: string;
     name: string;
   } | null>(null);
-
   if (!item) return null;
-
   const status = item.StatusC || item.StatusResult || item.Status || "Waiting";
-
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
   if (status.toLowerCase().includes("approv"))
@@ -59,12 +46,10 @@ const DocModal: React.FC<DocModalProps> = ({
       label: status.toUpperCase(),
     };
   }
-
   // Helper to format ASP.NET JSON Date
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return "N/A";
-
       if (typeof dateString === "string" && dateString.includes("/Date(")) {
         const timestamp = parseInt(
           dateString.replace(/\/Date\((-?\d+)\)\//, "$1"),
@@ -80,7 +65,6 @@ const DocModal: React.FC<DocModalProps> = ({
           date.toLocaleDateString("en-US", { weekday: "short" })
         );
       }
-
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
       return (
@@ -96,25 +80,19 @@ const DocModal: React.FC<DocModalProps> = ({
       return dateString;
     }
   };
-
   // Fetch document details
   useEffect(() => {
     const fetchDocDetails = async () => {
       if (!visible || !item) return;
-
       setDetailsLoading(true);
-
       try {
         const docResult = await ApiService.getEmployeeDocument(item.IdN);
-
         if (docResult?.success && docResult?.data?.data?.[0]) {
           const docInfo = docResult.data.data[0];
           setDocData(docInfo);
-
           // Get employee ID - try multiple sources
           const currentUser = ApiService.getCurrentUser();
           const empId = docInfo.EmpIdN || item.EmpIdN || currentUser.empId;
-
           // Fetch documents using getEmployeeDocuments with proper parameters
           if (empId && docInfo.DocTypeC && docInfo.DocNameC) {
             const docsResult = await ApiService.getEmployeeDocuments(
@@ -122,7 +100,6 @@ const DocModal: React.FC<DocModalProps> = ({
               docInfo.DocTypeC,
               docInfo.DocNameC,
             );
-
             if (docsResult?.success && docsResult.data?.xx) {
               setDocuments(docsResult.data.xx);
             }
@@ -134,12 +111,10 @@ const DocModal: React.FC<DocModalProps> = ({
         setDetailsLoading(false);
       }
     };
-
     fetchDocDetails();
   }, [visible, item]);
-
   const handleCancelRequest = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Cancel Request",
       "Are you sure you want to cancel this document request?",
       [
@@ -153,13 +128,11 @@ const DocModal: React.FC<DocModalProps> = ({
               const requestId = item.IdN || item.Id || item.id;
               const currentUser = ApiService.getCurrentUser();
               const empId = item.EmpIdN || item.EmpId || currentUser.empId;
-
               if (!empId) {
-                Alert.alert("Error", "Employee ID not found.");
+                ConfirmModal.alert("Error", "Employee ID not found.");
                 setLoading(false);
                 return;
               }
-
               const result = await ApiService.updatePendingApproval({
                 IdN: requestId,
                 StatusC: "Rejected",
@@ -173,22 +146,21 @@ const DocModal: React.FC<DocModalProps> = ({
                 ReceiveMonthN: 0,
                 PayTypeN: 0,
               });
-
               if (result.success) {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Success",
                   "Document request cancelled successfully",
                 );
                 onClose();
                 onRefresh?.();
               } else {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Error",
                   result.error || "Failed to cancel document request.",
                 );
               }
             } catch (error: any) {
-              Alert.alert(
+              ConfirmModal.alert(
                 "Error",
                 error.message || "An unexpected error occurred.",
               );
@@ -200,43 +172,36 @@ const DocModal: React.FC<DocModalProps> = ({
       ],
     );
   };
-
   const handleViewDocument = async (fileName: string, folderName: string) => {
     try {
       const AsyncStorage =
         require("@react-native-async-storage/async-storage").default;
-
       // Get user data for URL construction
       const userDataStr = await AsyncStorage.getItem("user_data");
       const userData = userDataStr ? JSON.parse(userDataStr) : null;
-
       const companyId = userData?.CompIdN || userData?.CompanyId || "1";
       const customerId =
         userData?.CustomerIdC || userData?.DomainId || "trickyhr";
-
       // Get company URL
       let companyUrl = await AsyncStorage.getItem("domain_url");
       if (companyUrl && companyUrl.endsWith("/")) {
         companyUrl = companyUrl.slice(0, -1);
       }
-
       const currentUser = ApiService.getCurrentUser();
       const empId = docData?.EmpIdN || item.EmpIdN || currentUser.empId;
-
       if (companyUrl) {
         // URL Pattern: https://hr.trickyhr.com/kevit-Customer/{CustomerId}/{CompanyId}/{EmpId}/EmpDocuments/{FolderName}/{FileName}
         const url = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/${empId}/EmpPortalDocuments/${folderName}/${fileName}`;
         // console.log("Viewing URL:", url);
         setViewingDoc({ url, name: fileName });
       } else {
-        Alert.alert("Error", "Missing company URL");
+        ConfirmModal.alert("Error", "Missing company URL");
       }
     } catch (error) {
       console.error("Error building document URL:", error);
-      Alert.alert("Error", "Failed to open document");
+      ConfirmModal.alert("Error", "Failed to open document");
     }
   };
-
   const renderContent = () => {
     if (detailsLoading) {
       return (
@@ -248,7 +213,6 @@ const DocModal: React.FC<DocModalProps> = ({
         </View>
       );
     }
-
     if (!docData) {
       return (
         <View style={styles.emptyContainer}>
@@ -258,7 +222,6 @@ const DocModal: React.FC<DocModalProps> = ({
         </View>
       );
     }
-
     return (
       <>
         <View style={styles.content}>
@@ -278,7 +241,6 @@ const DocModal: React.FC<DocModalProps> = ({
             theme={theme}
           />
         </View>
-
         {/* Documents */}
         {documents.length > 0 && (
           <View style={styles.documentsSection}>
@@ -289,11 +251,9 @@ const DocModal: React.FC<DocModalProps> = ({
                 : "N/A";
               const fileExtension =
                 fileName.split(".").pop()?.toLowerCase() || "";
-
               let iconName = "document-outline";
               let iconColor = theme.primary;
               let iconBg = theme.primary + "20";
-
               if (["jpg", "jpeg", "png", "gif"].includes(fileExtension)) {
                 iconName = "image-outline";
               } else if (fileExtension === "pdf") {
@@ -301,7 +261,6 @@ const DocModal: React.FC<DocModalProps> = ({
                 iconColor = "#DC2626";
                 iconBg = "#FEE2E2";
               }
-
               return (
                 <View
                   key={index}
@@ -355,7 +314,6 @@ const DocModal: React.FC<DocModalProps> = ({
       </>
     );
   };
-
   return (
     <AppModal
       visible={visible}
@@ -387,10 +345,8 @@ const DocModal: React.FC<DocModalProps> = ({
             </Text>
           </View>
         </View>
-
         {renderContent()}
       </ScrollView>
-
       <Modal
         visible={!!viewingDoc}
         transparent={true}
@@ -448,7 +404,6 @@ const DocModal: React.FC<DocModalProps> = ({
     </AppModal>
   );
 };
-
 // Helper component for info rows
 const InfoRow = ({
   label,
@@ -464,7 +419,6 @@ const InfoRow = ({
     <Text style={[styles.infoValue, { color: theme.text }]}>: {value}</Text>
   </View>
 );
-
 const styles = StyleSheet.create({
   modalBody: {
     padding: 18,
@@ -590,5 +544,4 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
-
 export default DocModal;

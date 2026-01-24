@@ -1,22 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import {
-    FlatList,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from '../../context/ThemeContext';
-
+import Modal from "@/components/common/SingleModal";
 interface ServiceType {
     IdN: number;
     NameC: string;
     selected: boolean;
 }
-
 interface SelectServiceTypeModalProps {
     visible: boolean;
     serviceTypes: ServiceType[];
@@ -24,7 +15,6 @@ interface SelectServiceTypeModalProps {
     onClose: () => void;
     onDone: (selectedIds: number[]) => void;
 }
-
 export default function SelectServiceTypeModal({
     visible,
     serviceTypes,
@@ -34,13 +24,11 @@ export default function SelectServiceTypeModal({
 }: SelectServiceTypeModalProps) {
     const { theme } = useTheme();
     const [tempSelected, setTempSelected] = useState<number[]>(selectedIds);
-
     React.useEffect(() => {
         if (visible) {
             setTempSelected(selectedIds);
         }
     }, [visible, selectedIds]);
-
     const toggleSelection = (id: number) => {
         if (tempSelected.includes(id)) {
             setTempSelected(tempSelected.filter(item => item !== id));
@@ -48,15 +36,12 @@ export default function SelectServiceTypeModal({
             setTempSelected([...tempSelected, id]);
         }
     };
-
     const handleDone = () => {
         onDone(tempSelected);
         onClose();
     };
-
     const renderItem = ({ item }: { item: ServiceType }) => {
         const isSelected = tempSelected.includes(item.IdN);
-
         return (
             <Pressable
                 style={[styles.item, { borderBottomColor: theme.inputBorder }]}
@@ -71,7 +56,6 @@ export default function SelectServiceTypeModal({
             </Pressable>
         );
     };
-
     return (
         <Modal
             visible={visible}
@@ -88,7 +72,6 @@ export default function SelectServiceTypeModal({
                         style={styles.list}
                         showsVerticalScrollIndicator={false}
                     />
-
                     <TouchableOpacity
                         style={[styles.doneButton, { backgroundColor: theme.primary }]}
                         onPress={handleDone}
@@ -100,7 +83,6 @@ export default function SelectServiceTypeModal({
         </Modal>
     );
 }
-
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,

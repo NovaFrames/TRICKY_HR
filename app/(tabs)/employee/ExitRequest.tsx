@@ -16,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { CustomButton } from "../../../components/CustomButton";
 import CenterModalSelection from "../../../components/common/CenterModalSelection";
 import { useTheme } from "../../../context/ThemeContext";
@@ -148,7 +148,7 @@ export default function ExitRequestScreen() {
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to fetch exit details");
+      ConfirmModal.alert("Error", "Failed to fetch exit details");
     } finally {
       setLoading(false);
       if (isRefresh) setRefreshing(false);
@@ -172,7 +172,7 @@ export default function ExitRequestScreen() {
     // There is also "Upload" button - ignoring for now as no functionality requested.
 
     if (!selectedReason) {
-      Alert.alert("Validation", "Please select an Exit Reason");
+      ConfirmModal.alert("Validation", "Please select an Exit Reason");
       return;
     }
 
@@ -213,20 +213,20 @@ export default function ExitRequestScreen() {
       const result = await ApiService.updateExitRequest(payload);
       // console.log("Update Exit Request Response:", result);
       if (result.success) {
-        Alert.alert("Success", "Exit request updated successfully");
+        ConfirmModal.alert("Success", "Exit request updated successfully");
         fetchInitialData();
       } else {
-        Alert.alert("Error", result.error || "Failed to update");
+        ConfirmModal.alert("Error", result.error || "Failed to update");
       }
     } catch (error) {
-      Alert.alert("Error", "An error occurred");
+      ConfirmModal.alert("Error", "An error occurred");
     } finally {
       setSubmitLoading(false);
     }
   };
 
   const handleRevoke = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Revoke Request",
       "Are you sure you want to revoke your exit request?",
       [
@@ -239,19 +239,19 @@ export default function ExitRequestScreen() {
             try {
               const result = await ApiService.revokeExitRequest();
               if (result.success) {
-                Alert.alert("Success", "Exit request revoked successfully");
+                ConfirmModal.alert("Success", "Exit request revoked successfully");
                 setExitData({}); // Clear local data
                 setNotes("");
                 setSelectedReason(0);
                 fetchInitialData(); // Refresh to be sure
               } else {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Error",
                   result.error || "Failed to revoke request",
                 );
               }
             } catch (error) {
-              Alert.alert("Error", "An error occurred while revoking");
+              ConfirmModal.alert("Error", "An error occurred while revoking");
             } finally {
               setSubmitLoading(false);
             }

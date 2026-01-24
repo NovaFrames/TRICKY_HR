@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import AppModal from "../common/AppModal";
@@ -86,7 +86,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
 
   const handleSubmit = async () => {
     if (!formData.projectId) {
-      Alert.alert("Validation", "Please select a project");
+      ConfirmModal.alert("Validation", "Please select a project");
       return;
     }
 
@@ -95,7 +95,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       const currentUser = ApiService.getCurrentUser();
       const empId = currentUser?.empId || (await AsyncStorage.getItem("EmpId"));
       if (!empId) {
-        Alert.alert("Error", "User ID not found");
+        ConfirmModal.alert("Error", "User ID not found");
         return;
       }
 
@@ -133,11 +133,11 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       }
 
       if (successCount === requests.length) {
-        Alert.alert("Success", "Time request submitted successfully");
+        ConfirmModal.alert("Success", "Time request submitted successfully");
         onSuccess?.();
         onClose();
       } else {
-        Alert.alert(
+        ConfirmModal.alert(
           successCount > 0 ? "Partial Success" : "Error",
           errorMsg || "Failed to submit request",
         );
@@ -147,7 +147,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
         }
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred");
+      ConfirmModal.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
     }

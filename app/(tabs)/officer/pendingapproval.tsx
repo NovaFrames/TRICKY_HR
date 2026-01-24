@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import PendingApprovalModal from "../../../components/PendingApproval/PendingApprovalModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
@@ -88,7 +88,7 @@ export default function PendingApproval() {
           // );
           setYourPendings(result.data);
         } else {
-          Alert.alert(
+          ConfirmModal.alert(
             "Error",
             result.error || "Failed to fetch your pending approvals",
           );
@@ -102,14 +102,14 @@ export default function PendingApproval() {
           );
           setOtherPendings(result.data);
         } else {
-          Alert.alert(
+          ConfirmModal.alert(
             "Error",
             result.error || "Failed to fetch other pending approvals",
           );
         }
       }
     } catch (error: any) {
-      Alert.alert(
+      ConfirmModal.alert(
         "Error",
         error?.message || "Failed to fetch pending approvals",
       );

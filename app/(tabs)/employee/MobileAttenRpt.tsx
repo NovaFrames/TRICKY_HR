@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import DatePicker from "@/components/DatePicker";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
@@ -99,12 +99,12 @@ export default function MobileAttenRpt() {
 
   const fetchReport = async () => {
     if (!user?.TokenC) {
-      Alert.alert("Error", "Session expired. Please login again.");
+      ConfirmModal.alert("Error", "Session expired. Please login again.");
       return;
     }
 
     if (fromDate > toDate) {
-      Alert.alert("Invalid Range", "From date cannot be after To date.");
+      ConfirmModal.alert("Invalid Range", "From date cannot be after To date.");
       return;
     }
 
@@ -136,11 +136,11 @@ export default function MobileAttenRpt() {
         );
         setAttendance(withImages);
       } else {
-        Alert.alert("Info", result.error || "No attendance records found.");
+        ConfirmModal.alert("Info", result.error || "No attendance records found.");
       }
     } catch (err: any) {
       console.error("Attendance API error:", err);
-      Alert.alert("Error", "Failed to fetch attendance.");
+      ConfirmModal.alert("Error", "Failed to fetch attendance.");
     } finally {
       setLoading(false);
     }

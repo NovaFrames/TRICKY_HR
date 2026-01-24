@@ -2,8 +2,8 @@ import { CustomButton } from "@/components/CustomButton";
 import { ThemeType } from "@/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Modal, StyleSheet, Text, View } from "react-native";
-
+import { StyleSheet, Text, View } from "react-native";
+import Modal from "@/components/common/SingleModal";
 interface ConfirmationModalProps {
   visible: boolean;
   totalAmount: number;
@@ -11,7 +11,6 @@ interface ConfirmationModalProps {
   onCancel: () => void;
   onConfirm: () => void;
 }
-
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   visible,
   totalAmount,
@@ -68,7 +67,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     </View>
   </Modal>
 );
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -110,5 +108,4 @@ const styles = StyleSheet.create({
   noButton: {},
   yesButton: {},
 });
-
 export default ConfirmationModal;

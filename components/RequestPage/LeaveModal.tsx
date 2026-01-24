@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -73,7 +73,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
   }, [visible, item]);
 
   const handleCancelRequest = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Cancel Request",
       "Are you sure you want to cancel this leave request?",
       [
@@ -115,17 +115,17 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
               );
 
               if (result.success) {
-                Alert.alert("Success", "Leave request cancelled successfully");
+                ConfirmModal.alert("Success", "Leave request cancelled successfully");
                 onClose();
                 onRefresh?.();
               } else {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Error",
                   result.error || "Failed to cancel leave request.",
                 );
               }
             } catch (error: any) {
-              Alert.alert(
+              ConfirmModal.alert(
                 "Error",
                 error.message || "An unexpected error occurred.",
               );

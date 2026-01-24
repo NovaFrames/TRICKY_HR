@@ -1,30 +1,20 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
-
+import Modal from "@/components/common/SingleModal";
 interface ClaimModalProps {
   visible: boolean;
   onClose: () => void;
   item: any;
   onRefresh?: () => void;
 }
-
 const ClaimModal: React.FC<ClaimModalProps> = ({
   visible,
   onClose,
@@ -40,11 +30,8 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     url: string;
     name: string;
   } | null>(null);
-
   if (!item) return null;
-
   const status = item.StatusC || item.StatusResult || item.Status || "Waiting";
-
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
   if (status.toLowerCase().includes("approv"))
@@ -59,12 +46,10 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       label: status.toUpperCase(),
     };
   }
-
   // Helper to format ASP.NET JSON Date
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return "N/A";
-
       if (typeof dateString === "string" && dateString.includes("/Date(")) {
         const timestamp = parseInt(
           dateString.replace(/\/Date\((-?\d+)\)\//, "$1"),
@@ -76,7 +61,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
           year: "numeric",
         });
       }
-
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
       return date.toLocaleDateString("en-US", {
@@ -88,24 +72,19 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       return dateString;
     }
   };
-
   // Fetch claim details and documents
   useEffect(() => {
     const fetchClaimDetails = async () => {
       if (!visible || !item) return;
-
       setDetailsLoading(true);
-
       try {
         const [claimResult, docsResult] = await Promise.all([
           ApiService.getClaimDetails(item.IdN),
           ApiService.getClaimDocuments(item.IdN),
         ]);
-
         if (claimResult?.success && claimResult?.data) {
           setClaimData(claimResult.data);
         }
-
         if (docsResult?.success && docsResult.data?.xx) {
           setDocuments(docsResult.data.xx);
         }
@@ -115,12 +94,10 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         setDetailsLoading(false);
       }
     };
-
     fetchClaimDetails();
   }, [visible, item]);
-
   const handleCancelRequest = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Cancel Request",
       "Are you sure you want to cancel this claim request?",
       [
@@ -149,10 +126,8 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                   return undefined;
                 }
               };
-
               const fromDate = parseDate(item.LFromDateD || item.FromDate);
               const toDate = parseDate(item.LToDateD || item.ToDate);
-
               const result = await ApiService.deleteRequest(
                 requestId,
                 "Claim",
@@ -160,19 +135,18 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                 toDate,
                 "Cancelled by user",
               );
-
               if (result.success) {
-                Alert.alert("Success", "Claim request cancelled successfully");
+                ConfirmModal.alert("Success", "Claim request cancelled successfully");
                 onClose();
                 onRefresh?.();
               } else {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Error",
                   result.error || "Failed to cancel claim request.",
                 );
               }
             } catch (error: any) {
-              Alert.alert(
+              ConfirmModal.alert(
                 "Error",
                 error.message || "An unexpected error occurred.",
               );
@@ -184,44 +158,37 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       ],
     );
   };
-
   const handleViewDocument = async (fileName: string) => {
     try {
       const AsyncStorage =
         require("@react-native-async-storage/async-storage").default;
-
       // Get user data for URL construction
       const userDataStr = await AsyncStorage.getItem("user_data");
       const userData = userDataStr ? JSON.parse(userDataStr) : null;
-
       const companyId = userData?.CompIdN || userData?.CompanyId || "1";
       const customerId =
         userData?.CustomerIdC || userData?.DomainId || "trickyhr";
-
       // Get company URL
       let companyUrl = await AsyncStorage.getItem("domain_url");
       if (companyUrl && companyUrl.endsWith("/")) {
         companyUrl = companyUrl.slice(0, -1);
       }
-
       const currentUser = ApiService.getCurrentUser();
       const empId = item.EmpIdN || currentUser.empId;
       const requestId = item.IdN || item.Id;
-
       if (companyUrl) {
         // URL Pattern: https://hr.trickyhr.com/kevit-Customer/{CustomerId}/{CompanyId}/EmpPortal/ClaimDoc/{EmpId}/{ClaimId}/{FileName}
         const url = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/ClaimDoc/${empId}/${requestId}/${fileName}`;
         // console.log("Viewing URL:", url);
         setViewingDoc({ url, name: fileName });
       } else {
-        Alert.alert("Error", "Missing company URL");
+        ConfirmModal.alert("Error", "Missing company URL");
       }
     } catch (error) {
       console.error("Error building document URL:", error);
-      Alert.alert("Error", "Failed to open document");
+      ConfirmModal.alert("Error", "Failed to open document");
     }
   };
-
   const getTravelTypeLabel = (type: number) => {
     const types = [
       "",
@@ -234,7 +201,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     ];
     return types[type] || "Unknown";
   };
-
   const renderContent = () => {
     if (detailsLoading) {
       return (
@@ -246,7 +212,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         </View>
       );
     }
-
     if (!claimData) {
       return (
         <View style={styles.emptyContainer}>
@@ -256,9 +221,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         </View>
       );
     }
-
     const travelExpenses = claimData.ClaimExpenseDtl1 || [];
-
     return (
       <>
         {/* Claim Information */}
@@ -296,7 +259,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
             theme={theme}
           />
         </View>
-
         {/* Travel and Other Expense */}
         {travelExpenses.length > 0 && (
           <View style={styles.section}>
@@ -379,7 +341,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
             </ScrollView>
           </View>
         )}
-
         {/* Claim Documents */}
         {documents.length > 0 && (
           <View style={styles.section}>
@@ -393,11 +354,9 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                 : "N/A";
               const fileExtension =
                 fileName.split(".").pop()?.toLowerCase() || "";
-
               let iconName = "document-outline";
               let iconColor = theme.primary;
               let iconBg = theme.primary + "20";
-
               if (["jpg", "jpeg", "png", "gif"].includes(fileExtension)) {
                 iconName = "image-outline";
               } else if (fileExtension === "pdf") {
@@ -405,7 +364,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                 iconColor = "#DC2626";
                 iconBg = "#FEE2E2";
               }
-
               return (
                 <View
                   key={index}
@@ -457,7 +415,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       </>
     );
   };
-
   return (
     <AppModal
       visible={visible}
@@ -489,10 +446,8 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
             </Text>
           </View>
         </View>
-
         {renderContent()}
       </ScrollView>
-
       <Modal
         visible={!!viewingDoc}
         transparent={true}
@@ -550,7 +505,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     </AppModal>
   );
 };
-
 // Helper component for info rows
 const InfoRow = ({
   label,
@@ -566,7 +520,6 @@ const InfoRow = ({
     <Text style={[styles.infoValue, { color: theme.text }]}>: {value}</Text>
   </View>
 );
-
 const styles = StyleSheet.create({
   modalBody: {
     padding: 18,
@@ -740,5 +693,4 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
-
 export default ClaimModal;

@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -159,7 +159,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
   }, [visible, item]);
 
   const handleCancelRequest = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Cancel Request",
       "Are you sure you want to cancel this request?",
       [
@@ -175,7 +175,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
               const empId = item.EmpIdN || item.EmpId || currentUser.empId;
 
               if (!requestId) {
-                Alert.alert("Error", "Request ID not found.");
+                ConfirmModal.alert("Error", "Request ID not found.");
                 setLoading(false);
                 return;
               }
@@ -188,7 +188,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 descLower.includes("attendance")
               ) {
                 if (!empId) {
-                  Alert.alert("Error", "Employee ID not found.");
+                  ConfirmModal.alert("Error", "Employee ID not found.");
                   setLoading(false);
                   return;
                 }
@@ -211,11 +211,11 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 });
 
                 if (result.success) {
-                  Alert.alert("Success", "Request cancelled successfully");
+                  ConfirmModal.alert("Success", "Request cancelled successfully");
                   onClose();
                   onRefresh?.();
                 } else {
-                  Alert.alert(
+                  ConfirmModal.alert(
                     "Error",
                     result.error || "Failed to cancel time request.",
                   );
@@ -262,18 +262,18 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 );
 
                 if (result.success) {
-                  Alert.alert("Success", "Request cancelled successfully");
+                  ConfirmModal.alert("Success", "Request cancelled successfully");
                   onClose();
                   onRefresh?.();
                 } else {
-                  Alert.alert(
+                  ConfirmModal.alert(
                     "Error",
                     result.error || "Failed to cancel request.",
                   );
                 }
               }
             } catch (error: any) {
-              Alert.alert(
+              ConfirmModal.alert(
                 "Error",
                 error.message || "An unexpected error occurred.",
               );

@@ -1,8 +1,8 @@
 import { ThemeType } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Modal from "@/components/common/SingleModal";
 interface DocumentPickerModalProps {
     visible: boolean;
     theme: ThemeType;
@@ -11,7 +11,6 @@ interface DocumentPickerModalProps {
     onPickImage: () => void;
     onPickDocument: () => void;
 }
-
 const DocumentPickerModal: React.FC<DocumentPickerModalProps> = ({
     visible,
     theme,
@@ -34,7 +33,6 @@ const DocumentPickerModal: React.FC<DocumentPickerModalProps> = ({
                         <Ionicons name="close" size={24} color={theme.text} />
                     </TouchableOpacity>
                 </View>
-
                 <View style={styles.options}>
                     <TouchableOpacity style={styles.option} onPress={onTakePhoto}>
                         <View style={[styles.iconCircle, { backgroundColor: theme.inputBg }]}>
@@ -42,14 +40,12 @@ const DocumentPickerModal: React.FC<DocumentPickerModalProps> = ({
                         </View>
                         <Text style={[styles.optionText, { color: theme.text }]}>Camera</Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity style={styles.option} onPress={onPickImage}>
                         <View style={[styles.iconCircle, { backgroundColor: theme.inputBg }]}>
                             <Ionicons name="image" size={30} color={theme.primary} />
                         </View>
                         <Text style={[styles.optionText, { color: theme.text }]}>Gallery</Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity style={styles.option} onPress={onPickDocument}>
                         <View style={[styles.iconCircle, { backgroundColor: theme.inputBg }]}>
                             <Ionicons name="document" size={30} color={theme.primary} />
@@ -61,7 +57,6 @@ const DocumentPickerModal: React.FC<DocumentPickerModalProps> = ({
         </View>
     </Modal>
 );
-
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -108,5 +103,4 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 });
-
 export default DocumentPickerModal;

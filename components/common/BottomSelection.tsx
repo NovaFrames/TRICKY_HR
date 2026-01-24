@@ -1,20 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from '../../context/ThemeContext';
-
+import Modal from "@/components/common/SingleModal";
 interface Option {
     label: string;
     value: any;
 }
-
 interface BottomSelectionProps {
     visible: boolean;
     onClose: () => void;
@@ -23,7 +15,6 @@ interface BottomSelectionProps {
     title?: string;
     selectedValue?: any;
 }
-
 const BottomSelection: React.FC<BottomSelectionProps> = ({
     visible,
     onClose,
@@ -33,9 +24,7 @@ const BottomSelection: React.FC<BottomSelectionProps> = ({
     selectedValue,
 }) => {
     const { theme } = useTheme();
-
     if (!visible) return null;
-
     return (
         <Modal
             transparent
@@ -49,7 +38,6 @@ const BottomSelection: React.FC<BottomSelectionProps> = ({
                     onPress={onClose}
                     style={styles.backdrop}
                 />
-
                 <View style={[styles.sheet, { backgroundColor: theme.cardBackground }]}>
                     <View style={[styles.header, { borderBottomColor: theme.inputBorder }]}>
                         <Text style={[styles.title, { color: theme.text }]}>
@@ -59,7 +47,6 @@ const BottomSelection: React.FC<BottomSelectionProps> = ({
                             <Ionicons name="close" size={24} color={theme.icon} />
                         </TouchableOpacity>
                     </View>
-
                     <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
                         {options.map((option, index) => {
                             const isSelected = selectedValue === option.value;
@@ -95,7 +82,6 @@ const BottomSelection: React.FC<BottomSelectionProps> = ({
         </Modal>
     );
 };
-
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -146,5 +132,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
-
 export default BottomSelection;

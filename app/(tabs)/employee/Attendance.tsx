@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import CenterModalSelection from "@/components/common/CenterModalSelection";
 import { CustomButton } from "@/components/CustomButton";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
@@ -177,7 +177,7 @@ const Attendance = () => {
     if (!capturedImage) return;
 
     const timer = setTimeout(() => {
-      Alert.alert(
+      ConfirmModal.alert(
         "Session Timeout",
         "Please fill again."
       );
@@ -205,7 +205,7 @@ const Attendance = () => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission Required", "Location permission is required");
+        ConfirmModal.alert("Permission Required", "Location permission is required");
         return;
       }
 
@@ -265,7 +265,7 @@ const Attendance = () => {
         setCapturedImage(photo.uri);
       }
     } catch {
-      Alert.alert("Camera Error", "Failed to take picture");
+      ConfirmModal.alert("Camera Error", "Failed to take picture");
     }
   };
 
@@ -278,28 +278,28 @@ const Attendance = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedProject) return Alert.alert("Required", "Select project");
-    if (!capturedImage) return Alert.alert("Required", "Capture your photo");
-    if (!location) return Alert.alert("Required", "Location not ready");
+    if (!selectedProject) return ConfirmModal.alert("Required", "Select project");
+    if (!capturedImage) return ConfirmModal.alert("Required", "Capture your photo");
+    if (!location) return ConfirmModal.alert("Required", "Location not ready");
 
     setSubmitting(true);
     try {
       const token = user?.TokenC || user?.Token;
 
       if (!token || !empId) {
-        Alert.alert("Session Error", "Please sign in again");
+        ConfirmModal.alert("Session Error", "Please sign in again");
         return;
       }
       const project = projects.find(
         (p) => String(p.IdN) === String(selectedProject),
       );
       if (!project) {
-        Alert.alert("Required", "Selected project not found");
+        ConfirmModal.alert("Required", "Selected project not found");
         return;
       }
       const projectCoords = parseProjectCoords(project);
       if (!projectCoords) {
-        Alert.alert("Required", "Project location not available");
+        ConfirmModal.alert("Required", "Project location not available");
         return;
       }
       const distance = distanceMeters(
@@ -314,7 +314,7 @@ const Attendance = () => {
           distance >= 1000
             ? `${(distance / 1000).toFixed(1)} km`
             : `${Math.round(distance)} meters`;
-        Alert.alert(
+        ConfirmModal.alert(
           "Location Mismatch",
           `You are ${distanceDisplay} away from the project location`,
         );
@@ -339,15 +339,15 @@ const Attendance = () => {
 
       if (res.success) {
         resetForm();
-        Alert.alert("Success", "Attendance marked", [
+        ConfirmModal.alert("Success", "Attendance marked", [
           { text: "OK", onPress: () => router.back() },
         ]);
       } else {
-        Alert.alert("Failed", res.message || "Attendance failed");
+        ConfirmModal.alert("Failed", res.message || "Attendance failed");
       }
     } catch (error) {
       console.error("Attendance submit error:", error);
-      Alert.alert("Error", "Unable to submit attendance right now");
+      ConfirmModal.alert("Error", "Unable to submit attendance right now");
     } finally {
       setSubmitting(false);
     }

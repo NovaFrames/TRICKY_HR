@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, {
   CalendarEvent,
@@ -69,7 +69,7 @@ export default function CalendarScreen() {
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to fetch calendar events");
+      ConfirmModal.alert("Error", "Failed to fetch calendar events");
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export default function CalendarScreen() {
         // Handle no details or error
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch details");
+      ConfirmModal.alert("Error", "Failed to fetch details");
     } finally {
       setDetailLoading(false);
     }

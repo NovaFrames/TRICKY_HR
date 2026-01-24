@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, {
   AvailableLeaveType,
@@ -112,35 +112,35 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
   const validateForm = (): boolean => {
     if (!selectedLeaveType) {
-      Alert.alert("Error", "Please select leave type");
+      ConfirmModal.alert("Error", "Please select leave type");
       return false;
     }
     if (fromDate > toDate) {
-      Alert.alert("Error", "To date must be after from date");
+      ConfirmModal.alert("Error", "To date must be after from date");
       return false;
     }
     if (!pastLeaveYes && !pastLeaveNo) {
-      Alert.alert("Error", "Please select past leave option");
+      ConfirmModal.alert("Error", "Please select past leave option");
       return false;
     }
     if (pastLeaveYes && fromDate > new Date()) {
-      Alert.alert("Error", "Past leave must be before current date");
+      ConfirmModal.alert("Error", "Past leave must be before current date");
       return false;
     }
     if (showTimeSection && parseFloat(totalTime) <= 0) {
-      Alert.alert("Error", "Please enter valid time");
+      ConfirmModal.alert("Error", "Please enter valid time");
       return false;
     }
     if (showMedicalSection) {
       const claim = parseFloat(claimAmount) || 0;
       const maxPerVisit = leaveData?.MLPerVisitMaxN || 0;
       if (claim > maxPerVisit) {
-        Alert.alert("Error", `Claim amount cannot exceed ₹${maxPerVisit}`);
+        ConfirmModal.alert("Error", `Claim amount cannot exceed ₹${maxPerVisit}`);
         return false;
       }
     }
     if (remarks.trim().length === 0) {
-      Alert.alert("Error", "Please enter remarks");
+      ConfirmModal.alert("Error", "Please enter remarks");
       return false;
     }
     return true;
@@ -176,14 +176,14 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
       const result = await ApiService.applyLeave(applicationData);
       if (result.success) {
-        Alert.alert("Success", "Leave applied successfully!", [
+        ConfirmModal.alert("Success", "Leave applied successfully!", [
           { text: "OK", onPress: onSuccess },
         ]);
       } else {
-        Alert.alert("Error", result.error || "Failed to apply leave");
+        ConfirmModal.alert("Error", result.error || "Failed to apply leave");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to apply leave");
+      ConfirmModal.alert("Error", "Failed to apply leave");
     } finally {
       setLoading(false);
     }

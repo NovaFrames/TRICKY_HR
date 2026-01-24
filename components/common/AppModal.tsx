@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react';
 import {
     Animated,
     Dimensions,
-    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
     TouchableWithoutFeedback,
     View
 } from 'react-native';
+import Modal from "@/components/common/SingleModal";
 import { useTheme } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');

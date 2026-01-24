@@ -18,7 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
 
@@ -144,14 +144,14 @@ export default function EmpMobileRpt() {
         // console.log("Attendance data loaded:", result.data.length, "records");
       } else {
         console.error("Failed to fetch attendance report:", result.error);
-        Alert.alert(
+        ConfirmModal.alert(
           "Error",
           result.error || "Failed to fetch attendance report",
         );
       }
     } catch (error: any) {
       console.error("Error fetching attendance report:", error);
-      Alert.alert(
+      ConfirmModal.alert(
         "Error",
         error?.message || "Failed to fetch attendance report",
       );
@@ -174,7 +174,7 @@ export default function EmpMobileRpt() {
     setShowFromPicker(false);
     if (selectedDate) {
       if (selectedDate > toDate) {
-        Alert.alert("Invalid Date", "From date cannot be after To date");
+        ConfirmModal.alert("Invalid Date", "From date cannot be after To date");
         return;
       }
       setFromDate(selectedDate);
@@ -185,7 +185,7 @@ export default function EmpMobileRpt() {
     setShowToPicker(false);
     if (selectedDate) {
       if (selectedDate < fromDate) {
-        Alert.alert("Invalid Date", "To date cannot be before From date");
+        ConfirmModal.alert("Invalid Date", "To date cannot be before From date");
         return;
       }
       setToDate(selectedDate);

@@ -3,16 +3,8 @@ import { ThemeType } from "@/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import React from "react";
-import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Modal from "@/components/common/SingleModal";
 interface TravelExpenseModalProps {
   visible: boolean;
   theme: ThemeType;
@@ -32,7 +24,6 @@ interface TravelExpenseModalProps {
   setPnr: (val: string) => void;
   setAmount: (val: string) => void;
 }
-
 const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
   visible,
   theme,
@@ -68,7 +59,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
             <Ionicons name="close" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
-
         <ScrollView style={styles.body}>
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: theme.text }]}>Type</Text>
@@ -98,7 +88,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
               </Picker>
             </View>
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: theme.text }]}>
               Boarding Point/Description *
@@ -118,7 +107,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
               placeholderTextColor={theme.placeholder}
             />
           </View>
-
           {travelType !== 0 && (
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: theme.text }]}>
@@ -140,7 +128,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
               />
             </View>
           )}
-
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: theme.text }]}>
               PNR/Ticket Number
@@ -160,7 +147,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
               placeholderTextColor={theme.placeholder}
             />
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: theme.text }]}>Amount *</Text>
             <TextInput
@@ -179,7 +165,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
               keyboardType="numeric"
             />
           </View>
-
           <View style={[styles.footer, { borderTopColor: theme.inputBorder }]}>
             <CustomButton
               title="Cancel"
@@ -209,7 +194,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
     </View>
   </Modal>
 );
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -280,5 +264,4 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 });
-
 export default TravelExpenseModal;

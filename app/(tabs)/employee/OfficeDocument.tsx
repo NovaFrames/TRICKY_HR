@@ -5,24 +5,14 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  PanResponder,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import Alert from "@/components/common/AppAlert";
+import { ActivityIndicator, FlatList, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { useTheme } from "../../../context/ThemeContext";
 import { useUser } from "../../../context/UserContext";
 import ApiService from "../../../services/ApiService";
-
+import Modal from "@/components/common/SingleModal";
 interface Document {
   NameC: string;
   LastWriteTimeC: string;
@@ -30,13 +20,11 @@ interface Document {
   FileNameC?: string;
   IconC?: string;
 }
-
 interface DocumentRoute {
   key: string;
   title: string;
   folderName: string | null;
 }
-
 const OfficeDocument: React.FC<any> = ({ navigation }) => {
   const { theme } = useTheme();
   const { user } = useUser();
@@ -51,18 +39,14 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
   const [domain, setDomain] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
-
   useEffect(() => {
     fetchDocumentsByTab(index);
   }, [index]);
-
   const fetchDocumentsByTab = async (tabIndex: number) => {
     setLoading(true);
     setError(null);
-
     try {
       let result;
-
       if (tabIndex === 0) {
         // Office Docs tab
         result = await ApiService.getOfficeDocuments("OfficeDoc");
@@ -84,15 +68,12 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       setLoading(false);
     }
   };
-
   useProtectedBack({
     home: "/home",
   });
-
   const fetchDocuments = () => {
     return fetchDocumentsByTab;
   };
-
   useEffect(() => {
     const fetchDomain = async () => {
       const domainUrl = await getDomainUrl();
@@ -100,7 +81,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
     };
     fetchDomain();
   }, [user]);
-
   const constructDownloadUrl = (fileName: string) => {
     // console.log("File Name: ", fileName);
     const customerId = user?.CustomerIdC || "kevit";
@@ -114,7 +94,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       ? `${domain}/kevit-Customer/${customerId}/${companyId}/OfficeDoc/${empId}/${encodeURIComponent(fileName)}`
       : `${domain}/kevit-Customer/${customerId}/CompanyPolicies/${fileName}`;
   };
-
   const handleDownloadedFile = async (
     url: string,
     shouldShare: boolean = false,
@@ -123,12 +102,9 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       if (!url) {
         throw new Error("Download URL is empty");
       }
-
       const fileName = `Document_${new Date().getTime()}.pdf`; // Or extract extension
       const fileUri = FileSystem.documentDirectory + fileName;
-
       console.log("Starting download from URL:", url);
-
       // 1. If explicit "Download" on Android -> Use Storage Access Framework
       if (!shouldShare && Platform.OS === "android") {
         const permissions =
@@ -137,7 +113,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
           const downloadRes = await FileSystem.downloadAsync(url, fileUri);
           if (downloadRes.status !== 200)
             throw new Error("Failed to download temp file");
-
           const base64 = await FileSystem.readAsStringAsync(downloadRes.uri, {
             encoding: FileSystem.EncodingType.Base64,
           });
@@ -150,50 +125,44 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
           await FileSystem.writeAsStringAsync(createdUri, base64, {
             encoding: FileSystem.EncodingType.Base64,
           });
-
-          Alert.alert("Success", "File captured to selected folder.");
+          ConfirmModal.alert("Success", "File captured to selected folder.");
           return;
         } else {
           return;
         }
       }
-
       // 2. Default logic
       const downloadRes = await FileSystem.downloadAsync(url, fileUri);
-
       if (downloadRes.status === 200) {
         if (shouldShare) {
           const isAvailable = await Sharing.isAvailableAsync();
           if (isAvailable) {
             await Sharing.shareAsync(downloadRes.uri);
           } else {
-            Alert.alert("Success", "File downloaded to: " + downloadRes.uri);
+            ConfirmModal.alert("Success", "File downloaded to: " + downloadRes.uri);
           }
         } else {
-          Alert.alert("Success", "File downloaded successfully.");
+          ConfirmModal.alert("Success", "File downloaded successfully.");
         }
       } else {
         throw new Error(`Download failed with status: ${downloadRes.status}`);
       }
     } catch (error: any) {
       console.error("Error downloading file:", error);
-      Alert.alert(
+      ConfirmModal.alert(
         "Download Error",
         error?.message || "Could not download the file.",
       );
     }
   };
-
   const handleDocumentPress = async (document: Document) => {
     const url = constructDownloadUrl(document.NameC);
     // Directly open viewer
     setViewingUrl(url);
   };
-
   const handleShareFromPreview = async (url: string) => {
     if (url) await handleDownloadedFile(url, true);
   };
-
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return "";
@@ -210,7 +179,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       return dateString;
     }
   };
-
   const renderDocumentItem = ({ item }: { item: Document }) => (
     <TouchableOpacity
       style={[styles.documentItem, { backgroundColor: theme.cardBackground }]}
@@ -223,7 +191,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
           color={theme.primary}
         />
       </View>
-
       <View style={styles.documentInfo}>
         <Text
           style={[styles.documentName, { color: theme.text }]}
@@ -235,13 +202,11 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
           Modified: {formatDate(item.LastWriteTimeC)}
         </Text>
       </View>
-
       <View style={styles.documentAction}>
         <Ionicons name="eye-outline" size={24} color={theme.icon} />
       </View>
     </TouchableOpacity>
   );
-
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="folder-open-outline" size={80} color={theme.icon} />
@@ -253,14 +218,11 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       </Text>
     </View>
   );
-
   useEffect(() => {
     console.log("Current Index: ", index);
   }, [index]);
-
   const isImage = (url: string) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
   const isHtml = (url: string) => /\.(html|htm)$/i.test(url);
-
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -278,7 +240,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       },
     }),
   ).current;
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Office Documents" />
@@ -308,7 +269,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
           )}
         />
       </View>
-
       <View
         style={{ flex: 1, paddingHorizontal: 16 }}
         {...panResponder.panHandlers}
@@ -353,7 +313,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
           }
         />
       </View>
-
       <Modal
         visible={!!viewingUrl}
         transparent={true}
@@ -368,7 +327,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
             >
               <Ionicons name="close" size={24} color="white" />
             </TouchableOpacity>
-
             <Text
               style={{
                 color: "white",
@@ -379,7 +337,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
             >
               Document Preview
             </Text>
-
             {index === 0 && (
               <View style={{ flexDirection: "row", gap: 16 }}>
                 <TouchableOpacity
@@ -439,7 +396,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -564,5 +520,4 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
-
 export default OfficeDocument;

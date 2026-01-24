@@ -1,5 +1,5 @@
 // LeaveApply.tsx
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
@@ -83,10 +83,10 @@ const LeaveApply: React.FC = () => {
         }
       } else {
         console.log("Leave API failed:", result.error);
-        Alert.alert("Error", result.error || "Failed to load leave data");
+        ConfirmModal.alert("Error", result.error || "Failed to load leave data");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to load leave data");
+      ConfirmModal.alert("Error", "Failed to load leave data");
     } finally {
       setLoading(false);
     }

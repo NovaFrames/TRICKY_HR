@@ -1,16 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useTheme } from '../../context/ThemeContext';
-
+import Modal from "@/components/common/SingleModal";
 interface ServiceDetail {
     WHC: string;          // Work Hours
     PartCodeC: string;    // Part Code
@@ -18,14 +10,12 @@ interface ServiceDetail {
     QtyN: number;         // Quantity
     UnitN: number;        // Unit Price
 }
-
 interface ServiceDetailsModalProps {
     visible: boolean;
     onClose: () => void;
     onSave: (detail: ServiceDetail) => void;
     editingDetail?: ServiceDetail | null;
 }
-
 export default function ServiceDetailsModal({
     visible,
     onClose,
@@ -33,13 +23,11 @@ export default function ServiceDetailsModal({
     editingDetail,
 }: ServiceDetailsModalProps) {
     const { theme } = useTheme();
-
     const [workHours, setWorkHours] = useState('');
     const [partCode, setPartCode] = useState('');
     const [partDescription, setPartDescription] = useState('');
     const [quantity, setQuantity] = useState('');
     const [unit, setUnit] = useState('');
-
     useEffect(() => {
         if (visible) {
             if (editingDetail) {
@@ -53,7 +41,6 @@ export default function ServiceDetailsModal({
             }
         }
     }, [visible, editingDetail]);
-
     const clearForm = () => {
         setWorkHours('');
         setPartCode('');
@@ -61,14 +48,12 @@ export default function ServiceDetailsModal({
         setQuantity('');
         setUnit('');
     };
-
     const handleSave = () => {
         // Check if all fields are empty
         if (!workHours && !partCode && !partDescription && !quantity && !unit) {
             onClose();
             return;
         }
-
         const detail: ServiceDetail = {
             WHC: workHours.trim(),
             PartCodeC: partCode.trim(),
@@ -76,12 +61,10 @@ export default function ServiceDetailsModal({
             QtyN: quantity ? parseInt(quantity) : 0,
             UnitN: unit ? parseFloat(unit) : 0,
         };
-
         onSave(detail);
         clearForm();
         onClose();
     };
-
     return (
         <Modal
             visible={visible}
@@ -100,7 +83,6 @@ export default function ServiceDetailsModal({
                             <Ionicons name="close" size={24} color={theme.text} />
                         </TouchableOpacity>
                     </View>
-
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {/* W/H (Work Hours) */}
                         <View style={styles.fieldContainer}>
@@ -117,7 +99,6 @@ export default function ServiceDetailsModal({
                                 onChangeText={setWorkHours}
                             />
                         </View>
-
                         {/* Part Code */}
                         <View style={styles.fieldContainer}>
                             <Text style={[styles.label, { color: theme.text }]}>Part Code</Text>
@@ -133,7 +114,6 @@ export default function ServiceDetailsModal({
                                 onChangeText={setPartCode}
                             />
                         </View>
-
                         {/* Part Description */}
                         <View style={styles.fieldContainer}>
                             <Text style={[styles.label, { color: theme.text }]}>Part Description</Text>
@@ -151,7 +131,6 @@ export default function ServiceDetailsModal({
                                 numberOfLines={3}
                             />
                         </View>
-
                         {/* Quantity */}
                         <View style={styles.fieldContainer}>
                             <Text style={[styles.label, { color: theme.text }]}>Quantity</Text>
@@ -168,7 +147,6 @@ export default function ServiceDetailsModal({
                                 keyboardType="numeric"
                             />
                         </View>
-
                         {/* Unit */}
                         <View style={styles.fieldContainer}>
                             <Text style={[styles.label, { color: theme.text }]}>Unit</Text>
@@ -185,7 +163,6 @@ export default function ServiceDetailsModal({
                                 keyboardType="decimal-pad"
                             />
                         </View>
-
                         {/* Save Button */}
                         <TouchableOpacity
                             style={[styles.saveButton, { backgroundColor: theme.primary }]}
@@ -199,7 +176,6 @@ export default function ServiceDetailsModal({
         </Modal>
     );
 }
-
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,

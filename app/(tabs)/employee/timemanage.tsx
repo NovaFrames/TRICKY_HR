@@ -1,23 +1,13 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import DatePicker from "@/components/DatePicker";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import { BACK_FALLBACKS } from "@/components/Header";
 import {
@@ -27,14 +17,12 @@ import {
 } from "@/constants/timeFormat";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import TimeRequestModal from "../../../components/TimeManage/TimeRequestModal";
+import Modal from "@/components/common/SingleModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
-
 /* ---------------- CONSTANTS ---------------- */
-
 const ROW_HEIGHT = 44;
 const TABLE_WIDTH = 780;
-
 const TIME_COLUMNS: ColumnDef[] = [
   {
     key: "DateD",
@@ -116,38 +104,29 @@ const TIME_COLUMNS: ColumnDef[] = [
     formatter: (v) => formatTimeNumber(v),
   },
 ];
-
 /* ---------------- COMPONENT ---------------- */
-
 export default function TimeManage() {
   const { theme } = useTheme();
   const router = useRouter();
-
   const [timeData, setTimeData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
-
   const today = new Date();
   const tenDaysAgo = new Date();
   tenDaysAgo.setDate(today.getDate() - 10);
-
   const [fromDate, setFromDate] = useState(tenDaysAgo);
   const [toDate, setToDate] = useState(today);
-
   useProtectedBack({
     home: "/home",
     settings: "/settings",
     dashboard: "/dashboard",
   });
-
   React.useEffect(() => {
     setToDate(new Date());
   }, [fromDate]);
-
   /* ---------------- API ---------------- */
-
   const fetchTimeData = async () => {
     setLoading(true);
     try {
@@ -161,11 +140,9 @@ export default function TimeManage() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchTimeData();
   }, [fromDate, toDate]);
-
   const handleDownloadedFile = async (
     url: string,
     shouldShare: boolean = false,
@@ -174,14 +151,11 @@ export default function TimeManage() {
       if (!url) {
         throw new Error("Download URL is empty");
       }
-
       // Define temp path for sharing or iOS download logic
       const fileName = `TimeReport_${new Date().getTime()}.pdf`;
       const fileUri = FileSystem.documentDirectory + fileName;
-
       // Log details
       // console.log("Starting download from URL:", url);
-
       // 1. If explicit "Download" on Android -> Use Storage Access Framework to save to user's folder
       if (!shouldShare && Platform.OS === "android") {
         const permissions =
@@ -191,12 +165,10 @@ export default function TimeManage() {
           const downloadRes = await FileSystem.downloadAsync(url, fileUri);
           if (downloadRes.status !== 200)
             throw new Error("Failed to download temp file");
-
           // Read content
           const base64 = await FileSystem.readAsStringAsync(downloadRes.uri, {
             encoding: FileSystem.EncodingType.Base64,
           });
-
           // Create file in user's chosen directory
           const createdUri =
             await FileSystem.StorageAccessFramework.createFileAsync(
@@ -204,26 +176,21 @@ export default function TimeManage() {
               fileName,
               "application/pdf",
             );
-
           // Write content
           await FileSystem.writeAsStringAsync(createdUri, base64, {
             encoding: FileSystem.EncodingType.Base64,
           });
-
-          Alert.alert("Success", "File saved successfully to selected folder.");
+          ConfirmModal.alert("Success", "File saved successfully to selected folder.");
           return;
         } else {
           // User cancelled or denied permission
           return;
         }
       }
-
       // 2. Default logic: Download to app document directory (for Sharing or iOS)
       const downloadRes = await FileSystem.downloadAsync(url, fileUri);
-
       if (downloadRes.status === 200) {
         console.log("Download complete:", downloadRes.uri);
-
         if (shouldShare) {
           const isAvailable = await Sharing.isAvailableAsync();
           if (isAvailable) {
@@ -233,64 +200,56 @@ export default function TimeManage() {
               UTI: "com.adobe.pdf",
             });
           } else {
-            Alert.alert("Success", "File downloaded to: " + downloadRes.uri);
+            ConfirmModal.alert("Success", "File downloaded to: " + downloadRes.uri);
           }
         } else {
-          Alert.alert("Success", "File downloaded successfully.");
+          ConfirmModal.alert("Success", "File downloaded successfully.");
         }
       } else {
         throw new Error(`Download failed with status: ${downloadRes.status}`);
       }
     } catch (error: any) {
       console.error("Error downloading file:", error);
-      Alert.alert(
+      ConfirmModal.alert(
         "Download Error",
         error?.message || "Could not download the file.",
       );
     }
   };
-
   const validateAndGetDates = () => {
     if (toDate < fromDate) {
-      Alert.alert("Error", "To date must be greater than From date");
+      ConfirmModal.alert("Error", "To date must be greater than From date");
       return null;
     }
-
     const diffTime = Math.abs(toDate.getTime() - fromDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
     if (diffDays > 31) {
-      Alert.alert("Error", "Total days must be less than 31 days");
+      ConfirmModal.alert("Error", "Total days must be less than 31 days");
       return null;
     }
-
     return {
       fromDateStr: formatDateForApi(fromDate),
       toDateStr: formatDateForApi(toDate),
     };
   };
-
   const handleShare = async () => {
     const dates = validateAndGetDates();
     if (!dates) return;
-
     setDownloading(true);
-
     try {
       // console.log("Downloading report for sharing:", dates);
       const result = await ApiService.downloadTimeReport(
         dates.fromDateStr,
         dates.toDateStr,
       );
-
       if (result.success && result.url) {
         await handleDownloadedFile(result.url, true);
       } else {
         const errorMsg = result.error || "Failed to download report";
-        Alert.alert("Download Failed", errorMsg);
+        ConfirmModal.alert("Download Failed", errorMsg);
       }
     } catch (error: any) {
-      Alert.alert(
+      ConfirmModal.alert(
         "Error",
         error?.message || "Download failed. Please try again.",
       );
@@ -298,28 +257,24 @@ export default function TimeManage() {
       setDownloading(false);
     }
   };
-
   const handleView = async () => {
     const dates = validateAndGetDates();
     if (!dates) return;
-
     setDownloading(true);
-
     try {
       // console.log("Downloading report for viewing:", dates);
       const result = await ApiService.downloadTimeReport(
         dates.fromDateStr,
         dates.toDateStr,
       );
-
       if (result.success && result.url) {
         setViewingUrl(result.url);
       } else {
         const errorMsg = result.error || "Failed to open report";
-        Alert.alert("View Failed", errorMsg);
+        ConfirmModal.alert("View Failed", errorMsg);
       }
     } catch (error: any) {
-      Alert.alert(
+      ConfirmModal.alert(
         "Error",
         error?.message || "Failed to open report. Please try again.",
       );
@@ -327,9 +282,7 @@ export default function TimeManage() {
       setDownloading(false);
     }
   };
-
   const { from } = useLocalSearchParams<{ from?: string }>();
-
   const handleBack = () => {
     if (typeof from === "string" && BACK_FALLBACKS[from]) {
       router.replace(BACK_FALLBACKS[from]);
@@ -337,22 +290,17 @@ export default function TimeManage() {
     }
     router.back();
   };
-
   /* ---------------- HEADER ---------------- */
-
   const renderHeader = () => (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-
       <View style={styles.navBar}>
         <TouchableOpacity onPress={() => handleBack()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
-
         <Text style={[styles.navTitle, { color: theme.text }]}>
           Time Management
         </Text>
-
         <View style={{ flexDirection: "row", gap: 16 }}>
           <TouchableOpacity onPress={handleView} disabled={downloading}>
             {downloading ? (
@@ -365,7 +313,6 @@ export default function TimeManage() {
               />
             )}
           </TouchableOpacity>
-
           <TouchableOpacity onPress={handleShare} disabled={downloading}>
             <Ionicons
               name="share-social-outline"
@@ -375,7 +322,6 @@ export default function TimeManage() {
           </TouchableOpacity>
         </View>
       </View>
-
       <View style={styles.datePickerSection}>
         <DatePicker
           fromDate={fromDate}
@@ -385,39 +331,31 @@ export default function TimeManage() {
       </View>
     </>
   );
-
   /* ---------------- RENDER ---------------- */
-
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {renderHeader()}
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {/* <View style={{ width: TABLE_WIDTH }}> */}
-
         <DynamicTable
           data={timeData}
           columns={TIME_COLUMNS} // remove this to auto-generate
           theme={theme}
           tableWidth={900}
         />
-
         {/* </View> */}
       </ScrollView>
-
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.primary }]}
         onPress={() => setShowRequestModal(true)}
       >
         <Ionicons name="add" size={30} color="#fff" />
       </TouchableOpacity>
-
       <TimeRequestModal
         visible={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         onSuccess={fetchTimeData}
       />
-
       {/* PDF Viewer Modal */}
       <Modal
         visible={!!viewingUrl}
@@ -485,28 +423,22 @@ export default function TimeManage() {
     </View>
   );
 }
-
 /* ---------------- STYLES ---------------- */
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-
   navBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 12,
     alignItems: "center",
   },
-
   navTitle: {
     fontSize: 17,
     fontWeight: "700",
   },
-
   datePickerSection: {
     paddingHorizontal: 8,
   },
-
   tableRow: {
     flexDirection: "row",
     height: ROW_HEIGHT,
@@ -514,28 +446,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#e5e7eb",
   },
-
   headerRow: {
     borderBottomWidth: 2,
   },
-
   cell: {
     justifyContent: "center",
     paddingHorizontal: 8,
     borderRightWidth: 1,
     borderColor: "#e5e7eb",
   },
-
   headerText: {
     fontSize: 12,
     fontWeight: "700",
   },
-
   cellText: {
     fontSize: 11,
     fontWeight: "500",
   },
-
   fab: {
     position: "absolute",
     bottom: 60,

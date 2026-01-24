@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import CenterModalSelection from "../../../components/common/CenterModalSelection";
 import { CustomButton } from "../../../components/CustomButton";
 import AttenderSignatureModal from "../../../components/ServiceReport/AttenderSignatureModal";
@@ -127,10 +127,10 @@ export default function ServiceReport() {
             .map((st: any) => ({ ...st, selected: false })),
         );
       } else {
-        Alert.alert("Error", result.error || "Failed to fetch client list");
+        ConfirmModal.alert("Error", result.error || "Failed to fetch client list");
       }
     } catch (error: any) {
-      Alert.alert("Error", error?.message || "Failed to fetch client list");
+      ConfirmModal.alert("Error", error?.message || "Failed to fetch client list");
     } finally {
       setLoading(false);
     }
@@ -178,39 +178,39 @@ export default function ServiceReport() {
 
   const handleSubmit = async () => {
     if (!selectedClient) {
-      Alert.alert("Error", "Please select a client");
+      ConfirmModal.alert("Error", "Please select a client");
       return;
     }
     if (!ticketNumber.trim()) {
-      Alert.alert("Error", "Please enter ticket number");
+      ConfirmModal.alert("Error", "Please enter ticket number");
       return;
     }
     if (selectedServiceTypes.length === 0) {
-      Alert.alert("Error", "Please select at least one service type");
+      ConfirmModal.alert("Error", "Please select at least one service type");
       return;
     }
     if (selectedServiceStatus.length === 0) {
-      Alert.alert("Error", "Please select service status");
+      ConfirmModal.alert("Error", "Please select service status");
       return;
     }
     if (faultDescription.length < 10) {
-      Alert.alert("Error", "Fault description must be at least 10 characters");
+      ConfirmModal.alert("Error", "Fault description must be at least 10 characters");
       return;
     }
     if (actionTaken.length < 10) {
-      Alert.alert("Error", "Action taken must be at least 10 characters");
+      ConfirmModal.alert("Error", "Action taken must be at least 10 characters");
       return;
     }
     if (!attendeeSignature) {
-      Alert.alert("Error", "Attendee signature is required");
+      ConfirmModal.alert("Error", "Attendee signature is required");
       return;
     }
     if (!clientSignature) {
-      Alert.alert("Error", "Client signature is required");
+      ConfirmModal.alert("Error", "Client signature is required");
       return;
     }
 
-    Alert.alert(
+    ConfirmModal.alert(
       "Confirm Submission",
       "Are you sure you want to submit this service report?",
       [
@@ -245,14 +245,14 @@ export default function ServiceReport() {
       });
 
       if (result.success) {
-        Alert.alert("Success", "Service report submitted successfully", [
+        ConfirmModal.alert("Success", "Service report submitted successfully", [
           { text: "OK", onPress: () => router.back() },
         ]);
       } else {
-        Alert.alert("Error", result.error || "Failed to submit service report");
+        ConfirmModal.alert("Error", result.error || "Failed to submit service report");
       }
     } catch (error: any) {
-      Alert.alert("Error", error?.message || "Failed to submit service report");
+      ConfirmModal.alert("Error", error?.message || "Failed to submit service report");
     } finally {
       setSubmitting(false);
     }
@@ -269,7 +269,7 @@ export default function ServiceReport() {
   };
 
   const handleDeleteServiceDetail = (index: number) => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Delete Service Detail",
       "Are you sure you want to delete this service detail?",
       [

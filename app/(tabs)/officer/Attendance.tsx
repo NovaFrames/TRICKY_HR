@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 // Types for Attendance Data
 export interface AttendanceShift {
@@ -105,7 +105,7 @@ export default function AttendanceList() {
     const today = normalizeDate(new Date());
 
     if (selectedDate > today) {
-      Alert.alert("Invalid Date", "Future dates are not allowed");
+      ConfirmModal.alert("Invalid Date", "Future dates are not allowed");
       setSelectedDate(today);
       return;
     }
@@ -130,7 +130,7 @@ export default function AttendanceList() {
       }
     } catch (error) {
       console.error("Fetch Attendance Error:", error);
-      Alert.alert("Error", "Failed to fetch attendance records.");
+      ConfirmModal.alert("Error", "Failed to fetch attendance records.");
     } finally {
       setLoading(false);
     }

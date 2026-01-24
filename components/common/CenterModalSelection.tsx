@@ -2,22 +2,14 @@ import { lockAndroidNavigationBar } from "@/utils/systemUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as NavigationBar from "expo-navigation-bar";
 import React, { useEffect } from "react";
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-
+import Modal from "@/components/common/SingleModal";
 interface Option {
   label: string;
   value: any;
   subLabel?: string;
 }
-
 interface CenterModalSelectionProps {
   visible: boolean;
   onClose: () => void;
@@ -26,7 +18,6 @@ interface CenterModalSelectionProps {
   title?: string;
   selectedValue?: any;
 }
-
 const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
   visible,
   onClose,
@@ -36,7 +27,6 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
   selectedValue,
 }) => {
   const { theme, isDark } = useTheme();
-
   useEffect(() => {
     if (!visible) return;
     void NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
@@ -44,21 +34,16 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
       void NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
     };
   }, [visible, theme.background, isDark]);
-
   useEffect(() => {
     if (!visible) return;
-
     // LOCK nav bar when modal opens
     lockAndroidNavigationBar(theme.background, isDark);
-
     return () => {
       // RESTORE nav bar when modal closes
       lockAndroidNavigationBar(theme.background, isDark);
     };
   }, [visible, isDark, theme.background]);
-
   if (!visible) return null;
-
   return (
     <Modal
       transparent
@@ -74,7 +59,6 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
           onPress={onClose}
           style={styles.backdrop}
         />
-
         <View
           style={[
             styles.modalContainer,
@@ -92,7 +76,6 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
               <Ionicons name="close" size={24} color={theme.icon} />
             </TouchableOpacity>
           </View>
-
           {/* Options List */}
           <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
             {options.map((option, index) => {
@@ -149,7 +132,6 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
     </Modal>
   );
 };
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -212,5 +194,4 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
-
 export default CenterModalSelection;

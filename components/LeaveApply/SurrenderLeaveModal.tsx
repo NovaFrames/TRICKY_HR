@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, { SurrenderData } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
@@ -50,13 +50,13 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
       if (result.success && result.eligLeave !== undefined) {
         setEligibleDays(result.eligLeave || 10);
       } else {
-        Alert.alert(
+        ConfirmModal.alert(
           "Error",
           result.error || "Failed to check surrender eligibility",
         );
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to check surrender eligibility");
+      ConfirmModal.alert("Error", "Failed to check surrender eligibility");
     } finally {
       setCheckingEligibility(false);
     }
@@ -72,15 +72,15 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
   const validateForm = (): boolean => {
     const days = parseFloat(surrenderDays);
     if (isNaN(days) || days <= 0) {
-      Alert.alert("Error", "Please enter valid surrender days");
+      ConfirmModal.alert("Error", "Please enter valid surrender days");
       return false;
     }
     if (days > eligibleDays) {
-      Alert.alert("Error", `Cannot surrender more than ${eligibleDays} days`);
+      ConfirmModal.alert("Error", `Cannot surrender more than ${eligibleDays} days`);
       return false;
     }
     if (remarks.trim().length < 10) {
-      Alert.alert("Error", "Remarks must be at least 10 characters");
+      ConfirmModal.alert("Error", "Remarks must be at least 10 characters");
       return false;
     }
     return true;
@@ -98,14 +98,14 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
       };
       const result = await ApiService.submitSurrender(surrenderData);
       if (result.success) {
-        Alert.alert("Success", "Request submitted successfully!", [
+        ConfirmModal.alert("Success", "Request submitted successfully!", [
           { text: "OK", onPress: onSuccess },
         ]);
       } else {
-        Alert.alert("Error", result.error || "Failed to submit request");
+        ConfirmModal.alert("Error", result.error || "Failed to submit request");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to submit request");
+      ConfirmModal.alert("Error", "Failed to submit request");
     } finally {
       setLoading(false);
     }

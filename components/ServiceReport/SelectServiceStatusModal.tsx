@@ -1,22 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import {
-    FlatList,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from '../../context/ThemeContext';
-
+import Modal from "@/components/common/SingleModal";
 interface ServiceStatus {
     IdN: number;
     NameC: string;
     selected: boolean;
 }
-
 interface SelectServiceStatusModalProps {
     visible: boolean;
     serviceStatus: ServiceStatus[];
@@ -24,7 +15,6 @@ interface SelectServiceStatusModalProps {
     onClose: () => void;
     onDone: (selectedIds: number[]) => void;
 }
-
 export default function SelectServiceStatusModal({
     visible,
     serviceStatus,
@@ -34,19 +24,16 @@ export default function SelectServiceStatusModal({
 }: SelectServiceStatusModalProps) {
     const { theme } = useTheme();
     const [tempSelected, setTempSelected] = useState<number[]>(selectedIds);
-
     React.useEffect(() => {
         if (visible) {
             setTempSelected(selectedIds);
         }
     }, [visible, selectedIds]);
-
     const toggleSelection = (id: number) => {
         // Handle mutual exclusion for IDs 101 and 102
         if (id === 101 || id === 102) {
             const otherStatusId = id === 101 ? 102 : 101;
             const newSelected = tempSelected.filter(item => item !== otherStatusId);
-
             if (tempSelected.includes(id)) {
                 setTempSelected(newSelected.filter(item => item !== id));
             } else {
@@ -60,15 +47,12 @@ export default function SelectServiceStatusModal({
             }
         }
     };
-
     const handleDone = () => {
         onDone(tempSelected);
         onClose();
     };
-
     const renderItem = ({ item }: { item: ServiceStatus }) => {
         const isSelected = tempSelected.includes(item.IdN);
-
         return (
             <Pressable
                 style={[styles.item, { borderBottomColor: theme.inputBorder }]}
@@ -83,7 +67,6 @@ export default function SelectServiceStatusModal({
             </Pressable>
         );
     };
-
     return (
         <Modal
             visible={visible}
@@ -100,7 +83,6 @@ export default function SelectServiceStatusModal({
                         style={styles.list}
                         showsVerticalScrollIndicator={false}
                     />
-
                     <TouchableOpacity
                         style={[styles.doneButton, { backgroundColor: theme.primary }]}
                         onPress={handleDone}
@@ -112,7 +94,6 @@ export default function SelectServiceStatusModal({
         </Modal>
     );
 }
-
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,

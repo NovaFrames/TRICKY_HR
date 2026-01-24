@@ -4,37 +4,24 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
-import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import Alert from "@/components/common/AppAlert";
+import { ActivityIndicator, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { WebView } from "react-native-webview";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { PaySlip } from "../../../services/ApiService";
-
+import Modal from "@/components/common/SingleModal";
 export default function PayslipScreen() {
   const { theme, isDark } = useTheme();
   const [payslips, setPayslips] = useState<PaySlip[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
-
   useEffect(() => {
     loadPayslips();
   }, []);
-
   useProtectedBack({
     home: "/home",
   });
-
   const loadPayslips = async () => {
     try {
       setLoading(true);
@@ -45,7 +32,7 @@ export default function PayslipScreen() {
         // Silent fail or empty handling
       }
     } catch (error) {
-      Alert.alert(
+      ConfirmModal.alert(
         "Error",
         "An unexpected error occurred while fetching payslips",
       );
@@ -53,17 +40,14 @@ export default function PayslipScreen() {
       setLoading(false);
     }
   };
-
   const handleDownloadedFile = async (
     url: string,
     shouldShare: boolean = false,
   ) => {
     try {
       if (!url) throw new Error("Download URL is empty");
-
       const fileName = `PaySlip_${new Date().getTime()}.pdf`;
       const fileUri = FileSystem.documentDirectory + fileName;
-
       // 1. If explicit "Download" on Android -> Use Storage Access Framework
       if (!shouldShare && Platform.OS === "android") {
         const permissions =
@@ -72,7 +56,6 @@ export default function PayslipScreen() {
           const downloadRes = await FileSystem.downloadAsync(url, fileUri);
           if (downloadRes.status !== 200)
             throw new Error("Failed to download temp file");
-
           const base64 = await FileSystem.readAsStringAsync(downloadRes.uri, {
             encoding: FileSystem.EncodingType.Base64,
           });
@@ -85,14 +68,12 @@ export default function PayslipScreen() {
           await FileSystem.writeAsStringAsync(createdUri, base64, {
             encoding: FileSystem.EncodingType.Base64,
           });
-
-          Alert.alert("Success", "File saved successfully.");
+          ConfirmModal.alert("Success", "File saved successfully.");
           return;
         } else {
           return; // User cancelled
         }
       }
-
       // 2. Default logic (iOS or Sharing)
       const downloadRes = await FileSystem.downloadAsync(url, fileUri);
       if (downloadRes.status === 200) {
@@ -106,17 +87,16 @@ export default function PayslipScreen() {
             });
           }
         } else {
-          Alert.alert("Success", "File downloaded successfully.");
+          ConfirmModal.alert("Success", "File downloaded successfully.");
         }
       } else {
         throw new Error(`Download failed with status: ${downloadRes.status}`);
       }
     } catch (error: any) {
       console.error("Download Error", error);
-      Alert.alert("Error", error?.message || "Download failed");
+      ConfirmModal.alert("Error", error?.message || "Download failed");
     }
   };
-
   const handleViewPdf = async (item: PaySlip) => {
     try {
       setDownloading(true);
@@ -124,18 +104,17 @@ export default function PayslipScreen() {
       if (response.success && response.url) {
         setViewingUrl(response.url);
       } else {
-        Alert.alert(
+        ConfirmModal.alert(
           "Error",
           response.error || "Failed to generate payslip link",
         );
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to open payslip");
+      ConfirmModal.alert("Error", "Failed to open payslip");
     } finally {
       setDownloading(false);
     }
   };
-
   const months = [
     "Jan",
     "Feb",
@@ -150,13 +129,11 @@ export default function PayslipScreen() {
     "Nov",
     "Dec",
   ];
-
   const renderItem = ({ item, index }: { item: PaySlip; index: number }) => {
     const monthIndex = item.MonthN - 1;
     const monthName =
       monthIndex >= 0 && monthIndex < months.length ? months[monthIndex] : "";
     const payPeriod = `${monthName} ${item.YearN}`;
-
     // Use theme-aware background colors.
     // In light mode, maintain the requested alternating colors (#F9FDFF / #ffffff).
     // In dark mode, use theme background/card colors.
@@ -167,7 +144,6 @@ export default function PayslipScreen() {
     } else {
       backgroundColor = index % 2 === 0 ? "#F9FDFF" : "#ffffff";
     }
-
     return (
       <View
         style={[
@@ -195,11 +171,9 @@ export default function PayslipScreen() {
       </View>
     );
   };
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="PaySlip" />
-
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.primary || "#00A3E0"} />
@@ -224,7 +198,6 @@ export default function PayslipScreen() {
           }}
         />
       )}
-
       {/* PDF Viewer Modal */}
       <Modal
         visible={!!viewingUrl}
@@ -250,7 +223,6 @@ export default function PayslipScreen() {
             >
               Payslip Preview
             </Text>
-
             <View style={{ flexDirection: "row" }}>
               <TouchableOpacity
                 onPress={() =>
@@ -301,7 +273,6 @@ export default function PayslipScreen() {
           </View>
         </SafeAreaView>
       </Modal>
-
       {downloading && (
         <View style={styles.loadingOverlay}>
           <View
@@ -323,7 +294,6 @@ export default function PayslipScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

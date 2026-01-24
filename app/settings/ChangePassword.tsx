@@ -17,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 export default function ChangePassword() {
   const { theme } = useTheme();
@@ -40,28 +40,28 @@ export default function ChangePassword() {
 
   const validateForm = () => {
     if (!formData.oldPassword.trim()) {
-      Alert.alert("Validation Error", "Old password is required");
+      ConfirmModal.alert("Validation Error", "Old password is required");
       return false;
     }
 
     if (!formData.newPassword.trim()) {
-      Alert.alert("Validation Error", "New password is required");
+      ConfirmModal.alert("Validation Error", "New password is required");
       return false;
     }
 
     if (!formData.confirmPassword.trim()) {
-      Alert.alert("Validation Error", "Please confirm your new password");
+      ConfirmModal.alert("Validation Error", "Please confirm your new password");
       return false;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      Alert.alert("Validation Error", "New passwords do not match");
+      ConfirmModal.alert("Validation Error", "New passwords do not match");
       return false;
     }
 
     // Optional: Add minimum password length validation
     // if (formData.newPassword.length < 7) {
-    //     Alert.alert('Validation Error', 'Password is too short. Minimum 7 characters required');
+    //     ConfirmModal.alert('Validation Error', 'Password is too short. Minimum 7 characters required');
     //     return false;
     // }
 
@@ -79,7 +79,7 @@ export default function ChangePassword() {
       );
 
       if (result.success) {
-        Alert.alert(
+        ConfirmModal.alert(
           "Success",
           "Password changed successfully. Please login again with your new password.",
           [
@@ -94,10 +94,10 @@ export default function ChangePassword() {
           ],
         );
       } else {
-        Alert.alert("Error", result.error || "Failed to change password");
+        ConfirmModal.alert("Error", result.error || "Failed to change password");
       }
     } catch (error: any) {
-      Alert.alert("Error", error.message || "An error occurred");
+      ConfirmModal.alert("Error", error.message || "An error occurred");
     } finally {
       setLoading(false);
     }

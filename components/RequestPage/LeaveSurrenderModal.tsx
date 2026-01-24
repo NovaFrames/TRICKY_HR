@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -73,7 +73,7 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
   }, [visible, item]);
 
   const handleCancelRequest = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Cancel Request",
       "Are you sure you want to cancel this leave surrender request?",
       [
@@ -94,20 +94,20 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
               );
 
               if (result.success) {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Success",
                   "Leave surrender request cancelled successfully",
                 );
                 onClose();
                 onRefresh?.();
               } else {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Error",
                   result.error || "Failed to cancel leave surrender request.",
                 );
               }
             } catch (error: any) {
-              Alert.alert(
+              ConfirmModal.alert(
                 "Error",
                 error.message || "An unexpected error occurred.",
               );

@@ -17,7 +17,7 @@ FolderName: category === 'All' ? '' : category,
 ## Step 2: Update app/(tabs)/employee/empdocument.tsx
 
 ### Find the fetchDocuments function (around line 66-78):
-Note: use `Alert` from `@/components/common/AppAlert` instead of `react-native`.
+Note: use `ConfirmModal` from `@/components/common/ConfirmModal` instead of `react-native`.
 
 ### Current Code:
 ```typescript
@@ -27,7 +27,7 @@ const fetchDocuments = async () => {
         const docs = await ApiService.getDocuments();
         setDocuments(docs);
     } catch (error) {
-        Alert.alert('Error', 'Failed to load documents');
+        ConfirmModal.alert('Error', 'Failed to load documents');
         console.error('Error fetching documents:', error);
     } finally {
         setLoading(false);
@@ -53,7 +53,7 @@ const fetchDocuments = async () => {
         setDocuments(docs);
         setFilteredDocuments(docs);
     } catch (error) {
-        Alert.alert('Error', 'Failed to load documents');
+        ConfirmModal.alert('Error', 'Failed to load documents');
         console.error('Error fetching documents:', error);
     } finally {
         setLoading(false);

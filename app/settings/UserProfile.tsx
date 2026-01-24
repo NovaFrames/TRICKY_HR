@@ -9,31 +9,15 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
-import {
-  Animated,
-  Dimensions,
-  Easing,
-  FlatList,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import Alert from "@/components/common/AppAlert";
+import { Animated, Dimensions, Easing, FlatList, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import Modal from "@/components/common/SingleModal";
 const { width } = Dimensions.get("window");
-
 type Nation = {
   NationIdN: number;
   NationNameC: string;
 };
-
 // Helper function to check if an object has meaningful data
 const hasMeaningfulData = (obj: any, fields: string[]): boolean => {
   if (!obj) return false;
@@ -53,7 +37,6 @@ const hasMeaningfulData = (obj: any, fields: string[]): boolean => {
     return true;
   });
 };
-
 // Fields to check for meaningful data in each type
 const CHILD_FIELDS = ["NameC", "BDateD", "StatusN", "HidNationIdN"];
 const EDUCATION_FIELDS = ["EducationC", "CenterC", "YearN"];
@@ -73,20 +56,15 @@ const COMPANY_FIELDS = [
   "ExperienceN",
   "DescC",
 ];
-
 // Filter functions for each type
 const filterMeaningfulChildren = (children: any[]) =>
   children.filter((child) => hasMeaningfulData(child, CHILD_FIELDS));
-
 const filterMeaningfulEducation = (education: any[]) =>
   education.filter((edu) => hasMeaningfulData(edu, EDUCATION_FIELDS));
-
 const filterMeaningfulFamily = (family: any[]) =>
   family.filter((member) => hasMeaningfulData(member, FAMILY_FIELDS));
-
 const filterMeaningfulCompanies = (companies: any[]) =>
   companies.filter((company) => hasMeaningfulData(company, COMPANY_FIELDS));
-
 // CollapsibleCard component
 const CollapsibleCard = ({
   title,
@@ -110,11 +88,9 @@ const CollapsibleCard = ({
     new Animated.Value(isOpen ? 0 : -8),
   ).current;
   const rotateAnim = React.useRef(new Animated.Value(isOpen ? 1 : 0)).current;
-
   useEffect(() => {
     animatedOpacity.stopAnimation();
     animatedTranslate.stopAnimation();
-
     const easing = Easing.out(Easing.cubic);
     Animated.parallel([
       Animated.timing(animatedOpacity, {
@@ -131,12 +107,10 @@ const CollapsibleCard = ({
       }),
     ]).start();
   }, [isOpen]);
-
   const rotateIcon = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "180deg"],
   });
-
   return (
     <View
       style={[
@@ -175,12 +149,10 @@ const CollapsibleCard = ({
             {title}
           </Text>
         </View>
-
         <Animated.View style={{ transform: [{ rotate: rotateIcon }] }}>
           <Ionicons name="chevron-down" size={24} color={theme.primary} />
         </Animated.View>
       </TouchableOpacity>
-
       {/* Content */}
       {isOpen && (
         <Animated.View
@@ -195,7 +167,6 @@ const CollapsibleCard = ({
     </View>
   );
 };
-
 // Reusable component for edit mode array sections
 const EditArraySection = ({
   title,
@@ -226,7 +197,6 @@ const EditArraySection = ({
         style={[styles.addButton, { backgroundColor: theme.primary }]}
       />
     </View>
-
     {data.length > 0 ? (
       data.map((item, index) => (
         <View
@@ -275,7 +245,6 @@ const EditArraySection = ({
     )}
   </View>
 );
-
 const DetailRow = ({
   label,
   value,
@@ -301,7 +270,6 @@ const DetailRow = ({
     )}
   </>
 );
-
 const EditableRow = ({
   label,
   value,
@@ -347,7 +315,6 @@ const EditableRow = ({
     />
   </View>
 );
-
 const DateRow = ({
   label,
   value,
@@ -392,7 +359,6 @@ const DateRow = ({
     </View>
   </TouchableOpacity>
 );
-
 const SelectionRow = ({
   label,
   value,
@@ -434,17 +400,14 @@ const SelectionRow = ({
     </View>
   </TouchableOpacity>
 );
-
 export default function UserProfile() {
   const { theme } = useTheme();
   const { user } = useUser();
-
   const [userData, setUserData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [sameAddress, setSameAddress] = useState(false);
-
   // Collapsible states
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -460,14 +423,12 @@ export default function UserProfile() {
     family: false,
     companies: false,
   });
-
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
   };
-
   // Modal states for selection
   const [showMaritalModal, setShowMaritalModal] = useState(false);
   const [showBloodGroupModal, setShowBloodGroupModal] = useState(false);
@@ -489,13 +450,11 @@ export default function UserProfile() {
     target: null,
     initialDate: new Date(),
   });
-
   // Selection options
   const maritalOptions = [
     { id: 1, label: "Single" },
     { id: 2, label: "Married" },
   ];
-
   const bloodGroupOptions = [
     { id: 1, label: "A+" },
     { id: 2, label: "A-" },
@@ -506,7 +465,6 @@ export default function UserProfile() {
     { id: 7, label: "AB+" },
     { id: 8, label: "AB-" },
   ];
-
   const [formData, setFormData] = useState({
     // Basic Info
     EmpNameC: "",
@@ -514,7 +472,6 @@ export default function UserProfile() {
     LastNameC: "",
     EmailIdC: "",
     PhNoC: "",
-
     // Current Address
     CDoorNoC: "",
     CStreetC: "",
@@ -523,7 +480,6 @@ export default function UserProfile() {
     CStateC: "",
     CPinC: "",
     CNationN: 1,
-
     // Permanent Address
     PDoorNoC: "",
     PStreetC: "",
@@ -532,35 +488,29 @@ export default function UserProfile() {
     PStateC: "",
     PPinC: "",
     PNationN: 1,
-
     // Personal Details
     MaritalN: 1,
     BloodTypeN: 0,
     FatherNameC: "",
     MotherNameC: "",
-
     // Spouse Details
     MarriedDateD: "",
     SpouseNameC: "",
     SpousePhNoC: "",
     SpouseEmailIdC: "",
-
     // Passport Details
     PassportNoC: "",
     IssuePlaceC: "",
     IssueDateD: "",
     ExpiryDateD: "",
-
     // Same address flag
     SameCurrentAddN: 0,
   });
-
   // Children and Education arrays - start with empty arrays
   const [children, setChildren] = useState<any[]>([]);
   const [education, setEducation] = useState<any[]>([]);
   const [family, setFamily] = useState<any[]>([]);
   const [previousCompanies, setPreviousCompanies] = useState<any[]>([]);
-
   // Helper functions to create empty items
   const createEmptyChild = () => ({
     EmpIdN: profile?.EmpIdN || 0,
@@ -570,14 +520,12 @@ export default function UserProfile() {
     HidNationIdN: 0,
     StatusN: "",
   });
-
   const createEmptyEducation = () => ({
     EmpIdN: profile?.EmpIdN || 0,
     EducationC: "",
     CenterC: "",
     YearN: 0,
   });
-
   const createEmptyFamily = () => ({
     EmpIdN: profile?.EmpIdN || 0,
     NamesC: "",
@@ -587,7 +535,6 @@ export default function UserProfile() {
     PhNoC: "",
     EmailIDC: "",
   });
-
   const createEmptyCompany = () => ({
     EmpIdN: profile?.EmpIdN || 0,
     CompNameC: "",
@@ -597,41 +544,32 @@ export default function UserProfile() {
     ExperienceN: "",
     DescC: "",
   });
-
   // Add item functions
   const addNewChild = () => {
     setChildren((prev) => [...prev, createEmptyChild()]);
   };
-
   const addNewEducation = () => {
     setEducation((prev) => [...prev, createEmptyEducation()]);
   };
-
   const addNewFamilyMember = () => {
     setFamily((prev) => [...prev, createEmptyFamily()]);
   };
-
   const addNewCompany = () => {
     setPreviousCompanies((prev) => [...prev, createEmptyCompany()]);
   };
-
   // Remove item functions
   const removeChild = (index: number) => {
     setChildren((prev) => prev.filter((_, i) => i !== index));
   };
-
   const removeEducation = (index: number) => {
     setEducation((prev) => prev.filter((_, i) => i !== index));
   };
-
   const removeFamilyMember = (index: number) => {
     setFamily((prev) => prev.filter((_, i) => i !== index));
   };
-
   const removeCompany = (index: number) => {
     setPreviousCompanies((prev) => prev.filter((_, i) => i !== index));
   };
-
   const formatApiDateSafe = (val: any, fallback: string) => {
     if (!val) return fallback;
     if (typeof val === "string" && val.includes("/Date(")) {
@@ -643,7 +581,6 @@ export default function UserProfile() {
     if (isNaN(parsed.getTime())) return fallback;
     return formatDateForApi(parsed);
   };
-
   const formatDateInput = (dateStr: string) => {
     if (
       !dateStr ||
@@ -654,7 +591,6 @@ export default function UserProfile() {
     }
     return dateStr;
   };
-
   const parseDateValue = (value?: string) => {
     if (!value) return null;
     if (value.includes("/Date(")) {
@@ -665,13 +601,11 @@ export default function UserProfile() {
     const parsed = new Date(value);
     return isNaN(parsed.getTime()) ? null : parsed;
   };
-
   const formatDateValueForInput = (value?: string) => {
     if (!value) return "";
     const parsed = parseDateValue(value);
     return parsed ? formatDateForApi(parsed) : value;
   };
-
   const openDatePicker = (
     target:
       | { scope: "form"; field: keyof typeof formData }
@@ -687,7 +621,6 @@ export default function UserProfile() {
       initialDate: parsed || new Date(),
     });
   };
-
   const applyPickedDate = (
     target:
       | { scope: "form"; field: keyof typeof formData }
@@ -714,7 +647,6 @@ export default function UserProfile() {
     }
     handleCompanyChange(target.index, target.field, formatted);
   };
-
   /* -------------------- API -------------------- */
   const fetchUserData = async () => {
     try {
@@ -728,19 +660,16 @@ export default function UserProfile() {
       setLoading(false);
     }
   };
-
   const formatServerDateSafe = async (
     token: string,
     value?: string,
     fallback = "/Date(-2209008600000)/", // 01/01/1900
   ): Promise<string> => {
     if (!value) return fallback;
-
     // Already server format → send as-is
     if (typeof value === "string" && value.includes("/Date(")) {
       return value;
     }
-
     // Convert using server
     try {
       return await ApiService.getServerTime(token, value);
@@ -748,14 +677,11 @@ export default function UserProfile() {
       return fallback;
     }
   };
-
   const updateProfileData = async () => {
     try {
       if (!user?.TokenC || !profile) return;
       setIsSaving(true);
-
       const token = user?.TokenC;
-
       const resolvedPermanent = sameAddress
         ? {
             PDoorNoC: formData.CDoorNoC,
@@ -775,17 +701,14 @@ export default function UserProfile() {
             PPinC: formData.PPinC,
             PNationN: formData.PNationN,
           };
-
       const payload = {
         TokenC: token,
-
         Model: [
           {
             EmpIdN: profile.EmpIdN,
             EmpNameC: formData.EmpNameC.trim(),
             MiddleNameC: formData.MiddleNameC.trim(),
             LastNameC: formData.LastNameC.trim(),
-
             CDoorNoC: formData.CDoorNoC.trim(),
             CStreetC: formData.CStreetC.trim(),
             CAreaC: formData.CAreaC.trim(),
@@ -793,40 +716,30 @@ export default function UserProfile() {
             CStateC: formData.CStateC.trim(),
             CPinC: formData.CPinC.trim(),
             CNationN: formData.CNationN,
-
             ...resolvedPermanent,
-
             PhNoC: formData.PhNoC.trim(),
             EmailIdC: formData.EmailIdC.trim(),
-
             MaritalN: formData.MaritalN,
             BloodTypeN: formData.BloodTypeN,
-
             MarriedDateD: formData.MarriedDateD
               ? formatApiDateSafe(formData.MarriedDateD, "01/01/1900")
               : "01/01/1900",
-
             SpouseNameC: formData.SpouseNameC || "",
             SpousePhNoC: formData.SpousePhNoC || "",
             SpouseEmailIdC: formData.SpouseEmailIdC || "",
-
             FatherNameC: formData.FatherNameC || "",
             MotherNameC: formData.MotherNameC || "",
-
             PassportNoC: formData.PassportNoC || "",
             IssuePlaceC: formData.IssuePlaceC || "",
-
             IssueDateD: formData.IssueDateD
               ? formatApiDateSafe(formData.IssueDateD, "")
               : "",
             ExpiryDateD: formData.ExpiryDateD
               ? formatApiDateSafe(formData.ExpiryDateD, "")
               : "",
-
             SameCurrentAddN: sameAddress ? 1 : 0,
           },
         ],
-
         Child: await Promise.all(
           children.map(async (child) => ({
             EmpIdN: profile.EmpIdN,
@@ -836,7 +749,6 @@ export default function UserProfile() {
             StatusN: child.StatusN || "",
           })),
         ),
-
         Education: education.map((edu) => ({
           EmpIdN: profile.EmpIdN,
           EducationC: edu.EducationC || "",
@@ -844,41 +756,34 @@ export default function UserProfile() {
           YearN: edu.YearN || 0,
         })),
       };
-
       const result = await ApiService.updateUserProfile(payload);
-
       if (result.success) {
         setIsEditing(false);
         await fetchUserData();
-        Alert.alert("Success", "Profile updated successfully!");
+        ConfirmModal.alert("Success", "Profile updated successfully!");
       } else {
-        Alert.alert("Profile Update", result.error || "Update failed.");
+        ConfirmModal.alert("Profile Update", result.error || "Update failed.");
       }
     } catch (err: any) {
-      Alert.alert("Profile Update", err?.response?.data?.Error || err.message);
+      ConfirmModal.alert("Profile Update", err?.response?.data?.Error || err.message);
     } finally {
       setIsSaving(false);
     }
   };
-
   useEffect(() => {
     if (!user?.TokenC) return;
     fetchUserData();
   }, [user?.TokenC]);
-
   useProtectedBack({
     home: "/home",
     settings: "/settings",
     dashboard: "/dashboard",
   });
-
   /* -------------------- DATA -------------------- */
   const profile = userData?.[0]?.empProfile;
   const nations: Nation[] = userData?.[0]?.nation || [];
-
   useEffect(() => {
     if (!profile || isEditing) return;
-
     // Initialize form data
     setFormData({
       EmpNameC: profile.EmpNameC || "",
@@ -914,29 +819,24 @@ export default function UserProfile() {
       ExpiryDateD: formatDateInput(profile.ExpiryDateD),
       SameCurrentAddN: profile.SameCurrentAddN || 0,
     });
-
     // Filter out empty items from API response
     const rawChildren = userData?.[0]?.ProfileEmpChild || [];
     const rawEducation = userData?.[0]?.ProfileEmpEducation || [];
     const rawFamily = userData?.[0]?.EmpFamily || [];
     const rawCompanies = userData?.[0]?.PerviousComp || [];
-
     // Initialize arrays with meaningful data only
     const meaningfulChildren = filterMeaningfulChildren(rawChildren);
     const meaningfulEducation = filterMeaningfulEducation(rawEducation);
     const meaningfulFamily = filterMeaningfulFamily(rawFamily);
     const meaningfulCompanies = filterMeaningfulCompanies(rawCompanies);
-
     // If there's meaningful data, use it. Otherwise, start with empty array.
     setChildren(meaningfulChildren);
     setEducation(meaningfulEducation);
     setFamily(meaningfulFamily);
     setPreviousCompanies(meaningfulCompanies);
-
     // Set same address flag
     setSameAddress(!!profile.SameCurrentAddN);
   }, [profile]);
-
   const nationality =
     nations.find((n: any) => n.NationIdN === formData.CNationN)?.NationNameC ||
     "-";
@@ -947,7 +847,6 @@ export default function UserProfile() {
     maritalOptions.find((m) => m.id === formData.MaritalN)?.label || "-";
   const bloodGroupLabel =
     bloodGroupOptions.find((b) => b.id === formData.BloodTypeN)?.label || "-";
-
   const syncPermanentAddress = (data: typeof formData) => ({
     ...data,
     PDoorNoC: data.CDoorNoC,
@@ -958,14 +857,12 @@ export default function UserProfile() {
     PPinC: data.CPinC,
     PNationN: data.CNationN,
   });
-
   const handleFieldChange = <K extends keyof typeof formData>(
     field: K,
     value: (typeof formData)[K],
   ) => {
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
-
       const currentToPermanentMap: Partial<
         Record<keyof typeof formData, keyof typeof formData>
       > = {
@@ -977,24 +874,20 @@ export default function UserProfile() {
         CPinC: "PPinC",
         CNationN: "PNationN",
       };
-
       if (sameAddress) {
         const mappedKey = currentToPermanentMap[field];
         if (mappedKey) {
           next[mappedKey] = value as (typeof formData)[typeof mappedKey];
         }
       }
-
       return next;
     });
   };
-
   const handleChildChange = (index: number, field: string, value: string) => {
     const newChildren = [...children];
     newChildren[index] = { ...newChildren[index], [field]: value };
     setChildren(newChildren);
   };
-
   const handleEducationChange = (
     index: number,
     field: string,
@@ -1004,26 +897,22 @@ export default function UserProfile() {
     newEducation[index] = { ...newEducation[index], [field]: value };
     setEducation(newEducation);
   };
-
   const handleFamilyChange = (index: number, field: string, value: string) => {
     const newFamily = [...family];
     newFamily[index] = { ...newFamily[index], [field]: value };
     setFamily(newFamily);
   };
-
   const handleCompanyChange = (index: number, field: string, value: string) => {
     const newCompanies = [...previousCompanies];
     newCompanies[index] = { ...newCompanies[index], [field]: value };
     setPreviousCompanies(newCompanies);
   };
-
   const handleToggleSameAddress = (value: boolean) => {
     setSameAddress(value);
     if (value) {
       setFormData((prev) => syncPermanentAddress(prev));
     }
   };
-
   const SelectionModal = ({
     visible,
     title,
@@ -1096,7 +985,6 @@ export default function UserProfile() {
       </View>
     </Modal>
   );
-
   const NationSelectionModal = ({
     visible,
     title,
@@ -1167,7 +1055,6 @@ export default function UserProfile() {
       </View>
     </Modal>
   );
-
   if (loading || !profile) {
     return (
       <SafeAreaView
@@ -1189,7 +1076,6 @@ export default function UserProfile() {
       </SafeAreaView>
     );
   }
-
   const ViewArraySection = ({
     title,
     data,
@@ -1224,7 +1110,6 @@ export default function UserProfile() {
       )}
     </View>
   );
-
   /* -------------------- RENDER -------------------- */
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -1243,7 +1128,6 @@ export default function UserProfile() {
           onSelect={(id) => handleFieldChange("MaritalN", id)}
           onClose={() => setShowMaritalModal(false)}
         />
-
         <SelectionModal
           visible={showBloodGroupModal}
           title="Select Blood Group"
@@ -1252,7 +1136,6 @@ export default function UserProfile() {
           onSelect={(id) => handleFieldChange("BloodTypeN", id)}
           onClose={() => setShowBloodGroupModal(false)}
         />
-
         <NationSelectionModal
           visible={showNationalityModal}
           title="Select Nationality"
@@ -1260,7 +1143,6 @@ export default function UserProfile() {
           onSelect={(id) => handleFieldChange("CNationN", id)}
           onClose={() => setShowNationalityModal(false)}
         />
-
         <NationSelectionModal
           visible={showChildNationModal}
           title="Select Child's Nationality"
@@ -1275,7 +1157,6 @@ export default function UserProfile() {
           }}
           onClose={() => setShowChildNationModal(false)}
         />
-
         {/* PROFILE HEADER */}
         <LinearGradient
           colors={[theme.primary, theme.primary]}
@@ -1285,7 +1166,6 @@ export default function UserProfile() {
           <Text style={styles.profileName}>{profile.EmpNameC}</Text>
           <Text style={styles.profileSub}>{profile.EmailIdC}</Text>
         </LinearGradient>
-
         <View style={styles.actionRow}>
           {!editDenied ? (
             <>
@@ -1306,7 +1186,6 @@ export default function UserProfile() {
               </Text>
             </View>
           )}
-
           {isEditing && (
             <CustomButton
               title="Cancel"
@@ -1316,7 +1195,6 @@ export default function UserProfile() {
             />
           )}
         </View>
-
         {/* BASIC INFO - Collapsible */}
         <CollapsibleCard
           title="Basic Information"
@@ -1394,7 +1272,6 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
-
         {/* PERSONAL INFO - Collapsible */}
         <CollapsibleCard
           title="Personal Details"
@@ -1458,7 +1335,6 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
-
         {/* SPOUSE INFO - Collapsible */}
         <CollapsibleCard
           title="Spouse Details"
@@ -1532,7 +1408,6 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
-
         {/* CURRENT ADDRESS - Collapsible */}
         <CollapsibleCard
           title="Current Address"
@@ -1630,7 +1505,6 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
-
         {/* PERMANENT ADDRESS - Collapsible */}
         <CollapsibleCard
           title="Permanent Address"
@@ -1745,7 +1619,6 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
-
         {/* PASSPORT DETAILS - Collapsible */}
         <CollapsibleCard
           title="Passport Details"
@@ -1819,7 +1692,6 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
-
         {/* CHILDREN DETAILS - Collapsible */}
         <CollapsibleCard
           title="Children Details"
@@ -1954,7 +1826,6 @@ export default function UserProfile() {
             />
           )}
         </CollapsibleCard>
-
         {/* EDUCATION DETAILS - Collapsible */}
         <CollapsibleCard
           title="Education Details"
@@ -2036,7 +1907,6 @@ export default function UserProfile() {
             />
           )}
         </CollapsibleCard>
-
         {/* FAMILY DETAILS - Collapsible */}
         <CollapsibleCard
           title="Family Details"
@@ -2162,7 +2032,6 @@ export default function UserProfile() {
             />
           )}
         </CollapsibleCard>
-
         {/* PREVIOUS COMPANIES - Collapsible */}
         <CollapsibleCard
           title="Previous Companies"
@@ -2309,7 +2178,6 @@ export default function UserProfile() {
     </View>
   );
 }
-
 /* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16 },

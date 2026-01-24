@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import AppModal from "../common/AppModal";
@@ -133,7 +133,7 @@ export default function PendingApprovalModal({
     // Validation based on Java snippets
     if (status === "Rejected") {
       if (remarks.trim().length < 11) {
-        Alert.alert(
+        ConfirmModal.alert(
           "Validation Error",
           "Remarks should be more than 10 characters",
         );
@@ -145,7 +145,7 @@ export default function PendingApprovalModal({
     if (flag === "Claim") {
       if (status === "Approved") {
         if (!approveAmt || parseFloat(approveAmt) <= 0) {
-          Alert.alert("Validation Error", "Enter approved amount");
+          ConfirmModal.alert("Validation Error", "Enter approved amount");
           return;
         }
         // Optional: Validating against Claim Amount if you want to implement strictly
@@ -184,7 +184,7 @@ export default function PendingApprovalModal({
       });
 
       if (result.success) {
-        Alert.alert("Success", `Request ${status.toLowerCase()} successfully`, [
+        ConfirmModal.alert("Success", `Request ${status.toLowerCase()} successfully`, [
           {
             text: "OK",
             onPress: () => {
@@ -194,10 +194,10 @@ export default function PendingApprovalModal({
           },
         ]);
       } else {
-        Alert.alert("Error", result.error || "Failed to update approval");
+        ConfirmModal.alert("Error", result.error || "Failed to update approval");
       }
     } catch (error: any) {
-      Alert.alert("Error", error?.message || "Failed to update approval");
+      ConfirmModal.alert("Error", error?.message || "Failed to update approval");
     } finally {
       setProcessingAction(null);
     }
@@ -220,7 +220,7 @@ export default function PendingApprovalModal({
   }
 
   const handleApprove = () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Approve Request",
       "Are you sure you want to approve this request?",
       [
@@ -236,11 +236,11 @@ export default function PendingApprovalModal({
 
   const handleReject = () => {
     if (!rejectRemarks.trim()) {
-      Alert.alert("Error", "Please enter reject remarks");
+      ConfirmModal.alert("Error", "Please enter reject remarks");
       return;
     }
 
-    Alert.alert(
+    ConfirmModal.alert(
       "Reject Request",
       "Are you sure you want to reject this request?",
       [

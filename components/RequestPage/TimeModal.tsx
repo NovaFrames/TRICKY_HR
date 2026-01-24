@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -107,7 +107,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
   }, [visible, item]);
 
   const handleCancelRequest = async () => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Cancel Request",
       "Are you sure you want to cancel this time update request?",
       [
@@ -123,7 +123,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
               const empId = item.EmpIdN || item.EmpId || currentUser.empId;
 
               if (!empId) {
-                Alert.alert("Error", "Employee ID not found.");
+                ConfirmModal.alert("Error", "Employee ID not found.");
                 setLoading(false);
                 return;
               }
@@ -143,20 +143,20 @@ const TimeModal: React.FC<TimeModalProps> = ({
               });
 
               if (result.success) {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Success",
                   "Time update request cancelled successfully",
                 );
                 onClose();
                 onRefresh?.();
               } else {
-                Alert.alert(
+                ConfirmModal.alert(
                   "Error",
                   result.error || "Failed to cancel time request.",
                 );
               }
             } catch (error: any) {
-              Alert.alert(
+              ConfirmModal.alert(
                 "Error",
                 error.message || "An unexpected error occurred.",
               );

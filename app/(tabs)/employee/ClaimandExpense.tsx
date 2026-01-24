@@ -26,7 +26,7 @@ import {
   Text,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 export interface TravelExpenseItem {
   type: number;
@@ -134,7 +134,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
+        ConfirmModal.alert(
           "Permission needed",
           "Sorry, we need camera roll permissions to make this work!",
         );
@@ -182,7 +182,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
         }
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to load claim data");
+      ConfirmModal.alert("Error", "Failed to load claim data");
     } finally {
       setLoading(false);
     }
@@ -231,17 +231,17 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
   // Travel expense handling
   const handleAddTravel = (): void => {
     if (!boardingPoint.trim()) {
-      Alert.alert("Error", "Enter Boarding Point/Description");
+      ConfirmModal.alert("Error", "Enter Boarding Point/Description");
       return;
     }
 
     if (travelType !== 0 && !destination.trim()) {
-      Alert.alert("Error", "Enter Destination");
+      ConfirmModal.alert("Error", "Enter Destination");
       return;
     }
 
     if (!amount.trim() || parseFloat(amount) <= 0) {
-      Alert.alert("Error", "Enter valid Amount");
+      ConfirmModal.alert("Error", "Enter valid Amount");
       return;
     }
 
@@ -316,7 +316,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
   };
 
   const handleDeleteTravel = (index: number): void => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Delete Travel",
       "Are you sure you want to delete this travel expense?",
       [
@@ -416,7 +416,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
   };
 
   const handleDeleteDocument = (id: string): void => {
-    Alert.alert(
+    ConfirmModal.alert(
       "Delete Document",
       "Are you sure you want to delete this document?",
       [
@@ -435,32 +435,32 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
   // Validation
   const validateForm = (): boolean => {
     if (selectedClaim === 0) {
-      Alert.alert("Error", "Select Claim name");
+      ConfirmModal.alert("Error", "Select Claim name");
       return false;
     }
 
     if (currencyStatus && selectedCurrency === 0) {
-      Alert.alert("Error", "Select Currency");
+      ConfirmModal.alert("Error", "Select Currency");
       return false;
     }
 
     if (!description.trim()) {
-      Alert.alert("Error", "Description should not be empty");
+      ConfirmModal.alert("Error", "Description should not be empty");
       return false;
     }
 
     if (travelExpenses.length === 0) {
-      Alert.alert("Error", "Add Travel OR Other Expenses");
+      ConfirmModal.alert("Error", "Add Travel OR Other Expenses");
       return false;
     }
 
     if (documents.length === 0) {
-      Alert.alert("Error", "Attach documents");
+      ConfirmModal.alert("Error", "Attach documents");
       return false;
     }
 
     if (fromDate > toDate) {
-      Alert.alert("Error", "From date must be smaller than To date");
+      ConfirmModal.alert("Error", "From date must be smaller than To date");
       return false;
     }
 
@@ -544,23 +544,23 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
 
         if (uploadResult.Status === "success") {
           resetFullForm();
-          Alert.alert("Success", "Claim submitted successfully", [
+          ConfirmModal.alert("Success", "Claim submitted successfully", [
             {
               text: "OK",
               onPress: () => router.back(),
             },
           ]);
         } else {
-          Alert.alert(
+          ConfirmModal.alert(
             "Error",
             uploadResult.Error || "Failed to upload documents",
           );
         }
       } else {
-        Alert.alert("Error", result.Error || "Failed to submit claim");
+        ConfirmModal.alert("Error", result.Error || "Failed to submit claim");
       }
     } catch (error) {
-      Alert.alert("Error", "An error occurred while submitting the claim");
+      ConfirmModal.alert("Error", "An error occurred while submitting the claim");
       console.error("Submit error:", error);
     } finally {
       setLoading(false);

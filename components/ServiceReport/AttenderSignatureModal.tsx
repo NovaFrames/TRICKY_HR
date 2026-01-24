@@ -1,23 +1,15 @@
 import React, { useRef, useState } from 'react';
-import {
-    Dimensions,
-    Modal,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from "react-native";
 import SignatureCanvas from 'react-native-signature-canvas';
 import { useTheme } from '../../context/ThemeContext';
 import { CustomButton } from '../CustomButton';
-
+import Modal from "@/components/common/SingleModal";
 interface AttenderSignatureModalProps {
     visible: boolean;
     onClose: () => void;
     onSave: (signature: string) => void;
 }
-
 const { width, height } = Dimensions.get('window');
-
 export default function AttenderSignatureModal({
     visible,
     onClose,
@@ -26,30 +18,24 @@ export default function AttenderSignatureModal({
     const { theme } = useTheme();
     const signatureRef = useRef<any>(null);
     const [hasSignature, setHasSignature] = useState(false);
-
     const handleOK = (signature: string) => {
         onSave(signature);
         onClose();
         setHasSignature(false);
     };
-
     const handleClear = () => {
         signatureRef.current?.clearSignature();
         setHasSignature(false);
     };
-
     const handleEmpty = () => {
         console.log('Signature is empty');
     };
-
     const handleBegin = () => {
         setHasSignature(true);
     };
-
     const handleEnd = () => {
         signatureRef.current?.readSignature();
     };
-
     const style = `
         .m-signature-pad {
             box-shadow: none;
@@ -66,7 +52,6 @@ export default function AttenderSignatureModal({
             height: 100%;
         }
     `;
-
     return (
         <Modal
             visible={visible}
@@ -79,7 +64,6 @@ export default function AttenderSignatureModal({
                 <View style={[styles.header, { backgroundColor: theme.primary }]}>
                     <Text style={styles.headerTitle}>Attender Signature</Text>
                 </View>
-
                 {/* Signature Canvas */}
                 <View style={[styles.canvasContainer, { borderColor: theme.inputBorder }]}>
                     <SignatureCanvas
@@ -96,7 +80,6 @@ export default function AttenderSignatureModal({
                         penColor={theme.text}
                     />
                 </View>
-
                 {/* Action Buttons */}
                 <View style={styles.buttonContainer}>
                     <CustomButton
@@ -104,13 +87,11 @@ export default function AttenderSignatureModal({
                         icon="close"
                         onPress={onClose}
                     />
-
                     <CustomButton
                         title="Clear"
                         icon="trash-outline"
                         onPress={handleClear}
                     />
-
                     <CustomButton
                         title="Done"
                         icon="checkmark-circle"
@@ -122,7 +103,6 @@ export default function AttenderSignatureModal({
         </Modal>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,

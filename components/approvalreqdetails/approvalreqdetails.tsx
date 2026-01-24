@@ -1,4 +1,4 @@
-import Alert from "@/components/common/AppAlert";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { formatDisplayDate, formatTimeNumber } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
@@ -142,7 +142,7 @@ export default function ApprovalReqDetails() {
 
       const rawData = result?.data?.data;
       if (!rawData) {
-        Alert.alert("Info", "No leave data found");
+        ConfirmModal.alert("Info", "No leave data found");
         return;
       }
 
@@ -176,7 +176,7 @@ export default function ApprovalReqDetails() {
       }
 
       if (!tableData.length) {
-        Alert.alert("Info", "No leave data found");
+        ConfirmModal.alert("Info", "No leave data found");
         return;
       }
 
@@ -184,7 +184,7 @@ export default function ApprovalReqDetails() {
       setFormattedLeaves(formatted);
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to load leave details");
+      ConfirmModal.alert("Error", "Failed to load leave details");
     } finally {
       setLoading(false);
     }
