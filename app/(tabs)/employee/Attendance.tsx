@@ -37,10 +37,6 @@ const Attendance = () => {
 
   const empId = propEmpIdN ?? user?.EmpIdN ?? user?.EmpId;
 
-  useEffect(() => {
-    console.log("Attendance Rendered & domain_url:", user?.domain_url);
-  }, []);
-
   const cameraRef = useRef<CameraView>(null);
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -163,7 +159,6 @@ const Attendance = () => {
         if (!isNaN(serverNow.getTime())) {
           baseTime = serverNow;
           setCurrentTime(serverNow);
-          console.log("serverNow: ", serverNow);
         }
       } catch (e) {
         console.log("Server time sync failed, using local time");
@@ -249,8 +244,6 @@ const Attendance = () => {
         token, // ✅ PASS AS OBJECT
       });
 
-      // console.log("Projects:", projectList);
-
       setProjects(projectList);
     } catch (error) {
       console.error("Fetch projects error:", error);
@@ -284,11 +277,6 @@ const Attendance = () => {
     setCameraFacing("front");
   };
 
-  useEffect(() => {
-    console.log("propEmpIdN: ", propEmpIdN);
-    console.log("empId: ", empId);
-  }, [empId]);
-
   const handleSubmit = async () => {
     if (!selectedProject) return Alert.alert("Required", "Select project");
     if (!capturedImage) return Alert.alert("Required", "Capture your photo");
@@ -320,8 +308,6 @@ const Attendance = () => {
         Number(projectCoords.latitude),
         Number(projectCoords.longitude),
       );
-
-      console.log(distance, "distance");
 
       if (distance > 100) {
         const distanceDisplay =
