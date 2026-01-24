@@ -1,3 +1,6 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
+import ProfileImage from "@/components/common/ProfileImage";
+import Modal from "@/components/common/SingleModal";
 import { CustomButton } from "@/components/CustomButton";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { formatDateForApi, formatDisplayDate } from "@/constants/timeFormat";
@@ -10,9 +13,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import { Animated, Dimensions, Easing, FlatList, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Modal from "@/components/common/SingleModal";
 const { width } = Dimensions.get("window");
 type Nation = {
   NationIdN: number;
@@ -1162,7 +1163,12 @@ export default function UserProfile() {
           colors={[theme.primary, theme.primary]}
           style={styles.profileHeader}
         >
-          <Ionicons name="person-circle" size={90} color="#fff" />
+                   <ProfileImage
+                     customerIdC={user?.CustomerIdC}
+                     compIdN={user?.CompIdN}
+                     empIdN={user?.EmpIdN}
+                     size={80}
+                   />
           <Text style={styles.profileName}>{profile.EmpNameC}</Text>
           <Text style={styles.profileSub}>{profile.EmailIdC}</Text>
         </LinearGradient>
