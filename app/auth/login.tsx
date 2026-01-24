@@ -22,7 +22,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { CustomButton } from "../../components/CustomButton";
 import { CustomInput } from "../../components/CustomInput";
 import Snackbar from "../../components/common/Snackbar";
@@ -32,6 +32,8 @@ import { loginUser, setBaseUrl } from "../../services/ApiService";
 const { width, height } = Dimensions.get("window");
 
 export default function Login() {
+
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [empCode, setEmpCode] = useState("");
   const [password, setPassword] = useState("");
@@ -198,8 +200,12 @@ export default function Login() {
     const top = interpolate(
       animationProgress.value,
       [0, 1],
-      [height / 2 - width * 0.4, height * 0.85],
+      [
+        height / 2 - width * 0.4 - insets.top,
+        height * 0.84 - insets.bottom,
+      ],
     );
+
     const left = interpolate(
       animationProgress.value,
       [0, 1],
@@ -432,7 +438,7 @@ export default function Login() {
 
               <Animated.View style={[styles.footer, formStyle]}>
                 <Text style={styles.footerText}>
-                  <Text style={{ color: theme.textLight }}>@created by </Text>
+                  <Text style={{ color: theme.textLight }}>@created by{"\n"}</Text>
                   <Text style={{ color: theme.text, fontWeight: "900" }}>
                     Kevit Hisoft Solutions Pvt Ltd
                   </Text>
@@ -522,5 +528,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 2,
     textTransform: "uppercase",
+    textAlign: "center"
   },
 });

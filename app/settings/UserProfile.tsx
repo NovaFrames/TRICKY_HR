@@ -440,11 +440,11 @@ export default function UserProfile() {
   const [datePickerState, setDatePickerState] = useState<{
     visible: boolean;
     target:
-      | { scope: "form"; field: keyof typeof formData }
-      | { scope: "child"; field: "BDateD"; index: number }
-      | { scope: "family"; field: "DateofBirthD"; index: number }
-      | { scope: "company"; field: "FromDateD" | "ToDateD"; index: number }
-      | null;
+    | { scope: "form"; field: keyof typeof formData }
+    | { scope: "child"; field: "BDateD"; index: number }
+    | { scope: "family"; field: "DateofBirthD"; index: number }
+    | { scope: "company"; field: "FromDateD" | "ToDateD"; index: number }
+    | null;
     initialDate: Date;
   }>({
     visible: false,
@@ -654,6 +654,11 @@ export default function UserProfile() {
       if (!user?.TokenC) return;
       const result = await ApiService.getUserProfile(user.TokenC);
       setUserData(result.data || []);
+      console.log(
+        "Result Data:",
+        JSON.stringify(result.data, null, 2)
+      );
+
       setEditDenied(result.EditDenied || false);
     } catch (err: any) {
       console.error("Profile API Error:", err?.response?.data || err.message);
@@ -685,23 +690,23 @@ export default function UserProfile() {
       const token = user?.TokenC;
       const resolvedPermanent = sameAddress
         ? {
-            PDoorNoC: formData.CDoorNoC,
-            PStreetC: formData.CStreetC,
-            PAreaC: formData.CAreaC,
-            PCityC: formData.CCityC,
-            PStateC: formData.CStateC,
-            PPinC: formData.CPinC,
-            PNationN: formData.CNationN,
-          }
+          PDoorNoC: formData.CDoorNoC,
+          PStreetC: formData.CStreetC,
+          PAreaC: formData.CAreaC,
+          PCityC: formData.CCityC,
+          PStateC: formData.CStateC,
+          PPinC: formData.CPinC,
+          PNationN: formData.CNationN,
+        }
         : {
-            PDoorNoC: formData.PDoorNoC,
-            PStreetC: formData.PStreetC,
-            PAreaC: formData.PAreaC,
-            PCityC: formData.PCityC,
-            PStateC: formData.PStateC,
-            PPinC: formData.PPinC,
-            PNationN: formData.PNationN,
-          };
+          PDoorNoC: formData.PDoorNoC,
+          PStreetC: formData.PStreetC,
+          PAreaC: formData.PAreaC,
+          PCityC: formData.PCityC,
+          PStateC: formData.PStateC,
+          PPinC: formData.PPinC,
+          PNationN: formData.PNationN,
+        };
       const payload = {
         TokenC: token,
         Model: [
@@ -756,8 +761,54 @@ export default function UserProfile() {
           CenterC: edu.CenterC || "",
           YearN: edu.YearN || 0,
         })),
+        PerviousComp: previousCompanies
+          .filter(
+            (c) =>
+              c.CompNameC ||
+              c.DesignationC ||
+              c.FromDateD ||
+              c.ToDateD ||
+              c.ExperienceN ||
+              c.DescC
+          )
+          .map((c) => ({
+            EmpIdN: profile.EmpIdN,
+            CompNameC: c.CompNameC || "",
+            DesignationC: c.DesignationC || "",
+            FromDateD: c.FromDateD
+              ? formatApiDateSafe(c.FromDateD, "")
+              : "",
+            ToDateD: c.ToDateD
+              ? formatApiDateSafe(c.ToDateD, "")
+              : "",
+            ExperienceN: c.ExperienceN || "",
+            DescC: c.DescC || "",
+          })),
+        EmpFamily: family
+          .filter(f =>
+            f.NamesC ||
+            f.RelationshipN ||
+            f.OccupationC ||
+            f.PhNoC ||
+            f.EmailIDC
+          )
+          .map(f => ({
+            EmpIdN: profile.EmpIdN,
+            NamesC: f.NamesC || "",
+            DateofBirthD: f.DateofBirthD
+              ? formatApiDateSafe(f.DateofBirthD, "")
+              : "",
+            RelationshipN: f.RelationshipN || "",
+            OccupationC: f.OccupationC || "",
+            PhNoC: f.PhNoC || "",
+            EmailIDC: f.EmailIDC || "",
+          })),
+
       };
+      console.log("payload Data: ", payload);
       const result = await ApiService.updateUserProfile(payload);
+      console.log("Result: ", result);
+
       if (result.success) {
         setIsEditing(false);
         await fetchUserData();
@@ -1163,12 +1214,12 @@ export default function UserProfile() {
           colors={[theme.primary, theme.primary]}
           style={styles.profileHeader}
         >
-                   <ProfileImage
-                     customerIdC={user?.CustomerIdC}
-                     compIdN={user?.CompIdN}
-                     empIdN={user?.EmpIdN}
-                     size={80}
-                   />
+          <ProfileImage
+            customerIdC={user?.CustomerIdC}
+            compIdN={user?.CompIdN}
+            empIdN={user?.EmpIdN}
+            size={80}
+          />
           <Text style={styles.profileName}>{profile.EmpNameC}</Text>
           <Text style={styles.profileSub}>{profile.EmailIdC}</Text>
         </LinearGradient>
