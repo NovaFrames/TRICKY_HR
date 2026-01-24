@@ -354,6 +354,7 @@ export interface Employee {
   CodeC: string;
   EmpIdN: number;
   DescC: string; // Designation
+  ImageUrl?: string;
 }
 
 export interface TimeRequestPayload {

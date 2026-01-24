@@ -1,3 +1,4 @@
+import Alert from "@/components/common/AppAlert";
 import CenterModalSelection from "@/components/common/CenterModalSelection";
 import { CustomButton } from "@/components/CustomButton";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
@@ -20,7 +21,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
 
 const { width } = Dimensions.get("window");
 
@@ -39,7 +39,7 @@ const Attendance = () => {
 
   useEffect(() => {
     console.log("Attendance Rendered & domain_url:", user?.domain_url);
-  }, [user]);
+  }, []);
 
   const cameraRef = useRef<CameraView>(null);
 
@@ -90,9 +90,9 @@ const Attendance = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-        Math.cos(toRadians(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return earthRadius * c;
   };
@@ -124,14 +124,74 @@ const Attendance = () => {
   };
 
   /* ---------------- CLOCK ---------------- */
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const parseServerTime = (raw: string) => {
+    const [day, monthStr, year, time] = raw.split(" ");
+    const [hour, minute, second] = time.split(":").map(Number);
 
-  // useEffect(() => {
-  //   console.log("Current location: ", location);
-  // }, [location]);
+    const months: Record<string, number> = {
+      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+      Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+    };
+
+    return new Date(
+      Number(year),
+      months[monthStr],
+      Number(day),
+      hour,
+      minute,
+      second
+    );
+  };
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
+    let baseTime = new Date(); // fallback
+
+    // 1️⃣ Start local clock immediately
+    setCurrentTime(baseTime);
+    timer = setInterval(() => {
+      baseTime = new Date(baseTime.getTime() + 1000);
+      setCurrentTime(new Date(baseTime));
+    }, 1000);
+
+    // 2️⃣ Sync with server time (optional but accurate)
+    const syncServerTime = async () => {
+      try {
+        const raw = await ApiService.getRawServerTime(user?.TokenC);
+        const serverNow = parseServerTime(raw);
+
+        if (!isNaN(serverNow.getTime())) {
+          baseTime = serverNow;
+          setCurrentTime(serverNow);
+          console.log("serverNow: ", serverNow);
+        }
+      } catch (e) {
+        console.log("Server time sync failed, using local time");
+      }
+    };
+
+    syncServerTime();
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [user?.TokenC]);
+
+
+  useEffect(() => {
+    if (!capturedImage) return;
+
+    const timer = setTimeout(() => {
+      Alert.alert(
+        "Session Timeout",
+        "Please fill again."
+      );
+      resetForm();
+    }, 30000); // 30 seconds
+
+    return () => clearTimeout(timer);
+  }, [capturedImage]);
+
 
   /* ---------------- PERMISSIONS ---------------- */
   useEffect(() => {
@@ -169,13 +229,13 @@ const Attendance = () => {
           setLocation((prev) =>
             prev
               ? {
-                  ...prev,
-                  address: formatAddress(a),
-                }
+                ...prev,
+                address: formatAddress(a),
+              }
               : null,
           );
         }
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -471,6 +531,36 @@ const Attendance = () => {
           />
         </View>
 
+
+        {/* LOCATION STATUS */}
+        <View style={styles.locationFooter}>
+          <Ionicons name="location" size={16} color={theme.primary} />
+
+          {location ? (
+            <>
+              <Text
+                style={[styles.locationText, { color: theme.placeholder }]}
+                numberOfLines={2}
+              >
+                <Text
+                  style={[styles.locationText, { color: theme.text }]}
+                  numberOfLines={1}
+                >
+                  {"Your Location: "}
+                </Text>
+                {location.address || "Geo-Location Active"}
+              </Text>
+            </>
+          ) : (
+            <Text
+              style={[styles.locationText, { color: theme.placeholder }]}
+              numberOfLines={2}
+            >
+              {"Locatoin Not Found"}
+            </Text>
+          )}
+        </View>
+
         {/* CAMERA SECTION */}
         <View
           style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}
@@ -582,19 +672,6 @@ const Attendance = () => {
             )}
           </View>
         </View>
-
-        {/* LOCATION STATUS */}
-        {location && (
-          <View style={styles.locationFooter}>
-            <Ionicons name="location" size={16} color={theme.primary} />
-            <Text
-              style={[styles.locationText, { color: theme.placeholder }]}
-              numberOfLines={1}
-            >
-              {location.address || "Geo-Location Active"}
-            </Text>
-          </View>
-        )}
 
         {/* SUBMIT BUTTON */}
         <CustomButton

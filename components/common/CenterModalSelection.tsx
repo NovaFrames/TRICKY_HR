@@ -3,12 +3,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as NavigationBar from "expo-navigation-bar";
 import React, { useEffect } from "react";
 import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -126,7 +126,7 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
                           styles.optionSubText,
                           { color: theme.textLight },
                         ]}
-                        numberOfLines={1}
+                        // numberOfLines={2}
                       >
                         {option.subLabel}
                       </Text>

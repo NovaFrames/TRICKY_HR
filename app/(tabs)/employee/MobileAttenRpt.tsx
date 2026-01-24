@@ -76,15 +76,18 @@ export default function MobileAttenRpt() {
 
   useProtectedBack({ home: "/home" });
 
-  const [fromDate, setFromDate] = useState(new Date());
-  const [toDate, setToDate] = useState(new Date());
+  const today = new Date();
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(today.getDate() - 10);
+
+  const [fromDate, setFromDate] = useState(tenDaysAgo);
+  const [toDate, setToDate] = useState(today);
+
   const [loading, setLoading] = useState(false);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
   React.useEffect(() => {
-    const date = new Date(fromDate);
-    date.setDate(date.getDate() + 30);
-    setToDate(date);
+    setToDate(new Date());
   }, [fromDate]);
 
   // Fetch report on mount
@@ -209,12 +212,6 @@ export default function MobileAttenRpt() {
             { backgroundColor: theme.cardBackground },
           ]}
         >
-          <View style={styles.filterHeader}>
-            <Text style={[styles.filterTitle, { color: theme.text }]}>
-              Filter History
-            </Text>
-            <Ionicons name="options-outline" size={20} color={theme.primary} />
-          </View>
 
           <View style={styles.filterRow}>
             <DatePicker

@@ -20,7 +20,7 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
   theme,
   showHeader = true,
 }) => {
-  const [TeamMem, setTeamMem] = useState<TeamMember[]>();
+  const [TeamMem, setTeamMem] = useState<TeamMember[]>([]);
   const { user } = useUser();
 
   useEffect(() => {
@@ -40,11 +40,11 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
 
   return (
     <View style={[styles.container, !showHeader && styles.compactContainer]}>
-      {showHeader && (
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>
-          Your Supervisors
-        </Text>
-      )}
+{TeamMem?.[0]?.SubName?.length > 0 && (
+  <Text style={[styles.sectionTitle, { color: theme.text }]}>
+    Your Supervisors
+  </Text>
+)}
 
       {/* Team Leaders */}
       <View style={styles.teamScrollWrapper}>

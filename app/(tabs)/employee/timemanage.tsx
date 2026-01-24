@@ -1,3 +1,4 @@
+import Alert from "@/components/common/AppAlert";
 import DatePicker from "@/components/DatePicker";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
@@ -14,7 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
@@ -129,11 +129,12 @@ export default function TimeManage() {
   const [downloading, setDownloading] = useState(false);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
-  const [fromDate, setFromDate] = useState(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
-  const [toDate, setToDate] = useState(new Date());
+  const today = new Date();
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(today.getDate() - 10);
+
+  const [fromDate, setFromDate] = useState(tenDaysAgo);
+  const [toDate, setToDate] = useState(today);
 
   useProtectedBack({
     home: "/home",
@@ -141,10 +142,8 @@ export default function TimeManage() {
     dashboard: "/dashboard",
   });
 
-  useEffect(() => {
-    const d = new Date(fromDate);
-    d.setDate(d.getDate() + 30);
-    setToDate(d);
+  React.useEffect(() => {
+    setToDate(new Date());
   }, [fromDate]);
 
   /* ---------------- API ---------------- */

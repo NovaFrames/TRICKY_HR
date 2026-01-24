@@ -1,24 +1,23 @@
+import ProfileImage from "@/components/common/ProfileImage";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
-import { getProfileImageUrl } from "@/hooks/useGetImage";
 import {
-    Feather,
-    FontAwesome5,
-    Ionicons,
-    MaterialIcons,
+  Feather,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 /* -------------------- TYPES ------------------- */
@@ -47,29 +46,6 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, setPrimaryColor } = useTheme();
   const { logout, user } = useUser();
   const router = useRouter();
-
-  const [profileImage, setProfileImage] = useState<string | undefined>();
-
-  useEffect(() => {
-    let isActive = true;
-
-    const loadProfileImage = async () => {
-      const url = await getProfileImageUrl(
-        user?.CustomerIdC,
-        user?.CompIdN,
-        user?.EmpIdN,
-      );
-      if (isActive) {
-        setProfileImage(url);
-      }
-    };
-
-    loadProfileImage();
-
-    return () => {
-      isActive = false;
-    };
-  }, [user?.CustomerIdC, user?.CompIdN, user?.EmpIdN]);
 
   const handleLogout = async () => {
     await logout();
@@ -272,13 +248,11 @@ export default function SettingsScreen() {
             ]}
           >
             <View style={styles.profileContent}>
-              <Image
-                source={{
-                  uri:
-                    profileImage ||
-                    "https://img.freepik.com/premium-vector/avatar-profile-icon-flat-style-male-user-profile-vector-illustration-isolated-background-man-profile-sign-business-concept_157943-38866.jpg",
-                }}
-                style={styles.avatar}
+              <ProfileImage
+                customerIdC={user?.CustomerIdC}
+                compIdN={user?.CompIdN}
+                empIdN={user?.EmpIdN}
+                size={60}
               />
               <View style={styles.userInfo}>
                 <Text style={[styles.userName, { color: theme.text }]}>
@@ -322,7 +296,7 @@ const styles = StyleSheet.create({
   headerContainer: { padding: 12 }, // Reduced from 20
   screenTitle: { fontSize: 22, fontWeight: "700", marginBottom: 8 }, // Smaller title
   profileCard: { borderRadius: 4, padding: 12, elevation: 2 }, // Compact card
-  profileContent: { flexDirection: "row", alignItems: "center" },
+  profileContent: { flexDirection: "row", alignItems: "center", gap:12 },
   avatar: { width: 50, height: 50, borderRadius: 4, marginRight: 12 }, // Smaller avatar
   userInfo: { flex: 1 },
   userName: { fontSize: 18, fontWeight: "600" },

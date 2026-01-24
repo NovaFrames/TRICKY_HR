@@ -1,5 +1,8 @@
+import Alert from "@/components/common/AppAlert";
+import ProfileImage from "@/components/common/ProfileImage";
 import EmployeeLeaveBalance from "@/components/EmployeeList/EmployeeLeaveBalance";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -10,30 +13,24 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { Employee } from "../../../services/ApiService";
 
-interface EmployeeSection {
-  title: string;
-  data: Employee[];
-}
 
 export default function EmployeeListScreen() {
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDesignation, setSelectedDesignation] = useState<string>("All");
   const [designations, setDesignations] = useState<string[]>([]);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null,
-  );
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const { user } = useUser();
 
   useProtectedBack({
     home: "/home",
@@ -123,7 +120,6 @@ export default function EmployeeListScreen() {
             });
           },
         },
-        { text: "Cancel", style: "default" },
       ],
     );
   };
@@ -143,16 +139,13 @@ export default function EmployeeListScreen() {
       >
         {/* Left Section - Avatar & Info */}
         <View style={styles.employeeLeft}>
-          <View
-            style={[styles.avatarContainer, { backgroundColor: theme.primary }]}
-          >
-            <Text style={styles.avatarText}>
-              {item.NameC.split(" ")
-                .map((n) => n[0])
-                .join("")
-                .substring(0, 2)
-                .toUpperCase()}
-            </Text>
+          <View>
+            <ProfileImage
+              customerIdC={user?.CustomerIdC}
+              compIdN={user?.CompIdN}
+              empIdN={item.EmpIdN}
+              size={60}
+            />
           </View>
           <View style={styles.employeeInfo}>
             <Text
@@ -389,19 +382,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     marginRight: 12,
-  },
-  avatarContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 4,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  avatarText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
+    gap:12
   },
   employeeInfo: {
     flex: 1,

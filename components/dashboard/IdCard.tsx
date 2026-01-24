@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Image, LayoutAnimation, StyleSheet, Text, View } from "react-native";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useUser } from "@/context/UserContext";
-import { getProfileImageUrl } from "@/hooks/useGetImage";
 import { ThemeType } from "../../theme/theme";
+import ProfileImage from "../common/ProfileImage";
 import { TeamLeaders } from "./TeamLeaders";
 
 interface IdCardProps {
@@ -23,39 +23,8 @@ export const IdCard: React.FC<IdCardProps> = ({
   initial,
   theme,
 }) => {
-  const [isTracking, setIsTracking] = React.useState(true);
-
-  const toggleTracking = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsTracking(!isTracking);
-  };
 
   const { user } = useUser();
-
-  const [logoError, setLogoError] = React.useState(false);
-  const [logoUrl, setLogoUrl] = useState<string | undefined>();
-
-  useEffect(() => {
-    let isActive = true;
-    setLogoError(false);
-
-    const loadLogoUrl = async () => {
-      const url = await getProfileImageUrl(
-        user?.CustomerIdC,
-        user?.CompIdN,
-        user?.EmpIdN,
-      );
-      if (isActive) {
-        setLogoUrl(url);
-      }
-    };
-
-    loadLogoUrl();
-
-    return () => {
-      isActive = false;
-    };
-  }, [user?.CustomerIdC, user?.CompIdN, user?.EmpIdN]);
 
   return (
     <View
@@ -74,20 +43,13 @@ export const IdCard: React.FC<IdCardProps> = ({
           <View
             style={[
               styles.avatarLarge,
-              {
-                backgroundColor: theme.primary + "10", // Light orange tint
-                borderColor: theme.primary + "20",
-              },
             ]}
           >
-            <Image
-              source={
-                !logoError && logoUrl
-                  ? { uri: logoUrl }
-                  : require("@/assets/images/trickyhr.png")
-              }
-              onError={() => setLogoError(true)}
-              style={styles.avatarImage}
+            <ProfileImage
+              customerIdC={user?.CustomerIdC}
+              compIdN={user?.CompIdN}
+              empIdN={user?.EmpIdN}
+              size={80}
             />
           </View>
           <View style={styles.idCardInfo}>
@@ -115,31 +77,6 @@ export const IdCard: React.FC<IdCardProps> = ({
           <TeamLeaders theme={theme} showHeader={true} />
         </View>
 
-        {/* <View style={[styles.idCardBottom, { borderTopColor: theme.inputBorder }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={{ width: 24, height: 24, borderRadius: 4, backgroundColor: isTracking ? '#10B981' : '#CBD5E1', justifyContent: 'center', alignItems: 'center' }}>
-                            <Feather name="map-pin" size={12} color="#fff" />
-                        </View>
-                        <View>
-                            <Text style={[styles.trackingTitle, { color: theme.text, fontSize: 13, fontWeight: '600' }]}>
-                                Live Tracking: <Text style={{ color: isTracking ? '#10B981' : '#64748B' }}>{isTracking ? 'ON' : 'OFF'}</Text>
-                            </Text>
-                        </View>
-                    </View>
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={toggleTracking}
-                        style={[
-                            styles.toggleTrack,
-                            {
-                                backgroundColor: isTracking ? theme.primary + '20' : '#F1F5F9',
-                                alignItems: isTracking ? 'flex-end' : 'flex-start'
-                            }
-                        ]}
-                    >
-                        <View style={[styles.toggleThumb, { backgroundColor: isTracking ? theme.primary : '#94A3B8' }]} />
-                    </TouchableOpacity>
-                </View> */}
       </View>
     </View>
   );
@@ -176,18 +113,6 @@ const styles = StyleSheet.create({
     overflow: "hidden", // 🔑 important
   },
 
-  avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 4,
-    resizeMode: "cover",
-  },
-
-  avatarLargeText: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#fff",
-  },
   idCardInfo: {
     flex: 1,
   },

@@ -1,4 +1,5 @@
 // LeaveApply.tsx
+import Alert from "@/components/common/AppAlert";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Alert from "@/components/common/AppAlert";
 import ApplyLeaveModal from "../../../components/LeaveApply/ApplyLeaveModal";
 import SurrenderLeaveModal from "../../../components/LeaveApply/SurrenderLeaveModal";
 import { useTheme } from "../../../context/ThemeContext";
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   scrollContent: {
-    paddingTop: HEADER_HEIGHT,
+    paddingTop: HEADER_HEIGHT+6,
   },
   card: {
     borderRadius: 4,
