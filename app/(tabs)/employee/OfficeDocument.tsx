@@ -1,3 +1,5 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
+import Modal from "@/components/common/SingleModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { getDomainUrl } from "@/services/urldomain";
@@ -6,13 +8,11 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { useTheme } from "../../../context/ThemeContext";
 import { useUser } from "../../../context/UserContext";
 import ApiService from "../../../services/ApiService";
-import Modal from "@/components/common/SingleModal";
 interface Document {
   NameC: string;
   LastWriteTimeC: string;
@@ -218,9 +218,7 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       </Text>
     </View>
   );
-  useEffect(() => {
-    console.log("Current Index: ", index);
-  }, [index]);
+
   const isImage = (url: string) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
   const isHtml = (url: string) => /\.(html|htm)$/i.test(url);
   const panResponder = useRef(

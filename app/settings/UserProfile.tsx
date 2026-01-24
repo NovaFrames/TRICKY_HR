@@ -654,10 +654,6 @@ export default function UserProfile() {
       if (!user?.TokenC) return;
       const result = await ApiService.getUserProfile(user.TokenC);
       setUserData(result.data || []);
-      console.log(
-        "Result Data:",
-        JSON.stringify(result.data, null, 2)
-      );
 
       setEditDenied(result.EditDenied || false);
     } catch (err: any) {
@@ -805,9 +801,7 @@ export default function UserProfile() {
           })),
 
       };
-      console.log("payload Data: ", payload);
       const result = await ApiService.updateUserProfile(payload);
-      console.log("Result: ", result);
 
       if (result.success) {
         setIsEditing(false);

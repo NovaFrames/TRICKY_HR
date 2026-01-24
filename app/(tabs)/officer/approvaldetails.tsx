@@ -78,7 +78,6 @@ export default function ApprovalDetails() {
       });
 
       if (response.data?.Status === "success") {
-        console.log(response.data.data);
         setData(response.data.data || []);
       } else {
         setData([]);
