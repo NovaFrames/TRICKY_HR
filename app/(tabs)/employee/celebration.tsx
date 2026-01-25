@@ -1,4 +1,6 @@
+import AppModal from "@/components/common/AppModal";
 import ProfileImage from "@/components/common/ProfileImage";
+import Snackbar from "@/components/common/Snackbar";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { formatDisplayDate } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
@@ -14,6 +16,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -28,6 +31,16 @@ export default function Celebration() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [index, setIndex] = useState(0);
+  const [wishModalVisible, setWishModalVisible] = useState(false);
+  const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
+  const [wishesTitle, setWishesTitle] = useState("");
+  const [wishesBody, setWishesBody] = useState("");
+  const [wishSending, setWishSending] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: "",
+    type: "info" as "info" | "error" | "success",
+  });
   const [routes] = useState([
     { key: "birthday", title: "BIRTHDAY", icon: "gift-outline" },
     { key: "work", title: "WORK ANNIVERSARY", icon: "ribbon-outline" },
@@ -35,6 +48,38 @@ export default function Celebration() {
   ]);
 
   useProtectedBack({ home: "/home" });
+  const [userMail, setUserMail] = useState<any | null>(null);
+
+  const fetchUserData = async () => {
+    try {
+      if (!user?.TokenC) return;
+      const result = await ApiService.getUserProfile(user.TokenC);
+      const profile = result.data?.[0]?.empProfile;
+      setUserMail(profile || null);
+      console.log("Result: ", profile.EmailIdC);
+    } catch (err: any) {
+      console.error("Profile API Error:", err?.response?.data || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
+  }, [user]);
+
+  const getWishSubject = (type: "birthday" | "work" | "wedding") => {
+    switch (type) {
+      case "birthday":
+        return "Birthday Wishes";
+      case "work":
+        return "Service Day Wishes";
+      case "wedding":
+        return "Wedding Wishes";
+      default:
+        return "Best Wishes";
+    }
+  };
 
   const fetchCelebration = async () => {
     try {
@@ -43,6 +88,7 @@ export default function Celebration() {
         return;
       }
       const responseData = await ApiService.getCelebrationData(user.TokenC, 1);
+
       setData(responseData);
     } catch (err) {
       console.error("Celebration API error:", err);
@@ -60,6 +106,115 @@ export default function Celebration() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchCelebration();
+  };
+
+  const showSnackbar = (
+    message: string,
+    type: "info" | "error" | "success" = "info",
+  ) => {
+    setSnackbar({ visible: true, message, type });
+  };
+
+  const normalizeEmail = (value?: string) =>
+    typeof value === "string" ? value.trim() : "";
+
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const resolveErrorMessage = (error: any) => {
+    if (typeof error?.message === "string" && error.message.trim()) {
+      return error.message;
+    }
+    if (typeof error?.response?.data?.error === "string") {
+      return error.response.data.error;
+    }
+    if (typeof error?.response?.data?.Error === "string") {
+      return error.response.data.Error;
+    }
+    return "Unable to send wishes";
+  };
+
+
+  const getEmpEmail = (item: any) => {
+    return (item?.EmailIdC || "")
+  }
+
+  const openWishesModal = (item: any, type: "birthday" | "work" | "wedding") => {
+    const mailFrom = normalizeEmail(userMail?.EmailIdC);
+    const mailTo = normalizeEmail(getEmpEmail(item));
+    const mailToCC = normalizeEmail(userMail?.EmailIdC);
+
+    if (!isValidEmail(mailFrom) || !isValidEmail(mailTo)) {
+      showSnackbar("Email id not found", "error");
+      return;
+    }
+
+    const subject = getWishSubject(type);
+
+    setSelectedEmp({
+      ...item,
+      mailFrom,
+      mailTo,
+      ...(isValidEmail(mailToCC) && { mailToCC }),
+      wishType: type,
+    });
+
+    setWishesTitle(subject);   // 🔥 AUTO SUBJECT
+    setWishesBody("");
+    setWishModalVisible(true);
+  };
+
+
+  const closeWishesModal = (force = false) => {
+    if (wishSending && !force) return;
+    setWishModalVisible(false);
+    setSelectedEmp(null);
+    setWishesTitle("");
+    setWishesBody("");
+  };
+
+  const handleSendWishes = async () => {
+    if (!selectedEmp?.mailFrom || !selectedEmp?.mailTo) {
+      showSnackbar("Email id not found", "error");
+      return;
+    }
+    if (!wishesTitle.trim()) {
+      showSnackbar("Please enter a subject", "error");
+      return;
+    }
+    setWishSending(true);
+
+    console.log({
+      EmpName: selectedEmp?.EmpNameC || "",
+      mailFrom: selectedEmp?.mailFrom ?? "",
+      mailTo: selectedEmp?.mailTo ?? "",
+      ...(selectedEmp?.mailToCC && { mailToCC: selectedEmp.mailToCC }),
+      subject: wishesTitle.trim(),
+      body: wishesBody.trim(),
+    });
+
+    try {
+      const response = await ApiService.sendEmailWishes({
+        EmpName: selectedEmp?.EmpNameC || "",
+        mailFrom: selectedEmp.mailFrom,
+        mailTo: selectedEmp.mailTo,
+        ...(selectedEmp?.mailToCC && { mailToCC: selectedEmp.mailToCC }),
+        subject: wishesTitle.trim(),
+        body: wishesBody.trim(),
+      });
+
+
+      if (response?.Status === "success") {
+        showSnackbar("Wishes sent successfully", "success");
+        closeWishesModal(true);
+      } else {
+        showSnackbar(response?.Error || "Unable to send wishes", "error");
+      }
+    } catch (error) {
+      showSnackbar(resolveErrorMessage(error), "error");
+    } finally {
+      setWishSending(false);
+    }
   };
 
   // PanResponder for swipe gestures
@@ -96,7 +251,10 @@ export default function Celebration() {
   const weddings = data?.DashBoardAnniversary ?? [];
   const workAnniv = data?.DashEmpService ?? [];
 
-  const renderCards = (list: any[], type: string) => {
+  const renderCards = (
+    list: any[],
+    type: "birthday" | "work" | "wedding"
+  ) => {
     if (list.length === 0) {
       return (
         <View style={styles.emptyContainer}>
@@ -109,12 +267,14 @@ export default function Celebration() {
     }
 
     return list.map((item: any) => (
-      <View
+      <TouchableOpacity
         key={item.EmpIdN}
         style={[
           styles.card,
           { backgroundColor: theme.cardBackground, shadowColor: theme.text },
         ]}
+        activeOpacity={0.85}
+        onPress={() => openWishesModal(item, type)}
       >
         <View
           style={[styles.iconContainer, { backgroundColor: theme.inputBg }]}
@@ -166,8 +326,15 @@ export default function Celebration() {
               </>
             )}
           </View>
+
+          <TouchableOpacity
+            style={[styles.wishButton, { backgroundColor: theme.primary }]}
+            onPress={() => openWishesModal(item, type)}
+          >
+            <Text style={styles.wishButtonText}>Send Wishes</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     ));
   };
 
@@ -221,6 +388,106 @@ export default function Celebration() {
           </ScrollView>
         </View>
       </View>
+
+      <AppModal
+        visible={wishModalVisible}
+        onClose={() => closeWishesModal()}
+        title="Send Wishes"
+        subtitle={selectedEmp?.EmpNameC ? `To ${selectedEmp.EmpNameC}` : undefined}
+        footer={
+          <View style={styles.modalFooterActions}>
+            <TouchableOpacity
+              style={[
+                styles.modalButton,
+                styles.modalCancel,
+                { borderColor: theme.inputBorder },
+              ]}
+              onPress={() => closeWishesModal()}
+              disabled={wishSending}
+            >
+              <Text style={[styles.modalButtonText, { color: theme.text }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: theme.primary }]}
+              onPress={handleSendWishes}
+              disabled={wishSending}
+            >
+              {wishSending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.modalButtonPrimaryText}>Send</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        }
+      >
+        <View style={styles.modalBody}>
+          <View style={styles.modalRow}>
+            <Text style={[styles.modalLabel, { color: theme.textLight }]}>
+              From
+            </Text>
+            <Text style={[styles.modalValue, { color: theme.text }]}>
+              {selectedEmp?.mailFrom || "-"}
+            </Text>
+          </View>
+          <View style={styles.modalRow}>
+            <Text style={[styles.modalLabel, { color: theme.textLight }]}>
+              To
+            </Text>
+            <Text style={[styles.modalValue, { color: theme.text }]}>
+              {selectedEmp?.mailTo || "-"}
+            </Text>
+          </View>
+
+          <Text style={[styles.inputLabel, { color: theme.textLight }]}>
+            Subject
+          </Text>
+          <TextInput
+            value={wishesTitle}
+            editable={false}
+            selectTextOnFocus={false}
+            style={[
+              styles.input,
+              {
+                color: theme.text,
+                backgroundColor: theme.inputBg,
+                borderColor: theme.inputBorder,
+                opacity: 0.8,
+              },
+            ]}
+          />
+
+          <Text style={[styles.inputLabel, { color: theme.textLight }]}>
+            Message
+          </Text>
+          <TextInput
+            value={wishesBody}
+            onChangeText={setWishesBody}
+            placeholder="Write your wishes..."
+            placeholderTextColor={theme.placeholder}
+            multiline
+            textAlignVertical="top"
+            style={[
+              styles.textArea,
+              {
+                color: theme.text,
+                backgroundColor: theme.inputBg,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+          />
+        </View>
+      </AppModal>
+
+      <Snackbar
+        visible={snackbar.visible}
+        message={snackbar.message}
+        type={snackbar.type}
+        topOffset={HEADER_HEIGHT}
+        onDismiss={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
@@ -295,6 +562,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
+  wishButton: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    marginTop: 10,
+  },
+  wishButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#fff",
+    letterSpacing: 0.3,
+  },
   infoText: {
     fontSize: 14,
     fontWeight: "600",
@@ -314,5 +594,69 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalBody: {
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    paddingTop: 8,
+    gap: 12,
+  },
+  modalRow: {
+    gap: 4,
+  },
+  modalLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  modalValue: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    minHeight: 110,
+  },
+  modalFooterActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
+  modalButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 4,
+    minWidth: 96,
+    alignItems: "center",
+  },
+  modalCancel: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  modalButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  modalButtonPrimaryText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#fff",
   },
 });

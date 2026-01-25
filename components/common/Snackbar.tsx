@@ -1,6 +1,6 @@
+import { useTheme } from "@/context/ThemeContext";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Platform, StatusBar, StyleSheet, Text, View } from "react-native";
-import { useTheme } from "@/context/ThemeContext";
 
 type SnackbarType = "error" | "success" | "info";
 
@@ -10,6 +10,7 @@ type SnackbarProps = {
   type?: SnackbarType;
   onDismiss: () => void;
   duration?: number;
+  topOffset?: number;
 };
 
 const Snackbar: React.FC<SnackbarProps> = ({
@@ -18,6 +19,7 @@ const Snackbar: React.FC<SnackbarProps> = ({
   type = "info",
   onDismiss,
   duration = 2800,
+  topOffset = 0,
 }) => {
   const { theme } = useTheme();
   const translateY = useRef(new Animated.Value(32)).current;
@@ -89,7 +91,14 @@ const Snackbar: React.FC<SnackbarProps> = ({
     type === "info" ? theme.inputBorder : backgroundColor;
 
   return (
-    <View style={styles.wrapper} pointerEvents="none">
+    <View style={[styles.wrapper, {
+      top:
+        (Platform.OS === "android"
+          ? (StatusBar.currentHeight ?? 0)
+          : 0) +
+        topOffset +
+        12,
+    }]} pointerEvents="none">
       <Animated.View
         style={[
           styles.container,
@@ -112,8 +121,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     right: 16,
-    top: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 12 : 16,
     alignItems: "center",
+    zIndex: 9999,
+    elevation: 9999,
   },
   container: {
     width: "100%",

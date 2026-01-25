@@ -2393,6 +2393,39 @@ class ApiService {
     }
   }
 
+  async sendEmailWishes(payload: {
+    EmpName: string;
+    mailFrom: string;
+    mailTo: string;
+    mailToCC?: string;
+    subject: string;
+    body: string;
+  }): Promise<APIResponse> {
+    try {
+      const domainUrl = await getDomainUrl();
+      if (!domainUrl) {
+        return { Status: "error", Error: "Domain not configured" };
+      }
+
+      const response = await axios.post(
+        `${domainUrl}${API_ENDPOINTS.SEND_EMAIL_WISHES}`,
+        payload,
+      );
+
+      return response?.data ?? { Status: "error", Error: "Invalid response" };
+    } catch (error: any) {
+      console.error("sendEmailWishes error:", error);
+      return {
+        Status: "error",
+        Error:
+          error?.response?.data?.Error ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Network error",
+      };
+    }
+  }
+
   async getHolidayList(token: string, year: string): Promise<any[]> {
     try {
       if (!token) return [];
