@@ -2400,6 +2400,7 @@ class ApiService {
     mailToCC?: string;
     subject: string;
     body: string;
+    TokenC: string;
   }): Promise<APIResponse> {
     try {
       const domainUrl = await getDomainUrl();
@@ -2469,7 +2470,7 @@ class ApiService {
         `${domainUrl}${API_ENDPOINTS.GET_EMPDASHBOARD_LIST}`,
         payload,
       );
-      return response.data?.supDataList;
+      return response.data;
     } catch (error) {
       console.log("Get Emp Document List error: ", error);
       return [];

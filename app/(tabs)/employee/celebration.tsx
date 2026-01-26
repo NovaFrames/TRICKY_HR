@@ -184,23 +184,15 @@ export default function Celebration() {
     }
     setWishSending(true);
 
-    console.log({
-      EmpName: selectedEmp?.EmpNameC || "",
-      mailFrom: selectedEmp?.mailFrom ?? "",
-      mailTo: selectedEmp?.mailTo ?? "",
-      ...(selectedEmp?.mailToCC && { mailToCC: selectedEmp.mailToCC }),
-      subject: wishesTitle.trim(),
-      body: wishesBody.trim(),
-    });
-
     try {
       const response = await ApiService.sendEmailWishes({
         EmpName: selectedEmp?.EmpNameC || "",
         mailFrom: selectedEmp.mailFrom,
         mailTo: selectedEmp.mailTo,
-        ...(selectedEmp?.mailToCC && { mailToCC: selectedEmp.mailToCC }),
+        mailToCC: user?.EmpNameC || "",
         subject: wishesTitle.trim(),
         body: wishesBody.trim(),
+        TokenC: user?.TokenC
       });
 
 

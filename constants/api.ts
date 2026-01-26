@@ -25,7 +25,7 @@ export const API_ENDPOINTS = {
 
   // Celebrations
   CELEBRATION: "/WebApi2/GetTodayCelebration",
-  SEND_EMAIL_WISHES: "/App/SendEMailWishes",
+  SEND_EMAIL_WISHES: "/WebApi2/SendEMailWishes",
 
   // Leave Management
   GET_LEAVE_DETAILS: "/WebApi2/GetEmpLeaveApplyDtlById",

@@ -57,8 +57,6 @@ export default function EmployeeListScreen() {
           a.CodeC.localeCompare(b.CodeC),
         );
 
-        console.log("sorted: ", sorted);
-
         setAllEmployees(sorted);
 
         // Get unique designations

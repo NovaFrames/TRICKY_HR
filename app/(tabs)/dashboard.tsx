@@ -1,5 +1,7 @@
+import Celebrations from "@/components/dashboard/Celebrations";
 import DashboardCards from "@/components/dashboard/DashboardCards";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { Schedule } from "@/components/dashboard/Schedule";
 import { UserData, useUser } from "@/context/UserContext";
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -42,6 +44,16 @@ export default function HomeScreen() {
           initial={initial}
           theme={theme}
         />
+
+        <Text style={[styles.sectionHeader, { color: theme.text }]}>
+          Schedule
+        </Text>
+        <Schedule />
+
+        <Text style={[styles.sectionHeader, { color: theme.text }]}>
+          Upcoming Celebration
+        </Text>
+        <Celebrations />
 
         <Text style={[styles.sectionHeader, { color: theme.text }]}>
           Quick Actions

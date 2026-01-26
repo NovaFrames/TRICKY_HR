@@ -27,8 +27,9 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
     const fetchData = async () => {
       try {
         const data = await ApiService.getEmpDashBoardList();
+        const arrayData = data.supDataList;
         // Ensure array
-        setTeamMem(Array.isArray(data) ? data : []);
+        setTeamMem(Array.isArray(arrayData) ? arrayData : []);
       } catch (err) {
         console.error("Team fetch error:", err);
         setTeamMem([]);

@@ -1,13 +1,14 @@
+import { MENU_ICON_MAP } from "@/constants/menuIconMap";
 import { UserData, useUser } from "@/context/UserContext";
-import { FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import {
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -42,26 +43,13 @@ const STATIC_MENU_ITEMS = [
 /* -------------------- DASHBOARD ALLOWED ACTIONS -------------------- */
 const DASHBOARD_MENU_ACTIONS = [
   "employee/Attendance",
-  "employee/leavemanage",
-  "employee/empRequest",
-  "employee/timemanage",
+  "employee/celebration",
 ];
 
 /* -------------------- LAYOUT -------------------- */
 const { width } = Dimensions.get("window");
 const GAP = 4;
 const CARD_WIDTH = (width - 32 - GAP) / 2;
-
-/* -------------------- ICON PARSER -------------------- */
-const getFontAwesomeIcon = (
-  iconClass?: string,
-): keyof typeof FontAwesome.glyphMap => {
-  if (!iconClass) return "question-circle";
-
-  return iconClass
-    .replace("fa ", "")
-    .replace("fa-", "") as keyof typeof FontAwesome.glyphMap;
-};
 
 export default function DashboardCards() {
   const { theme } = useTheme();
@@ -99,15 +87,30 @@ export default function DashboardCards() {
             })
           }
         >
-          <View
-            style={[styles.iconBox, { backgroundColor: theme.primary + "15" }]}
-          >
-            <FontAwesome
-              name={getFontAwesomeIcon(item.IconC)}
-              size={20}
-              color={theme.primary}
-            />
-          </View>
+          {(() => {
+            const iconConfig =
+              MENU_ICON_MAP[item.ActionC] ?? {
+                lib: Ionicons,
+                name: "apps",
+              };
+            const IconLib = iconConfig.lib;
+            const iconColor = item.IconcolorC || theme.primary;
+
+            return (
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: iconColor + "15" },
+                ]}
+              >
+                <IconLib
+                  name={iconConfig.name as any}
+                  size={20}
+                  color={iconColor}
+                />
+              </View>
+            );
+          })()}
 
           <Text style={[styles.title, { color: theme.text }]}>
             {item.MenuNameC}
