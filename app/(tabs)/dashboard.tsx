@@ -3,9 +3,8 @@ import DashboardCards from "@/components/dashboard/DashboardCards";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Schedule } from "@/components/dashboard/Schedule";
 import { UserData, useUser } from "@/context/UserContext";
-import { router } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { IdCard } from "../../components/dashboard/IdCard";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -51,18 +50,9 @@ export default function HomeScreen() {
         </Text>
         <Schedule />
 
-        <View style={styles.header}>
-          <Text style={[styles.sectionHeader, { color: theme.text }]}>
-            Upcoming Celebration
-          </Text>
-          <TouchableOpacity onPress={() =>
-            router.push({
-              pathname: "/(tabs)/employee/celebration",
-              params: { from: "dashboard" }
-            })}>
-            <Text style={[{ color: theme.textLight }]}>View all</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.sectionHeader, { color: theme.text }]}>
+          Upcoming Celebration
+        </Text>
         <Celebrations />
 
         <Text style={[styles.sectionHeader, { color: theme.text }]}>
@@ -87,15 +77,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 40,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center", // 👈 THIS
-    marginBottom: 14,
-  },
   sectionHeader: {
     fontSize: 18,
     fontWeight: "700",
+    marginBottom:10
   },
 
 });

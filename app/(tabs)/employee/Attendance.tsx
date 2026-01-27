@@ -325,12 +325,9 @@ const Attendance = () => {
             "Location Mismatch",
             `You are ${distanceDisplay} away from the project location`,
           );
-          resetForm();
           return;
         }
       }
-
-
 
       const mode = attendanceType === "Check-in" ? 0 : 1;
       const serverDate = await ApiService.getRawServerTime(token);

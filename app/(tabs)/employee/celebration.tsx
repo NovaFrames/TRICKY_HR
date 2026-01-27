@@ -56,7 +56,6 @@ export default function Celebration() {
       const result = await ApiService.getUserProfile(user.TokenC);
       const profile = result.data?.[0]?.empProfile;
       setUserMail(profile || null);
-      console.log("Result: ", profile.EmailIdC);
     } catch (err: any) {
       console.error("Profile API Error:", err?.response?.data || err.message);
     } finally {

@@ -1,51 +1,62 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import { Modal as RNModal, ModalProps } from "react-native";
 import { useModalManager } from "@/components/common/ModalManager";
+import React, { useCallback, useEffect, useRef } from "react";
+import { ModalProps, Modal as RNModal } from "react-native";
 
 let modalIdCounter = 0;
 
 const SingleModal: React.FC<ModalProps> = ({
-  visible,
+  visible = false,
   onRequestClose,
   ...rest
 }) => {
   const manager = useModalManager();
   const requestOpen = manager?.requestOpen;
   const requestClose = manager?.requestClose;
-  const activeId = manager?.activeId ?? null;
+
   const idRef = useRef<string>("");
+  const wasVisibleRef = useRef<boolean>(false);
 
   if (!idRef.current) {
     modalIdCounter += 1;
     idRef.current = `modal-${modalIdCounter}`;
   }
 
-  const handleRequestClose = useCallback(() => {
-    requestClose?.(idRef.current);
-    onRequestClose?.();
-  }, [onRequestClose, requestClose]);
+  const handleRequestClose = useCallback(
+    (event?: any) => {
+      onRequestClose?.(event as any);
+    },
+    [onRequestClose]
+  );
 
+  // Track ONLY visibility transitions
   useEffect(() => {
     if (!requestOpen || !requestClose) return;
 
-    if (visible) {
+    if (visible && !wasVisibleRef.current) {
       requestOpen(idRef.current);
-    } else {
+    }
+
+    if (!visible && wasVisibleRef.current) {
       requestClose(idRef.current);
     }
 
-    return () => {
-      requestClose(idRef.current);
-    };
-  }, [requestClose, requestOpen, visible]);
+    wasVisibleRef.current = visible;
+  }, [visible, requestOpen, requestClose]);
 
-  const effectiveVisible =
-    activeId && visible ? activeId === idRef.current : !!visible;
+  // Cleanup ONLY on unmount
+  useEffect(() => {
+    return () => {
+      if (wasVisibleRef.current) {
+        requestClose?.(idRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <RNModal
       {...rest}
-      visible={effectiveVisible}
+      visible={visible}
       onRequestClose={handleRequestClose}
     />
   );

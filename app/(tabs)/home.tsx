@@ -1,9 +1,9 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { UserData, useUser } from "@/context/UserContext";
 import {
-    Feather,
-    FontAwesome5,
-    MaterialCommunityIcons,
+  Feather,
+  FontAwesome5,
+  MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -36,13 +36,6 @@ export default function HomeScreen() {
     Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0
       ? loginData.EmpMenu
       : STATIC_MENU_ITEMS;
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
-  };
 
   const getMenuIcon = (name: string) => {
     const key = name.toLowerCase();

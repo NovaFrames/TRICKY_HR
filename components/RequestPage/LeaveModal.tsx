@@ -225,8 +225,8 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
       totalHours: formatNumber(leaveData.THrsN),
       claimAmount:
         leaveData.MLClaimAmtN && leaveData.MLClaimAmtN > 0
-          ? `₹${Number(leaveData.MLClaimAmtN).toFixed(2)}`
-          : "₹0.00",
+          ? `${Number(leaveData.MLClaimAmtN).toFixed(2)}`
+          : "0.00",
     };
 
     const hasPermission = leaveData.THrsN && leaveData.THrsN > 0;

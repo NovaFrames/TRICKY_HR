@@ -1,9 +1,9 @@
+import Modal from "@/components/common/SingleModal";
 import { CustomButton } from "@/components/CustomButton";
 import { ThemeType } from "@/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Modal from "@/components/common/SingleModal";
 interface ConfirmationModalProps {
   visible: boolean;
   totalAmount: number;
@@ -36,7 +36,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           Confirm Submission
         </Text>
         <Text style={[styles.message, { color: theme.textLight }]}>
-          Are you sure you want to submit this claim for ₹
+          Are you sure you want to submit this claim for 
           {totalAmount.toFixed(2)}?
         </Text>
         <View style={styles.buttons}>

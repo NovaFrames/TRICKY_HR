@@ -226,8 +226,7 @@ export default function Login() {
         workingDomain,
         normalizedDomainId || undefined,
       );
-
-      console.log(response);
+      
       const token = response.data.data?.TokenC;
       const empId = response.data.data?.EmpIdN;
 

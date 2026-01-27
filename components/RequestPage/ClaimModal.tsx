@@ -1,5 +1,7 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,7 +10,6 @@ import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
-import Modal from "@/components/common/SingleModal";
 interface ClaimModalProps {
   visible: boolean;
   onClose: () => void;
@@ -30,7 +31,9 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     url: string;
     name: string;
   } | null>(null);
+  const [viewerError, setViewerError] = useState<string | null>(null);
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
+  const imageExtRegex = /\.(jpg|jpeg|png|gif|bmp|webp|heic|heif)$/i;
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
   if (status.toLowerCase().includes("approv"))
@@ -162,6 +165,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   };
   const handleViewDocument = async (fileName: string) => {
     try {
+      setViewerError(null);
       const AsyncStorage =
         require("@react-native-async-storage/async-storage").default;
       // Get user data for URL construction
@@ -189,6 +193,23 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     } catch (error) {
       console.error("Error building document URL:", error);
       ConfirmModal.alert("Error", "Failed to open document");
+    }
+  };
+  const getViewerUri = (url: string) => {
+    if (imageExtRegex.test(url)) {
+      return url;
+    }
+    if (Platform.OS === "android") {
+      return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+  const handleOpenInBrowser = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url);
+    } catch (error) {
+      console.error("Error opening browser:", error);
+      ConfirmModal.alert("Error", "Unable to open the document in the browser.");
     }
   };
   const getTravelTypeLabel = (type: number) => {
@@ -230,7 +251,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         <View style={styles.section}>
           <InfoRow
             label="Claim Amount"
-            value={`₹${claimData.ClaimAmtN?.toFixed(2) || "0"}`}
+            value={`${claimData.ClaimAmtN?.toFixed(2) || "0"}`}
             theme={theme}
           />
           <InfoRow
@@ -335,7 +356,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                       ]}
                       numberOfLines={1}
                     >
-                      ₹{expense.TravelAmountN?.toFixed(2) || "0.00"}
+                      {expense.TravelAmountN?.toFixed(2) || "0.00"}
                     </Text>
                   </View>
                 ))}
@@ -453,13 +474,19 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       <Modal
         visible={!!viewingDoc}
         transparent={true}
-        onRequestClose={() => setViewingDoc(null)}
+        onRequestClose={() => {
+          setViewingDoc(null);
+          setViewerError(null);
+        }}
         animationType="slide"
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
           <View style={styles.viewerHeader}>
             <TouchableOpacity
-              onPress={() => setViewingDoc(null)}
+              onPress={() => {
+                setViewingDoc(null);
+                setViewerError(null);
+              }}
               style={styles.closeButton}
             >
               <Ionicons name="close" size={24} color="white" />
@@ -474,32 +501,51 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
           </View>
           <View style={{ flex: 1 }}>
             {viewingDoc?.url && (
-              <WebView
-                source={{
-                  uri:
-                    Platform.OS === "android" &&
-                    !/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(viewingDoc.url)
-                      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingDoc.url)}`
-                      : viewingDoc.url,
-                }}
-                style={{ flex: 1 }}
-                startInLoadingState={true}
-                renderLoading={() => (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <ActivityIndicator size="large" color={theme.primary} />
+              <>
+                <WebView
+                  source={{ uri: getViewerUri(viewingDoc.url) }}
+                  style={{ flex: 1 }}
+                  originWhitelist={["*"]}
+                  setSupportMultipleWindows={false}
+                  startInLoadingState={true}
+                  onError={(event) => {
+                    console.error("Document viewer error:", event.nativeEvent);
+                    setViewerError("This document can't be previewed here.");
+                  }}
+                  onHttpError={(event) => {
+                    console.error("Document viewer HTTP error:", event.nativeEvent);
+                    setViewerError("This document can't be previewed here.");
+                  }}
+                  renderLoading={() => (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <ActivityIndicator size="large" color={theme.primary} />
+                    </View>
+                  )}
+                />
+                {viewerError && (
+                  <View style={styles.viewerErrorContainer}>
+                    <Text style={styles.viewerErrorText}>{viewerError}</Text>
+                    <TouchableOpacity
+                      style={[styles.viewerFallbackButton, { borderColor: theme.primary }]}
+                      onPress={() => handleOpenInBrowser(viewingDoc.url)}
+                    >
+                      <Text style={[styles.viewerFallbackButtonText, { color: theme.primary }]}>
+                        Open in Browser
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 )}
-              />
+              </>
             )}
           </View>
         </SafeAreaView>
@@ -693,6 +739,35 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
+  },
+  viewerErrorContainer: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 24,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    borderRadius: 8,
+    padding: 16,
+    gap: 12,
+  },
+  viewerErrorText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  viewerFallbackButton: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
+  },
+  viewerFallbackButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
 export default ClaimModal;

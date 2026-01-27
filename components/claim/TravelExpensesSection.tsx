@@ -66,7 +66,7 @@ const TravelExpensesSection: React.FC<TravelExpensesSectionProps> = ({
 
         {/* <View style={[styles.totalContainer, { borderTopColor: theme.inputBorder }]}>
             <Text style={[styles.totalLabel, { color: theme.text }]}>Total Amount:</Text>
-            <Text style={[styles.totalValue, { color: theme.primary }]}>₹{totalAmount.toFixed(2)}</Text>
+            <Text style={[styles.totalValue, { color: theme.primary }]}>{totalAmount.toFixed(2)}</Text>
         </View> */}
     </View>
 );

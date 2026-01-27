@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import PendingApprovalModal from "../../../components/PendingApproval/PendingApprovalModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
@@ -96,10 +96,6 @@ export default function PendingApproval() {
       } else {
         const result = await ApiService.getOtherPendingApprovals();
         if (result.success && result.data) {
-          console.log(
-            "Other Pending Data:",
-            JSON.stringify(result.data[0], null, 2),
-          );
           setOtherPendings(result.data);
         } else {
           ConfirmModal.alert(
@@ -306,7 +302,7 @@ export default function PendingApproval() {
             style={[styles.remarks, { color: theme.textLight }]}
             numberOfLines={1}
           >
-            Amount: ₹{item.EmpRemarksC}
+            Amount: {item.EmpRemarksC}
           </Text>
         )}
 

@@ -8,6 +8,7 @@ import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -238,114 +239,117 @@ export default function Celebrations() {
                                         borderWidth: 1,
                                     },
                                 ]}
-                                onPress={() => openWishesModal(item, item.type)}
+                                onPress={() => router.push({
+                                    pathname: "/(tabs)/employee/celebration",
+                                    params: { from: "dashboard" }
+                                })}
                             >
-                                <ProfileImage
-                                    customerIdC={user?.CustomerIdC}
-                                    compIdN={user?.CompIdN}
-                                    empIdN={item.EmpIdN}
-                                    size={42}
-                                />
+                    <ProfileImage
+                        customerIdC={user?.CustomerIdC}
+                        compIdN={user?.CompIdN}
+                        empIdN={item.EmpIdN}
+                        size={42}
+                    />
 
-                                <View style={{ flex: 1 }}>
-                                    <Text style={[styles.itemName, { color: theme.text }]}>
-                                        {item.EmpNameC}
-                                    </Text>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.itemName, { color: theme.text }]}>
+                            {item.EmpNameC}
+                        </Text>
 
-                                    <View style={styles.metaRow}>
-                                        <Ionicons
-                                            name={
-                                                item.type === "birthday"
-                                                    ? "gift-outline"
-                                                    : item.type === "wedding"
-                                                        ? "heart-outline"
-                                                        : "ribbon-outline"
-                                            }
-                                            size={14}
-                                            color={theme.primary}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.itemSub,
-                                                { color: theme.textLight },
-                                            ]}
-                                        >
-                                            {item.type === "birthday" &&
-                                                `Birthday • ${formatDisplayDate(
-                                                    item.BirthDateD,
-                                                )}`}
-                                            {item.type === "wedding" &&
-                                                `Wedding • ${formatDisplayDate(
-                                                    item.MarriageDateD,
-                                                )}`}
-                                            {item.type === "work" &&
-                                                `Work Anniversary • ${item.ServiceN} Years`}
-                                        </Text>
-                                    </View>
-                                </View>
+                        <View style={styles.metaRow}>
+                            <Ionicons
+                                name={
+                                    item.type === "birthday"
+                                        ? "gift-outline"
+                                        : item.type === "wedding"
+                                            ? "heart-outline"
+                                            : "ribbon-outline"
+                                }
+                                size={14}
+                                color={theme.primary}
+                            />
+                            <Text
+                                style={[
+                                    styles.itemSub,
+                                    { color: theme.textLight },
+                                ]}
+                            >
+                                {item.type === "birthday" &&
+                                    `Birthday • ${formatDisplayDate(
+                                        item.BirthDateD,
+                                    )}`}
+                                {item.type === "wedding" &&
+                                    `Wedding • ${formatDisplayDate(
+                                        item.MarriageDateD,
+                                    )}`}
+                                {item.type === "work" &&
+                                    `Work Anniversary • ${item.ServiceN} Years`}
+                            </Text>
+                        </View>
+                    </View>
 
-                                <Ionicons
-                                    name="chevron-forward"
-                                    size={18}
-                                    color={theme.textLight}
-                                />
-                            </TouchableOpacity>
-                        ))
+                    <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color={theme.textLight}
+                    />
+                </TouchableOpacity>
+                ))
                     )}
-                </View>
-            </ScrollView>
-
-            {/* MODAL */}
-            <AppModal
-                visible={wishModalVisible}
-                onClose={closeWishesModal}
-                title="Send Wishes"
-                subtitle={selectedEmp?.EmpNameC}
-            >
-                <View style={styles.modalBody}>
-                    <TextInput
-                        value={wishesTitle}
-                        editable={false}
-                        style={[styles.input, { backgroundColor: theme.inputBg, color: theme.textLight }]}
-                    />
-                    <TextInput
-                        value={wishesBody}
-                        onChangeText={setWishesBody}
-                        placeholder="Write your wishes..."
-                        placeholderTextColor={theme.textLight} // 👈 THIS
-                        multiline
-                        style={[
-                            styles.textArea,
-                            {
-                                backgroundColor: theme.inputBg,
-                                color: theme.text, // actual typed text color
-                            },
-                        ]}
-                    />
-
-                    <TouchableOpacity
-                        style={[styles.sendBtn, { backgroundColor: theme.primary }]}
-                        onPress={handleSendWishes}
-                    >
-                        {wishSending ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.sendText}>Send Wishes</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
-            </AppModal>
-
-            <Snackbar
-                visible={snackbar.visible}
-                message={snackbar.message}
-                type={snackbar.type}
-                topOffset={HEADER_HEIGHT}
-                onDismiss={() =>
-                    setSnackbar((p) => ({ ...p, visible: false }))
-                }
-            />
         </View>
+            </ScrollView >
+
+        {/* MODAL */ }
+        < AppModal
+    visible = { wishModalVisible }
+    onClose = { closeWishesModal }
+    title = "Send Wishes"
+    subtitle = { selectedEmp?.EmpNameC }
+        >
+        <View style={styles.modalBody}>
+            <TextInput
+                value={wishesTitle}
+                editable={false}
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.textLight }]}
+            />
+            <TextInput
+                value={wishesBody}
+                onChangeText={setWishesBody}
+                placeholder="Write your wishes..."
+                placeholderTextColor={theme.textLight} // 👈 THIS
+                multiline
+                style={[
+                    styles.textArea,
+                    {
+                        backgroundColor: theme.inputBg,
+                        color: theme.text, // actual typed text color
+                    },
+                ]}
+            />
+
+            <TouchableOpacity
+                style={[styles.sendBtn, { backgroundColor: theme.primary }]}
+                onPress={handleSendWishes}
+            >
+                {wishSending ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.sendText}>Send Wishes</Text>
+                )}
+            </TouchableOpacity>
+        </View>
+            </AppModal >
+
+        <Snackbar
+            visible={snackbar.visible}
+            message={snackbar.message}
+            type={snackbar.type}
+            topOffset={HEADER_HEIGHT}
+            onDismiss={() =>
+                setSnackbar((p) => ({ ...p, visible: false }))
+            }
+        />
+        </View >
     );
 }
 

@@ -461,7 +461,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
             <DetailItem
               icon="cash-outline"
               label="MEDICAL CLAIM"
-              value={`₹${leaveData.MLClaimAmtN.toFixed(2)}`}
+              value={`${leaveData.MLClaimAmtN.toFixed(2)}`}
             />
           )}
 
@@ -607,7 +607,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
           <DetailItem
             icon="cash-outline"
             label="CLAIM AMOUNT"
-            value={`₹${claimData.ClaimAmtN?.toFixed(2) || "0"}`}
+            value={`${claimData.ClaimAmtN?.toFixed(2) || "0"}`}
           />
           <DetailItem
             icon="calendar-outline"

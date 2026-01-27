@@ -3,11 +3,13 @@
 ## Step 1: Update services/ApiService.ts (Line 881)
 
 ### Current Code:
+
 ```typescript
 FolderName: "EDUCATION",     // Category: "All", "EDUCATION", "EXPERIENCE", etc.
 ```
 
 ### Change To:
+
 ```typescript
 FolderName: category === 'All' ? '' : category,
 ```
@@ -17,64 +19,65 @@ FolderName: category === 'All' ? '' : category,
 ## Step 2: Update app/(tabs)/employee/empdocument.tsx
 
 ### Find the fetchDocuments function (around line 66-78):
+
 Note: use `ConfirmModal` from `@/components/common/ConfirmModal` instead of `react-native`.
 
 ### Current Code:
+
 ```typescript
 const fetchDocuments = async () => {
-    try {
-        setLoading(true);
-        const docs = await ApiService.getDocuments();
-        setDocuments(docs);
-    } catch (error) {
-        ConfirmModal.alert('Error', 'Failed to load documents');
-        console.error('Error fetching documents:', error);
-    } finally {
-        setLoading(false);
-        setRefreshing(false);
-    }
+  try {
+    setLoading(true);
+    const docs = await ApiService.getDocuments();
+    setDocuments(docs);
+  } catch (error) {
+    ConfirmModal.alert("Error", "Failed to load documents");
+    console.error("Error fetching documents:", error);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
 };
 ```
 
 ### Replace With:
+
 ```typescript
 const fetchDocuments = async () => {
-    try {
-        setLoading(true);
-        
-        // Get current tab and convert to folder name
-        const currentTab = routes[index].key;
-        const folderName = currentTab === 'all' ? 'All' : currentTab.toUpperCase();
-        
-        console.log('Fetching documents for folder:', folderName);
-        const docs = await ApiService.getDocuments(folderName);
-        console.log('Fetched documents:', docs);
-        
-        setDocuments(docs);
-        setFilteredDocuments(docs);
-    } catch (error) {
-        ConfirmModal.alert('Error', 'Failed to load documents');
-        console.error('Error fetching documents:', error);
-    } finally {
-        setLoading(false);
-        setRefreshing(false);
-    }
+  try {
+    setLoading(true);
+
+    // Get current tab and convert to folder name
+    const currentTab = routes[index].key;
+    const folderName = currentTab === "all" ? "All" : currentTab.toUpperCase();
+    const docs = await ApiService.getDocuments(folderName);
+    setDocuments(docs);
+    setFilteredDocuments(docs);
+  } catch (error) {
+    ConfirmModal.alert("Error", "Failed to load documents");
+    console.error("Error fetching documents:", error);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
 };
 ```
 
 ### Also update the useEffect (around line 62-64):
 
 ### Current Code:
+
 ```typescript
 useEffect(() => {
-    filterDocumentsByTab();
+  filterDocumentsByTab();
 }, [index, documents]);
 ```
 
 ### Replace With:
+
 ```typescript
 useEffect(() => {
-    fetchDocuments();
+  fetchDocuments();
 }, [index]);
 ```
 
@@ -124,9 +127,11 @@ useEffect(() => {
 ## Summary of Changes
 
 ### services/ApiService.ts:
+
 - Line 881: Change `"EDUCATION"` to `category === 'All' ? '' : category`
 
 ### app/(tabs)/employee/empdocument.tsx:
+
 - Update `fetchDocuments` function to get current tab and pass to `getDocuments()`
 - Update `useEffect` to refetch when tab changes (dependency: `[index]`)
 

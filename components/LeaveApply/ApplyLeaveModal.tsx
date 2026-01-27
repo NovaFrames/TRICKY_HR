@@ -1,21 +1,21 @@
 // ApplyLeaveModal.tsx
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, {
-  AvailableLeaveType,
-  LeaveApplicationData,
-  LeaveBalanceResponse,
+    AvailableLeaveType,
+    LeaveApplicationData,
+    LeaveBalanceResponse,
 } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
 import CenterModalSelection from "../common/CenterModalSelection";
@@ -135,7 +135,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
       const claim = parseFloat(claimAmount) || 0;
       const maxPerVisit = leaveData?.MLPerVisitMaxN || 0;
       if (claim > maxPerVisit) {
-        ConfirmModal.alert("Error", `Claim amount cannot exceed ₹${maxPerVisit}`);
+        ConfirmModal.alert("Error", `Claim amount cannot exceed ${maxPerVisit}`);
         return false;
       }
     }

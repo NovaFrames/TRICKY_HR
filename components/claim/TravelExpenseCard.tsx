@@ -28,7 +28,7 @@ const TravelExpenseCard: React.FC<TravelExpenseCardProps> = ({ item, index, them
                 {item.boarding} {item.destination ? `→ ${item.destination}` : ''}
             </Text>
             {item.pnr ? <Text style={[styles.pnr, { color: theme.textLight }]}>PNR: {item.pnr}</Text> : null}
-            <Text style={[styles.amount, { color: theme.primary }]}>Amount: ₹{item.amount.toFixed(2)}</Text>
+            <Text style={[styles.amount, { color: theme.primary }]}>Amount: {item.amount.toFixed(2)}</Text>
         </View>
         <View style={styles.actions}>
             <TouchableOpacity onPress={() => onEdit(index)} style={styles.actionBtn}>
