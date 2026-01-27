@@ -82,9 +82,9 @@ const Snackbar: React.FC<SnackbarProps> = ({
 
   const backgroundColor =
     type === "error"
-      ? theme.secondary
+      ? theme.error
       : type === "success"
-        ? theme.primary
+        ? theme.success
         : theme.cardBackground;
   const textColor = type === "info" ? theme.text : "#fff";
   const borderColor =
