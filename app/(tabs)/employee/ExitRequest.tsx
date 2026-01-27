@@ -57,6 +57,31 @@ const formatDate = (dateString?: string) => {
   return date.toDateString();
 };
 
+const getValidDeclareDate = (declareDateString?: string) => {
+  const parsed = declareDateString
+    ? declareDateString.includes("/Date(")
+      ? parseAspDate(declareDateString)
+      : new Date(declareDateString)
+    : new Date();
+
+  if (!parsed || isNaN(parsed.getTime()) || parsed.getFullYear() < 2000) {
+    return new Date();
+  }
+
+  return parsed;
+};
+
+const computeDefaultLastWorkingDate = (
+  declareDateString?: string,
+  noticePeriodDays?: number,
+) => {
+  const baseDate = getValidDeclareDate(declareDateString);
+  const daysToAdd = Math.max(0, noticePeriodDays || 0);
+  const defaultDate = new Date(baseDate);
+  defaultDate.setDate(defaultDate.getDate() + daysToAdd);
+  return defaultDate;
+};
+
 export default function ExitRequestScreen() {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -140,7 +165,28 @@ export default function ExitRequestScreen() {
           // Initialize form
           if (finalData.ResExitDateD) {
             const parsed = parseAspDate(finalData.ResExitDateD);
-            if (parsed) setSelectedDate(parsed);
+            if (
+              parsed &&
+              !isNaN(parsed.getTime()) &&
+              parsed.getFullYear() > 1900
+            ) {
+              setSelectedDate(parsed);
+            } else {
+              setSelectedDate(
+                computeDefaultLastWorkingDate(
+                  finalData.ResDeclareD,
+                  finalData.RegNoticePeriodN,
+                ),
+              );
+            }
+          } else {
+            // If there is no selected exit date yet, default to declaration date + notice period.
+            setSelectedDate(
+              computeDefaultLastWorkingDate(
+                finalData.ResDeclareD,
+                finalData.RegNoticePeriodN,
+              ),
+            );
           }
           if (finalData.RegReasonIdN) setSelectedReason(finalData.RegReasonIdN);
           if (finalData.RegNoteC) setNotes(finalData.RegNoteC);
@@ -179,20 +225,7 @@ export default function ExitRequestScreen() {
     setSubmitLoading(true);
     try {
       // Ensure dates are in ISO format
-      let declareDate = exitData.ResDeclareD
-        ? exitData.ResDeclareD.includes("/Date(")
-          ? parseAspDate(exitData.ResDeclareD)
-          : new Date(exitData.ResDeclareD)
-        : new Date();
-
-      // Fix: If date is invalid or too old (e.g. 1899), use today
-      if (
-        !declareDate ||
-        isNaN(declareDate.getTime()) ||
-        declareDate.getFullYear() < 2000
-      ) {
-        declareDate = new Date();
-      }
+      const declareDate = getValidDeclareDate(exitData.ResDeclareD);
 
       const payload = {
         EmpIdN: exitData.EmpIdN || ApiService.getCurrentUser().empId || 0,

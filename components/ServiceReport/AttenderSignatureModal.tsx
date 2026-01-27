@@ -1,9 +1,9 @@
+import Modal from "@/components/common/SingleModal";
 import React, { useRef, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import SignatureCanvas from 'react-native-signature-canvas';
 import { useTheme } from '../../context/ThemeContext';
 import { CustomButton } from '../CustomButton';
-import Modal from "@/components/common/SingleModal";
 interface AttenderSignatureModalProps {
     visible: boolean;
     onClose: () => void;
@@ -86,17 +86,20 @@ export default function AttenderSignatureModal({
                         title="Cancel"
                         icon="close"
                         onPress={onClose}
+                        style={styles.buttonsize}
                     />
                     <CustomButton
                         title="Clear"
                         icon="trash-outline"
                         onPress={handleClear}
+                        style={styles.buttonsize}
                     />
                     <CustomButton
                         title="Done"
                         icon="checkmark-circle"
                         onPress={handleEnd}
                         disabled={!hasSignature}
+                        style={styles.buttonsize}
                     />
                 </View>
             </View>
@@ -126,11 +129,15 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         overflow: 'hidden',
     },
+    buttonsize:{
+        paddingHorizontal: 10,
+        paddingVertical:10
+    },
     buttonContainer: {
         flexDirection: 'row',
-        paddingHorizontal: 20,
         paddingBottom: 30,
-        gap: 10,
+        paddingHorizontal:10,
+        justifyContent:"space-around"
     },
     button: {
         flex: 1,

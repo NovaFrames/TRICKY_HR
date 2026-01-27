@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import CenterModalSelection from "../../../components/common/CenterModalSelection";
 import { CustomButton } from "../../../components/CustomButton";
 import AttenderSignatureModal from "../../../components/ServiceReport/AttenderSignatureModal";
@@ -176,6 +176,34 @@ export default function ServiceReport() {
     }
   };
 
+  const resetForm = () => {
+    // Client & selections
+    setSelectedClient(null);
+    setSelectedServiceTypes([]);
+    setSelectedServiceStatus([]);
+
+    // Form fields
+    setTicketNumber("");
+    setFaultDescription("");
+    setActionTaken("");
+    setRemarks("");
+
+    // Dates
+    setCallTime(new Date());
+    setAppointmentTime(new Date());
+    setStartTime(new Date());
+    setFollowUpDate(null);
+
+    // Service details
+    setServiceDetails([]);
+    setEditingDetailIndex(null);
+
+    // Signatures
+    setClientSignature("");
+    setAttendeeSignature("");
+  };
+
+
   const handleSubmit = async () => {
     if (!selectedClient) {
       ConfirmModal.alert("Error", "Please select a client");
@@ -246,7 +274,12 @@ export default function ServiceReport() {
 
       if (result.success) {
         ConfirmModal.alert("Success", "Service report submitted successfully", [
-          { text: "OK", onPress: () => router.back() },
+          {
+            text: "OK",
+            onPress: () => {
+              resetForm();
+            },
+          },
         ]);
       } else {
         ConfirmModal.alert("Error", result.error || "Failed to submit service report");
@@ -909,7 +942,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 16
   },
   label: {
     fontSize: 14,

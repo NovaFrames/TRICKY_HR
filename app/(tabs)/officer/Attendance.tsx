@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { API_ENDPOINTS } from "@/constants/api";
@@ -19,7 +20,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 
 // Types for Attendance Data
 export interface AttendanceShift {
@@ -265,7 +265,7 @@ export default function AttendanceList() {
         <ScrollView contentContainerStyle={{ paddingTop: HEADER_HEIGHT }}>
           {renderHeader()}
 
-          <Text
+          {/* <Text
             style={{
               textAlign: "center",
               marginTop: 8,
@@ -276,7 +276,7 @@ export default function AttendanceList() {
             <Text style={{ fontWeight: "700" }}>
               {formatDisplayDate(selectedDate)}
             </Text>
-          </Text>
+          </Text> */}
 
           <View style={{ paddingHorizontal: 16, paddingTop: 8, flex: 1 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>

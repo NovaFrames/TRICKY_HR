@@ -9,13 +9,12 @@ import { Href, useLocalSearchParams } from "expo-router";
 import { XMLParser } from "fast-xml-parser";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
-import DynamicTable, { ColumnDef } from "../DynamicTable";
+import { ColumnDef } from "../DynamicTable";
 import Header, { HEADER_HEIGHT } from "../Header";
 
 /* ---------------- TYPES ---------------- */
@@ -323,7 +322,7 @@ export default function ApprovalReqDetails() {
         </View>
 
         {/* TABLE */}
-        <View style={{ marginTop: 16 }}>
+        {/* <View style={{ marginTop: 16 }}>
           {approval.DescC === "LEAVE" ? (
             loading ? (
               <ActivityIndicator size="large" color={theme.primary} />
@@ -340,7 +339,7 @@ export default function ApprovalReqDetails() {
               No leave data available for this request.
             </Text>
           )}
-        </View>
+        </View> */}
       </ScrollView>
     </View>
   );
@@ -377,7 +376,7 @@ const createStyles = (theme: any) =>
       paddingHorizontal: 16,
     },
     content: {
-      paddingTop: HEADER_HEIGHT,
+      paddingTop: HEADER_HEIGHT +6,
     },
     card: {
       backgroundColor: theme.cardBackground,
