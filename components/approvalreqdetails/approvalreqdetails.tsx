@@ -1,4 +1,4 @@
-import ConfirmModal from "@/components/common/ConfirmModal";
+import Snackbar from "@/components/common/Snackbar";
 import { formatDisplayDate, formatTimeNumber } from "@/constants/timeFormat";
 import { useTheme } from "@/context/ThemeContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
@@ -78,6 +78,22 @@ export default function ApprovalReqDetails() {
   const [formattedLeaves, setFormattedLeaves] = useState<FormattedLeaveType[]>(
     [],
   );
+  const [snackbar, setSnackbar] = useState<{
+    visible: boolean;
+    message: string;
+    type: "info" | "error" | "success";
+  }>({
+    visible: false,
+    message: "",
+    type: "info",
+  });
+
+  const showSnackbar = (
+    message: string,
+    type: "info" | "error" | "success" = "info",
+  ) => {
+    setSnackbar({ visible: true, message, type });
+  };
 
   /* ---------------- PARSE PARAM ---------------- */
 
@@ -141,7 +157,7 @@ export default function ApprovalReqDetails() {
 
       const rawData = result?.data?.data;
       if (!rawData) {
-        ConfirmModal.alert("Info", "No leave data found");
+        showSnackbar("No leave data found", "info");
         return;
       }
 
@@ -175,7 +191,7 @@ export default function ApprovalReqDetails() {
       }
 
       if (!tableData.length) {
-        ConfirmModal.alert("Info", "No leave data found");
+        showSnackbar("No leave data found", "info");
         return;
       }
 
@@ -183,7 +199,7 @@ export default function ApprovalReqDetails() {
       setFormattedLeaves(formatted);
     } catch (error) {
       console.error(error);
-      ConfirmModal.alert("Error", "Failed to load leave details");
+      showSnackbar("Failed to load leave details", "error");
     } finally {
       setLoading(false);
     }
@@ -341,6 +357,14 @@ export default function ApprovalReqDetails() {
           )}
         </View> */}
       </ScrollView>
+
+      <Snackbar
+        visible={snackbar.visible}
+        message={snackbar.message}
+        type={snackbar.type}
+        topOffset={HEADER_HEIGHT}
+        onDismiss={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 }
