@@ -222,8 +222,26 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     }
 
     const profile = profileData.empProfile;
-    const children = profileData.profileEmpChildUpdate || [];
-    const education = profileData.profileEmpEducationUpdate || [];
+    const children =
+      profileData.profileEmpChildUpdate ||
+      profileData.ProfileEmpChild ||
+      profileData.ProfileEmpChildUpdate ||
+      [];
+    const education =
+      profileData.profileEmpEducationUpdate ||
+      profileData.ProfileEmpEducation ||
+      profileData.ProfileEmpEducationUpdate ||
+      [];
+    const family =
+      profileData.empFamilyUpdate ||
+      profileData.EmpFamily ||
+      profileData.EmpFamilyUpdate ||
+      [];
+    const previousCompanies =
+      profileData.perviousCompUpdate ||
+      profileData.PerviousComp ||
+      profileData.PerviousCompUpdate ||
+      [];
     const nations = profileData.nation || [];
 
     const getCurrentNation = () => {
@@ -250,6 +268,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             theme={theme}
           />
           <InfoRow
+            label="Employee Code"
+            value={profile.EmpCodeC || ""}
+            theme={theme}
+          />
+          <InfoRow
             label="Middle Name"
             value={profile.MiddleNameC || ""}
             theme={theme}
@@ -257,6 +280,18 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
           <InfoRow
             label="Last Name"
             value={profile.LastNameC || ""}
+            theme={theme}
+          />
+          <InfoRow
+            label="Date of Birth"
+            value={
+              formatDate(
+                profile.BirthDateD ||
+                  profile.DateofBirthD ||
+                  profile.DOBD ||
+                  profile.BDateD,
+              ) || "N/A"
+            }
             theme={theme}
           />
 
@@ -475,6 +510,95 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             })}
           </View>
         )}
+
+        {/* Family Details */}
+        {family.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.textLight }]}>
+              Family Details
+            </Text>
+            {family.map((member: any, index: number) => {
+              if (member.EmpIdN === 0) return null;
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.familyCard,
+                    { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
+                  ]}
+                >
+                  <Text style={[styles.familyName, { color: theme.text }]}>
+                    {member.NamesC || "N/A"}
+                  </Text>
+                  <Text
+                    style={[styles.familyDetail, { color: theme.placeholder }]}
+                  >
+                    Relationship: {member.RelationshipN || "N/A"}
+                  </Text>
+                  <Text
+                    style={[styles.familyDetail, { color: theme.placeholder }]}
+                  >
+                    DOB: {formatDate(member.DateofBirthD) || "N/A"}
+                  </Text>
+                  {(member.PhNoC || member.EmailIDC) && (
+                    <Text
+                      style={[styles.familyDetail, { color: theme.placeholder }]}
+                    >
+                      Contact: {member.PhNoC || "N/A"} {member.EmailIDC ? `• ${member.EmailIDC}` : ""}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Previous Company Details */}
+        {previousCompanies.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.textLight }]}>
+              Previous Company Details
+            </Text>
+            {previousCompanies.map((company: any, index: number) => {
+              if (company.EmpIdN === 0) return null;
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.companyCard,
+                    { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
+                  ]}
+                >
+                  <Text style={[styles.companyName, { color: theme.text }]}>
+                    {company.CompNameC || "N/A"}
+                  </Text>
+                  <Text
+                    style={[styles.companyDetail, { color: theme.placeholder }]}
+                  >
+                    Designation: {company.DesignationC || "N/A"}
+                  </Text>
+                  <Text
+                    style={[styles.companyDetail, { color: theme.placeholder }]}
+                  >
+                    Period: {formatDate(company.FromDateD) || "N/A"} • {formatDate(company.ToDateD) || "N/A"}
+                  </Text>
+                  <Text
+                    style={[styles.companyDetail, { color: theme.placeholder }]}
+                  >
+                    Experience: {company.ExperienceN || "N/A"}
+                  </Text>
+                  {company.DescC ? (
+                    <Text
+                      style={[styles.companyDetail, { color: theme.placeholder }]}
+                    >
+                      Notes: {company.DescC}
+                    </Text>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        )}
       </>
     );
   };
@@ -524,12 +648,14 @@ const InfoRow = ({
   theme,
 }: {
   label: string;
-  value: string;
+  value: string | number | undefined | null;
   theme: any;
 }) => (
   <View style={styles.infoRow}>
     <Text style={[styles.infoLabel, { color: theme.textLight }]}>{label}</Text>
-    <Text style={[styles.infoValue, { color: theme.text }]}>: {value}</Text>
+    <Text style={[styles.infoValue, { color: theme.text }]}>
+      : {value === undefined || value === null || value === "" ? "N/A" : String(value)}
+    </Text>
   </View>
 );
 
@@ -625,6 +751,38 @@ const styles = StyleSheet.create({
   eduDetail: {
     fontSize: 12,
     fontWeight: "500",
+  },
+  familyCard: {
+    padding: 12,
+    borderRadius: 4,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  familyName: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  familyDetail: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  companyCard: {
+    padding: 12,
+    borderRadius: 4,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  companyName: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  companyDetail: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 2,
   },
   cancelButton: {
     height: 56,
