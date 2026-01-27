@@ -43,7 +43,7 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
     <View style={[styles.container, !showHeader && styles.compactContainer]}>
 {TeamMem?.[0]?.SubName?.length > 0 && (
   <Text style={[styles.sectionTitle, { color: theme.text }]}>
-    Your Supervisors
+    My Officer
   </Text>
 )}
 
@@ -61,7 +61,8 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
                 customerIdC={user?.CustomerIdC}
                 compIdN={user?.CompIdN}
                 empIdN={member.SubEmpIdN}
-                size={60}
+                size={70}
+                borderRadius={40}
               />
 
               <Text style={[styles.profileName, { color: theme.text }]}>
@@ -134,7 +135,6 @@ const styles = StyleSheet.create({
     fontWeight: "200",
     textAlign: "center",
     lineHeight: 14,
-    height: 28, // 👈 FIXED HEIGHT (2 lines)
   },
   teamScroll: {
     width: "100%",

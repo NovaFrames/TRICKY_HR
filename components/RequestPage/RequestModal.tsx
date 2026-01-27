@@ -31,8 +31,6 @@ const RequestModal: React.FC<RequestModalProps> = ({
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailedData, setDetailedData] = useState<any>(null);
 
-  if (!item) return null;
-
   // Helper to format ASP.NET JSON Date /Date(1234567890)/
   const formatDate = (dateString: string) => {
     try {
@@ -68,13 +66,13 @@ const RequestModal: React.FC<RequestModalProps> = ({
   };
 
   // Mapping fields
-  const requestDate = item.applyDateD || item.RequestDate || item.CreatedDate;
+  const requestDate = item?.applyDateD || item?.RequestDate || item?.CreatedDate;
   const description =
-    item.DescC || item.LeaveName || item.Description || "General Request";
-  const rangeDescription = item.LvDescC || "";
-  const status = item.StatusC || item.StatusResult || item.Status || "Waiting";
+    item?.DescC || item?.LeaveName || item?.Description || "General Request";
+  const rangeDescription = item?.LvDescC || "";
+  const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
   const remarks =
-    item.LVRemarksC || item.RemarksC || item.Remarks || "No remarks provided";
+    item?.LVRemarksC || item?.RemarksC || item?.Remarks || "No remarks provided";
 
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
@@ -157,6 +155,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
 
     fetchDetails();
   }, [visible, item]);
+
+  if (!item) return null;
 
   const handleCancelRequest = async () => {
     ConfirmModal.alert(

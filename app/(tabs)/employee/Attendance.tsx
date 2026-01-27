@@ -293,34 +293,44 @@ const Attendance = () => {
       const project = projects.find(
         (p) => String(p.IdN) === String(selectedProject),
       );
+
       if (!project) {
         ConfirmModal.alert("Required", "Selected project not found");
         return;
       }
-      const projectCoords = parseProjectCoords(project);
-      if (!projectCoords) {
-        ConfirmModal.alert("Required", "Project location not available");
-        return;
-      }
-      const distance = distanceMeters(
-        Number(location.latitude),
-        Number(location.longitude),
-        Number(projectCoords.latitude),
-        Number(projectCoords.longitude),
-      );
 
-      if (distance > 100) {
-        const distanceDisplay =
-          distance >= 1000
-            ? `${(distance / 1000).toFixed(1)} km`
-            : `${Math.round(distance)} meters`;
-        ConfirmModal.alert(
-          "Location Mismatch",
-          `You are ${distanceDisplay} away from the project location`,
+      // Only enforce geo-fencing for verified projects
+      if (Number(project.VerifiedAddressN) === 1) {
+        const projectCoords = parseProjectCoords(project);
+
+        if (!projectCoords) {
+          ConfirmModal.alert("Required", "Project location not available");
+          return;
+        }
+
+        const distance = distanceMeters(
+          Number(location.latitude),
+          Number(location.longitude),
+          Number(projectCoords.latitude),
+          Number(projectCoords.longitude),
         );
-        resetForm();
-        return;
+
+        if (distance > 100) {
+          const distanceDisplay =
+            distance >= 1000
+              ? `${(distance / 1000).toFixed(1)} km`
+              : `${Math.round(distance)} meters`;
+
+          ConfirmModal.alert(
+            "Location Mismatch",
+            `You are ${distanceDisplay} away from the project location`,
+          );
+          resetForm();
+          return;
+        }
       }
+
+
 
       const mode = attendanceType === "Check-in" ? 0 : 1;
       const serverDate = await ApiService.getRawServerTime(token);
@@ -340,7 +350,7 @@ const Attendance = () => {
       if (res.success) {
         resetForm();
         ConfirmModal.alert("Success", "Attendance marked", [
-          { text: "OK", onPress: () => router.back() },
+          { text: "OK" },
         ]);
       } else {
         ConfirmModal.alert("Failed", res.message || "Attendance failed");

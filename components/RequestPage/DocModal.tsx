@@ -30,8 +30,7 @@ const DocModal: React.FC<DocModalProps> = ({
     url: string;
     name: string;
   } | null>(null);
-  if (!item) return null;
-  const status = item.StatusC || item.StatusResult || item.Status || "Waiting";
+  const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
   if (status.toLowerCase().includes("approv"))
@@ -113,6 +112,9 @@ const DocModal: React.FC<DocModalProps> = ({
     };
     fetchDocDetails();
   }, [visible, item]);
+
+  if (!item) return null;
+
   const handleCancelRequest = async () => {
     ConfirmModal.alert(
       "Cancel Request",

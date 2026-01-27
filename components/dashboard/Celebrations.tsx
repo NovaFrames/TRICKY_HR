@@ -203,7 +203,7 @@ export default function Celebrations() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.cardBackground }]}>
+        <View style={[styles.container]}>
             <ScrollView
                 contentContainerStyle={styles.dashboard}
                 refreshControl={
@@ -218,15 +218,9 @@ export default function Celebrations() {
             >
                 <View
                     style={[
-                        styles.sectionCard,
-                        { backgroundColor: theme.cardBackground },
+                        styles.sectionCard
                     ]}
                 >
-                    {/* <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Upcoming Celebrations
-            </Text>
-          </View> */}
 
                     {upcomingCelebrations.length === 0 ? (
                         <Text style={[styles.sectionEmpty, { color: theme.textLight }]}>
@@ -236,7 +230,14 @@ export default function Celebrations() {
                         upcomingCelebrations.map((item) => (
                             <TouchableOpacity
                                 key={`${item.EmpIdN}-${item.type}`}
-                                style={[styles.sectionItem, { backgroundColor: theme.inputBg }]}
+                                style={[
+                                    styles.sectionItem,
+                                    {
+                                        backgroundColor: theme.cardBackground,
+                                        borderColor: theme.inputBorder ?? theme.primary + "33", // fallback
+                                        borderWidth: 1,
+                                    },
+                                ]}
                                 onPress={() => openWishesModal(item, item.type)}
                             >
                                 <ProfileImage
@@ -352,7 +353,7 @@ export default function Celebrations() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    dashboard: { padding: 16 },
+    dashboard: { paddingBottom: 14 },
     center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
     sectionCard: { borderRadius: 8, gap: 4 },

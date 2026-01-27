@@ -18,7 +18,7 @@ const Snackbar: React.FC<SnackbarProps> = ({
   message,
   type = "info",
   onDismiss,
-  duration = 2800,
+  duration = 1200,
   topOffset = 0,
 }) => {
   const { theme } = useTheme();

@@ -30,9 +30,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [timeData, setTimeData] = useState<any>(null);
 
-  if (!item) return null;
-
-  const status = item.StatusC || item.StatusResult || item.Status || "Waiting";
+  const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
@@ -105,6 +103,8 @@ const TimeModal: React.FC<TimeModalProps> = ({
 
     fetchTimeDetails();
   }, [visible, item]);
+
+  if (!item) return null;
 
   const handleCancelRequest = async () => {
     ConfirmModal.alert(

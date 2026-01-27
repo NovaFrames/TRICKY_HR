@@ -21,18 +21,6 @@ const STATIC_MENU_ITEMS = [
     IconC: "fa fa-th-large",
   },
   {
-    MenuNameC: "Profile",
-    IconcolorC: "#0EA5E9",
-    ActionC: "employee/profileupdate",
-    IconC: "fa fa-user",
-  },
-  {
-    MenuNameC: "Request Status",
-    IconcolorC: "#10B981",
-    ActionC: "employee/empRequest",
-    IconC: "fa fa-bar-chart",
-  },
-  {
     MenuNameC: "Leave Manage",
     IconcolorC: "#F59E0B",
     ActionC: "employee/leavemanage",
@@ -43,7 +31,7 @@ const STATIC_MENU_ITEMS = [
 /* -------------------- DASHBOARD ALLOWED ACTIONS -------------------- */
 const DASHBOARD_MENU_ACTIONS = [
   "employee/Attendance",
-  "employee/celebration",
+  "employee/leavemanage",
 ];
 
 /* -------------------- LAYOUT -------------------- */

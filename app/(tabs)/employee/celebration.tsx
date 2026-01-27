@@ -263,7 +263,7 @@ export default function Celebration() {
         key={item.EmpIdN}
         style={[
           styles.card,
-          { backgroundColor: theme.cardBackground, shadowColor: theme.text },
+          { backgroundColor: theme.inputBg, shadowColor: theme.text },
         ]}
         activeOpacity={0.85}
         onPress={() => openWishesModal(item, type)}

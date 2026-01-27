@@ -23,7 +23,7 @@ interface Document {
 }
 type DocumentType = string;
 const initialLayout = { width: Dimensions.get("window").width };
-const empdocument: React.FC = () => {
+const EmpDocument: React.FC = () => {
   const { theme } = useTheme();
   const [index, setIndex] = useState(0);
   const [routes] = useState([
@@ -388,4 +388,4 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
 });
-export default empdocument;
+export default EmpDocument;

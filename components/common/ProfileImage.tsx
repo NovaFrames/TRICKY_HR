@@ -17,7 +17,7 @@ export default function ProfileImage({
     compIdN,
     empIdN,
     size = 60,
-    borderRadius,
+    borderRadius = 4,
     style,
     fallbackSource = require("@/assets/images/emptyprofile.png"),
 }: ProfileImageProps) {
@@ -48,7 +48,7 @@ export default function ProfileImage({
                 {
                     width: size,
                     height: size,
-                    borderRadius: 4,
+                    borderRadius: borderRadius,
                 },
                 style,
             ]}

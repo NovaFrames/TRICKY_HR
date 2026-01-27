@@ -152,7 +152,7 @@ export const Schedule = () => {
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
 
   card: {
