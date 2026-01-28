@@ -24,18 +24,22 @@ import {
 
 const { width } = Dimensions.get("window");
 
-interface AttendanceProps {
-  propEmpIdN?: number | string;
-}
+type AttendanceParams = {
+  propEmpIdN?: string;
+  propEmpName?: string;
+};
 
 const Attendance = () => {
   const { theme } = useTheme();
   const { user } = useUser();
   const router = useRouter();
 
-  const { propEmpIdN } = useLocalSearchParams<{ propEmpIdN?: string }>();
+  const params = useLocalSearchParams() as AttendanceParams;
+
+  const { propEmpIdN, propEmpName } = params;
 
   const empId = propEmpIdN ?? user?.EmpIdN ?? user?.EmpId;
+  const empName = propEmpName ?? user?.EmpNameC;
 
   const cameraRef = useRef<CameraView>(null);
 
@@ -558,6 +562,19 @@ const Attendance = () => {
           )}
         </View>
 
+        <View style={styles.employeeNameSection}>
+          <Text style={[styles.employeeNameLabel, { color: theme.textLight }]}>
+            Attendance for{" "}
+          </Text>
+          <Text
+            style={[styles.employeeName, { color: theme.text }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {empName}
+          </Text>
+        </View>
+
         {/* CAMERA SECTION */}
         <View
           style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}
@@ -792,14 +809,13 @@ const styles = StyleSheet.create({
   cameraContainer: {
     borderRadius: 4,
     overflow: "hidden",
-    borderWidth: 1,
-    backgroundColor: "#f8fafc",
+    borderWidth: 0,
     marginBottom: 16,
+    alignItems: "center"
   },
   cameraFrame: {
-    height: 280,
-    width: "100%",
-    backgroundColor: "#000",
+    height: 240,
+    width: "80%",
   },
   switchCameraBtn: {
     position: "absolute",
@@ -880,6 +896,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 6,
     fontWeight: "500",
+  },
+
+  employeeNameSection: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent:"center",
+    flexWrap: "wrap",
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+
+  employeeNameLabel: {
+    flexShrink: 0,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  employeeName: {
+    flexShrink: 1,
+    fontSize: 20,
+    maxWidth: "100%",
+    textAlign: "center",
   },
 
   submitBtn: {

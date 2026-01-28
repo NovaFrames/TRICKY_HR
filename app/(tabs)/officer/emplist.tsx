@@ -116,6 +116,7 @@ export default function EmployeeListScreen() {
             params: {
               propEmpIdN: employee.EmpIdN,
               from: "employeelist",
+              propEmpName: employee.NameC,
             },
           });
         },
