@@ -27,9 +27,7 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
     const fetchData = async () => {
       try {
         const data = await ApiService.getEmpDashBoardList();
-        const arrayData = data.supDataList;
-        // Ensure array
-        setTeamMem(Array.isArray(arrayData) ? arrayData : []);
+        setTeamMem(Array.isArray(data.supDataList) ? data.supDataList : []);
       } catch (err) {
         console.error("Team fetch error:", err);
         setTeamMem([]);
@@ -39,104 +37,78 @@ export const TeamLeaders: React.FC<TeamLeadersProps> = ({
     fetchData();
   }, []);
 
+  if (!TeamMem.length) return null;
+
   return (
-    <View style={[styles.container, !showHeader && styles.compactContainer]}>
-{TeamMem?.[0]?.SubName?.length > 0 && (
-  <Text style={[styles.sectionTitle, { color: theme.text }]}>
-    My Officer
-  </Text>
-)}
+    <View>
+      {showHeader && (
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>
+          My Officer
+        </Text>
+      )}
 
-      {/* Team Leaders */}
-      <View style={styles.teamScrollWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.teamScroll}
-          contentContainerStyle={styles.teamRow}
-        >
-          {TeamMem?.map((member) => (
-            <View key={member.SubEmpIdN} style={styles.profileWrapper}>
-              <ProfileImage
-                customerIdC={user?.CustomerIdC}
-                compIdN={user?.CompIdN}
-                empIdN={member.SubEmpIdN}
-                size={70}
-                borderRadius={40}
-              />
+      <ScrollView>
+        {TeamMem.map((member) => (
+          <View
+            key={member.SubEmpIdN}
+            style={[
+              styles.card,
+            ]}
+          >
+            {/* Left avatar */}
+            <ProfileImage
+              customerIdC={user?.CustomerIdC}
+              compIdN={user?.CompIdN}
+              empIdN={member.SubEmpIdN}
+              size={48}
+              borderRadius={20}
+            />
 
-              <Text style={[styles.profileName, { color: theme.text }]}>
+            {/* Middle content */}
+            <View style={styles.info}>
+              <Text style={[styles.name, { color: theme.text }]}>
                 {member.SubName?.trim()}
               </Text>
-
-              <Text style={[styles.designation, { color: theme.text }]}>
+              <Text style={[styles.subText, { color: theme.textLight }]}>
                 {member.SubDesig}
               </Text>
             </View>
-          ))}
-        </ScrollView>
-      </View>
+
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    // marginBottom: 0, // Reduced from 24
-  },
-  compactContainer: {
-    marginBottom: 0,
-  },
-  header: {
-    alignItems: "flex-start", // Left-aligned
-  },
-  /* ⬇️ NEW wrapper prevents full-height expansion */
-  teamScrollWrapper: {
-    width: "100%",
-    alignItems: "center",
-  },
-
   sectionTitle: {
-    fontSize: 16, // Reduced from 18
-    fontWeight: "400",
-    marginBottom: 12, // Reduced from 16
-  },
-
-  /* 🔹 Team leaders styles */
-  teamRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    flexGrow: 1, // ⭐ THIS IS THE KEY FIX
-  },
-
-  profileWrapper: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-    width: 90,
-  },
-
-  profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#F3F4F6", // Light gray border for better definition on white
-  },
-  profileName: {
-    fontSize: 12,
-    marginTop: 6,
+    fontSize: 16,
     fontWeight: "500",
+    marginBottom: 12,
   },
-  designation: {
+
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+
+  info: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  name: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  subText: {
     fontSize: 12,
     marginTop: 4,
-    fontWeight: "200",
-    textAlign: "center",
-    lineHeight: 14,
-  },
-  teamScroll: {
-    width: "100%",
+    opacity: 0.8,
   },
 });

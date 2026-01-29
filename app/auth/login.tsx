@@ -29,7 +29,7 @@ import { CustomInput } from "../../components/CustomInput";
 import Modal from "../../components/common/SingleModal";
 import Snackbar from "../../components/common/Snackbar";
 import { useTheme } from "../../context/ThemeContext";
-import {
+import ApiService, {
   compPoliciesUpdate,
   loginUser,
   setBaseUrl,
@@ -169,6 +169,7 @@ export default function Login() {
     }
 
     setBaseUrl(workingDomain);
+    ApiService.setCredentials(token, empId ? Number(empId) : null);
     await setUser(userData);
     router.replace("/(tabs)/dashboard");
   };

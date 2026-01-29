@@ -93,7 +93,8 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
     setLoading(true);
     try {
       const currentUser = ApiService.getCurrentUser();
-      const empId = currentUser?.empId || (await AsyncStorage.getItem("EmpId"));
+      const empId =
+        currentUser?.empId || (await AsyncStorage.getItem("emp_id"));
       if (!empId) {
         ConfirmModal.alert("Error", "User ID not found");
         return;

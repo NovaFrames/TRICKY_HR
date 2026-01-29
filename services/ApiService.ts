@@ -5,6 +5,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { getDomainUrl } from "./urldomain";
 
 let BASE_URL = "";
+let baseUrlInitPromise: Promise<void> | null = null;
 
 const normalizeBaseUrl = (domainUrl: string) => {
   const trimmed = domainUrl.trim();
@@ -26,6 +27,14 @@ const initializeBaseUrl = async () => {
     BASE_URL = normalizeBaseUrl(domainUrl);
     api.defaults.baseURL = BASE_URL;
   }
+};
+
+const ensureBaseUrl = async () => {
+  if (BASE_URL) return;
+  if (!baseUrlInitPromise) {
+    baseUrlInitPromise = initializeBaseUrl();
+  }
+  await baseUrlInitPromise;
 };
 
 void initializeBaseUrl();
@@ -474,6 +483,7 @@ class ApiService {
 
   private async loadCredentials() {
     try {
+      await ensureBaseUrl();
       this.token = await AsyncStorage.getItem("auth_token");
       const empIdStr = await AsyncStorage.getItem("emp_id");
       this.empId = empIdStr ? parseInt(empIdStr) : null;
@@ -1030,6 +1040,16 @@ class ApiService {
       token: this.token,
       empId: this.empId,
     };
+  }
+
+  async refreshCredentials() {
+    await this.loadCredentials();
+    return this.getCurrentUser();
+  }
+
+  setCredentials(token: string | null, empId: number | null) {
+    this.token = token;
+    this.empId = empId;
   }
 
   // Time Management

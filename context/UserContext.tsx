@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import ApiService, { setBaseUrl } from "@/services/ApiService";
 
 export interface UserData {
   domain_url: string;
@@ -40,7 +41,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const storedUser = await AsyncStorage.getItem("user_data");
       if (storedUser) {
-        setUserState(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUserState(parsedUser);
+        if (parsedUser?.domain_url) {
+          setBaseUrl(parsedUser.domain_url);
+        }
+        await ApiService.refreshCredentials();
         setIsUserReady(true);
       }
     } catch (error) {

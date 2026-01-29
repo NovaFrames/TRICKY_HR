@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/context/ThemeContext";
+import { useUser } from "@/context/UserContext";
 import ApiService from "@/services/ApiService";
 
 type ScheduleProps = {
@@ -12,23 +13,34 @@ type ScheduleProps = {
 
 export const Schedule = () => {
   const { theme, isDark } = useTheme();
+  const { isUserReady, user } = useUser();
   const [shedule, setShedule] = useState<ScheduleProps[]>([]);
 
   useEffect(() => {
+    if (!isUserReady) return;
+    let cancelled = false;
     const fetchData = async () => {
       try {
+        await ApiService.refreshCredentials();
         const data = await ApiService.getEmpDashBoardList();
         const sheduleData = data.Schedule;
         // Ensure array
-        setShedule(Array.isArray(sheduleData) ? sheduleData : []);
+        if (!cancelled) {
+          setShedule(Array.isArray(sheduleData) ? sheduleData : []);
+        }
       } catch (err) {
         console.error("Team fetch error:", err);
-        setShedule([]);
+        if (!cancelled) {
+          setShedule([]);
+        }
       }
     };
 
     fetchData();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [isUserReady, user?.emp_id, user?.domain_url]);
 
   const parseScheduleDate = (val: string | number) => {
     if (!val) return null;
@@ -240,4 +252,3 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 });
-
