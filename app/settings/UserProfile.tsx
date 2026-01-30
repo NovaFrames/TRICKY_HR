@@ -662,23 +662,7 @@ export default function UserProfile() {
       setLoading(false);
     }
   };
-  const formatServerDateSafe = async (
-    token: string,
-    value?: string,
-    fallback = "/Date(-2209008600000)/", // 01/01/1900
-  ): Promise<string> => {
-    if (!value) return fallback;
-    // Already server format → send as-is
-    if (typeof value === "string" && value.includes("/Date(")) {
-      return value;
-    }
-    // Convert using server
-    try {
-      return await ApiService.getServerTime(token, value);
-    } catch {
-      return fallback;
-    }
-  };
+
   const updateProfileData = async () => {
     try {
       if (!user?.TokenC || !profile) return;
@@ -828,6 +812,7 @@ export default function UserProfile() {
   /* -------------------- DATA -------------------- */
   const profile = userData?.[0]?.empProfile;
   const nations: Nation[] = userData?.[0]?.nation || [];
+
   useEffect(() => {
     if (!profile || isEditing) return;
     // Initialize form data
@@ -1256,7 +1241,7 @@ export default function UserProfile() {
           onToggle={() => toggleSection("basic")}
           theme={theme}
         >
-          <DetailRow theme={theme} label="Employee ID" value={profile.EmpIdN} />
+          <DetailRow theme={theme} label="Employee ID" value={user?.EmpCodeC} />
           {isEditing ? (
             <>
               <EditableRow

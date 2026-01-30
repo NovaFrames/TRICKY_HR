@@ -1,10 +1,10 @@
+import Modal from "@/components/common/SingleModal";
 import { lockAndroidNavigationBar } from "@/utils/systemUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as NavigationBar from "expo-navigation-bar";
 import React, { useEffect } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import Modal from "@/components/common/SingleModal";
 interface Option {
   label: string;
   value: any;
@@ -103,7 +103,7 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
                     >
                       {option.label}
                     </Text>
-                    {option.subLabel ? (
+                    {/* {option.subLabel ? (
                       <Text
                         style={[
                           styles.optionSubText,
@@ -113,7 +113,7 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
                       >
                         {option.subLabel}
                       </Text>
-                    ) : null}
+                    ) : null} */}
                   </View>
                   {isSelected && (
                     <Ionicons
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 4,
     marginVertical: 4,

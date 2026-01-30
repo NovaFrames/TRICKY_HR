@@ -91,9 +91,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: 4,
+    marginBottom: 4,
   },
 
   info: {

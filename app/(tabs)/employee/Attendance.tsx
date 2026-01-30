@@ -27,6 +27,7 @@ const { width } = Dimensions.get("window");
 type AttendanceParams = {
   propEmpIdN?: string;
   propEmpName?: string;
+  propEmpCodeC?: string;
 };
 
 const Attendance = () => {
@@ -36,10 +37,11 @@ const Attendance = () => {
 
   const params = useLocalSearchParams() as AttendanceParams;
 
-  const { propEmpIdN, propEmpName } = params;
+  const { propEmpIdN, propEmpName, propEmpCodeC } = params;
 
   const empId = propEmpIdN ?? user?.EmpIdN ?? user?.EmpId;
   const empName = propEmpName ?? user?.EmpNameC;
+  const empCodeC = propEmpCodeC ?? user?.EmpCodeC;
 
   const cameraRef = useRef<CameraView>(null);
 
@@ -434,7 +436,7 @@ const Attendance = () => {
               :{currentTime.getSeconds().toString().padStart(2, "0")}
             </Text> */}
             {currentTime.toLocaleTimeString("en-US", {
-              hour12: true,
+              hour12: false,
             })}
           </Text>
           <Text style={[styles.dateText, { color: theme.placeholder }]}>
@@ -487,17 +489,6 @@ const Attendance = () => {
                 >
                   {selectedProjectData?.NameC}
                 </Text>
-                {selectedProjectLocation ? (
-                  <Text
-                    style={[
-                      styles.selectorSubText,
-                      { color: theme.placeholder },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {selectedProjectLocation}
-                  </Text>
-                ) : null}
               </View>
             ) : (
               <Text style={[styles.selectorText, { color: theme.placeholder }]}>
@@ -505,6 +496,36 @@ const Attendance = () => {
               </Text>
             )}
             <Ionicons name="chevron-down" size={20} color={theme.text + "80"} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.selectorContainer,
+              {
+                backgroundColor: theme.inputBg,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="location-outline"
+              size={20}
+              color={theme.primary}
+            />
+            {selectedProject ? (
+              <View style={styles.selectorTextBlock}>
+                <Text
+                  style={[styles.selectorText, { color: theme.text }]}
+                >
+                  {selectedProjectLocation}
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.selectorText, { color: theme.placeholder }]}>
+                Project Location
+              </Text>
+            )}
           </TouchableOpacity>
 
           <Text
@@ -571,7 +592,7 @@ const Attendance = () => {
             numberOfLines={2}
             ellipsizeMode="tail"
           >
-            {empName}
+            {empName}{` (${empCodeC})`}
           </Text>
         </View>
 
@@ -783,6 +804,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
+    marginTop:4
   },
   selectorText: {
     flex: 1,

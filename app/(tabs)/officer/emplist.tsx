@@ -117,6 +117,7 @@ export default function EmployeeListScreen() {
               propEmpIdN: employee.EmpIdN,
               from: "employeelist",
               propEmpName: employee.NameC,
+              propEmpCodeC: employee.CodeC,
             },
           });
         },
