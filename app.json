@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Tricky HR",
+    "name": "TrickyHR",
     "slug": "trickyhr",
     "version": "1.0.0",
     "orientation": "default",
@@ -23,9 +23,8 @@
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "adaptiveIcon": {
         "backgroundColor": "#121212",
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundImage": "./assets/images/icon.png",
-        "monochromeImage": "./assets/images/icon.png"
+        "foregroundImage": "./assets/images/adptive-icon.png",
+        "backgroundImage": "./assets/images//background.png"
       },
       "userInterfaceStyle": "automatic",
       "edgeToEdgeEnabled": true,
