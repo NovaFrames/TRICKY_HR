@@ -15,12 +15,16 @@
       "bundleIdentifier": "com.stalinchidhamparam01.trickyhr",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Location is required to mark attendance and verify work location."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.stalinchidhamparam01.trickyhr",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/adptive-icon.png",

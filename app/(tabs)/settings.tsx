@@ -209,7 +209,7 @@ export default function SettingsScreen() {
                             <Feather name="check" size={14} color="#FFF" />
                           )}
                         </TouchableOpacity>
-                        <Text>{color.label}</Text>
+                        <Text style={{color:theme.text}}>{color.label}</Text>
                       </View>
                     );
                   })}
