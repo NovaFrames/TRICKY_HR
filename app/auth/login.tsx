@@ -305,7 +305,7 @@ export default function Login() {
       [0, 1],
       [
         height / 2 - width * 0.4 - insets.top,
-        height * 0.84 - insets.bottom,
+        height * 0.90 - insets.bottom,
       ],
     );
 

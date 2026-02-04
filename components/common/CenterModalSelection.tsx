@@ -2,8 +2,15 @@ import Modal from "@/components/common/SingleModal";
 import { lockAndroidNavigationBar } from "@/utils/systemUI";
 import { Ionicons } from "@expo/vector-icons";
 import * as NavigationBar from "expo-navigation-bar";
-import React, { useEffect } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 interface Option {
   label: string;
@@ -27,6 +34,7 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
   selectedValue,
 }) => {
   const { theme, isDark } = useTheme();
+  const [query, setQuery] = useState("");
   useEffect(() => {
     if (!visible) return;
     void NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
@@ -43,6 +51,17 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
       lockAndroidNavigationBar(theme.background, isDark);
     };
   }, [visible, isDark, theme.background]);
+  useEffect(() => {
+    if (!visible) setQuery("");
+  }, [visible]);
+  const filteredOptions = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return options;
+    return options.filter((option) => {
+      const haystack = `${option.label} ${option.subLabel ?? ""}`.toLowerCase();
+      return haystack.includes(trimmed);
+    });
+  }, [options, query]);
   if (!visible) return null;
   return (
     <Modal
@@ -76,9 +95,41 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
               <Ionicons name="close" size={24} color={theme.icon} />
             </TouchableOpacity>
           </View>
+          {/* Search */}
+          <View
+            style={[
+              styles.searchRow,
+              { borderBottomColor: theme.inputBorder },
+            ]}
+          >
+            <Ionicons name="search" size={18} color={theme.icon} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search..."
+              placeholderTextColor={theme.placeholder}
+              style={[
+                styles.searchInput,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
+            />
+            {!!query && (
+              <TouchableOpacity
+                onPress={() => setQuery("")}
+                accessibilityLabel="Clear search"
+                style={styles.clearButton}
+              >
+                <Ionicons name="close-circle" size={18} color={theme.icon} />
+              </TouchableOpacity>
+            )}
+          </View>
           {/* Options List */}
           <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-            {options.map((option, index) => {
+            {filteredOptions.map((option, index) => {
               const isSelected = selectedValue === option.value;
               return (
                 <TouchableOpacity
@@ -125,6 +176,11 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
                 </TouchableOpacity>
               );
             })}
+            {filteredOptions.length === 0 && (
+              <Text style={[styles.emptyText, { color: theme.textLight }]}>
+                No results found.
+              </Text>
+            )}
             <View style={{ height: 20 }} />
           </ScrollView>
         </View>
@@ -165,6 +221,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    fontSize: 14,
+  },
+  clearButton: {
+    padding: 4,
+  },
   closeButton: {
     padding: 4,
   },
@@ -192,6 +268,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     fontWeight: "500",
+  },
+  emptyText: {
+    paddingVertical: 16,
+    textAlign: "center",
+    fontSize: 14,
   },
 });
 export default CenterModalSelection;
