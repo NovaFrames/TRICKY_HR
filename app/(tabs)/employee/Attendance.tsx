@@ -25,9 +25,9 @@ import {
 const { width } = Dimensions.get("window");
 
 type AttendanceParams = {
-  propEmpIdN?: string;
-  propEmpName?: string;
-  propEmpCodeC?: string;
+  propEmpIdN?: string | string[];
+  propEmpName?: string | string[];
+  propEmpCodeC?: string | string[];
 };
 
 const Attendance = () => {
@@ -39,9 +39,19 @@ const Attendance = () => {
 
   const { propEmpIdN, propEmpName, propEmpCodeC } = params;
 
-  const empId = propEmpIdN ?? user?.EmpIdN ?? user?.EmpId;
-  const empName = propEmpName ?? user?.EmpNameC;
-  const empCodeC = propEmpCodeC ?? user?.EmpCodeC;
+  const normalizeParam = (value?: string | string[]) =>
+    Array.isArray(value) ? value[0] : value;
+
+  const normalizedEmpId = normalizeParam(propEmpIdN);
+  const normalizedEmpName = normalizeParam(propEmpName);
+  const normalizedEmpCodeC = normalizeParam(propEmpCodeC);
+
+  const parsedEmpId = normalizedEmpId ? Number(normalizedEmpId) : undefined;
+  const empId = Number.isFinite(parsedEmpId)
+    ? parsedEmpId
+    : user?.EmpIdN ?? user?.EmpId;
+  const empName = normalizedEmpName ?? user?.EmpNameC ?? "";
+  const empCodeC = normalizedEmpCodeC ?? user?.EmpCodeC ?? "";
 
   const cameraRef = useRef<CameraView>(null);
 
@@ -127,15 +137,25 @@ const Attendance = () => {
 
   /* ---------------- CLOCK ---------------- */
   const parseServerTime = (raw: string) => {
-    const [day, monthStr, year, time] = raw.split(" ");
-    const [hour, minute, second] = time.split(":").map(Number);
+    const trimmed = String(raw || "").trim();
+    if (!trimmed) return null;
+
+    const parts = trimmed.split(" ");
+    if (parts.length < 4) return null;
+
+    const [day, monthStr, year, time] = parts;
+    const [hour, minute, second] = String(time || "")
+      .split(":")
+      .map(Number);
 
     const months: Record<string, number> = {
       Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
       Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
     };
 
-    return new Date(
+    if (!months.hasOwnProperty(monthStr)) return null;
+
+    const date = new Date(
       Number(year),
       months[monthStr],
       Number(day),
@@ -143,6 +163,8 @@ const Attendance = () => {
       minute,
       second
     );
+
+    return isNaN(date.getTime()) ? null : date;
   };
 
   useEffect(() => {
@@ -159,10 +181,13 @@ const Attendance = () => {
     // 2️⃣ Sync with server time (optional but accurate)
     const syncServerTime = async () => {
       try {
-        const raw = await ApiService.getRawServerTime(user?.TokenC);
+        const token = user?.TokenC || user?.Token;
+        if (!token) return;
+
+        const raw = await ApiService.getRawServerTime(token);
         const serverNow = parseServerTime(raw);
 
-        if (!isNaN(serverNow.getTime())) {
+        if (serverNow) {
           baseTime = serverNow;
           setCurrentTime(serverNow);
         }
@@ -338,6 +363,10 @@ const Attendance = () => {
       const mode = attendanceType === "Check-in" ? 0 : 1;
       const serverDate = await ApiService.getRawServerTime(token);
       const createdUser = user?.EmpIdN;
+      if (!createdUser) {
+        ConfirmModal.alert("Session Error", "Please sign in again");
+        return;
+      }
       const res = await markMobileAttendance(
         token,
         empId,
