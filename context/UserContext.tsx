@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import ApiService, { setBaseUrl } from "@/services/ApiService";
 
@@ -34,20 +35,57 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadUser();
+    void bootstrap();
   }, []);
+
+  const getAppStorageVersion = () => {
+    const expoConfig = Constants.expoConfig ?? (Constants as any).manifest;
+    const version = expoConfig?.version ?? Constants.nativeAppVersion ?? "0";
+    const build =
+      expoConfig?.ios?.buildNumber ??
+      expoConfig?.android?.versionCode ??
+      Constants.nativeBuildVersion ??
+      "0";
+    return `${version}(${build})`;
+  };
+
+  const ensureStorageVersion = async () => {
+    const versionKey = "__app_storage_version";
+    try {
+      const currentVersion = getAppStorageVersion();
+      const storedVersion = await AsyncStorage.getItem(versionKey);
+
+      if (storedVersion !== currentVersion) {
+        // Clear stale cache from previous app installs/updates.
+        await AsyncStorage.clear();
+        await AsyncStorage.setItem(versionKey, currentVersion);
+      }
+    } catch (error) {
+      console.error("Failed to validate storage version", error);
+    }
+  };
+
+  const bootstrap = async () => {
+    await ensureStorageVersion();
+    await loadUser();
+  };
 
   const loadUser = async () => {
     try {
       const storedUser = await AsyncStorage.getItem("user_data");
       if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUserState(parsedUser);
-        if (parsedUser?.domain_url) {
-          setBaseUrl(parsedUser.domain_url);
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUserState(parsedUser);
+          if (parsedUser?.domain_url) {
+            setBaseUrl(parsedUser.domain_url);
+          }
+          await ApiService.refreshCredentials();
+          setIsUserReady(true);
+        } catch (parseError) {
+          console.error("Invalid user cache, clearing", parseError);
+          await AsyncStorage.removeItem("user_data");
         }
-        await ApiService.refreshCredentials();
-        setIsUserReady(true);
       }
     } catch (error) {
       console.error("Failed to load user", error);
