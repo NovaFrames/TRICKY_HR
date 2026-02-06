@@ -7,19 +7,21 @@ import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService, { markMobileAttendance } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { useIsFocused } from "@react-navigation/native";
+import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Dimensions,
+  AppState, Dimensions,
   Image,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -72,6 +74,152 @@ const Attendance = () => {
   } | null>(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [cameraFacing, setCameraFacing] = useState<"front" | "back">("front");
+  const isFocused = useIsFocused();
+  const [cameraKey, setCameraKey] = useState(0);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [locationPermission, setLocationPermission] =
+    useState<Location.PermissionStatus | null>(null);
+  const [cameraPermissionStatus, setCameraPermissionStatus] = useState<
+    "granted" | "denied" | "undetermined" | null
+  >(null);
+
+  const updateLocationFromCoords = async (coords: {
+    latitude: number;
+    longitude: number;
+  }) => {
+    setLocation(coords);
+    try {
+      const address = await Location.reverseGeocodeAsync(coords);
+      if (address?.length) {
+        const a = address[0];
+        setLocation((prev) =>
+          prev
+            ? {
+              ...prev,
+              address: formatAddress(a),
+            }
+            : null,
+        );
+      }
+    } catch { }
+  };
+
+  const refreshCameraPermission = async () => {
+    const current = await Camera.getCameraPermissionsAsync();
+    setCameraPermissionStatus(current.status);
+    return current;
+  };
+
+  const refreshLocationPermission = async (opts?: { silent?: boolean }) => {
+    const current = await Location.getForegroundPermissionsAsync();
+    setLocationPermission(current.status);
+    if (current.status === "granted") {
+      await ensureLocation({ silent: opts?.silent });
+    }
+    return current;
+  };
+
+  useEffect(() => {
+    void refreshCameraPermission();
+    void refreshLocationPermission({ silent: true });
+  }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", async (state) => {
+      if (state === "active") {
+        const current = await refreshCameraPermission();
+        await refreshLocationPermission({ silent: true });
+
+        if (current.status === "granted") {
+          // 🔥 Force camera re-init
+          setCameraReady(false);
+          setTimeout(() => {
+            setCameraKey((k) => k + 1);
+            setCameraReady(true);
+          }, 200);
+        }
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
+
+
+  const ensureLocation = async (opts?: { silent?: boolean }) => {
+    try {
+      const current = await Location.getForegroundPermissionsAsync();
+      let status = current.status;
+      let canAskAgain = current.canAskAgain;
+
+      if (status !== "granted") {
+        const requested = await Location.requestForegroundPermissionsAsync();
+        status = requested.status;
+        canAskAgain = requested.canAskAgain;
+      }
+
+      setLocationPermission(status);
+
+      if (status !== "granted") {
+        if (!opts?.silent) {
+          if (canAskAgain === false) {
+            ConfirmModal.alert(
+              "Location Permission Blocked",
+              "Location access is blocked. Enable it from settings.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Open Settings",
+                  onPress: () => Linking.openSettings(),
+                },
+              ]
+            );
+          } else {
+            ConfirmModal.alert(
+              "Permission Required",
+              "Location permission is required to submit attendance",
+            );
+          }
+        }
+        return false;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      await updateLocationFromCoords({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      return true;
+    } catch {
+      if (!opts?.silent) {
+        ConfirmModal.alert(
+          "Location Error",
+          "Unable to access location. Please enable GPS/location services and try again.",
+        );
+      }
+      return false;
+    }
+  };
+
+  const isCameraGranted =
+    cameraPermissionStatus === "granted" || permission?.granted === true;
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (isFocused && isCameraGranted && !capturedImage) {
+      setCameraReady(false); // reset first
+      timeout = setTimeout(() => {
+        setCameraReady(true);
+        setCameraKey((prev) => prev + 1); // force fresh mount
+      }, 250); // 🔑 small delay (200–300ms is ideal)
+    }
+
+    return () => {
+      clearTimeout(timeout);
+      setCameraReady(false);
+    };
+  }, [isFocused, isCameraGranted, capturedImage, cameraFacing]);
+
 
   const formatAddress = (a: Location.LocationGeocodedAddress) => {
     const parts = [
@@ -221,15 +369,14 @@ const Attendance = () => {
 
   /* ---------------- PERMISSIONS ---------------- */
   useEffect(() => {
-    requestPermission();
     fetchProjects();
   }, []);
 
-  useProtectedBack({
-    home: "/home",
-    dashboard: "/dashboard",
-    employeelist: "/officer/emplist",
-  });
+  useEffect(() => {
+    if (isFocused && isCameraGranted && !capturedImage) {
+      setCameraKey((prev) => prev + 1);
+    }
+  }, [isFocused, isCameraGranted, capturedImage, cameraFacing]);
 
   const protectedBack = useProtectedBack({
     home: "/home",
@@ -238,38 +385,64 @@ const Attendance = () => {
   });
 
   /* ---------------- LOCATION ---------------- */
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        ConfirmModal.alert("Permission Required", "Location permission is required");
+  // useEffect(() => {
+  //   (async () => {
+  //     await ensureLocation({ silent: true });
+  //   })();
+  // }, []);
+
+  const handleRequestLocationPermission = async () => {
+    const current = await Location.getForegroundPermissionsAsync();
+    setLocationPermission(current.status);
+
+    console.log("Current location permission:", current);
+
+    if (current.granted) {
+      await ensureLocation();
+      return;
+    }
+
+    if (current.canAskAgain) {
+      const requested = await Location.requestForegroundPermissionsAsync(); // popup again
+      setLocationPermission(requested.status);
+      if (requested.granted) {
+        await ensureLocation();
         return;
       }
+      if (!requested.canAskAgain) {
+        ConfirmModal.alert(
+          "Location Permission Blocked",
+          "Please enable location permission from settings",
+          [{ text: "Open Settings", onPress: Linking.openSettings }]
+        );
+      }
+      return;
+    }
 
-      const loc = await Location.getCurrentPositionAsync({});
-      const coords = {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      };
+    if (!current.canAskAgain) {
+      const requested = await Location.requestForegroundPermissionsAsync(); // popup again
+      setLocationPermission(requested.status);
+      if (requested.granted) {
+        await ensureLocation();
+        return;
+      }
+      if (!requested.canAskAgain) {
+        ConfirmModal.alert(
+          "Location Permission Blocked",
+          "Please enable location permission from settings",
+          [{ text: "Open Settings", onPress: Linking.openSettings }]
+        );
+      }
+      return;
+    }
 
-      setLocation(coords);
+    ConfirmModal.alert(
+      "Location Permission Blocked",
+      "Please enable location permission from settings",
+      [{ text: "Open Settings", onPress: Linking.openSettings }]
+    );
+  };
 
-      try {
-        const address = await Location.reverseGeocodeAsync(coords);
-        if (address?.length) {
-          const a = address[0];
-          setLocation((prev) =>
-            prev
-              ? {
-                ...prev,
-                address: formatAddress(a),
-              }
-              : null,
-          );
-        }
-      } catch { }
-    })();
-  }, []);
 
   /* ---------------- PROJECT LIST ---------------- */
   const fetchProjects = async () => {
@@ -289,6 +462,49 @@ const Attendance = () => {
   };
 
   /* ---------------- MANUAL CAPTURE ---------------- */
+  const handleRequestCameraPermission = async () => {
+    let current = await refreshCameraPermission();
+
+    // ✅ Already granted → just activate camera
+    if (current.status === "granted") {
+      setCameraReady(false);
+      setTimeout(() => {
+        setCameraKey(k => k + 1);
+        setCameraReady(true);
+      }, 200);
+      return;
+    }
+
+    // ✅ Ask system popup (THIS shows Android dialog)
+    if (current.canAskAgain) {
+      console.log("Requesting can ask again permission...");
+      const result = await requestPermission();
+
+      // 🔁 Re-check after popup
+      current = await refreshCameraPermission();
+
+      if (current.status === "granted") {
+        setCameraReady(false);
+        setTimeout(() => {
+          setCameraKey(k => k + 1);
+          setCameraReady(true);
+        }, 200);
+      }
+      return;
+    } else {
+      console.log("Requesting camera permission...");
+      await requestPermission(); // Try again if user denied but can ask again
+      await refreshCameraPermission();
+    }
+
+    // ❌ Only here we open settings
+    ConfirmModal.alert(
+      "Camera Permission Required",
+      "Camera permission was permanently denied. Enable it from settings.",
+      [{ text: "Open Settings", onPress: Linking.openSettings }]
+    );
+  };
+
   const takePicture = async () => {
     if (!cameraRef.current) return;
 
@@ -455,8 +671,11 @@ const Attendance = () => {
       <Header title="Mobile Attendance" />
       <ScrollView
         showsVerticalScrollIndicator={false}
+        bounces={false}                 // iOS
+        alwaysBounceVertical={false}    // iOS
+        overScrollMode="never"          // Android 🔑
         contentContainerStyle={{
-          paddingTop: HEADER_HEIGHT + 24, // header + status bar
+          paddingTop: HEADER_HEIGHT + 24,
         }}
       >
         {/* CLOCK SECTION */}
@@ -609,12 +828,30 @@ const Attendance = () => {
               </Text>
             </>
           ) : (
-            <Text
-              style={[styles.locationText, { color: theme.placeholder }]}
-              numberOfLines={2}
-            >
-              {"Locatoin Not Found"}
-            </Text>
+            <View style={styles.locationDeniedWrap}>
+              <Text
+                style={[styles.locationText, { color: theme.placeholder }]}
+                numberOfLines={2}
+              >
+                {locationPermission === "denied"
+                  ? "Location permission is required"
+                  : "Location not available"}
+              </Text>
+              {locationPermission !== "granted" && (
+                <TouchableOpacity
+                  onPress={handleRequestLocationPermission}
+                  style={[
+                    styles.locationAllowBtn,
+                    { backgroundColor: theme.primary },
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.locationAllowBtnText}>
+                    Allow Location
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
 
@@ -636,7 +873,7 @@ const Attendance = () => {
           style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}
         >
           <View style={styles.cameraFrame}>
-            {permission?.granted && !capturedImage && (
+            {isCameraGranted && !capturedImage && (
               <TouchableOpacity
                 style={styles.switchCameraBtn}
                 onPress={() =>
@@ -656,13 +893,20 @@ const Attendance = () => {
 
             {capturedImage ? (
               <Image source={{ uri: capturedImage }} style={styles.preview} />
-            ) : permission?.granted ? (
+            ) : isFocused && cameraReady && isCameraGranted ? (
               <CameraView
+                key={cameraKey}     // 🔑 REQUIRED
                 ref={cameraRef}
                 facing={cameraFacing}
                 style={styles.preview}
+                onMountError={() => {
+                  ConfirmModal.alert(
+                    "Camera Error",
+                    "Unable to start camera"
+                  );
+                }}
               />
-            ) : (
+            ) : !isCameraGranted ? (
               <View
                 style={[
                   styles.permissionBlock,
@@ -685,14 +929,22 @@ const Attendance = () => {
                     styles.permissionBtn,
                     { backgroundColor: theme.primary },
                   ]}
-                  onPress={requestPermission}
+                  onPress={handleRequestCameraPermission}
                 >
                   <Text style={styles.permissionBtnText}>Allow Camera</Text>
                 </TouchableOpacity>
               </View>
-            )}
+            ) : (<View
+              style={[
+                styles.preview,
+                { backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
+              ]}
+            >
+              <Ionicons name="camera-outline" size={32} color="#777" />
+              <Text style={{ color: "#777", marginTop: 6 }}>Loading camera…</Text>
+            </View>)}
 
-            {!capturedImage && permission?.granted && (
+            {!capturedImage && isCameraGranted && (
               <View style={styles.cameraOverlay}>
                 <View
                   style={[
@@ -710,14 +962,14 @@ const Attendance = () => {
               { backgroundColor: theme.cardBackground },
             ]}
           >
-            {!capturedImage && permission?.granted ? (
+            {!capturedImage && isCameraGranted ? (
               <CustomButton
                 title="CAPTURE IDENTITY"
                 onPress={takePicture}
                 style={{ marginHorizontal: 8 }}
                 icon="camera"
               />
-            ) : (
+            ) : capturedImage ? (
               <View style={styles.retakeRow}>
                 <Ionicons name="checkmark-circle" size={24} color="#10B981" />
                 <Text
@@ -739,7 +991,9 @@ const Attendance = () => {
                   </Text>
                 </TouchableOpacity>
               </View>
-            )}
+            ) : (<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+              <Text style={{ color: "#777", fontSize: 16 }}>No identity captured</Text>
+            </View>)}
           </View>
         </View>
 
@@ -872,7 +1126,8 @@ const styles = StyleSheet.create({
   },
   cameraFrame: {
     height: 240,
-    width: "80%",
+    width: Math.min(width * 0.8, 320),
+    overflow: "hidden",
   },
   switchCameraBtn: {
     position: "absolute",
@@ -949,10 +1204,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 20,
   },
+  locationDeniedWrap: {
+    flex: 1,
+    alignItems: "center",
+  },
   locationText: {
     fontSize: 12,
     marginLeft: 6,
     fontWeight: "500",
+  },
+  locationAllowBtn: {
+    marginTop: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  locationAllowBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 12,
   },
 
   employeeNameSection: {

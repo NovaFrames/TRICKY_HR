@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Href, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
+  BackHandler,
   Platform,
   StatusBar,
   StyleSheet,
@@ -32,7 +33,13 @@ export default function Header({ title }: { title: string }) {
       router.replace(BACK_FALLBACKS[from]);
       return;
     }
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    if (BackHandler?.exitApp) {
+      BackHandler.exitApp();
+    }
   };
 
   return (

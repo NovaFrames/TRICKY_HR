@@ -13,7 +13,13 @@ export function useProtectedBack(backMap: BackMap) {
       router.replace(backMap[from]);
       return true;
     }
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+      return true;
+    }
+    if (BackHandler?.exitApp) {
+      BackHandler.exitApp();
+    }
     return true;
   }, [from, backMap]);
 
