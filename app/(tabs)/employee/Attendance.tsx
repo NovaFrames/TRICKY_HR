@@ -77,6 +77,8 @@ const Attendance = () => {
   const isFocused = useIsFocused();
   const [cameraKey, setCameraKey] = useState(0);
   const [cameraReady, setCameraReady] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const captureLockRef = useRef(false);
   const [locationPermission, setLocationPermission] =
     useState<Location.PermissionStatus | null>(null);
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<
@@ -507,8 +509,12 @@ const Attendance = () => {
 
   const takePicture = async () => {
     if (!cameraRef.current) return;
+    if (captureLockRef.current || isCapturing) return;
+    if (!isCameraGranted || !cameraReady || capturedImage) return;
 
     try {
+      captureLockRef.current = true;
+      setIsCapturing(true);
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.6,
         skipProcessing: true,
@@ -519,6 +525,9 @@ const Attendance = () => {
       }
     } catch {
       ConfirmModal.alert("Camera Error", "Failed to take picture");
+    } finally {
+      captureLockRef.current = false;
+      setIsCapturing(false);
     }
   };
 
@@ -968,6 +977,8 @@ const Attendance = () => {
                 onPress={takePicture}
                 style={{ marginHorizontal: 8 }}
                 icon="camera"
+                isLoading={isCapturing}
+                disabled={isCapturing || !cameraReady}
               />
             ) : capturedImage ? (
               <View style={styles.retakeRow}>
