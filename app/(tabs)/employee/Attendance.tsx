@@ -231,6 +231,12 @@ const Attendance = () => {
     employeelist: "/officer/emplist",
   });
 
+  const protectedBack = useProtectedBack({
+    home: "/home",
+    dashboard: "/dashboard",
+    employeelist: "/officer/emplist",
+  });
+
   /* ---------------- LOCATION ---------------- */
   useEffect(() => {
     (async () => {
@@ -382,7 +388,7 @@ const Attendance = () => {
       if (res.success) {
         resetForm();
         ConfirmModal.alert("Success", "Attendance marked", [
-          { text: "OK" },
+          { text: "OK", onPress: () => protectedBack() },
         ]);
       } else {
         ConfirmModal.alert("Failed", res.message || "Attendance failed");
@@ -833,7 +839,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
-    marginTop:4
+    marginTop: 4
   },
   selectorText: {
     flex: 1,
@@ -952,7 +958,7 @@ const styles = StyleSheet.create({
   employeeNameSection: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent:"center",
+    justifyContent: "center",
     flexWrap: "wrap",
     marginBottom: 10,
     paddingHorizontal: 20,

@@ -1,33 +1,36 @@
-import { useFocusEffect } from '@react-navigation/native';
-import {
-    Href,
-    router,
-    useLocalSearchParams,
-} from 'expo-router';
-import { useCallback } from 'react';
-import { BackHandler } from 'react-native';
+import { useFocusEffect } from "@react-navigation/native";
+import { Href, router, useLocalSearchParams } from "expo-router";
+import { useCallback } from "react";
+import { BackHandler } from "react-native";
 
 type BackMap = Record<string, Href>;
 
 export function useProtectedBack(backMap: BackMap) {
-    const { from } = useLocalSearchParams<{ from?: string }>();
+  const { from } = useLocalSearchParams<{ from?: string }>();
 
-    useFocusEffect(
-        useCallback(() => {
-            const onBackPress = () => {
-                if (from && backMap[from]) {
-                    router.replace(backMap[from]); // ✅ now typed
-                    return true;
-                }
-                return false;
-            };
+  const handleBack = useCallback(() => {
+    if (from && backMap[from]) {
+      router.replace(backMap[from]);
+      return true;
+    }
+    router.back();
+    return true;
+  }, [from, backMap]);
 
-            const subscription = BackHandler.addEventListener(
-                'hardwareBackPress',
-                onBackPress
-            );
+  // 🔐 Hardware back button
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => handleBack();
 
-            return () => subscription.remove(); // ✅ correct cleanup
-        }, [from, backMap])
-    );
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress,
+      );
+
+      return () => subscription.remove();
+    }, [handleBack]),
+  );
+
+  // ✅ THIS is what you were missing
+  return handleBack;
 }
