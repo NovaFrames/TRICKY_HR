@@ -132,18 +132,23 @@ export default function EmpMobileRpt() {
 
       // console.log(result, "result");
 
-      const customerId = user?.CustomerIdC || "kevit";
-      const companyId = user?.CompIdN || "1";
+      const customerId = user?.CustomerIdC;
+      const companyId = user?.CompIdN;
 
       const domainUrl = await getDomainUrl();
 
       if (result.success && result.data) {
-        const withImages = result.data.map(
-          (row: AttendanceRecord, i: number) => ({
+        const withImages = result.data.map((row: AttendanceRecord) => {
+          const canBuildImage =
+            domainUrl && customerId && companyId && row.EmpIdN && row.DateC;
+          const version = row.DateC || "";
+          return {
             ...row,
-            ImageUrl: `${domainUrl}/kevit-Customer/${customerId}/${companyId}/${row.EmpIdN}/MobileAtten/${row.DateC}.jpg?timestamp=${Date.now()}`,
-          }),
-        );
+            ImageUrl: canBuildImage
+              ? `${domainUrl}/kevit-Customer/${customerId}/${companyId}/${row.EmpIdN}/MobileAtten/${row.DateC}.jpg?v=${version}`
+              : undefined,
+          };
+        });
         setAttendanceData(withImages);
         // console.log("Attendance data loaded:", result.data.length, "records");
       } else {
@@ -167,7 +172,7 @@ export default function EmpMobileRpt() {
 
   useEffect(() => {
     fetchAttendanceReport();
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, user?.CustomerIdC, user?.CompIdN]);
 
   const onRefresh = () => {
     setRefreshing(true);

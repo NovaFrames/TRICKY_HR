@@ -95,7 +95,7 @@ export default function MobileAttenRpt() {
     if (user?.TokenC) {
       fetchReport();
     }
-  }, [user?.TokenC, toDate]);
+  }, [user?.TokenC, user?.CustomerIdC, user?.CompIdN, toDate]);
 
   const fetchReport = async () => {
     if (!user?.TokenC) {
@@ -119,8 +119,8 @@ export default function MobileAttenRpt() {
         0,
       );
 
-      const customerId = user?.CustomerIdC || "kevit";
-      const companyId = user?.CompIdN || "1";
+      const customerId = user?.CustomerIdC;
+      const companyId = user?.CompIdN;
 
       const domainUrl = await getDomainUrl();
 
@@ -128,12 +128,17 @@ export default function MobileAttenRpt() {
         const filteredData = result.data.filter((record: AttendanceRecord) =>
           isRecordInDateRange(record.DateC, fromDate, toDate),
         );
-        const withImages = filteredData.map(
-          (row: AttendanceRecord, i: number) => ({
+        const withImages = filteredData.map((row: AttendanceRecord) => {
+          const canBuildImage =
+            domainUrl && customerId && companyId && row.EmpIdN && row.DateC;
+          const version = row.DateC || "";
+          return {
             ...row,
-            ImageUrl: `${domainUrl}/kevit-Customer/${customerId}/${companyId}/${row.EmpIdN}/MobileAtten/${row.DateC}.jpg?timestamp=${Date.now()}`,
-          }),
-        );
+            ImageUrl: canBuildImage
+              ? `${domainUrl}/kevit-Customer/${customerId}/${companyId}/${row.EmpIdN}/MobileAtten/${row.DateC}.jpg?v=${version}`
+              : undefined,
+          };
+        });
         setAttendance(withImages);
       } else {
         ConfirmModal.alert("Info", result.error || "No attendance records found.");

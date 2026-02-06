@@ -105,7 +105,7 @@ export default function DynamicTable({
           >
             {showImage ? (
               <Image
-                source={{ uri: value }}
+                source={{ uri: value, cache: "force-cache" }}
                 style={styles.cellImage}
                 resizeMode="cover"
               />
