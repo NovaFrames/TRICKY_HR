@@ -79,6 +79,7 @@ const Attendance = () => {
   const [cameraReady, setCameraReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const captureLockRef = useRef(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [locationPermission, setLocationPermission] =
     useState<Location.PermissionStatus | null>(null);
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<
@@ -208,7 +209,7 @@ const Attendance = () => {
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
 
-    if (isFocused && isCameraGranted && !capturedImage) {
+    if (isFocused && isCameraGranted && !capturedImage && showCamera) {
       setCameraReady(false); // reset first
       timeout = setTimeout(() => {
         setCameraReady(true);
@@ -220,7 +221,13 @@ const Attendance = () => {
       clearTimeout(timeout);
       setCameraReady(false);
     };
-  }, [isFocused, isCameraGranted, capturedImage, cameraFacing]);
+  }, [isFocused, isCameraGranted, capturedImage, cameraFacing, showCamera]);
+
+  useEffect(() => {
+    if (!showCamera) {
+      setCameraReady(false);
+    }
+  }, [showCamera]);
 
 
   const formatAddress = (a: Location.LocationGeocodedAddress) => {
@@ -355,7 +362,7 @@ const Attendance = () => {
 
 
   useEffect(() => {
-    if (!capturedImage) return;
+    if (!capturedImage && !showCamera) return;
 
     const timer = setTimeout(() => {
       ConfirmModal.alert(
@@ -366,8 +373,7 @@ const Attendance = () => {
     }, 30000); // 30 seconds
 
     return () => clearTimeout(timer);
-  }, [capturedImage]);
-
+  }, [capturedImage, showCamera]);
 
   /* ---------------- PERMISSIONS ---------------- */
   useEffect(() => {
@@ -375,10 +381,10 @@ const Attendance = () => {
   }, []);
 
   useEffect(() => {
-    if (isFocused && isCameraGranted && !capturedImage) {
+    if (isFocused && isCameraGranted && !capturedImage && showCamera) {
       setCameraKey((prev) => prev + 1);
     }
-  }, [isFocused, isCameraGranted, capturedImage, cameraFacing]);
+  }, [isFocused, isCameraGranted, capturedImage, cameraFacing, showCamera]);
 
   const protectedBack = useProtectedBack({
     home: "/home",
@@ -522,6 +528,7 @@ const Attendance = () => {
 
       if (photo?.uri) {
         setCapturedImage(photo.uri);
+        setShowCamera(true);
       }
     } catch {
       ConfirmModal.alert("Camera Error", "Failed to take picture");
@@ -537,6 +544,7 @@ const Attendance = () => {
     setRemarks("");
     setCapturedImage(null);
     setCameraFacing("front");
+    setShowCamera(false);
   };
 
   const handleSubmit = async () => {
@@ -674,6 +682,12 @@ const Attendance = () => {
     ? projects.find((p) => String(p.IdN) === selectedProject)
     : null;
   const selectedProjectLocation = getProjectLocationText(selectedProjectData);
+  const hasPhoto = Boolean(capturedImage);
+  const cameraToggleLabel = showCamera
+    ? "Hide Camera"
+    : hasPhoto
+      ? "View Camera"
+      : "Open Camera";
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -877,136 +891,170 @@ const Attendance = () => {
           </Text>
         </View>
 
-        {/* CAMERA SECTION */}
+        {/* CAMERA TOGGLE */}
         <View
-          style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}
+          style={[
+            styles.cameraToggleCard,
+            {
+              backgroundColor: theme.cardBackground,
+              borderColor: theme.inputBorder,
+            },
+          ]}
         >
-          <View style={styles.cameraFrame}>
-            {isCameraGranted && !capturedImage && (
-              <TouchableOpacity
-                style={styles.switchCameraBtn}
-                onPress={() =>
-                  setCameraFacing((prev) =>
-                    prev === "front" ? "back" : "front",
-                  )
-                }
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name="camera-reverse-outline"
-                  size={22}
-                  color="#fff"
-                />
-              </TouchableOpacity>
-            )}
+          <View style={styles.cameraToggleTextWrap}>
+            <Text style={[styles.cameraToggleTitle, { color: theme.text }]}>
+              Identity Capture
+            </Text>
+            <Text style={[styles.cameraToggleSubtitle, { color: theme.placeholder }]}>
+              {hasPhoto ? "Photo captured" : "Open the camera to capture your photo"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.cameraToggleBtn, { backgroundColor: theme.primary }]}
+            activeOpacity={0.85}
+            onPress={() => setShowCamera((prev) => !prev)}
+          >
+            <Ionicons
+              name={showCamera ? "close" : "camera"}
+              size={18}
+              color="#fff"
+            />
+            <Text style={styles.cameraToggleBtnText}>{cameraToggleLabel}</Text>
+          </TouchableOpacity>
+        </View>
 
-            {capturedImage ? (
-              <Image source={{ uri: capturedImage }} style={styles.preview} />
-            ) : isFocused && cameraReady && isCameraGranted ? (
-              <CameraView
-                key={cameraKey}     // 🔑 REQUIRED
-                ref={cameraRef}
-                facing={cameraFacing}
-                style={styles.preview}
-                onMountError={() => {
-                  ConfirmModal.alert(
-                    "Camera Error",
-                    "Unable to start camera"
-                  );
-                }}
-              />
-            ) : !isCameraGranted ? (
-              <View
-                style={[
-                  styles.permissionBlock,
-                  { backgroundColor: theme.inputBg },
-                ]}
-              >
-                <Ionicons
-                  name="camera-outline"
-                  size={32}
-                  color={theme.placeholder}
-                />
-                <Text
-                  style={[styles.permissionText, { color: theme.placeholder }]}
-                >
-                  Camera permission is required
-                </Text>
+        {/* CAMERA SECTION */}
+        {showCamera && (
+          <View
+            style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}
+          >
+            <View style={styles.cameraFrame}>
+              {isCameraGranted && !capturedImage && (
                 <TouchableOpacity
+                  style={styles.switchCameraBtn}
+                  onPress={() =>
+                    setCameraFacing((prev) =>
+                      prev === "front" ? "back" : "front",
+                    )
+                  }
                   activeOpacity={0.8}
-                  style={[
-                    styles.permissionBtn,
-                    { backgroundColor: theme.primary },
-                  ]}
-                  onPress={handleRequestCameraPermission}
                 >
-                  <Text style={styles.permissionBtnText}>Allow Camera</Text>
+                  <Ionicons
+                    name="camera-reverse-outline"
+                    size={22}
+                    color="#fff"
+                  />
                 </TouchableOpacity>
-              </View>
-            ) : (<View
-              style={[
-                styles.preview,
-                { backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
-              ]}
-            >
-              <Ionicons name="camera-outline" size={32} color="#777" />
-              <Text style={{ color: "#777", marginTop: 6 }}>Loading camera…</Text>
-            </View>)}
+              )}
 
-            {!capturedImage && isCameraGranted && (
-              <View style={styles.cameraOverlay}>
+              {capturedImage ? (
+                <Image source={{ uri: capturedImage }} style={styles.preview} />
+              ) : isFocused && cameraReady && isCameraGranted ? (
+                <CameraView
+                  key={cameraKey}     // 🔑 REQUIRED
+                  ref={cameraRef}
+                  facing={cameraFacing}
+                  style={styles.preview}
+                  onMountError={() => {
+                    ConfirmModal.alert(
+                      "Camera Error",
+                      "Unable to start camera"
+                    );
+                  }}
+                />
+              ) : !isCameraGranted ? (
                 <View
                   style={[
-                    styles.faceGuide,
-                    { borderColor: theme.primary + "50" },
+                    styles.permissionBlock,
+                    { backgroundColor: theme.inputBg },
                   ]}
-                />
-              </View>
-            )}
-          </View>
-
-          <View
-            style={[
-              styles.cameraActions,
-              { backgroundColor: theme.cardBackground },
-            ]}
-          >
-            {!capturedImage && isCameraGranted ? (
-              <CustomButton
-                title="CAPTURE IDENTITY"
-                onPress={takePicture}
-                style={{ marginHorizontal: 8 }}
-                icon="camera"
-                isLoading={isCapturing}
-                disabled={isCapturing || !cameraReady}
-              />
-            ) : capturedImage ? (
-              <View style={styles.retakeRow}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                <Text
-                  style={{
-                    color: "#10B981",
-                    fontWeight: "600",
-                    flex: 1,
-                    marginLeft: 8,
-                  }}
                 >
-                  Identity Verified
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setCapturedImage(null)}
-                  style={styles.retakeBtn}
-                >
-                  <Text style={{ color: theme.primary, fontWeight: "700" }}>
-                    Retake
+                  <Ionicons
+                    name="camera-outline"
+                    size={32}
+                    color={theme.placeholder}
+                  />
+                  <Text
+                    style={[styles.permissionText, { color: theme.placeholder }]}
+                  >
+                    Camera permission is required
                   </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ color: "#777", fontSize: 16 }}>No identity captured</Text>
-            </View>)}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={[
+                      styles.permissionBtn,
+                      { backgroundColor: theme.primary },
+                    ]}
+                    onPress={handleRequestCameraPermission}
+                  >
+                    <Text style={styles.permissionBtnText}>Allow Camera</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (<View
+                style={[
+                  styles.preview,
+                  { backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
+                ]}
+              >
+                <Ionicons name="camera-outline" size={32} color="#777" />
+                <Text style={{ color: "#777", marginTop: 6 }}>Loading camera…</Text>
+              </View>)}
+
+              {!capturedImage && isCameraGranted && (
+                <View style={styles.cameraOverlay}>
+                  <View
+                    style={[
+                      styles.faceGuide,
+                      { borderColor: theme.primary + "50" },
+                    ]}
+                  />
+                </View>
+              )}
+            </View>
+
+            <View
+              style={[
+                styles.cameraActions,
+                { backgroundColor: theme.cardBackground },
+              ]}
+            >
+              {!capturedImage && isCameraGranted ? (
+                <CustomButton
+                  title="CAPTURE IDENTITY"
+                  onPress={takePicture}
+                  style={{ marginHorizontal: 8 }}
+                  icon="camera"
+                  isLoading={isCapturing}
+                  disabled={isCapturing || !cameraReady}
+                />
+              ) : capturedImage ? (
+                <View style={styles.retakeRow}>
+                  <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                  <Text
+                    style={{
+                      color: "#10B981",
+                      fontWeight: "600",
+                      flex: 1,
+                      marginLeft: 8,
+                    }}
+                  >
+                    Identity Verified
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setCapturedImage(null)}
+                    style={styles.retakeBtn}
+                  >
+                    <Text style={{ color: theme.primary, fontWeight: "700" }}>
+                      Retake
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ color: "#777", fontSize: 16 }}>No identity captured</Text>
+              </View>)}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* SUBMIT BUTTON */}
         <CustomButton
@@ -1126,6 +1174,42 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: "top",
     fontSize: 14,
+  },
+
+  cameraToggleCard: {
+    borderRadius: 4,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  cameraToggleTextWrap: {
+    flex: 1,
+  },
+  cameraToggleTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  cameraToggleSubtitle: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  cameraToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 4,
+    gap: 6,
+  },
+  cameraToggleBtnText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   cameraContainer: {
