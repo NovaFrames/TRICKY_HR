@@ -13,7 +13,8 @@ import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  AppState, Dimensions,
+  AppState,
+  Dimensions,
   Image,
   Linking,
   ScrollView,
@@ -21,7 +22,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -528,7 +529,7 @@ const Attendance = () => {
 
       if (photo?.uri) {
         setCapturedImage(photo.uri);
-        setShowCamera(true);
+        setShowCamera(false);
       }
     } catch {
       ConfirmModal.alert("Camera Error", "Failed to take picture");
@@ -892,6 +893,7 @@ const Attendance = () => {
         </View>
 
         {/* CAMERA TOGGLE */}
+        {!capturedImage && (
         <View
           style={[
             styles.cameraToggleCard,
@@ -912,7 +914,7 @@ const Attendance = () => {
           <TouchableOpacity
             style={[styles.cameraToggleBtn, { backgroundColor: theme.primary }]}
             activeOpacity={0.85}
-            onPress={() => setShowCamera((prev) => !prev)}
+            onPress={() => setShowCamera(true)}
           >
             <Ionicons
               name={showCamera ? "close" : "camera"}
@@ -922,12 +924,77 @@ const Attendance = () => {
             <Text style={styles.cameraToggleBtnText}>{cameraToggleLabel}</Text>
           </TouchableOpacity>
         </View>
+        )}
 
-        {/* CAMERA SECTION */}
-        {showCamera && (
+        {/* CAPTURED IMAGE PREVIEW */}
+        {capturedImage && (
           <View
-            style={[styles.cameraContainer, { borderColor: theme.inputBorder }]}
+            style={[
+              styles.capturedCard,
+              { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder },
+            ]}
           >
+            <View style={styles.capturedHeader}>
+              <View style={styles.capturedHeaderLeft}>
+                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                <Text style={[styles.capturedTitle, { color: theme.text }]}>
+                  Identity Photo
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setCapturedImage(null);
+                  setShowCamera(true);
+                }}
+                style={styles.retakeBtn}
+              >
+                <Text style={{ color: theme.primary, fontWeight: "700" }}>
+                  Retake
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Image source={{ uri: capturedImage }} style={styles.capturedPreview} />
+          </View>
+        )}
+
+        {/* SUBMIT BUTTON */}
+        <CustomButton
+          title="SUBMIT ATTENDANCE"
+          icon="arrow-forward"
+          isLoading={submitting}
+          disabled={!capturedImage}
+          onPress={handleSubmit}
+          style={{ marginHorizontal: 16 }}
+        />
+      </ScrollView>
+
+      {/* CAMERA OVERLAY */}
+      {showCamera && (
+        <View style={styles.overlayRoot}>
+          <TouchableOpacity
+            style={styles.overlayBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowCamera(false)}
+          />
+          <View
+            style={[
+              styles.modalCard,
+              { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                Capture Identity
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowCamera(false)}
+                style={styles.modalCloseBtn}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close" size={20} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.cameraFrame}>
               {isCameraGranted && !capturedImage && (
                 <TouchableOpacity
@@ -947,11 +1014,9 @@ const Attendance = () => {
                 </TouchableOpacity>
               )}
 
-              {capturedImage ? (
-                <Image source={{ uri: capturedImage }} style={styles.preview} />
-              ) : isFocused && cameraReady && isCameraGranted ? (
+              {isFocused && cameraReady && isCameraGranted ? (
                 <CameraView
-                  key={cameraKey}     // 🔑 REQUIRED
+                  key={cameraKey}
                   ref={cameraRef}
                   facing={cameraFacing}
                   style={styles.preview}
@@ -990,17 +1055,19 @@ const Attendance = () => {
                     <Text style={styles.permissionBtnText}>Allow Camera</Text>
                   </TouchableOpacity>
                 </View>
-              ) : (<View
-                style={[
-                  styles.preview,
-                  { backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
-                ]}
-              >
-                <Ionicons name="camera-outline" size={32} color="#777" />
-                <Text style={{ color: "#777", marginTop: 6 }}>Loading camera…</Text>
-              </View>)}
+              ) : (
+                <View
+                  style={[
+                    styles.preview,
+                    { backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
+                  ]}
+                >
+                  <Ionicons name="camera-outline" size={32} color="#777" />
+                  <Text style={{ color: "#777", marginTop: 6 }}>Loading camera…</Text>
+                </View>
+              )}
 
-              {!capturedImage && isCameraGranted && (
+              {isCameraGranted && (
                 <View style={styles.cameraOverlay}>
                   <View
                     style={[
@@ -1018,54 +1085,18 @@ const Attendance = () => {
                 { backgroundColor: theme.cardBackground },
               ]}
             >
-              {!capturedImage && isCameraGranted ? (
-                <CustomButton
-                  title="CAPTURE IDENTITY"
-                  onPress={takePicture}
-                  style={{ marginHorizontal: 8 }}
-                  icon="camera"
-                  isLoading={isCapturing}
-                  disabled={isCapturing || !cameraReady}
-                />
-              ) : capturedImage ? (
-                <View style={styles.retakeRow}>
-                  <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                  <Text
-                    style={{
-                      color: "#10B981",
-                      fontWeight: "600",
-                      flex: 1,
-                      marginLeft: 8,
-                    }}
-                  >
-                    Identity Verified
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setCapturedImage(null)}
-                    style={styles.retakeBtn}
-                  >
-                    <Text style={{ color: theme.primary, fontWeight: "700" }}>
-                      Retake
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ color: "#777", fontSize: 16 }}>No identity captured</Text>
-              </View>)}
+              <CustomButton
+                title="CAPTURE IDENTITY"
+                onPress={takePicture}
+                style={{ marginHorizontal: 8 }}
+                icon="camera"
+                isLoading={isCapturing}
+                disabled={isCapturing || !cameraReady || !isCameraGranted}
+              />
             </View>
           </View>
-        )}
-
-        {/* SUBMIT BUTTON */}
-        <CustomButton
-          title="SUBMIT ATTENDANCE"
-          icon="arrow-forward"
-          isLoading={submitting}
-          disabled={!capturedImage}
-          onPress={handleSubmit}
-          style={{ marginHorizontal: 16 }}
-        />
-      </ScrollView>
+        </View>
+      )}
 
       {/* Project Selection Modal */}
       <CenterModalSelection
@@ -1220,9 +1251,10 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   cameraFrame: {
-    height: 240,
-    width: Math.min(width * 0.8, 320),
+    height: 260,
+    width: Math.min(width * 0.82, 340),
     overflow: "hidden",
+    borderRadius: 4,
   },
   switchCameraBtn: {
     position: "absolute",
@@ -1292,6 +1324,33 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 
+  capturedCard: {
+    borderRadius: 4,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 16,
+  },
+  capturedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  capturedHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  capturedTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  capturedPreview: {
+    width: "100%",
+    height: 250,
+    borderRadius: 4,
+  },
+
   locationFooter: {
     flexDirection: "row",
     alignItems: "center",
@@ -1358,5 +1417,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: 1,
+  },
+
+  overlayRoot: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    zIndex: 50,
+  },
+  overlayBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  modalCard: {
+    width: "100%",
+    borderRadius: 6,
+    borderWidth: 1,
+    padding: 12,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  modalCloseBtn: {
+    padding: 6,
+    borderRadius: 18,
   },
 });
