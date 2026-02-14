@@ -1,5 +1,6 @@
 import CenterModalSelection from "@/components/common/CenterModalSelection";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import Snackbar from "@/components/common/Snackbar";
 import { CustomButton } from "@/components/CustomButton";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
@@ -13,6 +14,7 @@ import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   AppState,
   Dimensions,
   Image,
@@ -81,6 +83,22 @@ const Attendance = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const captureLockRef = useRef(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [projectLoading, setProjectLoading] = useState(false);
+  const [projectModalLoading, setProjectModalLoading] = useState(false);
+  const [projectError, setProjectError] = useState<string | null>(null);
+  const [projectRefreshAttempts, setProjectRefreshAttempts] = useState(0);
+  const [projectRefreshing, setProjectRefreshing] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    visible: boolean;
+    message: string;
+    type: "error" | "success" | "info";
+  }>({
+    visible: false,
+    message: "",
+    type: "info",
+  });
+  const [snackbarKey, setSnackbarKey] = useState(0);
+
   const [locationPermission, setLocationPermission] =
     useState<Location.PermissionStatus | null>(null);
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<
@@ -279,6 +297,14 @@ const Attendance = () => {
     return { latitude, longitude };
   };
 
+  const showSnackbar = (
+    message: string,
+    type: "error" | "success" | "info" = "error",
+  ) => {
+    setSnackbarKey((prev) => prev + 1);
+    setSnackbar({ visible: true, message, type });
+  };
+
   const getProjectLocationText = (project: any) => {
     if (!project) return "";
     const parts = [
@@ -377,9 +403,6 @@ const Attendance = () => {
   }, [capturedImage, showCamera]);
 
   /* ---------------- PERMISSIONS ---------------- */
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   useEffect(() => {
     if (isFocused && isCameraGranted && !capturedImage && showCamera) {
@@ -454,19 +477,82 @@ const Attendance = () => {
 
 
   /* ---------------- PROJECT LIST ---------------- */
-  const fetchProjects = async () => {
+  useEffect(() => {
+    if (isFocused) {
+      fetchProjects();
+    }
+  }, [isFocused]);
+
+
+  const fetchProjects = async (): Promise<boolean> => {
     try {
+      setProjectLoading(true);
+      setProjectError(null);
+
       const token = user?.TokenC || user?.Token;
-      if (!token) return;
+      if (!token) {
+        setProjectError("Session expired");
+        showSnackbar("Session expired", "error");
+        return false;
+      }
 
       const projectList = await ApiService.getAttendanceProjectList({
-        token, // ✅ PASS AS OBJECT
+        token,
       });
 
-      setProjects(projectList);
+      if (!projectList || projectList.length === 0) {
+        setProjectError("No projects available");
+        setProjects([]);
+        return false;
+      } else {
+        setProjects(projectList);
+        setProjectError(null);
+        setProjectRefreshAttempts(0);
+        return true;
+      }
+
     } catch (error) {
       console.error("Fetch projects error:", error);
+      setProjectError("Failed to load projects");
+      showSnackbar("Failed to load projects", "error");
       setProjects([]);
+      return false;
+    } finally {
+      setProjectLoading(false);
+    }
+  };
+
+  const handleOpenProjectModal = async () => {
+    if (projectLoading || projectModalLoading) return;
+    setProjectModalLoading(true);
+    try {
+      await fetchProjects();
+      setShowProjectModal(true);
+    } finally {
+      setProjectModalLoading(false);
+    }
+  };
+
+  const handleProjectNoDataRefresh = async () => {
+    if (projectLoading || projectRefreshing || projectRefreshAttempts >= 2) return;
+
+    const nextAttempts = projectRefreshAttempts + 1;
+    setProjectRefreshAttempts(nextAttempts);
+    setProjectRefreshing(true);
+
+    try {
+      const hasProjects = await fetchProjects();
+
+      if (!hasProjects) {
+        if (nextAttempts >= 2) {
+          setProjectError("Please try again sometime");
+          showSnackbar("Please try again sometime", "info");
+        } else {
+          showSnackbar("Please Contact Support", "info");
+        }
+      }
+    } finally {
+      setProjectRefreshing(false);
     }
   };
 
@@ -740,9 +826,32 @@ const Attendance = () => {
             },
           ]}
         >
+
+
           <Text style={[styles.fieldLabel, { color: theme.textLight }]}>
             PROJECT / SITE
           </Text>
+
+          {projectError !== "No projects available" &&
+          projects.length === 0 &&
+            projectRefreshAttempts < 2 && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={projectRefreshing || projectLoading}
+                onPress={handleProjectNoDataRefresh}
+                style={[styles.projectRefreshButton, { borderColor: theme.inputBorder }]}
+              >
+                {projectRefreshing ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : (
+                  <Ionicons name="refresh" size={13} color={theme.primary} />
+                )}
+                <Text style={[styles.projectRefreshButtonText, { color: theme.primary }]}>
+                  {projectRefreshing ? "Refreshing..." : "Refresh Projects"}
+                </Text>
+              </TouchableOpacity>
+            )}
+
           <TouchableOpacity
             style={[
               styles.selectorContainer,
@@ -751,7 +860,7 @@ const Attendance = () => {
                 borderColor: theme.inputBorder,
               },
             ]}
-            onPress={() => setShowProjectModal(true)}
+            onPress={handleOpenProjectModal}
             activeOpacity={0.7}
           >
             <Ionicons
@@ -894,36 +1003,36 @@ const Attendance = () => {
 
         {/* CAMERA TOGGLE */}
         {!capturedImage && (
-        <View
-          style={[
-            styles.cameraToggleCard,
-            {
-              backgroundColor: theme.cardBackground,
-              borderColor: theme.inputBorder,
-            },
-          ]}
-        >
-          <View style={styles.cameraToggleTextWrap}>
-            <Text style={[styles.cameraToggleTitle, { color: theme.text }]}>
-              Identity Capture
-            </Text>
-            <Text style={[styles.cameraToggleSubtitle, { color: theme.placeholder }]}>
-              {hasPhoto ? "Photo captured" : "Open the camera to capture your photo"}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.cameraToggleBtn, { backgroundColor: theme.primary }]}
-            activeOpacity={0.85}
-            onPress={() => setShowCamera(true)}
+          <View
+            style={[
+              styles.cameraToggleCard,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.inputBorder,
+              },
+            ]}
           >
-            <Ionicons
-              name={showCamera ? "close" : "camera"}
-              size={18}
-              color="#fff"
-            />
-            <Text style={styles.cameraToggleBtnText}>{cameraToggleLabel}</Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.cameraToggleTextWrap}>
+              <Text style={[styles.cameraToggleTitle, { color: theme.text }]}>
+                Identity Capture
+              </Text>
+              <Text style={[styles.cameraToggleSubtitle, { color: theme.placeholder }]}>
+                {hasPhoto ? "Photo captured" : "Open the camera to capture your photo"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.cameraToggleBtn, { backgroundColor: theme.primary }]}
+              activeOpacity={0.85}
+              onPress={() => setShowCamera(true)}
+            >
+              <Ionicons
+                name={showCamera ? "close" : "camera"}
+                size={18}
+                color="#fff"
+              />
+              <Text style={styles.cameraToggleBtnText}>{cameraToggleLabel}</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* CAPTURED IMAGE PREVIEW */}
@@ -1111,6 +1220,34 @@ const Attendance = () => {
         selectedValue={selectedProject}
         onSelect={(val: string | number) => setSelectedProject(String(val))}
       />
+
+      {projectModalLoading && (
+        <View style={styles.projectLoadingOverlay}>
+          <View
+            style={[
+              styles.projectLoadingModal,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+          >
+            <ActivityIndicator size="small" color={theme.primary} />
+            <Text style={[styles.projectLoadingText, { color: theme.text }]}>
+              Loading projects...
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <Snackbar
+        key={snackbarKey}
+        visible={snackbar.visible}
+        message={snackbar.message}
+        type={snackbar.type}
+        topOffset={HEADER_HEIGHT}
+        onDismiss={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
+      />
     </View>
   );
 };
@@ -1205,6 +1342,43 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: "top",
     fontSize: 14,
+  },
+  projectRefreshButton: {
+    alignSelf: "center",
+    marginTop: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  projectRefreshButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  projectLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  projectLoadingModal: {
+    minWidth: 170,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  projectLoadingText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   cameraToggleCard: {

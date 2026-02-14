@@ -2123,20 +2123,29 @@ class ApiService {
   }): Promise<AttendanceProject[]> {
     try {
       const domainUrl = await getDomainUrl();
-      if (!domainUrl) return [];
 
-      // console.log("TokenC:", data.token);
+      if (!domainUrl) return [];
 
       const formData = new FormData();
       formData.append("TokenC", data.token);
       formData.append("blnEmpMaster", "false");
       formData.append("ViewReject", "false");
 
+      console.time("PROJECT_LIST_API");
+
       const res = await axios.post(
         `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } },
+        {
+          TokenC: data.token,
+          blnEmpMaster: false,
+          ViewReject: false,
+        },
+        {
+          timeout: 15000,
+        },
       );
+
+      console.timeEnd("PROJECT_LIST_API");
 
       if (res.data?.Status === "success") {
         return res.data.data || [];

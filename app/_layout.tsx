@@ -11,7 +11,6 @@ import {
   useRouter,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { setBackgroundColorAsync } from "expo-system-ui";
 import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -77,10 +76,6 @@ function RootNavigator() {
       router.replace("/(tabs)/dashboard");
     }
   }, [isAuthenticated, isLoading, pathname]);
-
-  useEffect(() => {
-    void setBackgroundColorAsync(theme.background);
-  }, [theme.background]);
 
   if (isLoading) return null;
 
