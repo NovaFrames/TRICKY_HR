@@ -2118,20 +2118,23 @@ class ApiService {
     }
   }
 
-  async getAttendanceProjectList(data: {
-    token: string;
-  }): Promise<AttendanceProject[]> {
+  async getAttendanceProjectList(data: { token: string }) {
     try {
+      console.log("STEP 1 - Inside getAttendanceProjectList");
+
       const domainUrl = await getDomainUrl();
+      console.log("STEP 2 - Domain:", domainUrl);
 
-      if (!domainUrl) return [];
+      if (!domainUrl) {
+        console.log("STEP 3 - No domainUrl");
+        return [];
+      }
 
-      const formData = new FormData();
-      formData.append("TokenC", data.token);
-      formData.append("blnEmpMaster", "false");
-      formData.append("ViewReject", "false");
-
-      console.time("PROJECT_LIST_API");
+      console.log("STEP 4 - Token:", data.token);
+      console.log(
+        "STEP 5 - Calling API:",
+        `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
+      );
 
       const res = await axios.post(
         `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
@@ -2140,20 +2143,20 @@ class ApiService {
           blnEmpMaster: false,
           ViewReject: false,
         },
-        {
-          timeout: 15000,
-        },
+        { timeout: 30000 },
       );
 
-      console.timeEnd("PROJECT_LIST_API");
+      console.log("STEP 6 - Response:", res.data);
 
       if (res.data?.Status === "success") {
         return res.data.data || [];
       }
 
+      console.log("STEP 7 - Status not success");
       return [];
-    } catch (error) {
-      console.error("getAttendanceProjectList error:", error);
+    } catch (error: any) {
+      console.log("STEP ERROR:", error?.message);
+      console.log("STEP ERROR RESPONSE:", error?.response?.data);
       return [];
     }
   }

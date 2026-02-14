@@ -478,11 +478,11 @@ const Attendance = () => {
 
   /* ---------------- PROJECT LIST ---------------- */
   useEffect(() => {
-    if (isFocused) {
-      fetchProjects();
-    }
-  }, [isFocused]);
+    if (!isFocused) return;
+    if (!user?.TokenC && !user?.Token) return;
 
+    fetchProjects();
+  }, [isFocused, user]);
 
   const fetchProjects = async (): Promise<boolean> => {
     try {
@@ -513,8 +513,12 @@ const Attendance = () => {
 
     } catch (error) {
       console.error("Fetch projects error:", error);
-      setProjectError("Failed to load projects");
-      showSnackbar("Failed to load projects", "error");
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to load projects";
+      setProjectError(message);
+      showSnackbar(message, "error");
       setProjects([]);
       return false;
     } finally {
@@ -833,7 +837,7 @@ const Attendance = () => {
           </Text>
 
           {projectError !== "No projects available" &&
-          projects.length === 0 &&
+            projects.length === 0 &&
             projectRefreshAttempts < 2 && (
               <TouchableOpacity
                 activeOpacity={0.8}

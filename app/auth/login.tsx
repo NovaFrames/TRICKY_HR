@@ -170,7 +170,11 @@ export default function Login() {
 
     setBaseUrl(workingDomain);
     ApiService.setCredentials(token, empId ? Number(empId) : null);
-    await setUser(userData);
+    await setUser({
+      ...userData,
+      domain_url: workingDomain,
+      domain_id: domainId ?? userData?.domain_id ?? "",
+    });
     router.replace("/(tabs)/dashboard");
   };
 
