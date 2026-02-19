@@ -1,4 +1,5 @@
 import { ConfirmModalProvider } from "@/components/common/ConfirmModal";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { ModalManagerProvider } from "@/components/common/ModalManager";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
@@ -21,15 +22,17 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <ModalManagerProvider>
-        <ConfirmModalProvider>
-          <UserProvider>
-            <RootNavigator />
-          </UserProvider>
-        </ConfirmModalProvider>
-      </ModalManagerProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ModalManagerProvider>
+          <ConfirmModalProvider>
+            <UserProvider>
+              <RootNavigator />
+            </UserProvider>
+          </ConfirmModalProvider>
+        </ModalManagerProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

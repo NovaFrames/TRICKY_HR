@@ -6,8 +6,14 @@ import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
-import ApiService, { markMobileAttendance } from "@/services/ApiService";
+import ApiService, {
+  ensureBaseUrl,
+  markMobileAttendance,
+} from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { useIsFocused } from "@react-navigation/native";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
@@ -37,7 +43,7 @@ type AttendanceParams = {
 
 const Attendance = () => {
   const { theme } = useTheme();
-  const { user } = useUser();
+  const { user, logout } = useUser();
   const router = useRouter();
 
   const params = useLocalSearchParams() as AttendanceParams;
@@ -65,6 +71,8 @@ const Attendance = () => {
   const [attendanceType, setAttendanceType] = useState<
     "Check-in" | "Check-out"
   >("Check-in");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [remarks, setRemarks] = useState("");
   const [projects, setProjects] = useState<any[]>([]);
@@ -305,6 +313,13 @@ const Attendance = () => {
     setSnackbar({ visible: true, message, type });
   };
 
+  const forceLogoutForMissingToken = async () => {
+    await logout();
+    ConfirmModal.alert("Session Expired", "Please sign in again.", [
+      { text: "OK", onPress: () => router.replace("/auth/login") },
+    ]);
+  };
+
   const getProjectLocationText = (project: any) => {
     if (!project) return "";
     const parts = [
@@ -404,12 +419,6 @@ const Attendance = () => {
 
   /* ---------------- PERMISSIONS ---------------- */
 
-  useEffect(() => {
-    if (isFocused && isCameraGranted && !capturedImage && showCamera) {
-      setCameraKey((prev) => prev + 1);
-    }
-  }, [isFocused, isCameraGranted, capturedImage, cameraFacing, showCamera]);
-
   const protectedBack = useProtectedBack({
     home: "/home",
     dashboard: "/dashboard",
@@ -492,7 +501,7 @@ const Attendance = () => {
       const token = user?.TokenC || user?.Token;
       if (!token) {
         setProjectError("Session expired");
-        showSnackbar("Session expired", "error");
+        await forceLogoutForMissingToken();
         return false;
       }
 
@@ -648,7 +657,17 @@ const Attendance = () => {
       const token = user?.TokenC || user?.Token;
 
       if (!token || !empId) {
-        ConfirmModal.alert("Session Error", "Please sign in again");
+        await forceLogoutForMissingToken();
+        return;
+      }
+
+      try {
+        await ensureBaseUrl();
+      } catch {
+        ConfirmModal.alert(
+          "Configuration Error",
+          "Domain URL is missing. Please sign in again.",
+        );
         return;
       }
       const project = projects.find(
@@ -707,12 +726,23 @@ const Attendance = () => {
         remarks,
         serverDate,
         createdUser,
+        selectedDate,
       );
 
       if (res.success) {
         resetForm();
         ConfirmModal.alert("Success", "Attendance marked", [
-          { text: "OK", onPress: () => protectedBack() },
+          {
+            text: "OK",
+            onPress: () => {
+              try {
+                protectedBack();
+              } catch (error) {
+                console.error("Protected back navigation failed:", error);
+                router.replace("/(tabs)/dashboard");
+              }
+            },
+          },
         ]);
       } else {
         ConfirmModal.alert("Failed", res.message || "Attendance failed");
@@ -768,6 +798,14 @@ const Attendance = () => {
       ))}
     </View>
   );
+
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    setShowDatePicker(false);
+
+    if (event.type === "set" && date) {
+      setSelectedDate(date);
+    }
+  };
 
   const selectedProjectData = selectedProject
     ? projects.find((p) => String(p.IdN) === selectedProject)
@@ -833,6 +871,32 @@ const Attendance = () => {
 
 
           <Text style={[styles.fieldLabel, { color: theme.textLight }]}>
+            ATTENDANCE DATE
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.selectorContainer,
+              {
+                backgroundColor: theme.inputBg,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar-outline" size={20} color={theme.primary} />
+            <Text style={[styles.selectorText, { color: theme.text }]}>
+              {selectedDate.toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color={theme.text + "80"} />
+          </TouchableOpacity>
+
+          <Text style={[styles.fieldLabel, { color: theme.textLight, marginTop: 16 }]}>
             PROJECT / SITE
           </Text>
 
@@ -1212,6 +1276,16 @@ const Attendance = () => {
       )}
 
       {/* Project Selection Modal */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          maximumDate={new Date()}
+          onChange={handleDateChange}
+        />
+      )}
+
       <CenterModalSelection
         visible={showProjectModal}
         onClose={() => setShowProjectModal(false)}

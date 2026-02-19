@@ -5,10 +5,9 @@ import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { UserData, useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
-import { getDomainUrl } from "@/services/urldomain";
+import { api, ensureBaseUrl } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -98,9 +97,7 @@ export default function AttendanceList() {
   };
 
   const fetchAttendance = async () => {
-    const domainUrl = await getDomainUrl();
-
-    if (!token || !domainUrl) return;
+    if (!token) return;
 
     const today = normalizeDate(new Date());
 
@@ -112,14 +109,14 @@ export default function AttendanceList() {
 
     setLoading(true);
     try {
-      const url = `${domainUrl}${API_ENDPOINTS.ATTENDANCE_LIST}`;
+      await ensureBaseUrl();
       const payload = {
         TokenC: token,
         FDate: formatDateForApi(selectedDate),
         TDate: formatDateForApi(selectedDate),
       };
 
-      const response = await axios.post(url, payload);
+      const response = await api.post(API_ENDPOINTS.ATTENDANCE_LIST, payload);
 
       if (response.data.Status === "success") {
         const data = response.data.data || [];

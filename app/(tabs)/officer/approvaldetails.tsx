@@ -4,9 +4,8 @@ import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
-import { getDomainUrl } from "@/services/urldomain";
+import { api, ensureBaseUrl } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -64,8 +63,7 @@ export default function ApprovalDetails() {
   const fetchData = async () => {
     try {
       setLoading(true);
-
-      const domainUrl = await getDomainUrl();
+      await ensureBaseUrl();
       const currentTab = routes[index].key;
 
       const endpoint =
@@ -73,7 +71,7 @@ export default function ApprovalDetails() {
           ? API_ENDPOINTS.SUP_DETAPPROVE_URL
           : API_ENDPOINTS.SUP_GETREJECT_URL;
 
-      const response = await axios.post(`${domainUrl}${endpoint}`, {
+      const response = await api.post(endpoint, {
         TokenC: user?.TokenC,
       });
 

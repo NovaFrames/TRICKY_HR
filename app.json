@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TrickyHR",
+    "name": "TrickyHr",
     "slug": "trickyhr",
     "version": "1.0.0",
     "orientation": "default",
@@ -12,7 +12,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.stalinchidhamparam01.trickyhr",
+      "bundleIdentifier": "com.mykevit.www.trickyhr",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
@@ -20,16 +20,14 @@
       }
     },
     "android": {
-      "package": "com.stalinchidhamparam01.trickyhr",
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
-      ],
+      "package": "com.mykevit.www.trickyhr",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/adptive-icon.png",
         "backgroundImage": "./assets/images//background.png"
       },
+      "versionCode": 110,
       "userInterfaceStyle": "automatic",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -44,7 +42,13 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "ndkVersion": "26.1.10909125",
+            "usesCleartextTraffic": true,
+            "packagingOptions": {
+              "pickFirst": []
+            }
           }
         }
       ],
@@ -60,8 +64,7 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker",
-      "expo-build-properties"
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -160,7 +160,6 @@ export default function Login() {
 
     await AsyncStorage.setItem("auth_token", token);
     await AsyncStorage.setItem("emp_id", empId || "");
-    await AsyncStorage.setItem("domain_url", workingDomain);
     await AsyncStorage.setItem("_domain", domainUrl);
     if (domainId) {
       await AsyncStorage.setItem("domain_id", domainId);
@@ -168,7 +167,7 @@ export default function Login() {
       await AsyncStorage.removeItem("domain_id");
     }
 
-    setBaseUrl(workingDomain);
+    await setBaseUrl(workingDomain);
     ApiService.setCredentials(token, empId ? Number(empId) : null);
     await setUser({
       ...userData,

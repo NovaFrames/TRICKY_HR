@@ -78,7 +78,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           const parsedUser = JSON.parse(storedUser);
           setUserState(parsedUser);
           if (parsedUser?.domain_url) {
-            setBaseUrl(parsedUser.domain_url);
+            await setBaseUrl(parsedUser.domain_url);
           }
           await ApiService.refreshCredentials();
           setIsUserReady(true);
@@ -101,9 +101,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await AsyncStorage.setItem("user_data", JSON.stringify(userData));
 
-      // 🔥 Save domain_url separately for Axios
       if (userData.domain_url) {
-        await AsyncStorage.setItem("domain_url", userData.domain_url);
+        await setBaseUrl(userData.domain_url);
       }
 
       if (userData.domain_id) {

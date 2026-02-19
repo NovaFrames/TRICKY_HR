@@ -2,10 +2,7 @@ import { API_ENDPOINTS } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as FileSystem from "expo-file-system/legacy";
-import { getDomainUrl } from "./urldomain";
-
-let BASE_URL = "";
-let baseUrlInitPromise: Promise<void> | null = null;
+import { getAuthTokenSafely, setDomainUrlSafely } from "./urldomain";
 
 const normalizeBaseUrl = (domainUrl: string) => {
   const trimmed = domainUrl.trim();
@@ -13,38 +10,68 @@ const normalizeBaseUrl = (domainUrl: string) => {
   return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
 };
 
+export const getSafeDomain = async (): Promise<string | null> => {
+  const domain = await AsyncStorage.getItem("domain_url");
+  const normalized = normalizeBaseUrl(domain ?? "");
+  return normalized || null;
+};
+
+export const getSafeToken = async (): Promise<string | null> => {
+  const token = await getAuthTokenSafely();
+  return token ?? null;
+};
+
 // Create an axios instance
 const api = axios.create({
-  baseURL: BASE_URL,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-const initializeBaseUrl = async () => {
-  const domainUrl = await getDomainUrl();
-  if (domainUrl) {
-    BASE_URL = normalizeBaseUrl(domainUrl);
-    api.defaults.baseURL = BASE_URL;
+export const ensureBaseUrl = async () => {
+  const domainUrl = await getSafeDomain();
+  if (!domainUrl) {
+    throw new Error("Domain URL not configured");
   }
+  return domainUrl;
 };
 
-const ensureBaseUrl = async () => {
-  if (BASE_URL) return;
-  if (!baseUrlInitPromise) {
-    baseUrlInitPromise = initializeBaseUrl();
-  }
-  await baseUrlInitPromise;
-};
-
-void initializeBaseUrl();
-
-export const setBaseUrl = (domainUrl: string) => {
+export const setBaseUrl = async (
+  domainUrl: string,
+  options?: { force?: boolean },
+) => {
   const normalized = normalizeBaseUrl(domainUrl);
   if (!normalized) return;
-  BASE_URL = normalized;
-  api.defaults.baseURL = BASE_URL;
+  await setDomainUrlSafely(normalized, options);
 };
+
+api.interceptors.request.use(async (config) => {
+  const resolvedBaseUrl =
+    normalizeBaseUrl(config.baseURL ?? "") || (await getSafeDomain());
+
+  if (!resolvedBaseUrl) {
+    throw new Error("Domain URL missing. Please login again.");
+  }
+
+  config.baseURL = resolvedBaseUrl;
+
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("[ApiService] Request failed", {
+      message: error?.message,
+      status: error?.response?.status,
+      endpoint: error?.config?.url,
+      baseURL: error?.config?.baseURL,
+      data: error?.response?.data,
+    });
+    return Promise.reject(error);
+  },
+);
 
 export const loginUser = async (
   empCode: string,
@@ -53,11 +80,17 @@ export const loginUser = async (
   domainId?: string,
 ) => {
   try {
-    const response = await axios.post(`${domainUrl}/${API_ENDPOINTS.LOGIN}`, {
-      EmpCode: empCode,
-      Password: password,
-      ...(domainId ? { DomainId: domainId } : {}),
-    });
+    const response = await api.post(
+      API_ENDPOINTS.LOGIN,
+      {
+        EmpCode: empCode,
+        Password: password,
+        ...(domainId ? { DomainId: domainId } : {}),
+      },
+      {
+        baseURL: normalizeBaseUrl(domainUrl),
+      },
+    );
     return response ?? null;
   } catch (error) {
     throw error;
@@ -71,13 +104,14 @@ export const compPoliciesUpdate = async (
 ) => {
   try {
     const normalized = normalizeBaseUrl(domainUrl);
-    const response = await axios.post(
-      `${normalized}${API_ENDPOINTS.COMP_POLICIES_UPDATE}`,
+    const response = await api.post(
+      API_ENDPOINTS.COMP_POLICIES_UPDATE,
       {
         TokenC: token,
         PoliciseId: policyId,
       },
       {
+        baseURL: normalized,
         headers: {
           "Content-Type": "application/json",
           Token: token,
@@ -115,13 +149,9 @@ export const faceRegApi = async ({
 
   try {
     // Using explicit full URL to be safe, matching the standard WebApi pattern
-    const response = await axios.post(
-      `${BASE_URL}/UpdateFaceRegister`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      },
-    );
+    const response = await api.post("/UpdateFaceRegister", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response?.data ?? null;
   } catch (error) {
     throw error;
@@ -261,14 +291,39 @@ export const markMobileAttendance = async (
   remark: string,
   serverDateTime: string,
   createdUser: number,
+  selectedDate?: Date,
 ): Promise<AttendanceResponse> => {
-  const domainUrl = await getDomainUrl();
-  if (!domainUrl) {
+  const tokenBefore = await getSafeToken();
+  console.log("[Attendance] token before submit:", tokenBefore ?? "missing");
+
+  try {
+    await ensureBaseUrl();
+  } catch (error: any) {
+    console.error("[Attendance] Missing domain/baseURL:", error?.message);
     return { success: false, message: "Domain not available" };
   }
 
-  const url = `${domainUrl}${API_ENDPOINTS.INSERT_MOBILE_ATTENDANCE}`;
-  const { date, time } = parseServerDate(serverDateTime);
+  if (!serverDateTime) {
+    return { success: false, message: "Invalid server time" };
+  }
+
+  let date = "";
+  let time = "";
+
+  try {
+    const parsed = parseServerDate(serverDateTime);
+    date = parsed.date;
+    time = parsed.time;
+
+    if (selectedDate && Number.isFinite(selectedDate.getTime())) {
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const day = String(selectedDate.getDate()).padStart(2, "0");
+      const year = selectedDate.getFullYear();
+      date = `${month}/${day}/${year}`;
+    }
+  } catch {
+    return { success: false, message: "Date parsing failed" };
+  }
 
   const formData = new FormData();
   formData.append("MobilePht", {
@@ -289,10 +344,14 @@ export const markMobileAttendance = async (
   formData.append("CreatedByN", createdUser.toString());
 
   try {
-    const response = await axios.post(url, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      timeout: 120000,
-    });
+    const response = await api.post(
+      API_ENDPOINTS.INSERT_MOBILE_ATTENDANCE,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 30000,
+      },
+    );
 
     if (response.data?.Status === "success") {
       return {
@@ -308,10 +367,18 @@ export const markMobileAttendance = async (
       raw: response.data,
     };
   } catch (error: any) {
+    console.error("[Attendance] markMobileAttendance error", {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data,
+    });
     return {
       success: false,
       message: error?.message || "Network / Server error",
     };
+  } finally {
+    const tokenAfter = await getSafeToken();
+    console.log("[Attendance] token after submit:", tokenAfter ?? "missing");
   }
 };
 
@@ -484,12 +551,16 @@ class ApiService {
   private async loadCredentials() {
     try {
       await ensureBaseUrl();
-      this.token = await AsyncStorage.getItem("auth_token");
+      this.token = await getSafeToken();
       const empIdStr = await AsyncStorage.getItem("emp_id");
       this.empId = empIdStr ? parseInt(empIdStr) : null;
     } catch (error) {
       console.error("Error loading credentials:", error);
     }
+  }
+
+  private async ensureApiReady() {
+    await ensureBaseUrl();
   }
 
   private async saveCredentials(token: string, empId: number) {
@@ -513,7 +584,7 @@ class ApiService {
   // Authentication
   async login(username: string, password: string, companyCode: string) {
     try {
-      const response = await axios.post(BASE_URL + API_ENDPOINTS.LOGIN, {
+      const response = await api.post(API_ENDPOINTS.LOGIN, {
         username,
         password,
         companyCode,
@@ -542,8 +613,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_PROJECT_LIST,
+      const response = await api.post(
+        API_ENDPOINTS.GET_PROJECT_LIST,
         {
           TokenC: this.token,
         },
@@ -578,8 +649,8 @@ class ApiService {
       //   EmpIdN: this.empId,
       // });
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_LEAVE_DETAILS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_LEAVE_DETAILS,
         {
           TokenC: this.token,
           EmpIdN: this.empId,
@@ -615,8 +686,8 @@ class ApiService {
       //   EmpIdN: IdN,
       // });
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_LEAVE_BALANCE_DETAILS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_LEAVE_BALANCE_DETAILS,
         {
           TokenC: this.token,
           EmpIdN: IdN,
@@ -649,8 +720,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_LEAVE_BALANCE,
+      const response = await api.post(
+        API_ENDPOINTS.GET_LEAVE_BALANCE,
         {
           TokenC: this.token,
           EmpIdN: this.empId,
@@ -691,8 +762,8 @@ class ApiService {
         leaveData.AppEmpIdN = this.empId;
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.APPLY_LEAVE,
+      const response = await api.post(
+        API_ENDPOINTS.APPLY_LEAVE,
         {
           TokenC: this.token,
           lap: leaveData,
@@ -735,8 +806,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_SURRENDER_BALANCE,
+      const response = await api.post(
+        API_ENDPOINTS.GET_SURRENDER_BALANCE,
         {
           TokenC: this.token,
           EmpIdN: this.empId,
@@ -772,8 +843,8 @@ class ApiService {
         surrenderData.EmpIdN = this.empId;
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.SUBMIT_SURRENDER,
+      const response = await api.post(
+        API_ENDPOINTS.SUBMIT_SURRENDER,
         {
           TokenC: this.token,
           data: surrenderData,
@@ -801,8 +872,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_SURRENDER_DETAILS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_SURRENDER_DETAILS,
         {
           TokenC: this.token,
           Id: surrenderId,
@@ -842,8 +913,8 @@ class ApiService {
       //   JSON.stringify(requestPayload),
       // );
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.SAVE_APPROVAL,
+      const response = await api.post(
+        API_ENDPOINTS.SAVE_APPROVAL,
         requestPayload,
         { headers: this.getHeaders() },
       );
@@ -903,14 +974,12 @@ class ApiService {
       // console.log("Delete Request Payload:", JSON.stringify(payload, null, 2));
       // console.log(
       //   "Delete Request Endpoint:",
-      //   BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY,
+      //   API_ENDPOINTS.GET_DELETE_APPLY,
       // );
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_DELETE_APPLY,
-        payload,
-        { headers: this.getHeaders() },
-      );
+      const response = await api.post(API_ENDPOINTS.GET_DELETE_APPLY, payload, {
+        headers: this.getHeaders(),
+      });
 
       // console.log("Delete Request Response Status:", response.status);
       // console.log(
@@ -997,8 +1066,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_EMP_REQUEST_STATUS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_EMP_REQUEST_STATUS,
         {
           TokenC: this.token,
           EmpIdN: this.empId,
@@ -1064,11 +1133,9 @@ class ApiService {
       // Ensure TokenC is correct
       payload.TokenC = this.token || "";
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.UPDATE_TIME,
-        payload,
-        { headers: this.getHeaders() },
-      );
+      const response = await api.post(API_ENDPOINTS.UPDATE_TIME, payload, {
+        headers: this.getHeaders(),
+      });
 
       if (response.data.Status === "success") {
         return { success: true, data: response.data };
@@ -1099,8 +1166,8 @@ class ApiService {
         TDate: toDate,
       };
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_TIME_MANAGE_LIST,
+      const response = await api.post(
+        API_ENDPOINTS.GET_TIME_MANAGE_LIST,
         payload,
         { headers: this.getHeaders() },
       );
@@ -1153,7 +1220,7 @@ class ApiService {
       const empId = this.empId;
       const companyId = userData?.CompIdN || userData?.CompanyId || "1";
       const customerId = userData?.CustomerIdC || userData?.DomainId || "kevit";
-      const companyUrl = BASE_URL; // Base URL is constant for now
+      const companyUrl = await ensureBaseUrl();
 
       // console.log("Download parameters:", { empId, companyId, customerId });
 
@@ -1169,11 +1236,9 @@ class ApiService {
 
       // console.log("Download Report Payload:", payload);
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.DOWNLOAD_REPORT,
-        payload,
-        { headers: this.getHeaders() },
-      );
+      const response = await api.post(API_ENDPOINTS.DOWNLOAD_REPORT, payload, {
+        headers: this.getHeaders(),
+      });
 
       // console.log("Download Report Response Status:", response.data.Status);
       // console.log(
@@ -1238,10 +1303,10 @@ class ApiService {
       const companyId = userData?.CompIdN || userData?.CompanyId || "1";
       const customerId =
         userData?.CustomerIdC || userData?.DomainId || "trickyhr";
-      const companyUrl = BASE_URL;
+      const companyUrl = await ensureBaseUrl();
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
         {
           TokenC: this.token,
           Id: this.empId, // C# backend expects 'Id', not 'EmpID'
@@ -1310,8 +1375,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_PAYSLIP_LIST,
+      const response = await api.post(
+        API_ENDPOINTS.GET_PAYSLIP_LIST,
         {
           TokenC: this.token,
           EmpIdN: this.empId,
@@ -1370,8 +1435,8 @@ class ApiService {
       // 1. Trigger the API to generate/prepare the PDF (Method 70 in Java)
       // Even if we construct the URL manually, some backends require this trigger.
       try {
-        await axios.post(
-          BASE_URL + API_ENDPOINTS.DOWNLOAD_PAYSLIP,
+        await api.post(
+          API_ENDPOINTS.DOWNLOAD_PAYSLIP,
           {
             TokenC: this.token,
             Month: paySlip.MonthN,
@@ -1388,7 +1453,7 @@ class ApiService {
       // 2. Construct the URL
       const companyId = userData.CompIdN || userData.CompanyId;
       const customerId = userData.CustomerIdC || userData.DomainId;
-      const companyUrl = BASE_URL; // Or from storage if dynamic
+      const companyUrl = await ensureBaseUrl();
 
       // Pattern from Java: company_url+"/kevit-Customer/"+customer_id+"/"+company_id+ "/EmpPortal/EmpPaySlip/"+emp_id+"/" + pay_period+".pdf"
       const downloadUrl = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/EmpPaySlip/${this.empId}/${payPeriod}.pdf`;
@@ -1431,23 +1496,19 @@ class ApiService {
 
       // console.log("Uploading document...");
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.UPLOAD_DOCUMENT,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            // Axios might handle boundary automatically if we let it,
-            // but usually we need to be careful with headers in RN.
-            // Often it's best to let axios sets content-type for multipart
-            Accept: "application/json",
-          },
-          transformRequest: (data, headers) => {
-            // React Native FormData needs to remain as is
-            return data;
-          },
+      const response = await api.post(API_ENDPOINTS.UPLOAD_DOCUMENT, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          // Axios might handle boundary automatically if we let it,
+          // but usually we need to be careful with headers in RN.
+          // Often it's best to let axios sets content-type for multipart
+          Accept: "application/json",
         },
-      );
+        transformRequest: (data, headers) => {
+          // React Native FormData needs to remain as is
+          return data;
+        },
+      });
 
       // console.log("Upload response:", response.data);
 
@@ -1478,8 +1539,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_OFFICE_DOCUMENTS,
         {
           TokenC: this.token,
           Id: this.empId,
@@ -1510,8 +1571,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_COMPANY_POLICIES_LIST,
+      const response = await api.post(
+        API_ENDPOINTS.GET_COMPANY_POLICIES_LIST,
         {
           TokenC: this.token,
           Id: this.empId,
@@ -1571,8 +1632,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_CALENDAR_EVENTS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_CALENDAR_EVENTS,
         {
           TokenC: this.token,
           Year: year,
@@ -1603,8 +1664,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_CALENDAR_DETAILS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_CALENDAR_DETAILS,
         {
           TokenC: this.token,
           StartDate: dateStr,
@@ -1635,8 +1696,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_EMPLOYEE_LIST,
+      const response = await api.post(
+        API_ENDPOINTS.GET_EMPLOYEE_LIST,
         {
           TokenC: this.token,
         },
@@ -1675,8 +1736,8 @@ class ApiService {
 
       // console.log("Attendance Report Payload:", payload);
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_MOBILE_ATTENDANCE_REPORT,
+      const response = await api.post(
+        API_ENDPOINTS.GET_MOBILE_ATTENDANCE_REPORT,
         payload,
         { headers: this.getHeaders() },
       );
@@ -1710,8 +1771,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_CLIENT_LIST,
+      const response = await api.post(
+        API_ENDPOINTS.GET_CLIENT_LIST,
         {
           TokenC: this.token,
         },
@@ -1798,8 +1859,8 @@ class ApiService {
 
       // console.log("Submitting Service Report...");
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.SUBMIT_SERVICE_REPORT,
+      const response = await api.post(
+        API_ENDPOINTS.SUBMIT_SERVICE_REPORT,
         formData,
         {
           headers: {
@@ -1838,8 +1899,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_YOUR_PENDING_APPROVALS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_YOUR_PENDING_APPROVALS,
         {
           TokenC: this.token,
           EmpIdN: this.empId,
@@ -1884,8 +1945,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_OTHER_PENDING_APPROVALS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_OTHER_PENDING_APPROVALS,
         {
           TokenC: this.token,
           EmpIdN: this.empId,
@@ -1929,8 +1990,8 @@ class ApiService {
 
       const whereClause = this.empId ? `and a.EmpIdN=${this.empId}` : "";
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_EXIT_REQUEST,
+      const response = await api.post(
+        API_ENDPOINTS.GET_EXIT_REQUEST,
         {
           TokenC: this.token,
           where: whereClause,
@@ -1955,8 +2016,8 @@ class ApiService {
   }> {
     try {
       if (!this.token) await this.loadCredentials();
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_EXIT_REASON,
+      const response = await api.post(
+        API_ENDPOINTS.GET_EXIT_REASON,
         {
           TokenC: this.token,
         },
@@ -1987,8 +2048,8 @@ class ApiService {
 
       // console.log("Update Exit Request Payload:", JSON.stringify(payload));
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.UPDATE_EXIT_REQUEST,
+      const response = await api.post(
+        API_ENDPOINTS.UPDATE_EXIT_REQUEST,
         payload,
         { headers: this.getHeaders() },
       );
@@ -2015,8 +2076,8 @@ class ApiService {
         EmpIdN: this.empId,
       };
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.REVOKE_EXIT_REQUEST,
+      const response = await api.post(
+        API_ENDPOINTS.REVOKE_EXIT_REQUEST,
         payload,
         { headers: this.getHeaders() },
       );
@@ -2084,11 +2145,9 @@ class ApiService {
       //   JSON.stringify(payload, null, 2),
       // );
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.SAVE_APPROVAL,
-        payload,
-        { headers: this.getHeaders() },
-      );
+      const response = await api.post(API_ENDPOINTS.SAVE_APPROVAL, payload, {
+        headers: this.getHeaders(),
+      });
 
       // console.log(
       //   "Update Pending Approval Response:",
@@ -2121,23 +2180,13 @@ class ApiService {
   async getAttendanceProjectList(data: { token: string }) {
     try {
       console.log("STEP 1 - Inside getAttendanceProjectList");
-
-      const domainUrl = await getDomainUrl();
-      console.log("STEP 2 - Domain:", domainUrl);
-
-      if (!domainUrl) {
-        console.log("STEP 3 - No domainUrl");
-        return [];
-      }
+      await this.ensureApiReady();
 
       console.log("STEP 4 - Token:", data.token);
-      console.log(
-        "STEP 5 - Calling API:",
-        `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
-      );
+      console.log("STEP 5 - Calling API:", API_ENDPOINTS.GET_PROJECT_LIST);
 
-      const res = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.GET_PROJECT_LIST}`,
+      const res = await api.post(
+        API_ENDPOINTS.GET_PROJECT_LIST,
         {
           TokenC: data.token,
           blnEmpMaster: false,
@@ -2171,11 +2220,7 @@ class ApiService {
       if (!token) {
         return { success: false, error: "Token not available" };
       }
-
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        return { success: false, error: "Domain not available" };
-      }
+      await this.ensureApiReady();
 
       const payload = {
         TokenC: token,
@@ -2184,10 +2229,7 @@ class ApiService {
         Type: type,
       };
 
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.ATTENDANCE_REPORT}`,
-        payload,
-      );
+      const response = await api.post(API_ENDPOINTS.ATTENDANCE_REPORT, payload);
 
       if (response.data?.Status === "success") {
         return { success: true, data: response.data.data || [] };
@@ -2213,30 +2255,21 @@ class ApiService {
     if (overrideDate) {
       return toDotNetDate(overrideDate);
     }
+    await this.ensureApiReady();
 
-    const domainUrl = await getDomainUrl();
-    if (!domainUrl) {
-      throw new Error("Domain not available");
-    }
-
-    const response = await axios.post(
-      `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
-      { TokenC: token },
-    );
+    const response = await api.post(API_ENDPOINTS.SERVERTIME_URL, {
+      TokenC: token,
+    });
 
     return toDotNetDate(response.data);
   }
 
   async getRawServerTime(token: string): Promise<string> {
-    const domainUrl = await getDomainUrl();
-    if (!domainUrl) {
-      throw new Error("Domain not available");
-    }
+    await this.ensureApiReady();
 
-    const response = await axios.post(
-      `${domainUrl}${API_ENDPOINTS.SERVERTIME_URL}`,
-      { TokenC: token },
-    );
+    const response = await api.post(API_ENDPOINTS.SERVERTIME_URL, {
+      TokenC: token,
+    });
 
     if (typeof response.data === "string") {
       return response.data;
@@ -2255,14 +2288,10 @@ class ApiService {
       if (!token) {
         return { success: false, error: "Token not available" };
       }
+      await this.ensureApiReady();
 
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        return { success: false, error: "Domain not available" };
-      }
-
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.PROFILE_URL}`,
+      const response = await api.post(
+        API_ENDPOINTS.PROFILE_URL,
         {
           TokenC: token,
           BlnEmpMaster: true,
@@ -2290,16 +2319,11 @@ class ApiService {
     error?: string;
   }> {
     try {
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        return { success: false, error: "Domain not available" };
-      }
+      await this.ensureApiReady();
 
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.UPLOADPRO_URL}`,
-        payload,
-        { headers: { "Content-Type": "application/json" } },
-      );
+      const response = await api.post(API_ENDPOINTS.UPLOADPRO_URL, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
 
       if (response.data?.Status === "success") {
         return { success: true };
@@ -2320,13 +2344,10 @@ class ApiService {
 
   async getClaimList(token: string): Promise<APIResponse> {
     try {
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        throw new Error("Domain not available");
-      }
+      await this.ensureApiReady();
 
-      const response = await axios.post<APIResponse>(
-        `${domainUrl}/${API_ENDPOINTS.GETCLAIM_LIST}`,
+      const response = await api.post<APIResponse>(
+        API_ENDPOINTS.GETCLAIM_LIST,
         { TokenC: token },
       );
 
@@ -2339,10 +2360,7 @@ class ApiService {
 
   async updateClaim(token: string, claimData: ClaimData): Promise<APIResponse> {
     try {
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        throw new Error("Domain not available");
-      }
+      await this.ensureApiReady();
 
       const payload = {
         TokenC: token,
@@ -2352,7 +2370,7 @@ class ApiService {
       // console.log("Submitting claim data:", payload);
 
       const response = await api.post<APIResponse>(
-        `${domainUrl}/${API_ENDPOINTS.UPDATE_CLAIM}`,
+        API_ENDPOINTS.UPDATE_CLAIM,
         payload,
       );
 
@@ -2369,10 +2387,7 @@ class ApiService {
     files: DocumentFile[],
   ): Promise<APIResponse> {
     try {
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        throw new Error("Domain not available");
-      }
+      await this.ensureApiReady();
 
       const formData = new FormData();
       formData.append("TokenC", token);
@@ -2386,8 +2401,8 @@ class ApiService {
         } as any);
       });
 
-      const response = await axios.post<APIResponse>(
-        `${domainUrl}/${API_ENDPOINTS.UPDATECLAIM_DOC}`,
+      const response = await api.post<APIResponse>(
+        API_ENDPOINTS.UPDATECLAIM_DOC,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } },
       );
@@ -2401,18 +2416,14 @@ class ApiService {
 
   async getCelebrationData(token: string, type = 1): Promise<any> {
     try {
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) return {};
+      await this.ensureApiReady();
 
       const payload = {
         TokenC: token,
         Type: type,
       };
 
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.CELEBRATION}`,
-        payload,
-      );
+      const response = await api.post(API_ENDPOINTS.CELEBRATION, payload);
 
       if (response.data?.Status === "success") {
         return response.data?.DashData?.[0] ?? {};
@@ -2435,15 +2446,9 @@ class ApiService {
     TokenC: string;
   }): Promise<APIResponse> {
     try {
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        return { Status: "error", Error: "Domain not configured" };
-      }
+      await this.ensureApiReady();
 
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.SEND_EMAIL_WISHES}`,
-        payload,
-      );
+      const response = await api.post(API_ENDPOINTS.SEND_EMAIL_WISHES, payload);
 
       return response?.data ?? { Status: "error", Error: "Invalid response" };
     } catch (error: any) {
@@ -2462,19 +2467,14 @@ class ApiService {
   async getHolidayList(token: string, year: string): Promise<any[]> {
     try {
       if (!token) return [];
-
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) return [];
+      await this.ensureApiReady();
 
       const payload = {
         TokenC: token,
         Year: year,
       };
 
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.HOLIDAY}`,
-        payload,
-      );
+      const response = await api.post(API_ENDPOINTS.HOLIDAY, payload);
 
       return response.data?.Holiday ?? [];
     } catch (error) {
@@ -2490,16 +2490,14 @@ class ApiService {
       }
 
       if (!this.token) return [];
-
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) return [];
+      await this.ensureApiReady();
 
       const payload = {
         TokenC: this.token,
       };
 
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.GET_EMPDASHBOARD_LIST}`,
+      const response = await api.post(
+        API_ENDPOINTS.GET_EMPDASHBOARD_LIST,
         payload,
       );
       return response.data;
@@ -2521,11 +2519,7 @@ class ApiService {
       if (!this.token) {
         return { success: false, error: "Not authenticated" };
       }
-
-      const domainUrl = await getDomainUrl();
-      if (!domainUrl) {
-        return { success: false, error: "Domain URL not available" };
-      }
+      await this.ensureApiReady();
 
       const payload = {
         TokenC: this.token,
@@ -2533,11 +2527,9 @@ class ApiService {
         NewPassword: newPassword.trim(),
       };
 
-      const response = await axios.post(
-        `${domainUrl}${API_ENDPOINTS.CHANGE_PASSWORD}`,
-        payload,
-        { headers: this.getHeaders() },
-      );
+      const response = await api.post(API_ENDPOINTS.CHANGE_PASSWORD, payload, {
+        headers: this.getHeaders(),
+      });
 
       if (response.data?.Status === "success") {
         return { success: true };
@@ -2564,8 +2556,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.EMP_DOC_URL,
+      const response = await api.post(
+        API_ENDPOINTS.EMP_DOC_URL,
         {
           TokenC: this.token,
           Id: id,
@@ -2594,8 +2586,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.TIME_URL,
+      const response = await api.post(
+        API_ENDPOINTS.TIME_URL,
         {
           TokenC: this.token,
           Id: id,
@@ -2624,8 +2616,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.LEAVE_URL,
+      const response = await api.post(
+        API_ENDPOINTS.LEAVE_URL,
         {
           TokenC: this.token,
           Id: id,
@@ -2654,8 +2646,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GET_SURRENDER_DETAILS,
+      const response = await api.post(
+        API_ENDPOINTS.GET_SURRENDER_DETAILS,
         {
           TokenC: this.token,
           Id: id,
@@ -2686,8 +2678,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.PROFILE_URL,
+      const response = await api.post(
+        API_ENDPOINTS.PROFILE_URL,
         {
           TokenC: this.token,
           blnEmpMaster: false,
@@ -2717,8 +2709,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GETCLAIM_URL,
+      const response = await api.post(
+        API_ENDPOINTS.GETCLAIM_URL,
         {
           TokenC: this.token,
           id: id,
@@ -2747,8 +2739,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GETCLAIMDOC_URL,
+      const response = await api.post(
+        API_ENDPOINTS.GETCLAIMDOC_URL,
         {
           TokenC: this.token,
           Id: id,
@@ -2781,8 +2773,8 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await axios.post(
-        BASE_URL + API_ENDPOINTS.GETCLAIMDOC_URL,
+      const response = await api.post(
+        API_ENDPOINTS.GETCLAIMDOC_URL,
         {
           TokenC: this.token,
           Id: empId,

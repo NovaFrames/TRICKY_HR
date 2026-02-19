@@ -10,7 +10,11 @@ export function useProtectedBack(backMap: BackMap) {
 
   const handleBack = useCallback(() => {
     if (from && backMap[from]) {
-      router.replace(backMap[from]);
+      try {
+        router.replace(backMap[from]);
+      } catch {
+        router.replace("/home");
+      }
       return true;
     }
     if (router.canGoBack()) {
