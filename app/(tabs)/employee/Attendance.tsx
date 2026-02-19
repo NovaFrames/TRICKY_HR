@@ -86,8 +86,6 @@ const Attendance = () => {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [cameraFacing, setCameraFacing] = useState<"front" | "back">("front");
   const isFocused = useIsFocused();
-  const [cameraKey, setCameraKey] = useState(0);
-  const [cameraReady, setCameraReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const captureLockRef = useRef(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -157,23 +155,28 @@ const Attendance = () => {
   useEffect(() => {
     const sub = AppState.addEventListener("change", async (state) => {
       if (state === "active") {
-        const current = await refreshCameraPermission();
+        await refreshCameraPermission();
         await refreshLocationPermission({ silent: true });
-
-        if (current.status === "granted") {
-          // 🔥 Force camera re-init
-          setCameraReady(false);
-          setTimeout(() => {
-            setCameraKey((k) => k + 1);
-            setCameraReady(true);
-          }, 200);
-        }
       }
     });
 
     return () => sub.remove();
   }, []);
 
+  const handleRequestCameraPermission = async () => {
+    try {
+      const result = await requestPermission();
+
+      if (!result.granted) {
+        ConfirmModal.alert(
+          "Camera Permission Required",
+          "Please allow camera access to capture identity."
+        );
+      }
+    } catch (error) {
+      console.error("Camera permission error:", error);
+    }
+  };
 
   const ensureLocation = async (opts?: { silent?: boolean }) => {
     try {
@@ -232,30 +235,6 @@ const Attendance = () => {
 
   const isCameraGranted =
     cameraPermissionStatus === "granted" || permission?.granted === true;
-
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-
-    if (isFocused && isCameraGranted && !capturedImage && showCamera) {
-      setCameraReady(false); // reset first
-      timeout = setTimeout(() => {
-        setCameraReady(true);
-        setCameraKey((prev) => prev + 1); // force fresh mount
-      }, 250); // 🔑 small delay (200–300ms is ideal)
-    }
-
-    return () => {
-      clearTimeout(timeout);
-      setCameraReady(false);
-    };
-  }, [isFocused, isCameraGranted, capturedImage, cameraFacing, showCamera]);
-
-  useEffect(() => {
-    if (!showCamera) {
-      setCameraReady(false);
-    }
-  }, [showCamera]);
-
 
   const formatAddress = (a: Location.LocationGeocodedAddress) => {
     const parts = [
@@ -570,67 +549,26 @@ const Attendance = () => {
   };
 
   /* ---------------- MANUAL CAPTURE ---------------- */
-  const handleRequestCameraPermission = async () => {
-    let current = await refreshCameraPermission();
-
-    // ✅ Already granted → just activate camera
-    if (current.status === "granted") {
-      setCameraReady(false);
-      setTimeout(() => {
-        setCameraKey(k => k + 1);
-        setCameraReady(true);
-      }, 200);
-      return;
-    }
-
-    // ✅ Ask system popup (THIS shows Android dialog)
-    if (current.canAskAgain) {
-      console.log("Requesting can ask again permission...");
-      const result = await requestPermission();
-
-      // 🔁 Re-check after popup
-      current = await refreshCameraPermission();
-
-      if (current.status === "granted") {
-        setCameraReady(false);
-        setTimeout(() => {
-          setCameraKey(k => k + 1);
-          setCameraReady(true);
-        }, 200);
-      }
-      return;
-    } else {
-      console.log("Requesting camera permission...");
-      await requestPermission(); // Try again if user denied but can ask again
-      await refreshCameraPermission();
-    }
-
-    // ❌ Only here we open settings
-    ConfirmModal.alert(
-      "Camera Permission Required",
-      "Camera permission was permanently denied. Enable it from settings.",
-      [{ text: "Open Settings", onPress: Linking.openSettings }]
-    );
-  };
-
   const takePicture = async () => {
     if (!cameraRef.current) return;
     if (captureLockRef.current || isCapturing) return;
-    if (!isCameraGranted || !cameraReady || capturedImage) return;
+    if (!isCameraGranted || capturedImage) return;
 
     try {
       captureLockRef.current = true;
       setIsCapturing(true);
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.6,
-        skipProcessing: true,
+        skipProcessing: false,
       });
 
       if (photo?.uri) {
+        await new Promise((resolve) => setTimeout(resolve, 150));
         setCapturedImage(photo.uri);
         setShowCamera(false);
       }
-    } catch {
+    } catch (error) {
+      console.error("takePicture failed:", error);
       ConfirmModal.alert("Camera Error", "Failed to take picture");
     } finally {
       captureLockRef.current = false;
@@ -1191,58 +1129,32 @@ const Attendance = () => {
                 </TouchableOpacity>
               )}
 
-              {isFocused && cameraReady && isCameraGranted ? (
-                <CameraView
-                  key={cameraKey}
-                  ref={cameraRef}
-                  facing={cameraFacing}
-                  style={styles.preview}
-                  onMountError={() => {
-                    ConfirmModal.alert(
-                      "Camera Error",
-                      "Unable to start camera"
-                    );
-                  }}
-                />
-              ) : !isCameraGranted ? (
-                <View
-                  style={[
-                    styles.permissionBlock,
-                    { backgroundColor: theme.inputBg },
-                  ]}
-                >
-                  <Ionicons
-                    name="camera-outline"
-                    size={32}
-                    color={theme.placeholder}
+              {showCamera ? (
+                isCameraGranted ? (
+                  <CameraView
+                    ref={cameraRef}
+                    facing={cameraFacing}
+                    style={styles.preview}
+                    onMountError={(error) => {
+                      console.error("CameraView mount error:", error);
+                      ConfirmModal.alert("Camera Error", "Unable to start camera");
+                    }}
                   />
-                  <Text
-                    style={[styles.permissionText, { color: theme.placeholder }]}
-                  >
-                    Camera permission is required
-                  </Text>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={[
-                      styles.permissionBtn,
-                      { backgroundColor: theme.primary },
-                    ]}
-                    onPress={handleRequestCameraPermission}
-                  >
-                    <Text style={styles.permissionBtnText}>Allow Camera</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.preview,
-                    { backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
-                  ]}
-                >
-                  <Ionicons name="camera-outline" size={32} color="#777" />
-                  <Text style={{ color: "#777", marginTop: 6 }}>Loading camera…</Text>
-                </View>
-              )}
+                ) : (
+                  <View style={styles.permissionBlock}>
+                    <Ionicons name="camera-outline" size={32} color="#777" />
+                    <Text style={styles.permissionText}>
+                      Camera permission is required
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.permissionBtn}
+                      onPress={handleRequestCameraPermission}
+                    >
+                      <Text style={styles.permissionBtnText}>Allow Camera</Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              ) : null}
 
               {isCameraGranted && (
                 <View style={styles.cameraOverlay}>
@@ -1268,7 +1180,7 @@ const Attendance = () => {
                 style={{ marginHorizontal: 8 }}
                 icon="camera"
                 isLoading={isCapturing}
-                disabled={isCapturing || !cameraReady || !isCameraGranted}
+                disabled={isCapturing || !isCameraGranted}
               />
             </View>
           </View>
