@@ -11,9 +11,6 @@ import ApiService, {
   markMobileAttendance,
 } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 import { useIsFocused } from "@react-navigation/native";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
@@ -71,8 +68,6 @@ const Attendance = () => {
   const [attendanceType, setAttendanceType] = useState<
     "Check-in" | "Check-out"
   >("Check-in");
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [remarks, setRemarks] = useState("");
   const [projects, setProjects] = useState<any[]>([]);
@@ -112,10 +107,11 @@ const Attendance = () => {
     "granted" | "denied" | "undetermined" | null
   >(null);
 
+  const LOCATION_FROM_USER = user?.AttDistanceN;
   const LOCATION_MAX_RETRIES = 3;
   const LOCATION_RETRY_DELAY_MS = 1000;
   const LOCATION_REQUIRED_ACCURACY_METERS = 50;
-  const DEFAULT_ALLOWED_RADIUS_METERS = 150;
+  const DEFAULT_ALLOWED_RADIUS_METERS = 200;
   const MAX_GPS_DRIFT_BUFFER_METERS = 25;
 
   const wait = (ms: number) =>
@@ -515,11 +511,6 @@ const Attendance = () => {
   });
 
   /* ---------------- LOCATION ---------------- */
-  // useEffect(() => {
-  //   (async () => {
-  //     await ensureLocation({ silent: true });
-  //   })();
-  // }, []);
 
   const handleRequestLocationPermission = async () => {
     try {
@@ -727,11 +718,16 @@ const Attendance = () => {
           Number(projectCoords.longitude),
         );
 
-        const radiusFromProject = Number(project.AllowedRadiusN);
+        const userRadius = Number(LOCATION_FROM_USER);
+
+        const projectRadius = Number(project.AllowedRadiusN);
+
         const allowedRadius =
-          Number.isFinite(radiusFromProject) && radiusFromProject > 0
-            ? radiusFromProject
-            : DEFAULT_ALLOWED_RADIUS_METERS;
+          Number.isFinite(projectRadius) && projectRadius > 0
+            ? projectRadius
+            : Number.isFinite(userRadius) && userRadius > 0
+              ? userRadius
+              : DEFAULT_ALLOWED_RADIUS_METERS;
 
         const gpsAccuracy = Math.max(0, Number(location.accuracy ?? 0));
         const driftBuffer = Math.min(gpsAccuracy, MAX_GPS_DRIFT_BUFFER_METERS);
@@ -836,14 +832,6 @@ const Attendance = () => {
       ))}
     </View>
   );
-
-  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
-    setShowDatePicker(false);
-
-    if (event.type === "set" && date) {
-      setSelectedDate(date);
-    }
-  };
 
   const selectedProjectData = selectedProject
     ? projects.find((p) => String(p.IdN) === selectedProject)

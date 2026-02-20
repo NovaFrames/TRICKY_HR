@@ -1,13 +1,6 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import Modal from "@/components/common/SingleModal";
 import DatePicker from "@/components/DatePicker";
-import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system/legacy";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import * as Sharing from "expo-sharing";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import { BACK_FALLBACKS } from "@/components/Header";
 import {
@@ -16,8 +9,15 @@ import {
   formatTimeNumber,
 } from "@/constants/timeFormat";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
+import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
 import TimeRequestModal from "../../../components/TimeManage/TimeRequestModal";
-import Modal from "@/components/common/SingleModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
 /* ---------------- CONSTANTS ---------------- */
@@ -104,31 +104,51 @@ const TIME_COLUMNS: ColumnDef[] = [
     formatter: (v) => formatTimeNumber(v),
   },
 ];
+
+// Helper function to safely add months
+const addMonths = (date: Date, months: number) => {
+  const newDate = new Date(date);
+  const day = newDate.getDate();
+
+  newDate.setMonth(newDate.getMonth() + months);
+
+  // Handle month-end overflow (e.g., Jan 31 → Feb 28/29)
+  if (newDate.getDate() !== day) {
+    newDate.setDate(0);
+  }
+
+  return newDate;
+};
+
+const today = new Date();
+
+// ✅ Default fromDate = 1 month before today
+const defaultFromDate = addMonths(today, -1);
+
 /* ---------------- COMPONENT ---------------- */
 export default function TimeManage() {
   const { theme } = useTheme();
   const router = useRouter();
   const [timeData, setTimeData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
-  const today = new Date();
-  const tenDaysAgo = new Date();
-  tenDaysAgo.setDate(today.getDate() - 10);
-  const [fromDate, setFromDate] = useState(tenDaysAgo);
-  const [toDate, setToDate] = useState(today);
+  const [fromDate, setFromDate] = useState<Date>(defaultFromDate);
+  const [toDate, setToDate] = useState<Date>(today);
+  
+  // ✅ Whenever fromDate changes → set toDate = 1 month after fromDate
+  React.useEffect(() => {
+    const newToDate = addMonths(fromDate, 1);
+    setToDate(newToDate);
+  }, [fromDate]);
+
   useProtectedBack({
     home: "/home",
     settings: "/settings",
     dashboard: "/dashboard",
   });
-  React.useEffect(() => {
-    setToDate(new Date());
-  }, [fromDate]);
   /* ---------------- API ---------------- */
   const fetchTimeData = async () => {
-    setLoading(true);
     try {
       const res = await ApiService.getTimeManageList(
         formatDateForApi(fromDate),
@@ -136,8 +156,12 @@ export default function TimeManage() {
       );
       if (res?.success) setTimeData(res.data || []);
       // console.log("timemanageData: ", res.data);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching time data:", error);
+      ConfirmModal.alert(
+        "Error",
+        "Failed to load time data. Please try again later.",
+      );
     }
   };
   useEffect(() => {

@@ -68,6 +68,26 @@ const safeFromDateForApi = (from: Date) => {
   return adjusted;
 };
 
+// Helper function to safely add months
+const addMonths = (date: Date, months: number) => {
+  const newDate = new Date(date);
+  const day = newDate.getDate();
+
+  newDate.setMonth(newDate.getMonth() + months);
+
+  // Handle month-end overflow (e.g., Jan 31 → Feb 28/29)
+  if (newDate.getDate() !== day) {
+    newDate.setDate(0);
+  }
+
+  return newDate;
+};
+
+const today = new Date();
+
+// ✅ Default fromDate = 1 month before today
+const defaultFromDate = addMonths(today, -1);
+
 /* ---------------- COMPONENT ---------------- */
 
 export default function MobileAttenRpt() {
@@ -76,19 +96,18 @@ export default function MobileAttenRpt() {
 
   useProtectedBack({ home: "/home" });
 
-  const today = new Date();
-  const tenDaysAgo = new Date();
-  tenDaysAgo.setDate(today.getDate() - 10);
-
-  const [fromDate, setFromDate] = useState(tenDaysAgo);
-  const [toDate, setToDate] = useState(today);
-
+  const [fromDate, setFromDate] = useState<Date>(defaultFromDate);
+  const [toDate, setToDate] = useState<Date>(today);
+  
+  // ✅ Whenever fromDate changes → set toDate = 1 month after fromDate
+  React.useEffect(() => {
+    const newToDate = addMonths(fromDate, 1);
+    setToDate(newToDate);
+  }, [fromDate]);
+  
   const [loading, setLoading] = useState(false);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
-  React.useEffect(() => {
-    setToDate(new Date());
-  }, [fromDate]);
 
   // Fetch report on mount
   React.useEffect(() => {
