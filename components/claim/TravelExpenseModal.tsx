@@ -1,10 +1,10 @@
+import Modal from "@/components/common/SingleModal";
 import { CustomButton } from "@/components/CustomButton";
 import { ThemeType } from "@/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import Modal from "@/components/common/SingleModal";
 interface TravelExpenseModalProps {
   visible: boolean;
   theme: ThemeType;
@@ -59,7 +59,12 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
             <Ionicons name="close" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
-        <ScrollView style={styles.body}>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: theme.text }]}>Type</Text>
             <View
@@ -166,28 +171,29 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
             />
           </View>
           <View style={[styles.footer, { borderTopColor: theme.inputBorder }]}>
+
             <CustomButton
               title="Cancel"
               icon="close"
               onPress={onCancel}
               textColor={theme.textLight}
               iconColor={theme.textLight}
+              containerStyle={{ flex: 1 }}
               style={[
-                styles.button,
-                styles.cancelButton,
-                { backgroundColor: theme.inputBg },
+                { backgroundColor: theme.inputBg, borderWidth: 1, borderColor: theme.inputBorder }
               ]}
             />
+
             <CustomButton
               title={editIndex !== null ? "Update" : "Add"}
               icon={editIndex !== null ? "save-outline" : "add-circle-outline"}
               onPress={onSave}
+              containerStyle={{ flex: 1 }}
               style={[
-                styles.button,
-                styles.saveButton,
-                { backgroundColor: theme.primary },
+                { backgroundColor: theme.primary }
               ]}
             />
+
           </View>
         </ScrollView>
       </View>
@@ -223,6 +229,9 @@ const styles = StyleSheet.create({
   body: {
     padding: 20,
   },
+  bodyContent: {
+    paddingBottom: 12,
+  },
   inputContainer: {
     marginBottom: 15,
   },
@@ -248,20 +257,15 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   footer: {
-    flexDirection: "row-reverse",
+    flexDirection: "row",
+    padding: 16,
     gap: 12,
   },
   button: {
-    flex: 1,
-    borderRadius: 4,
-    marginBottom: 0,
-    padding: 10,
   },
   cancelButton: {
-    marginRight: 10,
+    borderWidth: 1,
   },
-  saveButton: {
-    marginLeft: 10,
-  },
+  saveButton: {},
 });
 export default TravelExpenseModal;

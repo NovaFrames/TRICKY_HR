@@ -241,6 +241,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         <ScrollView
           style={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.formGroup}>
             <Text style={labelStyle}>Leave Type</Text>
@@ -628,13 +629,20 @@ const styles = StyleSheet.create({
   footerRow: {
     display: "flex",
     flexDirection: "row-reverse",
+    justifyContent: "flex-end",
     gap: 12,
     alignItems: "flex-end",
   },
   cancelButton: {
+    minWidth: 132,
+    flexGrow: 0,
+    flexShrink: 0,
     padding: 10,
   },
   submitButton: {
+    minWidth: 132,
+    flexGrow: 0,
+    flexShrink: 0,
     padding: 10,
   },
 });

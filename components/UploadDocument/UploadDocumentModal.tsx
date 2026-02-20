@@ -4,12 +4,12 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import AppModal from "../common/AppModal";
@@ -157,7 +157,9 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
       <AppModal visible={visible} onClose={handleClose} title="Upload Document">
         <ScrollView
           style={styles.scrollContent}
+          contentContainerStyle={styles.scrollBody}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.formGroup}>
             <Text style={labelStyle}>Document Name</Text>
@@ -253,39 +255,36 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
             />
           </View>
 
-          <View style={styles.footerRow}>
-            <CustomButton
-              title="Cancel"
-              icon="close"
-              onPress={handleClose}
-              disabled={uploading}
-              textColor={theme.text}
-              iconColor={theme.text}
-              style={[
-                styles.footerButton,
-                styles.cancelButton,
-                {
-                  backgroundColor: theme.background,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
-            />
-
-            <CustomButton
-              title="Upload Now"
-              icon="cloud-upload-outline"
-              onPress={handleSubmit}
-              isLoading={uploading}
-              disabled={uploading}
-              style={[
-                styles.footerButton,
-                styles.submitButton,
-                { backgroundColor: theme.primary },
-              ]}
-            />
-          </View>
         </ScrollView>
+
+        <View style={styles.footerRow}>
+          <CustomButton
+            title="Upload"
+            icon="cloud-upload-outline"
+            onPress={handleSubmit}
+            isLoading={uploading}
+            disabled={uploading}
+            containerStyle={{ flex: 1 }}
+            style={{ backgroundColor: theme.primary }}
+          />
+
+          <CustomButton
+            title="Cancel"
+            icon="close"
+            onPress={handleClose}
+            disabled={uploading}
+            textColor={theme.text}
+            iconColor={theme.text}
+            containerStyle={{ flex: 1 }}
+            style={{
+              backgroundColor: theme.background,
+              borderWidth: 1,
+              borderColor: theme.inputBorder,
+            }}
+          />
+        </View>
       </AppModal>
+
 
       <CenterModalSelection
         visible={showTypeSelector}
@@ -306,6 +305,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 18,
     flexShrink: 1,
+  },
+  scrollBody: {
+    paddingBottom: 12,
   },
   formGroup: {
     marginBottom: 20,
@@ -363,15 +365,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   footerRow: {
-    flexDirection: "row-reverse",
+    flexDirection: "row",
     gap: 12,
+    padding: 16,
   },
   footerButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 4,
-    marginBottom: 0,
-    padding: 10,
   },
   cancelButton: {
     borderWidth: 1,

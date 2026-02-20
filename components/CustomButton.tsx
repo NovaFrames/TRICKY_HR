@@ -2,11 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   ActivityIndicator,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
   TouchableOpacityProps,
   View,
+  ViewStyle,
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -22,6 +24,7 @@ interface CustomButtonProps extends TouchableOpacityProps {
   textColor?: string;
   iconColor?: string;
   indicatorColor?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 export const CustomButton: React.FC<CustomButtonProps> = ({
@@ -31,6 +34,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   textColor,
   iconColor,
   indicatorColor,
+  containerStyle,
   style,
   disabled,
   ...props
@@ -43,7 +47,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   }));
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[animatedStyle, containerStyle]}>
       <TouchableOpacity
         style={[
           styles.button,
@@ -85,13 +89,12 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    alignSelf: "center", // 👈 KEY LINE
-    paddingHorizontal: 20, // instead of big padding
-    paddingVertical: 10,
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 12,

@@ -195,7 +195,14 @@ const EditArraySection = ({
         title="Add More"
         icon="add"
         onPress={onAdd}
-        style={[styles.addButton, { backgroundColor: theme.primary }]}
+        textColor="#fff"
+        iconColor="#fff"
+        containerStyle={{ alignSelf: "flex-start" }}
+        style={{
+          backgroundColor: theme.primary,
+          paddingVertical: 6,
+          paddingHorizontal: 14,
+        }}
       />
     </View>
     {data.length > 0 ? (
@@ -237,10 +244,17 @@ const EditArraySection = ({
           {emptyMessage}
         </Text>
         <CustomButton
-          title="Add First Item"
+          title="Add More"
           icon="add"
           onPress={onAdd}
-          style={[styles.addButton, { backgroundColor: theme.primary }]}
+          textColor="#fff"
+          iconColor="#fff"
+          containerStyle={{ alignSelf: "center" }}
+          style={{
+            backgroundColor: theme.primary,
+            paddingVertical: 6,
+            paddingHorizontal: 14,
+          }}
         />
       </View>
     )}
@@ -433,6 +447,7 @@ export default function UserProfile() {
   // Modal states for selection
   const [showMaritalModal, setShowMaritalModal] = useState(false);
   const [showBloodGroupModal, setShowBloodGroupModal] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
   const [showNationalityModal, setShowNationalityModal] = useState(false);
   const [showChildNationModal, setShowChildNationModal] = useState(false);
   const [childIndexForNation, setChildIndexForNation] = useState(0);
@@ -453,18 +468,31 @@ export default function UserProfile() {
   });
   // Selection options
   const maritalOptions = [
-    { id: 1, label: "Single" },
-    { id: 2, label: "Married" },
+    { id: 1, label: "Married" },
+    { id: 2, label: "UnMarried" },
+    { id: 3, label: "Divorce" },
+    { id: 4, label: "Others" },
+    { id: 5, label: "Widow" },
+  ];
+  const genderOptions = [
+    { id: 1, label: "Male" },
+    { id: 2, label: "Female" },
+    { id: 3, label: "Other" },
   ];
   const bloodGroupOptions = [
-    { id: 1, label: "A+" },
-    { id: 2, label: "A-" },
-    { id: 3, label: "B+" },
-    { id: 4, label: "B-" },
-    { id: 5, label: "O+" },
-    { id: 6, label: "O-" },
+    { id: 0, label: "None" },
+    { id: 1, label: "O+" },
+    { id: 2, label: "O-" },
+    { id: 3, label: "A+" },
+    { id: 4, label: "A-" },
+    { id: 5, label: "B+" },
+    { id: 6, label: "B-" },
     { id: 7, label: "AB+" },
     { id: 8, label: "AB-" },
+    { id: 9, label: "A1+" },
+    { id: 10, label: "A1B+" },
+    { id: 11, label: "A1B-" },
+    { id: 12, label: "A1-" },
   ];
   const [formData, setFormData] = useState({
     // Basic Info
@@ -490,6 +518,7 @@ export default function UserProfile() {
     PPinC: "",
     PNationN: 1,
     // Personal Details
+    GenderN: 1,
     MaritalN: 1,
     BloodTypeN: 0,
     FatherNameC: "",
@@ -705,6 +734,7 @@ export default function UserProfile() {
             ...resolvedPermanent,
             PhNoC: formData.PhNoC.trim(),
             EmailIdC: formData.EmailIdC.trim(),
+            GenderN: formData.GenderN,
             MaritalN: formData.MaritalN,
             BloodTypeN: formData.BloodTypeN,
             MarriedDateD: formData.MarriedDateD
@@ -836,6 +866,7 @@ export default function UserProfile() {
       PStateC: profile.PStateC || "",
       PPinC: profile.PPinC || "",
       PNationN: profile.PNationN || 1,
+      GenderN: profile.GenderN || 1,
       MaritalN: profile.MaritalN || 1,
       BloodTypeN: profile.BloodTypeN || 0,
       FatherNameC: profile.FatherNameC || "",
@@ -874,6 +905,8 @@ export default function UserProfile() {
   const permanentNationality =
     nations.find((n: any) => n.NationIdN === formData.PNationN)?.NationNameC ||
     "-";
+  const genderLabel =
+    genderOptions.find((g) => g.id === formData.GenderN)?.label || "-";
   const maritalStatusLabel =
     maritalOptions.find((m) => m.id === formData.MaritalN)?.label || "-";
   const bloodGroupLabel =
@@ -1152,6 +1185,14 @@ export default function UserProfile() {
       >
         {/* Selection Modals */}
         <SelectionModal
+          visible={showGenderModal}
+          title="Select Gender"
+          options={genderOptions}
+          selectedId={formData.GenderN}
+          onSelect={(id) => handleFieldChange("GenderN", id)}
+          onClose={() => setShowGenderModal(false)}
+        />
+        <SelectionModal
           visible={showMaritalModal}
           title="Select Marital Status"
           options={maritalOptions}
@@ -1322,6 +1363,12 @@ export default function UserProfile() {
             <>
               <SelectionRow
                 theme={theme}
+                label="Gender"
+                value={genderLabel}
+                onPress={() => setShowGenderModal(true)}
+              />
+              <SelectionRow
+                theme={theme}
                 label="Marital Status"
                 value={maritalStatusLabel}
                 onPress={() => setShowMaritalModal(true)}
@@ -1347,6 +1394,7 @@ export default function UserProfile() {
             </>
           ) : (
             <>
+              <DetailRow theme={theme} label="Gender" value={genderLabel} />
               <DetailRow
                 theme={theme}
                 label="Marital Status"
@@ -2438,7 +2486,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addButton: {
-    height: 34,
     paddingHorizontal: 12,
     borderRadius: 4,
     marginBottom: 0,

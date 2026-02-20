@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { CustomButton } from "@/components/CustomButton";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
@@ -17,7 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 
 export default function ChangePassword() {
   const { theme } = useTheme();
@@ -302,25 +302,24 @@ export default function ChangePassword() {
               disabled={loading}
               textColor={theme.text}
               iconColor={theme.text}
+              containerStyle={{ flex: 1 }}
               style={[
-                styles.button,
-                styles.resetButton,
                 {
                   borderColor: theme.inputBorder,
                   backgroundColor: theme.background,
+                  borderWidth: 1.5,
                 },
               ]}
             />
 
             <CustomButton
-              title="Change Password"
+              title="Change"
               icon="checkmark-circle"
               onPress={handleChangePassword}
               isLoading={loading}
               disabled={loading}
+              containerStyle={{ flex: 1 }}
               style={[
-                styles.button,
-                styles.saveButton,
                 { backgroundColor: theme.primary },
               ]}
             />
@@ -436,13 +435,14 @@ const styles = StyleSheet.create({
 
   // Buttons
   buttonContainer: {
-    flexDirection: "row-reverse",
+    flexDirection: "row",
     gap: 12,
-    // paddingHorizontal: 20,
     marginBottom: 20,
   },
+
   button: {
-    flex: 1,
+    flexGrow: 0,
+    flexShrink: 0,
     padding: 10,
     elevation: 2,
     shadowColor: "#000",
@@ -458,6 +458,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
   saveButton: {
-    flex: 2,
   },
 });

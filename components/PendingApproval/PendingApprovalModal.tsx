@@ -58,6 +58,8 @@ export default function PendingApprovalModal({
 
   // Determine flag helper
   const getFlag = (desc: string) => {
+    console.log("Description:", desc); // Debug log
+
     const d = (desc || "").toLowerCase();
     if (d.includes("claim")) return "Claim";
     if (d.includes("document")) return "Employee Document";
@@ -184,7 +186,6 @@ export default function PendingApprovalModal({
       });
 
       if (result.success) {
-        console.log("Approval updated successfully", result);
         ConfirmModal.alert("Success", `Request ${status.toLowerCase()} successfully`, [
           {
             text: "OK",
@@ -519,10 +520,14 @@ const styles = StyleSheet.create({
   },
   footerButtons: {
     flexDirection: "row-reverse",
+    justifyContent: "flex-end",
     gap: 12,
     paddingBottom: 30,
   },
   actionButton: {
+    minWidth: 130,
+    flexGrow: 0,
+    flexShrink: 0,
     marginBottom: 0,
     padding: 10,
   },

@@ -37,11 +37,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </Text>
         <Text style={[styles.message, { color: theme.textLight }]}>
           Are you sure you want to submit this claim for 
-          {totalAmount.toFixed(2)}?
+          {" " +totalAmount.toFixed(2)}?
         </Text>
         <View style={styles.buttons}>
           <CustomButton
-            title="No, Review"
+            title="No"
             icon="close"
             onPress={onCancel}
             textColor={theme.textLight}
@@ -55,10 +55,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             title="Yes"
             icon="checkmark-circle"
             onPress={onConfirm}
-            style={[
-              styles.button,
-              { backgroundColor: theme.primary },
-            ]}
+            style={[styles.button, { backgroundColor: theme.primary }]}
           />
         </View>
       </View>
@@ -96,9 +93,14 @@ const styles = StyleSheet.create({
   buttons: {
     flexDirection: "row",
     width: "100%",
+    justifyContent: "center",
+    gap: 12,
   },
   button: {
-    marginHorizontal: 8,
+    minWidth: 120,
+    flexGrow: 0,
+    flexShrink: 0,
+    marginHorizontal: 0,
     marginBottom: 0,
   },
   noButton: {},

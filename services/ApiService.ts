@@ -91,6 +91,7 @@ export const loginUser = async (
         baseURL: normalizeBaseUrl(domainUrl),
       },
     );
+    console.log("Login response:", response.data.data);
     return response ?? null;
   } catch (error) {
     throw error;

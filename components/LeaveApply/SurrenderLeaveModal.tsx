@@ -1,4 +1,5 @@
 // SurrenderLeaveModal.tsx
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, { SurrenderData } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
@@ -127,10 +127,41 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
 
   return (
     <>
-      <AppModal visible={visible} onClose={onClose} title="Leave Surrender">
+      <AppModal visible={visible} onClose={onClose} title="Leave Surrender"
+
+        footer={
+          <View style={styles.footerRow}>
+            <CustomButton
+              title="Cancel"
+              icon="close"
+              onPress={onClose}
+              disabled={loading}
+              textColor={theme.text}
+              iconColor={theme.text}
+              style={[
+                styles.cancelButton,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
+            />
+
+            <CustomButton
+              title="Submit"
+              icon="checkmark-circle-outline"
+              isLoading={loading}
+              disabled={loading}
+              onPress={handleSubmit}
+              style={styles.submitButton}
+            />
+          </View>
+        }
+      >
         <ScrollView
           style={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View
             style={[styles.eligibilityCard, { backgroundColor: theme.inputBg }]}
@@ -200,39 +231,8 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
               onChangeText={setRemarks}
             />
           </View>
-
-          <View style={styles.footerRow}>
-            <CustomButton
-              title="Cancel"
-              icon="close"
-              onPress={onClose}
-              disabled={loading}
-              textColor={theme.text}
-              iconColor={theme.text}
-              style={[
-                styles.footerButton,
-                styles.cancelButton,
-                {
-                  backgroundColor: theme.background,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
-            />
-
-            <CustomButton
-              title="Submit"
-              icon="checkmark-circle-outline"
-              onPress={handleSubmit}
-              isLoading={loading}
-              disabled={loading || checkingEligibility}
-              style={[
-                styles.footerButton,
-                styles.submitButton,
-                { backgroundColor: theme.primary },
-              ]}
-            />
-          </View>
         </ScrollView>
+
       </AppModal>
 
       {showDatePicker && (
@@ -321,12 +321,16 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   footerRow: {
+    display: "flex",
     flexDirection: "row-reverse",
     gap: 12,
+    alignItems: "flex-end",
   },
   footerButton: {
-    flex: 1,
-    height: "100%",
+    minWidth: 132,
+    flexGrow: 0,
+    flexShrink: 0,
+    height: 56,
     marginBottom: 0,
     padding: 8,
   },

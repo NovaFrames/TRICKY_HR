@@ -38,6 +38,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [showRequestTypeSelector, setShowRequestTypeSelector] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [projects, setProjects] = useState<{ label: string; value: number }[]>(
     [],
   );
@@ -82,6 +83,17 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
     } catch (error) {
       console.log("Error fetching projects", error);
     }
+  };
+
+  const getTimePickerDate = (time: string) => {
+    const [hourRaw, minuteRaw] = time.split(":");
+    const hour = Number(hourRaw);
+    const minute = Number(minuteRaw);
+    const date = new Date();
+    if (!Number.isNaN(hour) && !Number.isNaN(minute)) {
+      date.setHours(hour, minute, 0, 0);
+    }
+    return date;
   };
 
   const handleSubmit = async () => {
@@ -166,16 +178,20 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
         <ScrollView
           style={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Date Field (Read-only as per policy usually, but shown as fixed) */}
+          {/* Date Field */}
           <View style={styles.formGroup}>
             <Text style={labelStyle}>Date</Text>
-            <View style={inputStyle}>
+            <TouchableOpacity
+              style={inputStyle}
+              onPress={() => setShowDatePicker(true)}
+            >
               <Text style={{ color: theme.text }}>
                 {formData.date.toLocaleDateString()}
               </Text>
               <Ionicons name="calendar-outline" size={20} color={theme.icon} />
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Project Dropdown */}
@@ -298,9 +314,22 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       </AppModal>
 
       {/* Time Pickers */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={formData.date}
+          mode="date"
+          display="default"
+          onChange={(event, date) => {
+            setShowDatePicker(false);
+            if (date) {
+              setFormData((prev) => ({ ...prev, date }));
+            }
+          }}
+        />
+      )}
       {showInTimePicker && (
         <DateTimePicker
-          value={new Date()}
+          value={getTimePickerDate(formData.inTime)}
           mode="time"
           is24Hour={true}
           display="default"
@@ -319,7 +348,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       )}
       {showOutTimePicker && (
         <DateTimePicker
-          value={new Date()}
+          value={getTimePickerDate(formData.outTime)}
           mode="time"
           is24Hour={true}
           display="default"
@@ -406,13 +435,16 @@ const styles = StyleSheet.create({
   },
   footerRow: {
     flexDirection: "row-reverse",
+    justifyContent: "flex-end",
     gap: 12,
   },
   footerButton: {
-    flex: 1,
-    height: "100%",
+    minWidth: 132,
+    flexGrow: 0,
+    flexShrink: 0,
+    height: 56,
     borderRadius: 4,
-    marginBottom: 24,
+    marginBottom: 0,
     padding: 8,
   },
   cancelButton: {
