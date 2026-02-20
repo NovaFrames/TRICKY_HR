@@ -82,6 +82,7 @@ const Attendance = () => {
     latitude: number;
     longitude: number;
     address?: string;
+    accuracy?: number;
   } | null>(null);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [cameraFacing, setCameraFacing] = useState<"front" | "back">("front");
@@ -111,9 +112,19 @@ const Attendance = () => {
     "granted" | "denied" | "undetermined" | null
   >(null);
 
+  const LOCATION_MAX_RETRIES = 3;
+  const LOCATION_RETRY_DELAY_MS = 1000;
+  const LOCATION_REQUIRED_ACCURACY_METERS = 50;
+  const DEFAULT_ALLOWED_RADIUS_METERS = 150;
+  const MAX_GPS_DRIFT_BUFFER_METERS = 25;
+
+  const wait = (ms: number) =>
+    new Promise<void>((resolve) => setTimeout(resolve, ms));
+
   const updateLocationFromCoords = async (coords: {
     latitude: number;
     longitude: number;
+    accuracy?: number;
   }) => {
     setLocation(coords);
     try {
@@ -216,11 +227,56 @@ const Attendance = () => {
         return false;
       }
 
-      const loc = await Location.getCurrentPositionAsync({});
+      let bestLocation: Location.LocationObject | null = null;
+      let bestAccuracy = Number.POSITIVE_INFINITY;
+
+      for (let attempt = 1; attempt <= LOCATION_MAX_RETRIES; attempt++) {
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+          mayShowUserSettingsDialog: true,
+        });
+
+        const accuracy = Number(loc.coords.accuracy ?? Number.POSITIVE_INFINITY);
+        if (accuracy < bestAccuracy) {
+          bestLocation = loc;
+          bestAccuracy = accuracy;
+        }
+
+        if (accuracy <= LOCATION_REQUIRED_ACCURACY_METERS) {
+          break;
+        }
+
+        if (attempt < LOCATION_MAX_RETRIES) {
+          await wait(LOCATION_RETRY_DELAY_MS);
+        }
+      }
+
+      if (!bestLocation) {
+        if (!opts?.silent) {
+          ConfirmModal.alert(
+            "Location Error",
+            "Unable to access location. Please enable GPS/location services and try again.",
+          );
+        }
+        return false;
+      }
+
       await updateLocationFromCoords({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
+        latitude: bestLocation.coords.latitude,
+        longitude: bestLocation.coords.longitude,
+        accuracy: Number.isFinite(bestAccuracy) ? bestAccuracy : undefined,
       });
+
+      if (bestAccuracy > LOCATION_REQUIRED_ACCURACY_METERS) {
+        if (!opts?.silent) {
+          ConfirmModal.alert(
+            "Weak GPS Signal",
+            "Weak GPS Signal. Please move to open area and try again.",
+          );
+        }
+        return false;
+      }
+
       return true;
     } catch {
       if (!opts?.silent) {
@@ -271,6 +327,11 @@ const Attendance = () => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return earthRadius * c;
   };
+
+  const formatDistance = (distance: number) =>
+    distance < 1000
+      ? `${Math.round(distance)} meters`
+      : `${(distance / 1000).toFixed(1)} km`;
 
   const parseProjectCoords = (project: any) => {
     const raw = project?.GPRSC || project?.GPRS;
@@ -589,6 +650,12 @@ const Attendance = () => {
     if (!selectedProject) return ConfirmModal.alert("Required", "Select project");
     if (!capturedImage) return ConfirmModal.alert("Required", "Capture your photo");
     if (!location) return ConfirmModal.alert("Required", "Location not ready");
+    if (Number(location.accuracy ?? Number.POSITIVE_INFINITY) > LOCATION_REQUIRED_ACCURACY_METERS) {
+      return ConfirmModal.alert(
+        "Weak GPS Signal",
+        "Weak GPS Signal. Please move to open area and try again.",
+      );
+    }
 
     setSubmitting(true);
     try {
@@ -633,15 +700,22 @@ const Attendance = () => {
           Number(projectCoords.longitude),
         );
 
-        if (distance > 100) {
-          const distanceDisplay =
-            distance >= 1000
-              ? `${(distance / 1000).toFixed(1)} km`
-              : `${Math.round(distance)} meters`;
+        const radiusFromProject = Number(project.AllowedRadiusN);
+        const allowedRadius =
+          Number.isFinite(radiusFromProject) && radiusFromProject > 0
+            ? radiusFromProject
+            : DEFAULT_ALLOWED_RADIUS_METERS;
+
+        const gpsAccuracy = Math.max(0, Number(location.accuracy ?? 0));
+        const driftBuffer = Math.min(gpsAccuracy, MAX_GPS_DRIFT_BUFFER_METERS);
+        const effectiveRadius = allowedRadius + driftBuffer;
+
+        if (distance > effectiveRadius) {
+          const distanceDisplay = formatDistance(distance);
 
           ConfirmModal.alert(
             "Location Mismatch",
-            `You are ${distanceDisplay} away from the project location`,
+            `You are ${distanceDisplay} away from the project location (allowed ${Math.round(allowedRadius)}m).`,
           );
           return;
         }
