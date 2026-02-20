@@ -48,7 +48,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             iconColor={theme.textLight}
             style={[
               styles.button,
-              styles.noButton,
               { backgroundColor: theme.inputBg },
             ]}
           />
@@ -58,7 +57,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             onPress={onConfirm}
             style={[
               styles.button,
-              styles.yesButton,
               { backgroundColor: theme.primary },
             ]}
           />
@@ -100,8 +98,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   button: {
-    flex: 1,
-    borderRadius: 4,
     marginHorizontal: 8,
     marginBottom: 0,
   },

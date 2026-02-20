@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -7,7 +8,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import AppModal from "../common/AppModal";
@@ -184,6 +184,7 @@ export default function PendingApprovalModal({
       });
 
       if (result.success) {
+        console.log("Approval updated successfully", result);
         ConfirmModal.alert("Success", `Request ${status.toLowerCase()} successfully`, [
           {
             text: "OK",

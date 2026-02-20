@@ -291,7 +291,6 @@ export const markMobileAttendance = async (
   remark: string,
   serverDateTime: string,
   createdUser: number,
-  selectedDate?: Date,
 ): Promise<AttendanceResponse> => {
   const tokenBefore = await getSafeToken();
   console.log("[Attendance] token before submit:", tokenBefore ?? "missing");
@@ -307,23 +306,7 @@ export const markMobileAttendance = async (
     return { success: false, message: "Invalid server time" };
   }
 
-  let date = "";
-  let time = "";
-
-  try {
-    const parsed = parseServerDate(serverDateTime);
-    date = parsed.date;
-    time = parsed.time;
-
-    if (selectedDate && Number.isFinite(selectedDate.getTime())) {
-      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-      const day = String(selectedDate.getDate()).padStart(2, "0");
-      const year = selectedDate.getFullYear();
-      date = `${month}/${day}/${year}`;
-    }
-  } catch {
-    return { success: false, message: "Date parsing failed" };
-  }
+  const { date, time } = parseServerDate(serverDateTime);
 
   const formData = new FormData();
   formData.append("MobilePht", {

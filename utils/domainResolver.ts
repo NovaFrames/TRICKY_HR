@@ -1,41 +1,38 @@
-import { API_ENDPOINTS } from '@/constants/api';
-import axios from 'axios';
+import { API_ENDPOINTS } from "@/constants/api";
+import axios from "axios";
 
 export const resolveWorkingDomain = async (
   rawInput: string,
   empCode: string,
   password: string,
-  domainId?: string
+  domainId?: string,
 ): Promise<string> => {
   let cleaned = rawInput.trim();
 
-  // Remove protocol if user typed it
-  cleaned = cleaned.replace(/^https?:\/\//, '');
+  let baseUrl: string;
 
-  const candidates = [
-    `https://${cleaned}`,
-    `http://${cleaned}`,
-  ];
-
-  for (const baseUrl of candidates) {
-    try {
-      await axios.post(
-        `${baseUrl}/${API_ENDPOINTS.LOGIN}`,
-        {
-          EmpCode: empCode,
-          Password: password,
-          ...(domainId ? { DomainId: domainId } : {}),
-        },
-        { timeout: 6000 },
-      );
-
-      // ✅ This URL works
-      return baseUrl;
-    } catch (err) {
-      // ❌ Try next one
-      continue;
-    }
+  // ✅ If user already provided protocol → use as-is
+  if (/^https?:\/\//i.test(cleaned)) {
+    baseUrl = cleaned.replace(/\/$/, ""); // remove trailing slash if exists
+  } else {
+    // ✅ If no protocol → force http only
+    baseUrl = `http://${cleaned}`;
   }
 
-  throw new Error('Server not reachable on HTTP or HTTPS');
+  try {
+    await axios.post(
+      `${baseUrl}/${API_ENDPOINTS.LOGIN}`,
+      {
+        EmpCode: empCode,
+        Password: password,
+        ...(domainId ? { DomainId: domainId } : {}),
+      },
+      { timeout: 6000 },
+    );
+
+    return baseUrl; // ✅ working URL
+  } catch (err) {
+    console.warn(`Failed to connect to ${baseUrl}:`, err);
+    throw new Error("Server not reachable");
+  }
 };

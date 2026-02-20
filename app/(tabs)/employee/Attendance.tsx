@@ -11,7 +11,7 @@ import ApiService, {
   markMobileAttendance,
 } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker, {
+import {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useIsFocused } from "@react-navigation/native";
@@ -765,7 +765,6 @@ const Attendance = () => {
         remarks,
         serverDate,
         createdUser,
-        selectedDate,
       );
 
       if (res.success) {
@@ -907,33 +906,6 @@ const Attendance = () => {
             },
           ]}
         >
-
-
-          <Text style={[styles.fieldLabel, { color: theme.textLight }]}>
-            ATTENDANCE DATE
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.selectorContainer,
-              {
-                backgroundColor: theme.inputBg,
-                borderColor: theme.inputBorder,
-              },
-            ]}
-            onPress={() => setShowDatePicker(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="calendar-outline" size={20} color={theme.primary} />
-            <Text style={[styles.selectorText, { color: theme.text }]}>
-              {selectedDate.toLocaleDateString("en-GB", {
-                weekday: "short",
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color={theme.text + "80"} />
-          </TouchableOpacity>
 
           <Text style={[styles.fieldLabel, { color: theme.textLight, marginTop: 16 }]}>
             PROJECT / SITE
@@ -1248,6 +1220,7 @@ const Attendance = () => {
                 <CameraView
                   ref={cameraRef}
                   facing={cameraFacing}
+                  flash="off"
                   style={styles.preview}
                   onMountError={(error) => {
                     console.error("CameraView mount error:", error);
@@ -1285,17 +1258,6 @@ const Attendance = () => {
             </View>
           </View>
         </View>
-      )}
-
-      {/* Project Selection Modal */}
-      {showDatePicker && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display="default"
-          maximumDate={new Date()}
-          onChange={handleDateChange}
-        />
       )}
 
       <CenterModalSelection
