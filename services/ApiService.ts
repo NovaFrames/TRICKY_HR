@@ -550,11 +550,26 @@ class ApiService {
 
   private async loadCredentials() {
     try {
-      await ensureBaseUrl();
+      const domainUrl = await getSafeDomain();
+      if (!domainUrl) {
+        // First launch / logged-out state: credentials cannot be loaded yet.
+        this.token = null;
+        this.empId = null;
+        return;
+      }
       this.token = await getSafeToken();
       const empIdStr = await AsyncStorage.getItem("emp_id");
       this.empId = empIdStr ? parseInt(empIdStr) : null;
-    } catch (error) {
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message === "Domain URL not configured"
+      ) {
+        // Expected in pre-login state.
+        this.token = null;
+        this.empId = null;
+        return;
+      }
       console.error("Error loading credentials:", error);
     }
   }
@@ -2182,8 +2197,8 @@ class ApiService {
       console.log("STEP 1 - Inside getAttendanceProjectList");
       await this.ensureApiReady();
 
-      console.log("STEP 4 - Token:", data.token);
-      console.log("STEP 5 - Calling API:", API_ENDPOINTS.GET_PROJECT_LIST);
+      // console.log("STEP 4 - Token:", data.token);
+      // console.log("STEP 5 - Calling API:", API_ENDPOINTS.GET_PROJECT_LIST);
 
       const res = await api.post(
         API_ENDPOINTS.GET_PROJECT_LIST,
@@ -2195,7 +2210,7 @@ class ApiService {
         { timeout: 30000 },
       );
 
-      console.log("STEP 6 - Response:", res.data);
+      // console.log("STEP 6 - Response:", res.data);
 
       if (res.data?.Status === "success") {
         return res.data.data || [];
