@@ -1,11 +1,11 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
@@ -87,7 +87,7 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
               const requestId = item.IdN || item.Id || item.id;
               const result = await ApiService.deleteRequest(
                 requestId,
-                "Leave Surrender",
+                "LVSurrender",
                 undefined,
                 undefined,
                 "Cancelled by user",

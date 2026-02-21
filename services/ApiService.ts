@@ -970,21 +970,18 @@ class ApiService {
         RemarksC: remarks,
       };
 
-      // console.log("Delete Request Payload:", JSON.stringify(payload, null, 2));
-      // console.log(
-      //   "Delete Request Endpoint:",
-      //   API_ENDPOINTS.GET_DELETE_APPLY,
-      // );
+      console.log("Delete Request Payload:", JSON.stringify(payload, null, 2));
+      console.log("Delete Request Endpoint:", API_ENDPOINTS.GET_DELETE_APPLY);
 
       const response = await api.post(API_ENDPOINTS.GET_DELETE_APPLY, payload, {
         headers: this.getHeaders(),
       });
 
-      // console.log("Delete Request Response Status:", response.status);
-      // console.log(
-      //   "Delete Request Response Data:",
-      //   JSON.stringify(response.data, null, 2),
-      // );
+      console.log("Delete Request Response Status:", response.status);
+      console.log(
+        "Delete Request Response Data:",
+        JSON.stringify(response.data, null, 2),
+      );
 
       // Check for success in the response
       const status = response.data.Status || response.data.status;
@@ -1073,8 +1070,6 @@ class ApiService {
         },
         { headers: this.getHeaders() },
       );
-
-      console.log("Emp Request Status Response:", JSON.stringify(response));
 
       if (response.data.Status === "success") {
         return {

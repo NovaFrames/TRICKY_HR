@@ -101,7 +101,7 @@ export default function PendingApprovalModal({
     }
 
     // LEAVE SURRENDER
-    if (d.includes("surrender")) {
+    if (d.includes("surrender") || d.includes("leave")) {
       return "Leave";
     }
 
@@ -109,7 +109,7 @@ export default function PendingApprovalModal({
     return "Leave";
   };
 
-  const flag = data ? data.DescC : "";
+  const flag = data ? getFlag(data.DescC) : "";
   const isClaim = flag === "Claim";
 
   useEffect(() => {

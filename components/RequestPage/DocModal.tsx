@@ -1,4 +1,5 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -8,7 +9,6 @@ import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
-import Modal from "@/components/common/SingleModal";
 interface DocModalProps {
   visible: boolean;
   onClose: () => void;
@@ -135,19 +135,15 @@ const DocModal: React.FC<DocModalProps> = ({
                 setLoading(false);
                 return;
               }
-              const result = await ApiService.updatePendingApproval({
-                IdN: requestId,
-                StatusC: "Rejected",
-                ApproveRemarkC: "Cancelled by user",
-                EmpIdN: empId,
-                Flag: "Employee Document",
-                ApproveAmtN: 0,
-                title: docData?.DocTypeC || "",
-                DocName: docData?.DocNameC || "",
-                ReceiveYearN: 0,
-                ReceiveMonthN: 0,
-                PayTypeN: 0,
-              });
+
+              const result = await ApiService.deleteRequest(
+                requestId,
+                "Doc",
+                undefined,
+                undefined,
+                "Cancelled by user",
+              );
+
               if (result.success) {
                 ConfirmModal.alert(
                   "Success",
