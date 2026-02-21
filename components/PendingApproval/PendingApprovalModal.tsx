@@ -58,22 +58,58 @@ export default function PendingApprovalModal({
 
   // Determine flag helper
   const getFlag = (desc: string) => {
-    console.log("Description:", desc); // Debug log
+    const d = (desc || "").toLowerCase().trim();
 
-    const d = (desc || "").toLowerCase();
-    if (d.includes("claim")) return "Claim";
-    if (d.includes("document")) return "Employee Document";
-    if (d.includes("profile")) return "Profile";
-    if (d.includes("time")) return "Time";
-    if (d.includes("surrender")) return "Leave Surrender";
-    if (d.includes("cancel"))
-      return d.includes("surrender")
-        ? "Cancel Leave Surrender"
-        : "Cancel Leave";
-    return "Lev"; // Default to Leave
+    // CLAIM
+    if (d.includes("claim") && !d.includes("expense")) {
+      return "Claim";
+    }
+
+    // CLAIM EXPENSE
+    if (d.includes("expense")) {
+      return "EmpClaimExpense";
+    }
+
+    // TAX
+    if (d.includes("tax")) {
+      return "EmpTaxDeclaration";
+    }
+
+    // DOCUMENT
+    if (d.includes("document")) {
+      return "Employee Document";
+    }
+
+    // PROFILE
+    if (d.includes("profile")) {
+      return "Profile";
+    }
+
+    // LOAN
+    if (d.includes("loan")) {
+      return "Loan Request";
+    }
+
+    // TIME
+    if (d.includes("time")) {
+      return "Time";
+    }
+
+    // CANCEL LEAVE / CANCEL SURRENDER → API expects CancelLeave
+    if (d.includes("cancel")) {
+      return "CancelLeave";
+    }
+
+    // LEAVE SURRENDER
+    if (d.includes("surrender")) {
+      return "Leave";
+    }
+
+    // DEFAULT → LEAVE
+    return "Leave";
   };
 
-  const flag = data ? getFlag(data.DescC) : "Lev";
+  const flag = data ? data.DescC : "";
   const isClaim = flag === "Claim";
 
   useEffect(() => {
@@ -186,6 +222,7 @@ export default function PendingApprovalModal({
       });
 
       if (result.success) {
+        console.log("Approval Result:", result); // Debug log
         ConfirmModal.alert("Success", `Request ${status.toLowerCase()} successfully`, [
           {
             text: "OK",

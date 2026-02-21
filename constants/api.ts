@@ -56,6 +56,7 @@ export const API_ENDPOINTS = {
   GET_PENDING_SURRENDERS: "/WebApi2/GetSup_LVSurrenderById",
 
   SAVE_APPROVAL: "/WebApi2/SaveApproval_Supervisor",
+  // Superviser/SaveApprovalSupervisor
 
   // Employee Info
   GET_PROFILE: "/WebApi2/GetEmpProfile",

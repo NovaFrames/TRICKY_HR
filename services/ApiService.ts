@@ -1074,6 +1074,8 @@ class ApiService {
         { headers: this.getHeaders() },
       );
 
+      console.log("Emp Request Status Response:", JSON.stringify(response));
+
       if (response.data.Status === "success") {
         return {
           success: true,
