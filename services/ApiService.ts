@@ -43,7 +43,7 @@ export const setBaseUrl = async (
 ) => {
   const normalized = normalizeBaseUrl(domainUrl);
   if (!normalized) return;
-  await setDomainUrlSafely(normalized, options);
+  await setDomainUrlSafely(normalized);
 };
 
 api.interceptors.request.use(async (config) => {

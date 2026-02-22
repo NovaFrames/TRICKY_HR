@@ -1,6 +1,6 @@
 export const API_ENDPOINTS = {
   // Base URL
-  CompanyUrl: "https://hr.trickyhr.com",
+  CompanyUrl: "",
 
   // Authentication
   LOGIN: "/WebApi2/Login",
