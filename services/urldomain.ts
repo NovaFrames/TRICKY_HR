@@ -14,8 +14,10 @@ export async function getDomainUrl(): Promise<string | undefined> {
     const rawUser = await AsyncStorage.getItem("user_data");
     if (!rawUser) return undefined;
     const parsed = JSON.parse(rawUser);
+    console.log("Parsed user data for domain URL:", parsed);
     return normalize(parsed?.domain_url);
-  } catch {
+  } catch (error) {
+    console.error("Error parsing user data:", error);
     return undefined;
   }
 }
