@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/images/adptive-icon.png",
         "backgroundImage": "./assets/images//background.png"
       },
-      "versionCode": 110,
+      "versionCode": 115,
       "userInterfaceStyle": "automatic",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
