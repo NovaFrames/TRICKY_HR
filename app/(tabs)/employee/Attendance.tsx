@@ -12,6 +12,7 @@ import ApiService, {
 } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
+import * as Sentry from "@sentry/react-native";
 import { Camera, CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -665,6 +666,11 @@ const Attendance = () => {
   };
 
   const handleSubmit = async () => {
+    Sentry.setUser({
+      id: String(empId),
+      username: empName,
+    });
+
     if (!selectedProject) return ConfirmModal.alert("Required", "Select project");
     if (!capturedImage) return ConfirmModal.alert("Required", "Capture your photo");
     if (!location) return ConfirmModal.alert("Required", "Location not ready");
@@ -707,6 +713,14 @@ const Attendance = () => {
         const projectCoords = parseProjectCoords(project);
 
         if (!projectCoords) {
+          Sentry.captureMessage("Project location missing", {
+            level: "warning",
+            extra: {
+              projectName: project.NameC,
+              projectGPRSC: project.GPRSC,
+            },
+          });
+
           ConfirmModal.alert("Required", "Project location not available");
           return;
         }
@@ -719,7 +733,6 @@ const Attendance = () => {
         );
 
         const userRadius = Number(LOCATION_FROM_USER);
-
         const projectRadius = Number(project.AllowedRadiusN);
 
         const allowedRadius =
@@ -733,13 +746,34 @@ const Attendance = () => {
         const driftBuffer = Math.min(gpsAccuracy, MAX_GPS_DRIFT_BUFFER_METERS);
         const effectiveRadius = allowedRadius + driftBuffer;
 
+        // 🔥 Log ONLY when mismatch happens
         if (distance > effectiveRadius) {
+
           const distanceDisplay = formatDistance(distance);
+
+          Sentry.captureMessage("Location Mismatch", {
+            level: "error",
+            extra: {
+              userName: empName,
+              userCode: empCodeC,
+              projectName: project.NameC,
+              projectCoords,
+              employeeLat: location.latitude,
+              employeeLng: location.longitude,
+              accuracy: location.accuracy,
+              distance,
+              allowedRadius,
+              effectiveRadius,
+              distanceDisplay,
+            },
+          });
+
 
           ConfirmModal.alert(
             "Location Mismatch",
             `You are ${distanceDisplay} away from the project location (allowed ${Math.round(allowedRadius)}m).`,
           );
+
           return;
         }
       }
@@ -783,6 +817,9 @@ const Attendance = () => {
       }
     } catch (error) {
       console.error("Attendance submit error:", error);
+
+      Sentry.captureException(error);
+
       ConfirmModal.alert("Error", "Unable to submit attendance right now");
     } finally {
       setSubmitting(false);

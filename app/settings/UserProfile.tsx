@@ -19,22 +19,35 @@ type Nation = {
   NationIdN: number;
   NationNameC: string;
 };
+const isDefaultDotNetDate = (value?: string | null): boolean => {
+  if (!value) return true;
+
+  const match = value.match(/\/Date\((-?\d+)\)\//);
+  if (!match) return false;
+
+  const timestamp = parseInt(match[1], 10);
+  if (!Number.isFinite(timestamp)) return true;
+
+  const date = new Date(timestamp);
+
+  return date.getFullYear() <= 1900;
+};
+
 // Helper function to check if an object has meaningful data
 const hasMeaningfulData = (obj: any, fields: string[]): boolean => {
   if (!obj) return false;
+
   return fields.some((field) => {
     const value = obj[field];
+
     if (value === null || value === undefined || value === "") return false;
-    // Check for empty dates (like "/Date(-2209008600000)/" which is 01/01/1900)
-    if (
-      field.includes("Date") &&
-      typeof value === "string" &&
-      value.includes("/Date(-2209008600000)/")
-    ) {
+
+    if (field.includes("Date") && isDefaultDotNetDate(value)) {
       return false;
     }
-    // Check for number fields with 0
+
     if (typeof value === "number" && value === 0) return false;
+
     return true;
   });
 };
@@ -1419,79 +1432,81 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
+
         {/* SPOUSE INFO - Collapsible */}
-        <CollapsibleCard
-          title="Spouse Details"
-          icon={
-            <Ionicons name="people-outline" size={22} color={theme.primary} />
-          }
-          isOpen={expandedSections.spouse}
-          onToggle={() => toggleSection("spouse")}
-          theme={theme}
-        >
-          {isEditing ? (
-            <>
-              <DateRow
-                theme={theme}
-                label="Marital Date"
-                value={formatDateValueForInput(formData.MarriedDateD)}
-                placeholder="MM/DD/YYYY"
-                onPress={() =>
-                  openDatePicker(
-                    { scope: "form", field: "MarriedDateD" },
-                    formData.MarriedDateD,
-                  )
-                }
-              />
-              <EditableRow
-                theme={theme}
-                label="Spouse Name"
-                value={formData.SpouseNameC}
-                onChangeText={(text) => handleFieldChange("SpouseNameC", text)}
-              />
-              <EditableRow
-                theme={theme}
-                label="Spouse Phone"
-                value={formData.SpousePhNoC}
-                keyboardType="phone-pad"
-                onChangeText={(text) => handleFieldChange("SpousePhNoC", text)}
-              />
-              <EditableRow
-                theme={theme}
-                label="Spouse Email"
-                value={formData.SpouseEmailIdC}
-                keyboardType="email-address"
-                onChangeText={(text) =>
-                  handleFieldChange("SpouseEmailIdC", text)
-                }
-              />
-            </>
-          ) : (
-            <>
-              <DetailRow
-                theme={theme}
-                label="Marital Date"
-                value={formatDisplayDate(profile.MarriedDateD) || "-"}
-              />
-              <DetailRow
-                theme={theme}
-                label="Spouse Name"
-                value={profile.SpouseNameC || "-"}
-              />
-              <DetailRow
-                theme={theme}
-                label="Spouse Phone"
-                value={profile.SpousePhNoC || "-"}
-              />
-              <DetailRow
-                theme={theme}
-                label="Spouse Email"
-                value={profile.SpouseEmailIdC || "-"}
-                withDivider={false}
-              />
-            </>
-          )}
-        </CollapsibleCard>
+        {!isDefaultDotNetDate(profile.MarriedDateD) || !(maritalStatusLabel === "UnMarried") && (
+          <CollapsibleCard
+            title="Spouse Details"
+            icon={<Ionicons name="people-outline" size={22} color={theme.primary} />}
+            isOpen={expandedSections.spouse}
+            onToggle={() => toggleSection("spouse")}
+            theme={theme}
+          >
+            {isEditing ? (
+              <>
+                <DateRow
+                  theme={theme}
+                  label="Marital Date"
+                  value={formatDateValueForInput(formData.MarriedDateD)}
+                  placeholder="MM/DD/YYYY"
+                  onPress={() =>
+                    openDatePicker(
+                      { scope: "form", field: "MarriedDateD" },
+                      formData.MarriedDateD,
+                    )
+                  }
+                />
+                <EditableRow
+                  theme={theme}
+                  label="Spouse Name"
+                  value={formData.SpouseNameC}
+                  onChangeText={(text) => handleFieldChange("SpouseNameC", text)}
+                />
+                <EditableRow
+                  theme={theme}
+                  label="Spouse Phone"
+                  value={formData.SpousePhNoC}
+                  keyboardType="phone-pad"
+                  onChangeText={(text) => handleFieldChange("SpousePhNoC", text)}
+                />
+                <EditableRow
+                  theme={theme}
+                  label="Spouse Email"
+                  value={formData.SpouseEmailIdC}
+                  keyboardType="email-address"
+                  onChangeText={(text) =>
+                    handleFieldChange("SpouseEmailIdC", text)
+                  }
+                />
+              </>
+            ) : (
+              <>
+                <DetailRow
+                  theme={theme}
+                  label="Marital Date"
+                  value={formatDisplayDate(profile.MarriedDateD) || "-"}
+                />
+                <DetailRow
+                  theme={theme}
+                  label="Spouse Name"
+                  value={profile.SpouseNameC || "-"}
+                />
+                <DetailRow
+                  theme={theme}
+                  label="Spouse Phone"
+                  value={profile.SpousePhNoC || "-"}
+                />
+                <DetailRow
+                  theme={theme}
+                  label="Spouse Email"
+                  value={profile.SpouseEmailIdC || "-"}
+                  withDivider={false}
+                />
+              </>
+            )}
+          </CollapsibleCard>
+        )}
+
         {/* CURRENT ADDRESS - Collapsible */}
         <CollapsibleCard
           title="Current Address"
@@ -1703,213 +1718,220 @@ export default function UserProfile() {
             </>
           )}
         </CollapsibleCard>
+
         {/* PASSPORT DETAILS - Collapsible */}
-        <CollapsibleCard
-          title="Passport Details"
-          icon={<MaterialIcons name="badge" size={22} color={theme.primary} />}
-          isOpen={expandedSections.passport}
-          onToggle={() => toggleSection("passport")}
-          theme={theme}
-        >
-          {isEditing ? (
-            <>
-              <EditableRow
-                theme={theme}
-                label="Passport No"
-                value={formData.PassportNoC}
-                onChangeText={(text) => handleFieldChange("PassportNoC", text)}
-              />
-              <EditableRow
-                theme={theme}
-                label="Issue Place"
-                value={formData.IssuePlaceC}
-                onChangeText={(text) => handleFieldChange("IssuePlaceC", text)}
-              />
-              <DateRow
-                theme={theme}
-                label="Issue Date"
-                value={formatDateValueForInput(formData.IssueDateD)}
-                placeholder="MM/DD/YYYY"
-                onPress={() =>
-                  openDatePicker(
-                    { scope: "form", field: "IssueDateD" },
-                    formData.IssueDateD,
-                  )
-                }
-              />
-              <DateRow
-                theme={theme}
-                label="Expiry Date"
-                value={formatDateValueForInput(formData.ExpiryDateD)}
-                placeholder="MM/DD/YYYY"
-                onPress={() =>
-                  openDatePicker(
-                    { scope: "form", field: "ExpiryDateD" },
-                    formData.ExpiryDateD,
-                  )
-                }
-              />
-            </>
-          ) : (
-            <>
-              <DetailRow
-                theme={theme}
-                label="Passport No"
-                value={profile.PassportNoC || "-"}
-              />
-              <DetailRow
-                theme={theme}
-                label="Issue Place"
-                value={profile.IssuePlaceC || "-"}
-              />
-              <DetailRow
-                theme={theme}
-                label="Issue Date"
-                value={formatDisplayDate(profile.IssueDateD) || "-"}
-              />
-              <DetailRow
-                theme={theme}
-                label="Expiry Date"
-                value={formatDisplayDate(profile.ExpiryDateD) || "-"}
-                withDivider={false}
-              />
-            </>
-          )}
-        </CollapsibleCard>
+        {!isDefaultDotNetDate(profile.IssueDateD) && !isDefaultDotNetDate(profile.ExpiryDateD) && (
+          <CollapsibleCard
+            title="Passport Details"
+            icon={<MaterialIcons name="badge" size={22} color={theme.primary} />}
+            isOpen={expandedSections.passport}
+            onToggle={() => toggleSection("passport")}
+            theme={theme}
+          >
+            {isEditing ? (
+              <>
+                <EditableRow
+                  theme={theme}
+                  label="Passport No"
+                  value={formData.PassportNoC}
+                  onChangeText={(text) => handleFieldChange("PassportNoC", text)}
+                />
+                <EditableRow
+                  theme={theme}
+                  label="Issue Place"
+                  value={formData.IssuePlaceC}
+                  onChangeText={(text) => handleFieldChange("IssuePlaceC", text)}
+                />
+                <DateRow
+                  theme={theme}
+                  label="Issue Date"
+                  value={formatDateValueForInput(formData.IssueDateD)}
+                  placeholder="MM/DD/YYYY"
+                  onPress={() =>
+                    openDatePicker(
+                      { scope: "form", field: "IssueDateD" },
+                      formData.IssueDateD,
+                    )
+                  }
+                />
+                <DateRow
+                  theme={theme}
+                  label="Expiry Date"
+                  value={formatDateValueForInput(formData.ExpiryDateD)}
+                  placeholder="MM/DD/YYYY"
+                  onPress={() =>
+                    openDatePicker(
+                      { scope: "form", field: "ExpiryDateD" },
+                      formData.ExpiryDateD,
+                    )
+                  }
+                />
+              </>
+            ) : (
+              <>
+                <DetailRow
+                  theme={theme}
+                  label="Passport No"
+                  value={profile.PassportNoC || "-"}
+                />
+                <DetailRow
+                  theme={theme}
+                  label="Issue Place"
+                  value={profile.IssuePlaceC || "-"}
+                />
+                <DetailRow
+                  theme={theme}
+                  label="Issue Date"
+                  value={formatDisplayDate(profile.IssueDateD) || "-"}
+                />
+                <DetailRow
+                  theme={theme}
+                  label="Expiry Date"
+                  value={formatDisplayDate(profile.ExpiryDateD) || "-"}
+                  withDivider={false}
+                />
+              </>
+            )}
+          </CollapsibleCard>
+        )}
+
         {/* CHILDREN DETAILS - Collapsible */}
-        <CollapsibleCard
-          title="Children Details"
-          icon={
-            <MaterialIcons
-              name="child-friendly"
-              size={22}
-              color={theme.primary}
-            />
-          }
-          isOpen={expandedSections.children}
-          onToggle={() => toggleSection("children")}
-          theme={theme}
-        >
-          {isEditing ? (
-            <EditArraySection
-              title="Children"
-              data={children}
-              renderItem={(child, index) => (
-                <>
-                  <EditableRow
-                    theme={theme}
-                    label="Name"
-                    value={child.NameC || ""}
-                    onChangeText={(text) =>
-                      handleChildChange(index, "NameC", text)
-                    }
-                  />
-                  <DateRow
-                    theme={theme}
-                    label="Birth Date"
-                    value={formatDateValueForInput(child.BDateD)}
-                    placeholder="MM/DD/YYYY"
-                    onPress={() =>
-                      openDatePicker(
-                        { scope: "child", field: "BDateD", index },
-                        child.BDateD,
-                      )
-                    }
-                  />
-                  <EditableRow
-                    theme={theme}
-                    label="Status"
-                    value={child.StatusN || ""}
-                    onChangeText={(text) =>
-                      handleChildChange(index, "StatusN", text)
-                    }
-                  />
-                  <TouchableOpacity
-                    style={styles.editRow}
-                    onPress={() => {
-                      setChildIndexForNation(index);
-                      setShowChildNationModal(true);
-                    }}
-                  >
-                    <Text
-                      style={[styles.detailLabel, { color: theme.textLight }]}
-                    >
-                      Nation
-                    </Text>
-                    <View
-                      style={[
-                        styles.selectionInput,
-                        {
-                          backgroundColor: theme.inputBg,
-                          borderColor: theme.inputBorder,
-                        },
-                      ]}
+        {maritalStatusLabel === "Married" && (
+          <CollapsibleCard
+            title="Children Details"
+            icon={
+              <MaterialIcons
+                name="child-friendly"
+                size={22}
+                color={theme.primary}
+              />
+            }
+            isOpen={expandedSections.children}
+            onToggle={() => toggleSection("children")}
+            theme={theme}
+          >
+            {isEditing ? (
+              <EditArraySection
+                title="Children"
+                data={children}
+                renderItem={(child, index) => (
+                  <>
+                    <EditableRow
+                      theme={theme}
+                      label="Name"
+                      value={child.NameC || ""}
+                      onChangeText={(text) =>
+                        handleChildChange(index, "NameC", text)
+                      }
+                    />
+                    <DateRow
+                      theme={theme}
+                      label="Birth Date"
+                      value={formatDateValueForInput(child.BDateD)}
+                      placeholder="MM/DD/YYYY"
+                      onPress={() =>
+                        openDatePicker(
+                          { scope: "child", field: "BDateD", index },
+                          child.BDateD,
+                        )
+                      }
+                    />
+                    <EditableRow
+                      theme={theme}
+                      label="Status"
+                      value={child.StatusN || ""}
+                      onChangeText={(text) =>
+                        handleChildChange(index, "StatusN", text)
+                      }
+                    />
+                    <TouchableOpacity
+                      style={styles.editRow}
+                      onPress={() => {
+                        setChildIndexForNation(index);
+                        setShowChildNationModal(true);
+                      }}
                     >
                       <Text
-                        style={[
-                          styles.selectionValueText,
-                          { color: theme.text },
-                        ]}
-                        numberOfLines={1}
+                        style={[styles.detailLabel, { color: theme.textLight }]}
                       >
-                        {nations.find((n) => n.NationIdN === child.HidNationIdN)
-                          ?.NationNameC || "Select Nation"}
+                        Nation
                       </Text>
-                      <Ionicons
-                        name="chevron-down"
-                        size={20}
-                        color={theme.textLight}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </>
-              )}
-              onAdd={addNewChild}
-              onRemove={removeChild}
-              theme={theme}
-              emptyMessage="No children added yet"
-            />
-          ) : (
-            <ViewArraySection
-              title="Children"
-              data={children}
-              emptyMessage="No children added"
-              renderItem={(child, index) => (
-                <>
-                  <Text
-                    style={[styles.arrayItemIndex, { color: theme.primary }]}
-                  >
-                    Child {index + 1}
-                  </Text>
-                  <DetailRow
-                    theme={theme}
-                    label="Name"
-                    value={child.NameC || "-"}
-                  />
-                  <DetailRow
-                    theme={theme}
-                    label="Birth Date"
-                    value={formatDisplayDate(child.BDateD) || "-"}
-                  />
-                  <DetailRow
-                    theme={theme}
-                    label="Status"
-                    value={child.StatusN || "-"}
-                  />
-                  <DetailRow
-                    theme={theme}
-                    label="Nation"
-                    value={
-                      nations.find((n) => n.NationIdN === child.HidNationIdN)
-                        ?.NationNameC || "-"
-                    }
-                    withDivider={false}
-                  />
-                </>
-              )}
-            />
-          )}
-        </CollapsibleCard>
+                      <View
+                        style={[
+                          styles.selectionInput,
+                          {
+                            backgroundColor: theme.inputBg,
+                            borderColor: theme.inputBorder,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.selectionValueText,
+                            { color: theme.text },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {nations.find((n) => n.NationIdN === child.HidNationIdN)
+                            ?.NationNameC || "Select Nation"}
+                        </Text>
+                        <Ionicons
+                          name="chevron-down"
+                          size={20}
+                          color={theme.textLight}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
+                onAdd={addNewChild}
+                onRemove={removeChild}
+                theme={theme}
+                emptyMessage="No children added yet"
+              />
+            ) : (
+              <ViewArraySection
+                title="Children"
+                data={children}
+                emptyMessage="No children added"
+                renderItem={(child, index) => (
+                  <>
+                    <Text
+                      style={[styles.arrayItemIndex, { color: theme.primary }]}
+                    >
+                      Child {index + 1}
+                    </Text>
+                    <DetailRow
+                      theme={theme}
+                      label="Name"
+                      value={child.NameC || "-"}
+                    />
+                    <DetailRow
+                      theme={theme}
+                      label="Birth Date"
+                      value={formatDisplayDate(child.BDateD) || "-"}
+                    />
+                    <DetailRow
+                      theme={theme}
+                      label="Status"
+                      value={child.StatusN || "-"}
+                    />
+                    <DetailRow
+                      theme={theme}
+                      label="Nation"
+                      value={
+                        nations.find((n) => n.NationIdN === child.HidNationIdN)
+                          ?.NationNameC || "-"
+                      }
+                      withDivider={false}
+                    />
+                  </>
+                )}
+              />
+            )}
+          </CollapsibleCard>
+        )}
+
         {/* EDUCATION DETAILS - Collapsible */}
         <CollapsibleCard
           title="Education Details"

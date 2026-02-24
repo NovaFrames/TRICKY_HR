@@ -35,7 +35,7 @@ interface PendingApproval {
   ToDateC: string; // To Date
   EmpRemarksC: string; // Employee Remarks
   ApproveRemarkC: string; // Approve Remark
-  LeaveDaysN: number | null; // Leave Days
+  LeaveDaysN: string | null; // Leave Days
   Approve1C: string | null;
   Approve2C: string | null;
   FinalApproveC: string | null;
@@ -166,6 +166,63 @@ export default function PendingApproval() {
     });
   };
 
+    // Helper to format ASP.NET JSON Date /Date(1234567890)/
+  const formatFromDate = (dateString?: string | null): string => {
+    if (!dateString) return "-";
+
+    try {
+      // Extract only date part (remove time if exists)
+      const datePart = dateString.split(" ")[0]; // "2/3/2026"
+
+      const parts = datePart.split("/");
+      if (parts.length !== 3) return "-";
+
+      const month = parseInt(parts[0], 10) - 1; // JS month is 0-based
+      const day = parseInt(parts[1], 10);
+      const year = parseInt(parts[2], 10);
+
+      const date = new Date(year, month, day);
+
+      if (isNaN(date.getTime())) return "-";
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return "-";
+    }
+  };
+  // Helper to format ASP.NET JSON Date /Date(1234567890)/
+  const formatToDate = (dateString?: string | null): string => {
+    if (!dateString) return "-";
+
+    try {
+      // Extract only date part (remove time if exists)
+      const datePart = dateString.split(" ")[0]; // "2/3/2026"
+
+      const parts = datePart.split("/");
+      if (parts.length !== 3) return "-";
+
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // JS month is 0-based
+      const year = parseInt(parts[2], 10);
+
+      const date = new Date(year, month, day);
+
+      if (isNaN(date.getTime())) return "-";
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return "-";
+    }
+  };
+
   const getStatusIcon = (status?: string) => {
     if (!status) return "alert-circle";
 
@@ -244,7 +301,7 @@ export default function PendingApproval() {
     // Create period string from FromDateC and ToDateC
     const period =
       item.FromDateC && item.ToDateC
-        ? `${item.FromDateC} - ${item.ToDateC}`
+        ? `${formatFromDate(item.FromDateC)} - ${formatToDate(item.ToDateC)}`
         : "";
 
     return (
@@ -302,7 +359,7 @@ export default function PendingApproval() {
             style={[styles.remarks, { color: theme.textLight }]}
             numberOfLines={1}
           >
-            Amount: {item.EmpRemarksC}
+            Remarks: {item.EmpRemarksC}
           </Text>
         )}
 

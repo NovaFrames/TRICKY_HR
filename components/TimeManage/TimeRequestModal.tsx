@@ -1,3 +1,4 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -10,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import AppModal from "../common/AppModal";
@@ -174,7 +174,40 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
 
   return (
     <>
-      <AppModal visible={visible} onClose={onClose} title="Time Request">
+      <AppModal visible={visible} onClose={onClose} title="Time Request"
+        footer={
+          <View style={styles.footerRow}>
+            <CustomButton
+              title="Cancel"
+              icon="close"
+              onPress={onClose}
+              disabled={loading}
+              textColor={theme.text}
+              iconColor={theme.text}
+              style={[
+                styles.footerButton,
+                styles.cancelButton,
+                {
+                  backgroundColor: theme.background,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
+            />
+
+            <CustomButton
+              title="Submit"
+              icon="send"
+              onPress={handleSubmit}
+              isLoading={loading}
+              disabled={loading}
+              style={[
+                styles.footerButton,
+                styles.submitButton,
+                { backgroundColor: theme.primary },
+              ]}
+            />
+          </View>
+        }>
         <ScrollView
           style={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -230,30 +263,30 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
           <View style={styles.timeRow}>
             {(formData.requestType === "In Time" ||
               formData.requestType === "In & Out Time") && (
-              <View style={styles.timeGroup}>
-                <Text style={labelStyle}>In Time</Text>
-                <TouchableOpacity
-                  style={inputStyle}
-                  onPress={() => setShowInTimePicker(true)}
-                >
-                  <Text style={{ color: theme.text }}>{formData.inTime}</Text>
-                  <Ionicons name="time-outline" size={20} color={theme.icon} />
-                </TouchableOpacity>
-              </View>
-            )}
+                <View style={styles.timeGroup}>
+                  <Text style={labelStyle}>In Time</Text>
+                  <TouchableOpacity
+                    style={inputStyle}
+                    onPress={() => setShowInTimePicker(true)}
+                  >
+                    <Text style={{ color: theme.text }}>{formData.inTime}</Text>
+                    <Ionicons name="time-outline" size={20} color={theme.icon} />
+                  </TouchableOpacity>
+                </View>
+              )}
             {(formData.requestType === "Out Time" ||
               formData.requestType === "In & Out Time") && (
-              <View style={styles.timeGroup}>
-                <Text style={labelStyle}>Out Time</Text>
-                <TouchableOpacity
-                  style={inputStyle}
-                  onPress={() => setShowOutTimePicker(true)}
-                >
-                  <Text style={{ color: theme.text }}>{formData.outTime}</Text>
-                  <Ionicons name="time-outline" size={20} color={theme.icon} />
-                </TouchableOpacity>
-              </View>
-            )}
+                <View style={styles.timeGroup}>
+                  <Text style={labelStyle}>Out Time</Text>
+                  <TouchableOpacity
+                    style={inputStyle}
+                    onPress={() => setShowOutTimePicker(true)}
+                  >
+                    <Text style={{ color: theme.text }}>{formData.outTime}</Text>
+                    <Ionicons name="time-outline" size={20} color={theme.icon} />
+                  </TouchableOpacity>
+                </View>
+              )}
           </View>
 
           <View style={styles.formGroup}>
@@ -279,37 +312,6 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
             />
           </View>
 
-          <View style={styles.footerRow}>
-            <CustomButton
-              title="Cancel"
-              icon="close"
-              onPress={onClose}
-              disabled={loading}
-              textColor={theme.text}
-              iconColor={theme.text}
-              style={[
-                styles.footerButton,
-                styles.cancelButton,
-                {
-                  backgroundColor: theme.background,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
-            />
-
-            <CustomButton
-              title="Submit"
-              icon="send"
-              onPress={handleSubmit}
-              isLoading={loading}
-              disabled={loading}
-              style={[
-                styles.footerButton,
-                styles.submitButton,
-                { backgroundColor: theme.primary },
-              ]}
-            />
-          </View>
         </ScrollView>
       </AppModal>
 
@@ -434,9 +436,10 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   footerRow: {
+    display: "flex",
     flexDirection: "row-reverse",
-    justifyContent: "flex-end",
     gap: 12,
+    alignItems: "flex-end",
   },
   footerButton: {
     minWidth: 132,

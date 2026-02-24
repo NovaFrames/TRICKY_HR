@@ -29,7 +29,7 @@ interface PendingApprovalData {
   ToDateC: string;
   EmpRemarksC: string;
   ApproveRemarkC: string;
-  LeaveDaysN: number | null;
+  LeaveDaysN: string | null;
   Approve1C: string | null;
   Approve2C: string | null;
   FinalApproveC: string | null;
@@ -134,31 +134,59 @@ export default function PendingApprovalModal({
   if (!data) return null;
 
   // Helper to format ASP.NET JSON Date /Date(1234567890)/
-  const formatDate = (dateString: string) => {
+  const formatFromDate = (dateString?: string | null): string => {
+    if (!dateString) return "-";
+
     try {
-      if (!dateString) return "N/A";
+      // Extract only date part (remove time if exists)
+      const datePart = dateString.split(" ")[0]; // "2/3/2026"
 
-      if (typeof dateString === "string" && dateString.includes("/Date(")) {
-        const timestamp = parseInt(
-          dateString.replace(/\/Date\((-?\d+)\)\//, "$1"),
-        );
-        const date = new Date(timestamp);
-        return date.toLocaleDateString("en-US", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        });
-      }
+      const parts = datePart.split("/");
+      if (parts.length !== 3) return "-";
 
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString;
+      const month = parseInt(parts[0], 10) - 1; // JS month is 0-based
+      const day = parseInt(parts[1], 10);
+      const year = parseInt(parts[2], 10);
+
+      const date = new Date(year, month, day);
+
+      if (isNaN(date.getTime())) return "-";
+
       return date.toLocaleDateString("en-US", {
-        day: "numeric",
         month: "short",
+        day: "2-digit",
         year: "numeric",
       });
-    } catch (e) {
-      return dateString;
+    } catch {
+      return "-";
+    }
+  };
+  // Helper to format ASP.NET JSON Date /Date(1234567890)/
+  const formatToDate = (dateString?: string | null): string => {
+    if (!dateString) return "-";
+
+    try {
+      // Extract only date part (remove time if exists)
+      const datePart = dateString.split(" ")[0]; // "2/3/2026"
+
+      const parts = datePart.split("/");
+      if (parts.length !== 3) return "-";
+
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // JS month is 0-based
+      const year = parseInt(parts[2], 10);
+
+      const date = new Date(year, month, day);
+
+      if (isNaN(date.getTime())) return "-";
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return "-";
     }
   };
 
@@ -299,7 +327,7 @@ export default function PendingApprovalModal({
     icon,
   }: {
     label: string;
-    value: string | number;
+    value: string | number | any;
     icon: any;
   }) => (
     <View style={styles.detailItem}>
@@ -331,7 +359,7 @@ export default function PendingApprovalModal({
           >
             <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
             <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
-              {statusInfo.label}
+              {data.StatusC}
             </Text>
           </View>
         </View>
@@ -341,20 +369,29 @@ export default function PendingApprovalModal({
           label="EMPLOYEE CODE"
           value={data.CodeC}
         />
-        <DetailItem
-          icon="briefcase-outline"
-          label="PROJECT NAME"
-          value={data.CatgNameC || "N/A"}
-        />
+
         <DetailItem
           icon="document-text-outline"
-          label="REQUEST TYPE"
-          value={data.DescC || "N/A"}
+          label="LEAVE TYPE"
+          value={data.StatusC || "N/A"}
         />
+
         <DetailItem
           icon="calendar-outline"
-          label="APPLY DATE"
-          value={formatDate(data.ApplyDateD)}
+          label="FROM DATE"
+          value={formatFromDate(data.FromDateC)}
+        />
+
+        <DetailItem
+          icon="calendar-outline"
+          label="TO DATE"
+          value={formatToDate(data.ToDateC)}
+        />
+
+        <DetailItem
+          icon="calendar-outline"
+          label="TOTAL DAYS"
+          value={`${data.LeaveDaysN || "0"} day(s)`}
         />
 
         {data.LvDescC && (

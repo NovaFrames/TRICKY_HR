@@ -3,6 +3,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { ModalManagerProvider } from "@/components/common/ModalManager";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
+import * as Sentry from '@sentry/react-native';
 import * as NavigationBar from "expo-navigation-bar";
 import {
   SplashScreen,
@@ -16,11 +17,25 @@ import { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+Sentry.init({
+  dsn: 'https://7221addf6e9fac21ebdc89d25cea4d5e@o4510939901853696.ingest.de.sentry.io/4510939907358800',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
 SplashScreen.preventAutoHideAsync();
 
 /* ---------------- ROOT ---------------- */
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
@@ -34,7 +49,7 @@ export default function RootLayout() {
       </ThemeProvider>
     </ErrorBoundary>
   );
-}
+});
 
 /* ---------------- NAVIGATION ---------------- */
 
