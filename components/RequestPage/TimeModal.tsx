@@ -1,11 +1,12 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
@@ -17,6 +18,19 @@ interface TimeModalProps {
   onClose: () => void;
   item: any;
   onRefresh?: () => void;
+  mode?: "employee" | "approval";
+  onCancelRequest?: (
+    item: any,
+  ) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+  onApprove?: (params: {
+    item: any;
+    remarks: string;
+  }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+  onReject?: (params: {
+    item: any;
+    remarks: string;
+  }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+  onSuccess?: () => void;
 }
 
 const TimeModal: React.FC<TimeModalProps> = ({
@@ -24,11 +38,21 @@ const TimeModal: React.FC<TimeModalProps> = ({
   onClose,
   item,
   onRefresh,
+  mode = "employee",
+  onCancelRequest,
+  onApprove,
+  onReject,
+  onSuccess,
 }) => {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [processingAction, setProcessingAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
+  const [remarks, setRemarks] = useState("");
   const [timeData, setTimeData] = useState<any>(null);
+  const isApprovalMode = mode === "approval";
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -71,7 +95,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
         month: "short",
         year: "numeric",
       });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
@@ -104,6 +128,12 @@ const TimeModal: React.FC<TimeModalProps> = ({
     fetchTimeDetails();
   }, [visible, item]);
 
+  useEffect(() => {
+    if (!visible || !isApprovalMode) return;
+    setProcessingAction(null);
+    setRemarks("");
+  }, [visible, isApprovalMode]);
+
   if (!item) return null;
 
   const handleCancelRequest = async () => {
@@ -118,29 +148,32 @@ const TimeModal: React.FC<TimeModalProps> = ({
           onPress: async () => {
             setLoading(true);
             try {
-              const requestId = item.IdN || item.Id || item.id;
-              const currentUser = ApiService.getCurrentUser();
-              const empId = item.EmpIdN || item.EmpId || currentUser.empId;
+              const defaultCancel = async () => {
+                const requestId = item.IdN || item.Id || item.id;
+                const currentUser = ApiService.getCurrentUser();
+                const empId = item.EmpIdN || item.EmpId || currentUser.empId;
 
-              if (!empId) {
-                ConfirmModal.alert("Error", "Employee ID not found.");
-                setLoading(false);
-                return;
-              }
+                if (!empId) {
+                  return { success: false, error: "Employee ID not found." };
+                }
 
-              const result = await ApiService.updatePendingApproval({
-                IdN: requestId,
-                StatusC: "Rejected",
-                ApproveRemarkC: "Cancelled by user",
-                EmpIdN: empId,
-                Flag: "Time",
-                ApproveAmtN: 0,
-                title: "",
-                DocName: "",
-                ReceiveYearN: 0,
-                ReceiveMonthN: 0,
-                PayTypeN: 0,
-              });
+                return ApiService.updatePendingApproval({
+                  IdN: requestId,
+                  StatusC: "Rejected",
+                  Remarks: "Cancelled by user",
+                  EmpIdN: empId,
+                  Flag: "Time",
+                  ApproveAmtN: 0,
+                  title: "",
+                  DocName: "",
+                  ReceiveYearN: 0,
+                  ReceiveMonthN: 0,
+                  PayTypeN: 0,
+                });
+              };
+              const result = onCancelRequest
+                ? await onCancelRequest(item)
+                : await defaultCancel();
 
               if (result.success) {
                 ConfirmModal.alert(
@@ -149,6 +182,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
                 );
                 onClose();
                 onRefresh?.();
+                onSuccess?.();
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -164,6 +198,109 @@ const TimeModal: React.FC<TimeModalProps> = ({
               setLoading(false);
             }
           },
+        },
+      ],
+    );
+  };
+
+  const handleApprovalSubmission = async (status: "Approved" | "Rejected") => {
+    if (status === "Rejected" && remarks.trim().length < 11) {
+      ConfirmModal.alert(
+        "Validation Error",
+        "Remarks should be more than 10 characters",
+      );
+      return;
+    }
+
+    setProcessingAction(status);
+    try {
+      const defaultAction = async () => {
+        const currentUser = ApiService.getCurrentUser();
+        const empId = item.EmpIdN || item.EmpId || currentUser.empId;
+
+        if (!empId) {
+          return { success: false, error: "Employee ID not found." };
+        }
+
+        return ApiService.updatePendingApproval({
+          IdN: item.IdN || item.Id || item.id,
+          StatusC: status,
+          Remarks: remarks,
+          EmpIdN: empId,
+          Flag: "Time",
+          ApproveAmtN: 0,
+          title: "",
+          DocName: "",
+          ReceiveYearN: 0,
+          ReceiveMonthN: 0,
+          PayTypeN: 0,
+        });
+      };
+
+      const result =
+        status === "Approved"
+          ? onApprove
+            ? await onApprove({ item, remarks })
+            : await defaultAction()
+          : onReject
+            ? await onReject({ item, remarks })
+            : await defaultAction();
+
+      if (result.success) {
+        ConfirmModal.alert(
+          "Success",
+          `Request ${status.toLowerCase()} successfully`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                onSuccess?.();
+                onRefresh?.();
+                onClose();
+              },
+            },
+          ],
+        );
+      } else {
+        ConfirmModal.alert("Error", result.error || "Failed to update request.");
+      }
+    } catch (error: any) {
+      ConfirmModal.alert("Error", error?.message || "Failed to update request.");
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const handleApprove = () => {
+    ConfirmModal.alert(
+      "Approve Request",
+      "Are you sure you want to approve this request?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Approve",
+          style: "default",
+          onPress: () => handleApprovalSubmission("Approved"),
+        },
+      ],
+    );
+  };
+
+  const handleReject = () => {
+    if (!remarks.trim()) {
+      ConfirmModal.alert("Error", "Please enter reject remarks");
+      return;
+    }
+
+    ConfirmModal.alert(
+      "Reject Request",
+      "Are you sure you want to reject this request?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reject",
+          style: "destructive",
+          onPress: () => handleApprovalSubmission("Rejected"),
         },
       ],
     );
@@ -234,23 +371,68 @@ const TimeModal: React.FC<TimeModalProps> = ({
     <AppModal
       visible={visible}
       onClose={onClose}
-      title="Time Manage"
-      subtitle={`Ref: #${item.IdN || "N/A"}`}
-      footer={
-        status.toLowerCase().includes("waiting") ||
-        status.toLowerCase().includes("pending") ? (
-          <CustomButton
-            title="Cancel Request"
-            icon="close"
-            isLoading={loading}
-            disabled={loading}
-            onPress={handleCancelRequest}
-            style={styles.cancelButton}
-          />
-        ) : null
+      title={isApprovalMode ? "Approval Request" : "Time Manage"}
+      subtitle={
+        isApprovalMode
+          ? `Employee: ${item.NameC || "N/A"} • Ref: #${item.IdN || "N/A"}`
+          : `Ref: #${item.IdN || "N/A"}`
       }
+      footer={(() => {
+        if (isApprovalMode) {
+          return (
+            <View style={styles.footerButtons}>
+              <CustomButton
+                title="Reject"
+                icon="close-circle-outline"
+                onPress={handleReject}
+                isLoading={processingAction === "Rejected"}
+                disabled={processingAction !== null}
+                textColor="#DC2626"
+                iconColor="#DC2626"
+                indicatorColor="#DC2626"
+                style={[styles.actionButton, styles.rejectButton]}
+              />
+
+              <CustomButton
+                title="Approve"
+                icon="checkmark-circle-outline"
+                onPress={handleApprove}
+                isLoading={processingAction === "Approved"}
+                disabled={processingAction !== null}
+                style={[
+                  styles.actionButton,
+                  styles.approveButton,
+                  { backgroundColor: theme.primary },
+                ]}
+              />
+            </View>
+          );
+        }
+
+        if (
+          status.toLowerCase().includes("waiting") ||
+          status.toLowerCase().includes("pending")
+        ) {
+          return (
+            <CustomButton
+              title="Cancel Request"
+              icon="close"
+              isLoading={loading}
+              disabled={loading}
+              onPress={handleCancelRequest}
+              style={styles.cancelButton}
+            />
+          );
+        }
+
+        return null;
+      })()}
     >
-      <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.modalBody}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.badgeRow}>
           <View
             style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
@@ -263,6 +445,42 @@ const TimeModal: React.FC<TimeModalProps> = ({
         </View>
 
         {renderContent()}
+
+        {isApprovalMode && (
+          <View
+            style={[
+              styles.approvalSection,
+              { borderTopColor: theme.inputBorder },
+            ]}
+          >
+            <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+              APPROVAL DECISION
+            </Text>
+
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                Remarks
+              </Text>
+              <TextInput
+                style={[
+                  styles.textArea,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
+                placeholder="Enter your remarks here (required for rejection)"
+                placeholderTextColor={theme.placeholder}
+                value={remarks}
+                onChangeText={setRemarks}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+        )}
       </ScrollView>
     </AppModal>
   );
@@ -330,7 +548,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cancelButton: {
-    height: 56,
     borderRadius: 4,
     alignItems: "center",
     justifyContent: "center",
@@ -341,6 +558,50 @@ const styles = StyleSheet.create({
     color: "#DC2626",
     fontWeight: "700",
     fontSize: 16,
+  },
+  approvalSection: {
+    marginTop: 8,
+    paddingTop: 24,
+    borderTopWidth: 1,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1,
+    marginBottom: 16,
+  },
+  fieldContainer: {
+    marginBottom: 8,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 12,
+    fontSize: 15,
+    minHeight: 100,
+  },
+  footerButtons: {
+    flexDirection: "row-reverse",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  actionButton: {
+    flexGrow: 0,
+    flexShrink: 0,
+    marginBottom: 0,
+  },
+  approveButton: {
+    backgroundColor: "#16A34A",
+  },
+  rejectButton: {
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   loadingContainer: {
     alignItems: "center",

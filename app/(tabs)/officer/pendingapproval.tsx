@@ -1,6 +1,7 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
-import ClaimApprovalModal from "@/components/PendingApproval/ClaimApprovalModal";
+import ClaimModal from "@/components/RequestPage/ClaimModal";
+import TimeModal from "@/components/RequestPage/TimeModal";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
@@ -261,6 +262,53 @@ export default function PendingApproval() {
     setSelectedIndex(index);
     setSelectedItem(item);
     setShowModal(true);
+  };
+
+  const getFlag = (desc: string) => {
+    const d = (desc || "").toLowerCase().trim();
+    if (d.includes("claim") && !d.includes("expense")) return "Claim";
+    if (d.includes("expense")) return "EmpClaimExpense";
+    if (d.includes("tax")) return "EmpTaxDeclaration";
+    if (d.includes("document")) return "Employee Document";
+    if (d.includes("profile")) return "Profile";
+    if (d.includes("loan")) return "Loan Request";
+    if (d.includes("time")) return "Time";
+    if (d.includes("cancel")) return "CancelLeave";
+    if (d.includes("surrender") || d.includes("leave")) return "Leave";
+    return "Leave";
+  };
+
+  const handleApprovalAction = async (
+    request: PendingApproval,
+    status: "Approved" | "Rejected",
+    remarks: string,
+    approveAmount: number,
+  ) => {
+    const flag = getFlag(request.DescC);
+    return ApiService.updatePendingApproval({
+      IdN: request.IdN,
+      StatusC: status,
+      Remarks: remarks,
+      EmpIdN: request.EmpIdN,
+      Flag: flag,
+      ApproveAmtN: approveAmount,
+      title:
+        flag === "Employee Document"
+          ? request.CatgNameC || request.DescC
+          : flag === "Claim"
+            ? "ClaimDoc"
+            : "",
+      DocName:
+        flag === "Employee Document"
+          ? request.NameC || ""
+          : flag === "Claim"
+            ? "tyht"
+            : "",
+      ReceiveYearN: 0,
+      ReceiveMonthN: 0,
+      PayTypeN: 0,
+      ClaimExpenseDtl1: [],
+    });
   };
 
   const renderCustomTab = () => {
@@ -530,8 +578,9 @@ export default function PendingApproval() {
             data={selectedItem}
           />
         ) : selectedItem.DescC === "Claim" ? (
-          <ClaimApprovalModal
+          <ClaimModal
             visible={showModal}
+            mode="approval"
             onClose={() => {
               setShowModal(false);
               setSelectedItem(null);
@@ -541,7 +590,34 @@ export default function PendingApproval() {
               setSelectedItem(null);
               fetchPendingApprovals();
             }}
-            data={selectedItem}
+            item={selectedItem}
+            onApprove={({ item, remarks, approveAmount }) =>
+              handleApprovalAction(item, "Approved", remarks, approveAmount)
+            }
+            onReject={({ item, remarks, approveAmount }) =>
+              handleApprovalAction(item, "Rejected", remarks, approveAmount)
+            }
+          />
+        ) : selectedItem.DescC.toLowerCase().includes("time") ? (
+          <TimeModal
+            visible={showModal}
+            mode="approval"
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onSuccess={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+              fetchPendingApprovals();
+            }}
+            item={selectedItem}
+            onApprove={({ item, remarks }) =>
+              handleApprovalAction(item, "Approved", remarks, 0)
+            }
+            onReject={({ item, remarks }) =>
+              handleApprovalAction(item, "Rejected", remarks, 0)
+            }
           />
         ) : ('')
       )}

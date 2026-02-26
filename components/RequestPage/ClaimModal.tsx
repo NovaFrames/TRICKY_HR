@@ -1,9 +1,19 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import AppModal from "../../components/common/AppModal";
@@ -15,16 +25,43 @@ interface ClaimModalProps {
   onClose: () => void;
   item: any;
   onRefresh?: () => void;
+  mode?: "employee" | "approval";
+  onCancelRequest?: (
+    item: any,
+  ) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+  onApprove?: (params: {
+    item: any;
+    remarks: string;
+    approveAmount: number;
+    flag: string;
+  }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+  onReject?: (params: {
+    item: any;
+    remarks: string;
+    approveAmount: number;
+    flag: string;
+  }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+  onSuccess?: () => void;
 }
 const ClaimModal: React.FC<ClaimModalProps> = ({
   visible,
   onClose,
   item,
   onRefresh,
+  mode = "employee",
+  onCancelRequest,
+  onApprove,
+  onReject,
+  onSuccess,
 }) => {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [processingAction, setProcessingAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
+  const [rejectRemarks, setRejectRemarks] = useState("");
+  const [approveAmt, setApproveAmt] = useState("");
   const [claimData, setClaimData] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [viewingDoc, setViewingDoc] = useState<{
@@ -32,6 +69,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     name: string;
   } | null>(null);
   const [viewerError, setViewerError] = useState<string | null>(null);
+  const isApprovalMode = mode === "approval";
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
   const imageExtRegex = /\.(jpg|jpeg|png|gif|bmp|webp|heic|heif)$/i;
   // Status Logic for Color
@@ -48,6 +86,20 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       label: status.toUpperCase(),
     };
   }
+  const getFlag = (desc: string) => {
+    const d = (desc || "").toLowerCase().trim();
+    if (d.includes("claim") && !d.includes("expense")) return "Claim";
+    if (d.includes("expense")) return "EmpClaimExpense";
+    if (d.includes("tax")) return "EmpTaxDeclaration";
+    if (d.includes("document")) return "Employee Document";
+    if (d.includes("profile")) return "Profile";
+    if (d.includes("loan")) return "Loan Request";
+    if (d.includes("time")) return "Time";
+    if (d.includes("cancel")) return "CancelLeave";
+    if (d.includes("surrender") || d.includes("leave")) return "Leave";
+    return "Leave";
+  };
+  const flag = getFlag(item?.DescC || "");
   // Helper to format ASP.NET JSON Date
   const formatDate = (dateString: string) => {
     try {
@@ -70,7 +122,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         month: "short",
         year: "numeric",
       });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
@@ -99,6 +151,18 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     fetchClaimDetails();
   }, [visible, item]);
 
+  useEffect(() => {
+    if (!visible || !item || !isApprovalMode) return;
+    setRejectRemarks("");
+    setProcessingAction(null);
+    if (item.EmpRemarksC) {
+      const match = item.EmpRemarksC.match(/(\d+(\.\d+)?)/);
+      setApproveAmt(match ? match[0] : "");
+    } else {
+      setApproveAmt("");
+    }
+  }, [visible, item, isApprovalMode]);
+
   if (!item) return null;
 
   const handleCancelRequest = async () => {
@@ -113,37 +177,40 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
           onPress: async () => {
             setLoading(true);
             try {
-              const requestId = item.IdN || item.Id || item.id;
               const parseDate = (dateStr: string | undefined) => {
                 if (!dateStr) return undefined;
                 try {
-                  if (
-                    typeof dateStr === "string" &&
-                    dateStr.includes("/Date(")
-                  ) {
+                  if (typeof dateStr === "string" && dateStr.includes("/Date(")) {
                     const timestamp = parseInt(
                       dateStr.replace(/\/Date\((-?\d+)\)\//, "$1"),
                     );
                     return new Date(timestamp);
                   }
                   return new Date(dateStr);
-                } catch (e) {
+                } catch {
                   return undefined;
                 }
               };
-              const fromDate = parseDate(item.LFromDateD || item.FromDate);
-              const toDate = parseDate(item.LToDateD || item.ToDate);
-              const result = await ApiService.deleteRequest(
-                requestId,
-                "Claim",
-                fromDate,
-                toDate,
-                "Cancelled by user",
-              );
+              const defaultCancel = async () => {
+                const requestId = item.IdN || item.Id || item.id;
+                const fromDate = parseDate(item.LFromDateD || item.FromDate);
+                const toDate = parseDate(item.LToDateD || item.ToDate);
+                return ApiService.deleteRequest(
+                  requestId,
+                  "Claim",
+                  fromDate,
+                  toDate,
+                  "Cancelled by user",
+                );
+              };
+              const result = onCancelRequest
+                ? await onCancelRequest(item)
+                : await defaultCancel();
               if (result.success) {
                 ConfirmModal.alert("Success", "Claim request cancelled successfully");
                 onClose();
                 onRefresh?.();
+                onSuccess?.();
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -166,8 +233,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   const handleViewDocument = async (fileName: string) => {
     try {
       setViewerError(null);
-      const AsyncStorage =
-        require("@react-native-async-storage/async-storage").default;
       // Get user data for URL construction
       const userDataStr = await AsyncStorage.getItem("user_data");
       const userData = userDataStr ? JSON.parse(userDataStr) : null;
@@ -180,8 +245,8 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         companyUrl = companyUrl.slice(0, -1);
       }
       const currentUser = ApiService.getCurrentUser();
-      const empId = item.EmpIdN || currentUser.empId;
-      const requestId = item.IdN || item.Id;
+      const empId = claimData?.EmpIdN || item.EmpIdN || currentUser.empId;
+      const requestId = claimData?.IdN || claimData?.Id || item.IdN || item.Id;
       if (companyUrl) {
         // URL Pattern: https://hr.trickyhr.com/kevit-Customer/{CustomerId}/{CompanyId}/EmpPortal/ClaimDoc/{EmpId}/{ClaimId}/{FileName}
         const url = `${companyUrl}/kevit-Customer/${customerId}/${companyId}/EmpPortal/ClaimDoc/${empId}/${requestId}/${fileName}`;
@@ -211,6 +276,123 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       console.error("Error opening browser:", error);
       ConfirmModal.alert("Error", "Unable to open the document in the browser.");
     }
+  };
+  const handleApprovalSubmission = async (
+    actionStatus: "Approved" | "Rejected",
+  ) => {
+    if (actionStatus === "Rejected" && rejectRemarks.trim().length < 11) {
+      ConfirmModal.alert(
+        "Validation Error",
+        "Remarks should be more than 10 characters",
+      );
+      return;
+    }
+
+    if (actionStatus === "Approved" && (!approveAmt || parseFloat(approveAmt) <= 0)) {
+      ConfirmModal.alert("Validation Error", "Enter approved amount");
+      return;
+    }
+
+    setProcessingAction(actionStatus);
+    try {
+      const amount = parseFloat(approveAmt) || 0;
+      const callPayload = {
+        item,
+        remarks: rejectRemarks,
+        approveAmount: amount,
+        flag,
+      };
+      const defaultAction = async () => {
+        return ApiService.updatePendingApproval({
+          IdN: item.IdN,
+          StatusC: actionStatus,
+          Remarks: rejectRemarks,
+          EmpIdN: item.EmpIdN,
+          Flag: flag,
+          ApproveAmtN: amount,
+          title:
+            flag === "Employee Document"
+              ? item.CatgNameC || item.DescC
+              : flag === "Claim"
+                ? "ClaimDoc"
+                : "",
+          DocName:
+            flag === "Employee Document"
+              ? item.NameC || ""
+              : flag === "Claim"
+                ? "tyht"
+                : "",
+          ReceiveYearN: 0,
+          ReceiveMonthN: 0,
+          PayTypeN: 0,
+          ClaimExpenseDtl1: [],
+        });
+      };
+
+      const result =
+        actionStatus === "Approved"
+          ? onApprove
+            ? await onApprove(callPayload)
+            : await defaultAction()
+          : onReject
+            ? await onReject(callPayload)
+            : await defaultAction();
+
+      if (result.success) {
+        ConfirmModal.alert(
+          "Success",
+          `Request ${actionStatus.toLowerCase()} successfully`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                onSuccess?.();
+                onRefresh?.();
+                onClose();
+              },
+            },
+          ],
+        );
+      } else {
+        ConfirmModal.alert("Error", result.error || "Failed to update approval");
+      }
+    } catch (error: any) {
+      ConfirmModal.alert("Error", error?.message || "Failed to update approval");
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+  const handleApprove = () => {
+    ConfirmModal.alert(
+      "Approve Request",
+      "Are you sure you want to approve this request?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Approve",
+          style: "default",
+          onPress: () => handleApprovalSubmission("Approved"),
+        },
+      ],
+    );
+  };
+  const handleReject = () => {
+    if (!rejectRemarks.trim()) {
+      ConfirmModal.alert("Error", "Please enter reject remarks");
+      return;
+    }
+    ConfirmModal.alert(
+      "Reject Request",
+      "Are you sure you want to reject this request?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reject",
+          style: "destructive",
+          onPress: () => handleApprovalSubmission("Rejected"),
+        },
+      ],
+    );
   };
   const getTravelTypeLabel = (type: number) => {
     const types = [
@@ -442,21 +624,60 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     <AppModal
       visible={visible}
       onClose={onClose}
-      title="Claim"
-      subtitle={`Ref: #${item.IdN || "N/A"}`}
-      footer={
-        status.toLowerCase().includes("waiting") ||
-        status.toLowerCase().includes("pending") ? (
-          <CustomButton
-            title="Cancel Request"
-            icon="close"
-            isLoading={loading}
-            disabled={loading}
-            onPress={handleCancelRequest}
-            style={styles.cancelButton}
-          />
-        ) : null
+      title={isApprovalMode ? "Approval Request" : "Claim"}
+      subtitle={
+        isApprovalMode
+          ? `Employee: ${item.NameC || "N/A"} • Ref: #${item.IdN || "N/A"}`
+          : `Ref: #${item.IdN || "N/A"}`
       }
+      footer={(() => {
+        if (isApprovalMode) {
+          return (
+            <View style={styles.footerButtons}>
+              <CustomButton
+                title="Reject"
+                icon="close-circle-outline"
+                onPress={handleReject}
+                isLoading={processingAction === "Rejected"}
+                disabled={processingAction !== null}
+                textColor="#DC2626"
+                iconColor="#DC2626"
+                indicatorColor="#DC2626"
+                style={[styles.actionButton, styles.rejectButton]}
+              />
+              <CustomButton
+                title="Approve"
+                icon="checkmark-circle-outline"
+                onPress={handleApprove}
+                isLoading={processingAction === "Approved"}
+                disabled={processingAction !== null}
+                style={[
+                  styles.actionButton,
+                  styles.approveButton,
+                  { backgroundColor: theme.primary },
+                ]}
+              />
+            </View>
+          );
+        }
+
+        if (
+          status.toLowerCase().includes("waiting") ||
+          status.toLowerCase().includes("pending")
+        ) {
+          return (
+            <CustomButton
+              title="Cancel Request"
+              icon="close"
+              isLoading={loading}
+              disabled={loading}
+              onPress={handleCancelRequest}
+              style={styles.cancelButton}
+            />
+          );
+        }
+        return null;
+      })()}
     >
       <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
         <View style={styles.badgeRow}>
@@ -470,6 +691,62 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
           </View>
         </View>
         {renderContent()}
+        {isApprovalMode && (
+          <>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                Approve Amount
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
+                placeholder="Enter amount"
+                placeholderTextColor={theme.placeholder}
+                value={approveAmt}
+                onChangeText={setApproveAmt}
+                keyboardType="numeric"
+              />
+            </View>
+            <View
+              style={[
+                styles.approvalSection,
+                { borderTopColor: theme.inputBorder },
+              ]}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+                APPROVAL DECISION
+              </Text>
+              <View style={styles.fieldContainer}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                  Remarks
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textArea,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
+                  placeholder="Enter your remarks here (required for rejection)"
+                  placeholderTextColor={theme.placeholder}
+                  value={rejectRemarks}
+                  onChangeText={setRejectRemarks}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
       <Modal
         visible={!!viewingDoc}
@@ -707,6 +984,56 @@ const styles = StyleSheet.create({
     color: "#DC2626",
     fontWeight: "700",
     fontSize: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 12,
+    fontSize: 15,
+    height: 48,
+  },
+  approvalSection: {
+    marginTop: 8,
+    paddingTop: 24,
+    borderTopWidth: 1,
+  },
+  fieldContainer: {
+    marginBottom: 8,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 12,
+    fontSize: 15,
+    minHeight: 100,
+  },
+  footerButtons: {
+    flexDirection: "row-reverse",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  actionButton: {
+    minWidth: 130,
+    flexGrow: 0,
+    flexShrink: 0,
+    marginBottom: 0,
+    padding: 10,
+  },
+  approveButton: {
+    backgroundColor: "#16A34A",
+  },
+  rejectButton: {
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   loadingContainer: {
     alignItems: "center",
