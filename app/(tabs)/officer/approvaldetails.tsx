@@ -1,12 +1,13 @@
 import ApprovalClaimModal from "@/components/ApprovalRejectedModals/ApprovalClaimModal";
 import ApprovalLeaveModal from "@/components/ApprovalRejectedModals/ApprovalLeaveModal";
+import ApprovalTimeModal from "@/components/ApprovalRejectedModals/ApprovalTimeModal";
+import DatePicker from "@/components/DatePicker";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import DocModal from "@/components/RequestPage/DocModal";
 import LeaveSurrenderModal from "@/components/RequestPage/LeaveSurrenderModal";
 import ProfileModal from "@/components/RequestPage/ProfileModal";
 import RequestModal from "@/components/RequestPage/RequestModal";
 import RequestStatusItem from "@/components/RequestPage/RequestStatusItem";
-import TimeModal from "@/components/RequestPage/TimeModal";
 import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -42,6 +43,27 @@ type ApprovalItem = {
 
 type ApprovalMode = "approved" | "rejected";
 
+const addMonths = (date: Date, months: number) => {
+  const newDate = new Date(date);
+  const day = newDate.getDate();
+  newDate.setMonth(newDate.getMonth() + months);
+  if (newDate.getDate() !== day) {
+    newDate.setDate(0);
+  }
+  return newDate;
+};
+
+const formatDateDDMMMYYYY = (date: Date) => {
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = date.toLocaleString("en-GB", { month: "short" }); // Feb
+  const year = date.getFullYear();
+
+  return `${day} ${month} ${year}`;
+};
+
+const today = new Date();
+const defaultFromDate = addMonths(today, -1);
+
 /* ---------------- COMPONENT ---------------- */
 
 export default function ApprovalDetails() {
@@ -64,6 +86,12 @@ export default function ApprovalDetails() {
 
   const [data, setData] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState<Date>(defaultFromDate);
+  const [toDate, setToDate] = useState<Date>(today);
+
+  useEffect(() => {
+    setToDate(addMonths(fromDate, 1));
+  }, [fromDate]);
 
   useProtectedBack({
     home: "/home",
@@ -89,13 +117,17 @@ export default function ApprovalDetails() {
 
       const endpoint =
         currentTab === "approved"
-          ? API_ENDPOINTS.SUP_DETAPPROVE_URL
-          : API_ENDPOINTS.SUP_GETREJECT_URL;
+          ? API_ENDPOINTS.SUP_DETAPPROVEFT_URL
+          : API_ENDPOINTS.SUP_GETREJECTFT_URL;
 
       const response = await api.post(endpoint, {
         TokenC: user?.TokenC,
         EmpIdN: user?.EmpIdN,
+        FromDate: formatDateDDMMMYYYY(fromDate),
+        ToDate: formatDateDDMMMYYYY(toDate),
       });
+
+      console.log("From Date: ", formatDateDDMMMYYYY(fromDate), "To Date: ", formatDateDDMMMYYYY(toDate));
 
       if (response.data?.Status === "success") {
         const rows = response.data?.data || response.data?.xx || [];
@@ -109,7 +141,7 @@ export default function ApprovalDetails() {
     } finally {
       setLoading(false);
     }
-  }, [index, routes, user?.EmpIdN, user?.TokenC]);
+  }, [fromDate, index, routes, toDate, user?.EmpIdN, user?.TokenC]);
 
   useEffect(() => {
     fetchData();
@@ -192,6 +224,14 @@ export default function ApprovalDetails() {
           ))}
         </View>
 
+        <View style={styles.datePickerSection}>
+          <DatePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromChange={setFromDate}
+          />
+        </View>
+
         {/* Content Area with Swipe Support */}
         <View
           style={{ flex: 1, marginHorizontal: 16 }}
@@ -271,7 +311,7 @@ export default function ApprovalDetails() {
             onRefresh={fetchData}
           />
         ) : selectedItem.DescC?.toLowerCase().includes("time") ? (
-          <TimeModal
+          <ApprovalTimeModal
             visible={showModal}
             mode="approval"
             item={selectedItem}
@@ -353,6 +393,10 @@ const createStyles = (theme: any) =>
     tabText: {
       fontSize: 14,
       fontWeight: "600",
+    },
+    datePickerSection: {
+      paddingHorizontal: 8,
+      paddingTop: 8,
     },
     listContent: {
       paddingTop: 10,

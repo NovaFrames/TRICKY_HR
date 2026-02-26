@@ -120,6 +120,8 @@ export const API_ENDPOINTS = {
   // Approval Details
   SUP_DETAPPROVE_URL: "/WebApi2/GetApprovaledDetails",
   SUP_GETREJECT_URL: "/WebApi2/GetApproval_RejectedDetails",
+  SUP_DETAPPROVEFT_URL: "/WebApi2/GetApprovaledDetailsFTDate",
+  SUP_GETREJECTFT_URL: "/WebApi2/GetApproval_RejectedDetailsFTDate",
 
   GET_EXIT_REQUEST: "/WebApi2/GetEmpExitList",
   UPDATE_EXIT_REQUEST: "/WebApi2/UpdateEmpExit",
