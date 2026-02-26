@@ -2141,7 +2141,10 @@ class ApiService {
         Object.entries(expense || {}).forEach(([key, value]) => {
           const normalizedValue =
             value === null || value === undefined ? "" : String(value);
-          formData.append(`ClaimExpenseDtl1[${index}][${key}]`, normalizedValue);
+          formData.append(
+            `ClaimExpenseDtl1[${index}][${key}]`,
+            normalizedValue,
+          );
         });
       });
       // Preserve existing web payload compatibility where this key is submitted.

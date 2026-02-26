@@ -1,13 +1,20 @@
+import ApprovalClaimModal from "@/components/ApprovalRejectedModals/ApprovalClaimModal";
+import ApprovalLeaveModal from "@/components/ApprovalRejectedModals/ApprovalLeaveModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import DocModal from "@/components/RequestPage/DocModal";
+import LeaveSurrenderModal from "@/components/RequestPage/LeaveSurrenderModal";
+import ProfileModal from "@/components/RequestPage/ProfileModal";
+import RequestModal from "@/components/RequestPage/RequestModal";
 import RequestStatusItem from "@/components/RequestPage/RequestStatusItem";
+import TimeModal from "@/components/RequestPage/TimeModal";
 import { API_ENDPOINTS } from "@/constants/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { api, ensureBaseUrl } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -33,21 +40,27 @@ type ApprovalItem = {
   ApplyDateD: string;
 };
 
+type ApprovalMode = "approved" | "rejected";
+
 /* ---------------- COMPONENT ---------------- */
 
 export default function ApprovalDetails() {
   const { user } = useUser();
   const { theme } = useTheme();
   const styles = createStyles(theme);
-  const router = useRouter();
   const { from } = useLocalSearchParams<{ from?: string }>();
-  const originFrom = typeof from === "string" ? from : "home";
+  const [showModal, setShowModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ApprovalItem | null>(null);
+
 
   const [index, setIndex] = useState(0);
-  const [routes] = useState([
+
+  const [routes] = useState<{ key: ApprovalMode; title: string }[]>([
     { key: "approved", title: "APPROVED" },
     { key: "rejected", title: "REJECTED" },
   ]);
+
+  const currentmode = routes[index].key;
 
   const [data, setData] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,13 +69,21 @@ export default function ApprovalDetails() {
     home: "/home",
     settings: "/settings",
     dashboard: "/dashboard",
+    approvalreqdetails:
+      typeof from === "string"
+        ? { pathname: "/(tabs)/officer/approvaldetails", params: { from } }
+        : "/(tabs)/officer/approvaldetails",
   });
 
   /* ---------------- API ---------------- */
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      if (!user?.TokenC) {
+        setData([]);
+        return;
+      }
       await ensureBaseUrl();
       const currentTab = routes[index].key;
 
@@ -73,10 +94,12 @@ export default function ApprovalDetails() {
 
       const response = await api.post(endpoint, {
         TokenC: user?.TokenC,
+        EmpIdN: user?.EmpIdN,
       });
 
       if (response.data?.Status === "success") {
-        setData(response.data.data || []);
+        const rows = response.data?.data || response.data?.xx || [];
+        setData(Array.isArray(rows) ? rows : []);
       } else {
         setData([]);
       }
@@ -86,11 +109,11 @@ export default function ApprovalDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [index, routes, user?.EmpIdN, user?.TokenC]);
 
   useEffect(() => {
     fetchData();
-  }, [index]);
+  }, [fetchData]);
 
   /* ---------------- SWIPE GESTURES ---------------- */
 
@@ -130,16 +153,10 @@ export default function ApprovalDetails() {
         applyDateD: item.ApplyDateD,
       }}
       status={false}
-      onPress={() =>
-        router.push({
-          pathname: "/(tabs)/officer/approvalreqdetails",
-          params: {
-            details: JSON.stringify(item),
-            from: "approvaldetails",
-            parentFrom: originFrom,
-          },
-        })
-      }
+      onPress={() => {
+        setSelectedItem(item);
+        setShowModal(true);
+      }}
     />
   );
 
@@ -225,6 +242,86 @@ export default function ApprovalDetails() {
           )}
         </View>
       </View>
+      {showModal &&
+        selectedItem &&
+        (selectedItem.DescC?.toLowerCase().includes("claim") ? (
+          <ApprovalClaimModal
+            visible={showModal}
+            mode={currentmode}
+            item={selectedItem}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onRefresh={fetchData}
+            onSuccess={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+              fetchData();
+            }}
+          />
+        ) : selectedItem.DescC?.toLowerCase().includes("profile") ? (
+          <ProfileModal
+            visible={showModal}
+            item={selectedItem}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onRefresh={fetchData}
+          />
+        ) : selectedItem.DescC?.toLowerCase().includes("time") ? (
+          <TimeModal
+            visible={showModal}
+            mode="approval"
+            item={selectedItem}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onRefresh={fetchData}
+          />
+        ) : selectedItem.DescC?.toLowerCase().includes("document") ? (
+          <DocModal
+            visible={showModal}
+            item={selectedItem}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onRefresh={fetchData}
+          />
+        ) : selectedItem.DescC?.toLowerCase().includes("surrender") ? (
+          <LeaveSurrenderModal
+            visible={showModal}
+            item={selectedItem}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onRefresh={fetchData}
+          />
+        ) : selectedItem.DescC?.toLowerCase().includes("leave") ? (
+          <ApprovalLeaveModal
+            visible={showModal}
+            item={selectedItem}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onRefresh={fetchData}
+          />
+        ) : (
+          <RequestModal
+            visible={showModal}
+            item={selectedItem}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onRefresh={fetchData}
+          />
+        ))}
     </View>
   );
 }
