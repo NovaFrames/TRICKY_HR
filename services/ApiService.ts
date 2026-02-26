@@ -2095,7 +2095,7 @@ class ApiService {
   async updatePendingApproval(data: {
     IdN: number;
     StatusC: string;
-    ApproveRemarkC: string;
+    Remarks: string;
     EmpIdN: number;
     Flag: string;
     ApproveAmtN?: number;
@@ -2126,7 +2126,7 @@ class ApiService {
         Id: data.IdN,
         Approval: approvalStatus,
         YearN: 0, // Java snippet sets this to 0
-        Remarks: data.ApproveRemarkC || "",
+        Remarks: data.Remarks || "",
         title: data.title || "",
         DocName: data.DocName || "",
         ReceiveYearN: data.ReceiveYearN || 0,
@@ -2136,10 +2136,10 @@ class ApiService {
         ClaimExpenseDtl1: data.ClaimExpenseDtl1 || [],
       };
 
-      // console.log(
-      //   "Update Pending Approval Payload:",
-      //   JSON.stringify(payload, null, 2),
-      // );
+      console.log(
+        "Update Pending Approval Payload:",
+        JSON.stringify(payload, null, 2),
+      );
 
       const response = await api.post(API_ENDPOINTS.SAVE_APPROVAL, payload, {
         headers: this.getHeaders(),

@@ -76,7 +76,6 @@ export default function ApprovalDetails() {
       });
 
       if (response.data?.Status === "success") {
-        console.log("Approve Data: ", response.data.data);
         setData(response.data.data || []);
       } else {
         setData([]);

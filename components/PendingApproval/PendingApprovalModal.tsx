@@ -28,7 +28,7 @@ interface PendingApprovalData {
   FromDateC: string;
   ToDateC: string;
   EmpRemarksC: string;
-  ApproveRemarkC: string;
+  Remarks: string;
   LeaveDaysN: string | null;
   Approve1C: string | null;
   Approve2C: string | null;
@@ -208,16 +208,6 @@ export default function PendingApprovalModal({
     }
 
     let amount = 0;
-    if (flag === "Claim") {
-      if (status === "Approved") {
-        if (!approveAmt || parseFloat(approveAmt) <= 0) {
-          ConfirmModal.alert("Validation Error", "Enter approved amount");
-          return;
-        }
-        // Optional: Validating against Claim Amount if you want to implement strictly
-      }
-      amount = parseFloat(approveAmt) || 0;
-    }
 
     setProcessingAction(status);
 
@@ -225,28 +215,16 @@ export default function PendingApprovalModal({
       const result = await ApiService.updatePendingApproval({
         IdN: data.IdN,
         StatusC: status,
-        ApproveRemarkC: remarks,
+        Remarks: remarks,
         EmpIdN: data.EmpIdN,
         Flag: flag,
         ApproveAmtN: amount,
         // Add specific fields if needed based on Flag
-        title:
-          flag === "Employee Document"
-            ? data.CatgNameC || data.DescC
-            : flag === "Claim"
-              ? "ClaimDoc"
-              : "",
-        DocName:
-          flag === "Employee Document"
-            ? data.NameC || ""
-            : flag === "Claim"
-              ? "tyht"
-              : "",
+        title: "",
         // Defaults
         ReceiveYearN: 0,
         ReceiveMonthN: 0,
         PayTypeN: 0,
-        ClaimExpenseDtl1: [],
       });
 
       if (result.success) {

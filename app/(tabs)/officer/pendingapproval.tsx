@@ -1,5 +1,6 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import ClaimApprovalModal from "@/components/PendingApproval/ClaimApprovalModal";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
@@ -20,6 +21,7 @@ import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
 
 interface PendingApproval {
+  Id:number;
   IdN: number;
   EmpIdN: number;
   CodeC: string; // Employee Code
@@ -34,7 +36,7 @@ interface PendingApproval {
   FromDateC: string; // From Date
   ToDateC: string; // To Date
   EmpRemarksC: string; // Employee Remarks
-  ApproveRemarkC: string; // Approve Remark
+  Remarks: string; // Approve Remark
   LeaveDaysN: string | null; // Leave Days
   Approve1C: string | null;
   Approve2C: string | null;
@@ -166,7 +168,7 @@ export default function PendingApproval() {
     });
   };
 
-    // Helper to format ASP.NET JSON Date /Date(1234567890)/
+  // Helper to format ASP.NET JSON Date /Date(1234567890)/
   const formatFromDate = (dateString?: string | null): string => {
     if (!dateString) return "-";
 
@@ -347,13 +349,6 @@ export default function PendingApproval() {
           </View>
         )}
 
-        <Text
-          style={[styles.description, { color: theme.text }]}
-          numberOfLines={2}
-        >
-          {item.LvDescC || item.DescC || "No description"}
-        </Text>
-
         {item.EmpRemarksC && (
           <Text
             style={[styles.remarks, { color: theme.textLight }]}
@@ -519,20 +514,37 @@ export default function PendingApproval() {
         />
       </View>
 
-      {/* MODAL */}
-      <PendingApprovalModal
-        visible={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setSelectedItem(null);
-        }}
-        onSuccess={() => {
-          setShowModal(false);
-          setSelectedItem(null);
-          fetchPendingApprovals();
-        }}
-        data={selectedItem}
-      />
+      {showModal && selectedItem && (
+        selectedItem.DescC === "LEAVE" ? (
+          <PendingApprovalModal
+            visible={showModal}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onSuccess={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+              fetchPendingApprovals();
+            }}
+            data={selectedItem}
+          />
+        ) : selectedItem.DescC === "Claim" ? (
+          <ClaimApprovalModal
+            visible={showModal}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+            onSuccess={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+              fetchPendingApprovals();
+            }}
+            data={selectedItem}
+          />
+        ) : ('')
+      )}
     </View>
   );
 }
