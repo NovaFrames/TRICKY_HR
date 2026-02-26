@@ -15,7 +15,7 @@ interface TravelExpenseModalProps {
   destination: string;
   pnr: string;
   amount: string;
-  travelTypes: string[];
+  travelByOptions: { text: string; value: number }[];
   onCancel: () => void;
   onSave: () => void;
   setTravelType: (val: number) => void;
@@ -34,7 +34,7 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
   destination,
   pnr,
   amount,
-  travelTypes,
+  travelByOptions,
   onCancel,
   onSave,
   setTravelType,
@@ -82,11 +82,11 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
                 style={[styles.picker, { color: theme.text }]}
                 dropdownIconColor={theme.text}
               >
-                {travelTypes.map((type: string, index: number) => (
+                {travelByOptions.map((option) => (
                   <Picker.Item
-                    key={index}
-                    label={type}
-                    value={index}
+                    key={option.value}
+                    label={option.text}
+                    value={option.value}
                     color={isDark ? "#fff" : "#000"}
                   />
                 ))}

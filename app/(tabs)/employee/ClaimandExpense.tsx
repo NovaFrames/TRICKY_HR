@@ -15,6 +15,7 @@ import TravelExpenseModal from "@/components/claim/TravelExpenseModal";
 import TravelExpensesSection from "@/components/claim/TravelExpensesSection";
 import { CustomButton } from "@/components/CustomButton";
 
+import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService, { ClaimData, TravelExpense } from "@/services/ApiService";
@@ -26,7 +27,6 @@ import {
   Text,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 
 export interface TravelExpenseItem {
   type: number;
@@ -43,6 +43,7 @@ export interface DocumentItem {
   name: string;
   type: "image" | "document";
   ext: string;
+  mimeType?: string;
 }
 
 export interface ClaimAndExpenseProps {
@@ -63,6 +64,11 @@ export interface DatePickerEvent {
 
 export interface PickerItem {
   label: string;
+  value: number;
+}
+
+interface TravelByOption {
+  text: string;
   value: number;
 }
 
@@ -112,15 +118,14 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
 
   // Confirmation modal
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
-  const travelTypes: string[] = [
-    "Other Expenses",
-    "Flight",
-    "Train",
-    "Bus",
-    "Taxi",
-    "Travels",
-    "Two Wheeler",
-    "Accommodation/Food",
+  const travelByOptions: TravelByOption[] = [
+    { text: "None", value: 0 },
+    { text: "Train", value: 1 },
+    { text: "Bus", value: 2 },
+    { text: "Travels", value: 3 },
+    { text: "Two Wheeler", value: 4 },
+    { text: "Flight", value: 5 },
+    { text: "Accomdation/Food", value: 6 },
   ];
 
   // Initialize on component mount
@@ -247,7 +252,9 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
 
     const newTravel: TravelExpenseItem = {
       type: travelType,
-      typeName: travelTypes[travelType],
+      typeName:
+        travelByOptions.find((option) => option.value === travelType)?.text ||
+        "None",
       boarding: boardingPoint,
       destination: destination,
       pnr: pnr,
@@ -339,6 +346,29 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
   };
 
   // Document handling
+  const getMimeTypeFromExt = (ext: string): string => {
+    const lowerExt = ext.toLowerCase();
+    const mimeMap: Record<string, string> = {
+      pdf: "application/pdf",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+      heic: "image/heic",
+      txt: "text/plain",
+      csv: "text/csv",
+      doc: "application/msword",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      xls: "application/vnd.ms-excel",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ppt: "application/vnd.ms-powerpoint",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      zip: "application/zip",
+      rar: "application/vnd.rar",
+    };
+    return mimeMap[lowerExt] || "application/octet-stream";
+  };
+
   const pickImage = async (): Promise<void> => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -347,16 +377,23 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result || result.canceled || !result.assets?.length) {
+        setShowDocModal(false);
+        return;
+      }
+
+      const pickedAsset = result.assets?.[0];
+      if (!result.canceled && pickedAsset) {
         const newDoc: DocumentItem = {
           id: Date.now().toString(),
-          uri: result.assets[0].uri,
+          uri: pickedAsset.uri,
           name: `image_${Date.now()}.jpg`,
           type: "image",
           ext: "jpg",
+          mimeType: "image/jpeg",
         };
 
-        setDocuments([...documents, newDoc]);
+        setDocuments((prev) => [...prev, newDoc]);
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -371,16 +408,23 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result || result.canceled || !result.assets?.length) {
+        setShowDocModal(false);
+        return;
+      }
+
+      const capturedAsset = result.assets?.[0];
+      if (!result.canceled && capturedAsset) {
         const newDoc: DocumentItem = {
           id: Date.now().toString(),
-          uri: result.assets[0].uri,
+          uri: capturedAsset.uri,
           name: `photo_${Date.now()}.jpg`,
           type: "image",
           ext: "jpg",
+          mimeType: "image/jpeg",
         };
 
-        setDocuments([...documents, newDoc]);
+        setDocuments((prev) => [...prev, newDoc]);
       }
     } catch (error) {
       console.error("Error taking photo:", error);
@@ -392,27 +436,55 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "*/*",
+        copyToCacheDirectory: true, // IMPORTANT
+        multiple: false,
       });
 
-      if (!result.canceled && result.assets[0]) {
-        const uri = result.assets[0].uri;
-        const name = result.assets[0].name;
-        const ext = name.split(".").pop()?.toLowerCase() || "unknown";
-
-        const newDoc: DocumentItem = {
-          id: Date.now().toString(),
-          uri: uri,
-          name: name,
-          type: "document",
-          ext: ext,
-        };
-
-        setDocuments([...documents, newDoc]);
+      // 🔥 SAFETY CHECK 1
+      if (!result || result.canceled) {
+        setShowDocModal(false);
+        return;
       }
+
+      // 🔥 SAFETY CHECK 2
+      if (!result.assets || result.assets.length === 0) {
+        setShowDocModal(false);
+        return;
+      }
+
+      const pickedDoc = result.assets[0];
+
+      // 🔥 SAFETY CHECK 3
+      if (!pickedDoc.uri) {
+        setShowDocModal(false);
+        return;
+      }
+
+      const uri = pickedDoc.uri;
+      const name = pickedDoc.name || `document_${Date.now()}`;
+      const ext = name.includes(".")
+        ? name.split(".").pop()?.toLowerCase() || "unknown"
+        : "unknown";
+
+      const mimeType =
+        pickedDoc.mimeType || getMimeTypeFromExt(ext);
+
+      const newDoc: DocumentItem = {
+        id: Date.now().toString(),
+        uri,
+        name,
+        type: "document",
+        ext,
+        mimeType,
+      };
+
+      setDocuments((prev) => [...prev, newDoc]);
+
     } catch (error) {
-      console.error("Error picking document:", error);
+      console.error("Document picker error:", error);
+    } finally {
+      setShowDocModal(false);
     }
-    setShowDocModal(false);
   };
 
   const handleDeleteDocument = (id: string): void => {
@@ -488,7 +560,8 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
           PNRC: expense.pnr,
           DestinationC: expense.destination,
           BoardintPointC: expense.boarding,
-          TravelByN: expense.type,
+          TravelByN: String(expense.type),
+          HidTravelByN: expense.typeName,
         }),
       );
 
@@ -519,6 +592,8 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
         ClaimExpenseDtl1: travelExpensesArray,
       };
 
+      console.log('Claim Data: ', claimData);
+
       // Submit claim
       const result = await ApiService.updateClaim(
         user?.TokenC || "",
@@ -531,7 +606,9 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
         // Prepare documents for upload
         const filesForUpload = documents.map((doc) => ({
           uri: doc.uri,
-          type: doc.type === "image" ? "image/jpeg" : `application/${doc.ext}`,
+          type:
+            doc.mimeType ||
+            (doc.type === "image" ? "image/jpeg" : getMimeTypeFromExt(doc.ext)),
           name: doc.name,
         }));
 
@@ -655,7 +732,7 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
         destination={destination}
         pnr={pnr}
         amount={amount}
-        travelTypes={travelTypes}
+        travelByOptions={travelByOptions}
         onCancel={() => setShowTravelModal(false)}
         onSave={handleAddTravel}
         setTravelType={setTravelType}

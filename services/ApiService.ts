@@ -488,7 +488,8 @@ export interface TravelExpense {
   PNRC: string;
   DestinationC: string;
   BoardintPointC: string;
-  TravelByN: number;
+  TravelByN: string;
+  HidTravelByN?: string;
 }
 
 export interface ClaimData {

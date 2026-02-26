@@ -396,13 +396,13 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   };
   const getTravelTypeLabel = (type: number) => {
     const types = [
-      "",
-      "Flight",
+      "None",
       "Train",
       "Bus",
-      "Taxi",
-      "Own Vehicle",
-      "Other",
+      "Travels",
+      "Two Wheeler",
+      "Flight",
+      "Accomdation/Food",
     ];
     return types[type] || "Unknown";
   };
@@ -474,7 +474,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.tableScrollView}
-              contentContainerStyle={styles.tableScrollContent}
             >
               <View style={styles.tableContainer}>
                 <View
@@ -679,7 +678,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         return null;
       })()}
     >
-      <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.modalBody} contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
         <View style={styles.badgeRow}>
           <View
             style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
@@ -898,9 +897,6 @@ const styles = StyleSheet.create({
   },
   tableScrollView: {
     marginBottom: 8,
-  },
-  tableScrollContent: {
-    paddingRight: 16,
   },
   tableContainer: {
     minWidth: "100%",
