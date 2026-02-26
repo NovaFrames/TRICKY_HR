@@ -568,7 +568,14 @@ const Attendance = () => {
         setProjects([]);
         return false;
       } else {
-        setProjects(projectList);
+        const sortedProjects = [...projectList].sort((a, b) =>
+          (a.NameC || "")
+            .trim()
+            .toLowerCase()
+            .localeCompare((b.NameC || "").trim().toLowerCase())
+        );
+
+        setProjects(sortedProjects);
         setProjectError(null);
         setProjectRefreshAttempts(0);
         return true;
@@ -593,7 +600,7 @@ const Attendance = () => {
     if (projectLoading || projectModalLoading) return;
     setProjectModalLoading(true);
     try {
-      await fetchProjects();
+      // await fetchProjects();
       setShowProjectModal(true);
     } finally {
       setProjectModalLoading(false);
