@@ -2096,7 +2096,8 @@ class ApiService {
   async updatePendingApproval(data: {
     IdN: number;
     StatusC: string;
-    Remarks: string;
+    Remarks?: string;
+    ApproveRemarkC?: string;
     EmpIdN: number;
     Flag: string;
     ApproveAmtN?: number;
@@ -2105,7 +2106,7 @@ class ApiService {
     ReceiveYearN?: number;
     ReceiveMonthN?: number;
     PayTypeN?: number;
-    ClaimExpenseDtl1?: any[];
+    ClaimExpenseDtl1?: TravelExpense[];
   }): Promise<{ success: boolean; error?: string }> {
     try {
       if (!this.token || !this.empId) {
@@ -2119,31 +2120,38 @@ class ApiService {
           ? 1
           : 2;
 
-      // Construct payload matching C# SaveApproval_Supervisor signature
-      const payload = {
-        Tokenc: this.token, // Note: Java uses 'Tokenc', C# might expect 'TokenC' or 'Tokenc' depending on binding. Keeping 'Tokenc' as per User Java snippet.
-        Flag: data.Flag,
-        EmpId: data.EmpIdN,
-        Id: data.IdN,
-        Approval: approvalStatus,
-        YearN: 0, // Java snippet sets this to 0
-        Remarks: data.Remarks || "",
-        title: data.title || "",
-        DocName: data.DocName || "",
-        ReceiveYearN: data.ReceiveYearN || 0,
-        ReceiveMonthN: data.ReceiveMonthN || 0,
-        PayTypeN: data.PayTypeN || 0,
-        ApproveAmtN: data.ApproveAmtN || 0,
-        ClaimExpenseDtl1: data.ClaimExpenseDtl1 || [],
-      };
+      const formData = new FormData();
+      formData.append("TokenC", String(this.token || ""));
+      formData.append("Flag", String(data.Flag || ""));
+      formData.append("EmpId", String(data.EmpIdN));
+      formData.append("Id", String(data.IdN));
+      formData.append("Approval", String(approvalStatus));
+      formData.append("YearN", "0");
+      formData.append(
+        "Remarks",
+        String(data.Remarks || data.ApproveRemarkC || ""),
+      );
+      formData.append("title", String(data.title || ""));
+      formData.append("DocName", String(data.DocName || ""));
+      formData.append("ReceiveYearN", String(data.ReceiveYearN || 0));
+      formData.append("ReceiveMonthN", String(data.ReceiveMonthN || 0));
+      formData.append("PayTypeN", String(data.PayTypeN || 0));
+      formData.append("ApproveAmtN", String(data.ApproveAmtN || 0));
+      (data.ClaimExpenseDtl1 || []).forEach((expense, index) => {
+        Object.entries(expense || {}).forEach(([key, value]) => {
+          const normalizedValue =
+            value === null || value === undefined ? "" : String(value);
+          formData.append(`ClaimExpenseDtl1[${index}][${key}]`, normalizedValue);
+        });
+      });
+      // Preserve existing web payload compatibility where this key is submitted.
+      formData.append("AdminUpdae", "");
 
-      // console.log(
-      //   "Update Pending Approval Payload:",
-      //   JSON.stringify(payload, null, 2),
-      // );
-
-      const response = await api.post(API_ENDPOINTS.SAVE_APPROVAL, payload, {
-        headers: this.getHeaders(),
+      const response = await api.post(API_ENDPOINTS.SAVE_APPROVAL, formData, {
+        headers: {
+          ...this.getHeaders(),
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       // console.log(

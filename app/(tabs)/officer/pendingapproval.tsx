@@ -283,6 +283,9 @@ export default function PendingApproval() {
     status: "Approved" | "Rejected",
     remarks: string,
     approveAmount: number,
+    receiveYear = 0,
+    receiveMonth = 0,
+    claimExpenses: any[] = [],
   ) => {
     const flag = getFlag(request.DescC);
     return ApiService.updatePendingApproval({
@@ -304,10 +307,10 @@ export default function PendingApproval() {
           : flag === "Claim"
             ? "tyht"
             : "",
-      ReceiveYearN: 0,
-      ReceiveMonthN: 0,
+      ReceiveYearN: receiveYear,
+      ReceiveMonthN: receiveMonth,
       PayTypeN: 0,
-      ClaimExpenseDtl1: [],
+      ClaimExpenseDtl1: claimExpenses,
     });
   };
 
@@ -591,11 +594,27 @@ export default function PendingApproval() {
               fetchPendingApprovals();
             }}
             item={selectedItem}
-            onApprove={({ item, remarks, approveAmount }) =>
-              handleApprovalAction(item, "Approved", remarks, approveAmount)
+            onApprove={({ item, remarks, approveAmount, receiveYear, receiveMonth, claimExpenses }) =>
+              handleApprovalAction(
+                item,
+                "Approved",
+                remarks,
+                approveAmount,
+                receiveYear,
+                receiveMonth,
+                claimExpenses,
+              )
             }
-            onReject={({ item, remarks, approveAmount }) =>
-              handleApprovalAction(item, "Rejected", remarks, approveAmount)
+            onReject={({ item, remarks, approveAmount, receiveYear, receiveMonth, claimExpenses }) =>
+              handleApprovalAction(
+                item,
+                "Rejected",
+                remarks,
+                approveAmount,
+                receiveYear,
+                receiveMonth,
+                claimExpenses,
+              )
             }
           />
         ) : selectedItem.DescC.toLowerCase().includes("time") ? (

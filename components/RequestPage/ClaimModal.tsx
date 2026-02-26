@@ -2,6 +2,7 @@ import ConfirmModal from "@/components/common/ConfirmModal";
 import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Picker } from "@react-native-picker/picker";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import {
@@ -35,12 +36,18 @@ interface ClaimModalProps {
     remarks: string;
     approveAmount: number;
     flag: string;
+    receiveYear: number;
+    receiveMonth: number;
+    claimExpenses: any[];
   }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
   onReject?: (params: {
     item: any;
     remarks: string;
     approveAmount: number;
     flag: string;
+    receiveYear: number;
+    receiveMonth: number;
+    claimExpenses: any[];
   }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
   onSuccess?: () => void;
 }
@@ -63,6 +70,8 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   >(null);
   const [rejectRemarks, setRejectRemarks] = useState("");
   const [approveAmt, setApproveAmt] = useState("");
+  const [receiveYear, setReceiveYear] = useState("");
+  const [receiveMonth, setReceiveMonth] = useState("");
   const [claimData, setClaimData] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [viewingDoc, setViewingDoc] = useState<{
@@ -71,6 +80,24 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   } | null>(null);
   const [viewerError, setViewerError] = useState<string | null>(null);
   const isApprovalMode = mode === "approval";
+  const currentYear = new Date().getFullYear();
+  const receiveYearOptions = Array.from({ length: 4 }, (_, index) =>
+    String(currentYear + index),
+  );
+  const receiveMonthOptions = [
+    { label: "Jan", value: "1" },
+    { label: "Feb", value: "2" },
+    { label: "Mar", value: "3" },
+    { label: "Apr", value: "4" },
+    { label: "May", value: "5" },
+    { label: "Jun", value: "6" },
+    { label: "Jul", value: "7" },
+    { label: "Aug", value: "8" },
+    { label: "Sep", value: "9" },
+    { label: "Oct", value: "10" },
+    { label: "Nov", value: "11" },
+    { label: "Dec", value: "12" },
+  ];
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
   const imageExtRegex = /\.(jpg|jpeg|png|gif|bmp|webp|heic|heif)$/i;
   // Status Logic for Color
@@ -154,8 +181,11 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
 
   useEffect(() => {
     if (!visible || !item || !isApprovalMode) return;
+    const now = new Date();
     setRejectRemarks("");
     setProcessingAction(null);
+    setReceiveYear(String(now.getFullYear()));
+    setReceiveMonth(String(now.getMonth() + 2));
     if (item.EmpRemarksC) {
       const match = item.EmpRemarksC.match(/(\d+(\.\d+)?)/);
       setApproveAmt(match ? match[0] : "");
@@ -293,15 +323,39 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       ConfirmModal.alert("Validation Error", "Enter approved amount");
       return;
     }
+    const parsedReceiveYear = parseInt(receiveYear, 10);
+    const parsedReceiveMonth = parseInt(receiveMonth, 10);
+    if (
+      !Number.isInteger(parsedReceiveYear) ||
+      parsedReceiveYear < 1900 ||
+      parsedReceiveYear > 9999
+    ) {
+      ConfirmModal.alert("Validation Error", "Enter a valid receive year");
+      return;
+    }
+    if (
+      !Number.isInteger(parsedReceiveMonth) ||
+      parsedReceiveMonth < 1 ||
+      parsedReceiveMonth > 12
+    ) {
+      ConfirmModal.alert("Validation Error", "Enter receive month between 1 and 12");
+      return;
+    }
 
     setProcessingAction(actionStatus);
     try {
       const amount = parseFloat(approveAmt) || 0;
+      const claimExpenses = Array.isArray(claimData?.ClaimExpenseDtl1)
+        ? claimData.ClaimExpenseDtl1
+        : [];
       const callPayload = {
         item,
         remarks: rejectRemarks,
         approveAmount: amount,
         flag,
+        receiveYear: parsedReceiveYear,
+        receiveMonth: parsedReceiveMonth,
+        claimExpenses,
       };
       const defaultAction = async () => {
         return ApiService.updatePendingApproval({
@@ -323,10 +377,10 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
               : flag === "Claim"
                 ? "tyht"
                 : "",
-          ReceiveYearN: 0,
-          ReceiveMonthN: 0,
+          ReceiveYearN: parsedReceiveYear,
+          ReceiveMonthN: parsedReceiveMonth,
           PayTypeN: 0,
-          ClaimExpenseDtl1: [],
+          ClaimExpenseDtl1: claimExpenses,
         });
       };
 
@@ -668,6 +722,63 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         {renderContent()}
         {isApprovalMode && (
           <>
+            <View style={styles.receiveRow}>
+              <View style={[styles.inputContainer, styles.halfInputContainer]}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                  Receive Month
+                </Text>
+                <View
+                  style={[
+                    styles.pickerContainer,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                    },
+                  ]}
+                >
+                  <Picker
+                    selectedValue={receiveMonth}
+                    onValueChange={(value) => setReceiveMonth(String(value))}
+                    style={[styles.picker, { color: theme.text }]}
+                    dropdownIconColor={theme.text}
+                  >
+                    {receiveMonthOptions.map((month) => (
+                      <Picker.Item
+                        key={month.value}
+                        label={month.label}
+                        value={month.value}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              <View style={[styles.inputContainer, styles.halfInputContainer]}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                  Receive Year
+                </Text>
+                <View
+                  style={[
+                    styles.pickerContainer,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                    },
+                  ]}
+                >
+                  <Picker
+                    selectedValue={receiveYear}
+                    onValueChange={(value) => setReceiveYear(String(value))}
+                    style={[styles.picker, { color: theme.text }]}
+                    dropdownIconColor={theme.text}
+                  >
+                    {receiveYearOptions.map((year) => (
+                      <Picker.Item key={year} label={year} value={year} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+            </View>
             <View style={styles.inputContainer}>
               <Text style={[styles.fieldLabel, { color: theme.text }]}>
                 Approve Amount
@@ -908,6 +1019,22 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 16,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderRadius: 4,
+    height: 48,
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  picker: {
+  },
+  receiveRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  halfInputContainer: {
+    flex: 1,
   },
   input: {
     borderWidth: 1,

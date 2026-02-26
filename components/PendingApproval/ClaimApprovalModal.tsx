@@ -57,6 +57,9 @@ export default function ClaimApprovalModal({
     status: "Approved" | "Rejected",
     remarks: string,
     approveAmount: number,
+    receiveYear: number,
+    receiveMonth: number,
+    claimExpenses: any[],
   ) => {
     const flag = getFlag(data.DescC);
     return ApiService.updatePendingApproval({
@@ -78,10 +81,10 @@ export default function ClaimApprovalModal({
           : flag === "Claim"
             ? "tyht"
             : "",
-      ReceiveYearN: 0,
-      ReceiveMonthN: 0,
+      ReceiveYearN: receiveYear,
+      ReceiveMonthN: receiveMonth,
       PayTypeN: 0,
-      ClaimExpenseDtl1: [],
+      ClaimExpenseDtl1: claimExpenses,
     });
   };
 
@@ -92,11 +95,25 @@ export default function ClaimApprovalModal({
       onSuccess={onSuccess}
       item={data}
       mode="approval"
-      onApprove={({ remarks, approveAmount }) =>
-        handleApprovalAction("Approved", remarks, approveAmount)
+      onApprove={({ remarks, approveAmount, receiveYear, receiveMonth, claimExpenses }) =>
+        handleApprovalAction(
+          "Approved",
+          remarks,
+          approveAmount,
+          receiveYear,
+          receiveMonth,
+          claimExpenses,
+        )
       }
-      onReject={({ remarks, approveAmount }) =>
-        handleApprovalAction("Rejected", remarks, approveAmount)
+      onReject={({ remarks, approveAmount, receiveYear, receiveMonth, claimExpenses }) =>
+        handleApprovalAction(
+          "Rejected",
+          remarks,
+          approveAmount,
+          receiveYear,
+          receiveMonth,
+          claimExpenses,
+        )
       }
     />
   );
