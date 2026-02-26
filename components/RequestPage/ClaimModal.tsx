@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import AppModal from "../../components/common/AppModal";
+import DynamicTable, { ColumnDef } from "../../components/DynamicTable";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
@@ -427,6 +428,48 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       );
     }
     const travelExpenses = claimData.ClaimExpenseDtl1 || [];
+    const travelExpenseColumns: ColumnDef[] = [
+      {
+        key: "TravelByN",
+        label: "Travel By",
+        flex: 0.8,
+        formatter: (value) => getTravelTypeLabel(Number(value)),
+      },
+      {
+        key: "BoardintPointC",
+        label: "Boarding Point/Desc",
+        flex: 0.8,
+        formatter: (value) => (value as string) || "-",
+      },
+      {
+        key: "DestinationC",
+        label: "Destination",
+        flex: 0.8,
+        formatter: (value) => (value as string) || "-",
+      },
+      {
+        key: "PNRC",
+        label: "PNR",
+        flex: 0.8,
+        formatter: (value) => (value as string) || "-",
+      },
+      {
+        key: "TravelAmountN",
+        label: "Amount",
+        flex: 0.6,
+        align: "flex-end",
+        formatter: (value) => {
+          const amount =
+            typeof value === "number"
+              ? value
+              : typeof value === "string"
+                ? parseFloat(value)
+                : NaN;
+          return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
+        },
+      },
+    ];
+
     return (
       <>
         {/* Claim Information */}
@@ -470,79 +513,12 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
             <Text style={[styles.sectionTitle, { color: theme.primary }]}>
               Travel and Other Expense
             </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.tableScrollView}
-            >
-              <View style={styles.tableContainer}>
-                <View
-                  style={[
-                    styles.tableHeader,
-                    { backgroundColor: theme.inputBg },
-                  ]}
-                >
-                  <Text style={[styles.tableHeaderText, { color: theme.text }]}>
-                    Travel By
-                  </Text>
-                  <Text style={[styles.tableHeaderText, { color: theme.text }]}>
-                    Boarding Point/Desc
-                  </Text>
-                  <Text style={[styles.tableHeaderText, { color: theme.text }]}>
-                    Destination
-                  </Text>
-                  <Text style={[styles.tableHeaderText, { color: theme.text }]}>
-                    PNR
-                  </Text>
-                  <Text style={[styles.tableHeaderText, { color: theme.text }]}>
-                    Amount
-                  </Text>
-                </View>
-                {travelExpenses.map((expense: any, index: number) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.tableRow,
-                      { borderBottomColor: theme.inputBorder },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.tableCell, { color: theme.text }]}
-                      numberOfLines={1}
-                    >
-                      {getTravelTypeLabel(expense.TravelByN)}
-                    </Text>
-                    <Text
-                      style={[styles.tableCell, { color: theme.text }]}
-                      numberOfLines={1}
-                    >
-                      {expense.BoardintPointC || "-"}
-                    </Text>
-                    <Text
-                      style={[styles.tableCell, { color: theme.text }]}
-                      numberOfLines={1}
-                    >
-                      {expense.DestinationC || "-"}
-                    </Text>
-                    <Text
-                      style={[styles.tableCell, { color: theme.text }]}
-                      numberOfLines={1}
-                    >
-                      {expense.PNRC || "-"}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.tableCell,
-                        { color: theme.text, fontWeight: "600" },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {expense.TravelAmountN?.toFixed(2) || "0.00"}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
+            <DynamicTable
+              data={travelExpenses}
+              columns={travelExpenseColumns}
+              tableWidth={760}
+              theme={theme}
+            />
           </View>
         )}
         {/* Claim Documents */}
@@ -895,49 +871,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     flex: 1,
   },
-  tableScrollView: {
-    marginBottom: 8,
-  },
-  tableContainer: {
-    minWidth: "100%",
-  },
-  tableHeader: {
-    flexDirection: "row",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  tableHeaderText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    width: 110,
-    marginRight: 8,
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-  },
-  tableCell: {
-    fontSize: 13,
-    fontWeight: "500",
-    width: 110,
-    marginRight: 8,
-  },
-  scrollHint: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 8,
-  },
-  scrollHintText: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
   documentItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -965,9 +898,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  downloadButton: {
-    padding: 8,
-  },
   cancelButton: {
     height: 56,
     borderRadius: 4,
@@ -975,11 +905,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#FECACA",
-  },
-  cancelButtonText: {
-    color: "#DC2626",
-    fontWeight: "700",
-    fontSize: 16,
   },
   inputContainer: {
     marginBottom: 16,

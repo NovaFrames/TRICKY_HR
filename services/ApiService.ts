@@ -2137,10 +2137,10 @@ class ApiService {
         ClaimExpenseDtl1: data.ClaimExpenseDtl1 || [],
       };
 
-      console.log(
-        "Update Pending Approval Payload:",
-        JSON.stringify(payload, null, 2),
-      );
+      // console.log(
+      //   "Update Pending Approval Payload:",
+      //   JSON.stringify(payload, null, 2),
+      // );
 
       const response = await api.post(API_ENDPOINTS.SAVE_APPROVAL, payload, {
         headers: this.getHeaders(),
