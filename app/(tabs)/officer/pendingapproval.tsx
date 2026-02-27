@@ -42,6 +42,7 @@ interface PendingApproval {
   Approve1C: string | null;
   Approve2C: string | null;
   FinalApproveC: string | null;
+  ReaGrpNameC: string | null;
 }
 
 export default function PendingApproval() {
@@ -78,27 +79,28 @@ export default function PendingApproval() {
     fetchPendingApprovals();
   }, [index]);
 
+  const currentTab = routes[index].key;
+
   const fetchPendingApprovals = async () => {
     setLoading(true);
     try {
-      const currentTab = routes[index].key;
       if (currentTab === "your") {
         const result = await ApiService.getYourPendingApprovals();
         if (result.success && result.data) {
           // console.log(
-          //   "Your Pending Data:",
-          //   JSON.stringify(result.data[0], null, 2),
-          // );
-          setYourPendings(result.data);
+            //   "Your Pending Data:",
+            //   JSON.stringify(result.data[0], null, 2),
+            // );
+            setYourPendings(result.data);
+          } else {
+            ConfirmModal.alert(
+              "Error",
+              result.error || "Failed to fetch your pending approvals",
+            );
+          }
         } else {
-          ConfirmModal.alert(
-            "Error",
-            result.error || "Failed to fetch your pending approvals",
-          );
-        }
-      } else {
-        const result = await ApiService.getOtherPendingApprovals();
-        if (result.success && result.data) {
+          const result = await ApiService.getOtherPendingApprovals();
+          if (result.success && result.data) {
           setOtherPendings(result.data);
         } else {
           ConfirmModal.alert(
@@ -579,6 +581,7 @@ export default function PendingApproval() {
               fetchPendingApprovals();
             }}
             data={selectedItem}
+            currenttab={currentTab}
           />
         ) : selectedItem.DescC === "Claim" ? (
           <ClaimModal

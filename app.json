@@ -6,7 +6,6 @@
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "trickyhr",
-    "newArchEnabled": true,
     "updates": {
       "enabled": false
     },
@@ -35,7 +34,6 @@
       },
       "versionCode": 115,
       "userInterfaceStyle": "automatic",
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {

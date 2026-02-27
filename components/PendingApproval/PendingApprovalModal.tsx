@@ -33,6 +33,7 @@ interface PendingApprovalData {
   Approve1C: string | null;
   Approve2C: string | null;
   FinalApproveC: string | null;
+  ReaGrpNameC: string | null;
 }
 
 interface PendingApprovalModalProps {
@@ -40,6 +41,16 @@ interface PendingApprovalModalProps {
   onClose: () => void;
   onSuccess: () => void;
   data: PendingApprovalData | null;
+  currenttab: string;
+}
+
+interface LeaveManageDetail {
+  AppEmpIdN: number;
+  ReaGrpNameC: string;
+  LVRemarksC: string;
+  LeaveDaysN: string;
+  LFromDateD: string;
+  LToDateD: string;
 }
 
 export default function PendingApprovalModal({
@@ -47,6 +58,7 @@ export default function PendingApprovalModal({
   onClose,
   onSuccess,
   data,
+  currenttab,
 }: PendingApprovalModalProps) {
   const { theme } = useTheme();
 
@@ -55,6 +67,51 @@ export default function PendingApprovalModal({
   const [processingAction, setProcessingAction] = useState<
     "Approved" | "Rejected" | null
   >(null);
+
+  const [yourPendings, setYourPendings] = useState<LeaveManageDetail | null>(null);;
+  const [otherPendings, setOtherPendings] = useState<LeaveManageDetail | null>(null);;
+  // GetSup_LeaveManageById
+
+  const fetchPendingApprovals = async () => {
+    try {
+      const currentTab = currenttab;
+      console.log("currentTab: ", currentTab)
+      if (currentTab === "your") {
+        if (!data) return;
+        const result = await ApiService.GetSup_LeaveManageById(data.IdN);
+
+        if (result.success && result.data) {
+          console.log(
+            "Your Pending Data:",
+            JSON.stringify(result.data[0], null, 2),
+          );
+          setYourPendings(result.data[0]);
+        } else {
+          ConfirmModal.alert(
+            "Error",
+            result.error || "Failed to fetch your pending approvals",
+          );
+        }
+      } else {
+        const result = await ApiService.getOtherPendingApprovals();
+        if (result.success && result.data) {
+          setOtherPendings(result.data[0]);
+        } else {
+          ConfirmModal.alert(
+            "Error",
+            result.error || "Failed to fetch other pending approvals",
+          );
+        }
+      }
+    } catch (error: any) {
+      ConfirmModal.alert(
+        "Error",
+        error?.message || "Failed to fetch pending approvals",
+      );
+    }
+  };
+
+  useEffect(()=>{fetchPendingApprovals()},[data])
 
   // Determine flag helper
   const getFlag = (desc: string) => {
@@ -351,7 +408,7 @@ export default function PendingApprovalModal({
         <DetailItem
           icon="document-text-outline"
           label="LEAVE TYPE"
-          value={data.StatusC || "N/A"}
+          value={yourPendings?.ReaGrpNameC || "N/A"}
         />
 
         <DetailItem
@@ -369,7 +426,7 @@ export default function PendingApprovalModal({
         <DetailItem
           icon="calendar-outline"
           label="TOTAL DAYS"
-          value={`${data.LeaveDaysN || "0"} day(s)`}
+          value={`${yourPendings?.LeaveDaysN || "0"} day(s)`}
         />
 
         {data.LvDescC && (

@@ -1932,6 +1932,46 @@ class ApiService {
     }
   }
 
+  async GetSup_LeaveManageById(IdN: number): Promise<{
+    success: boolean;
+    data?: any[];
+    error?: string;
+  }> {
+    try {
+      if (!this.token || !this.empId) {
+        await this.loadCredentials();
+      }
+
+      const response = await api.post(
+        API_ENDPOINTS.GetSup_LeaveManageById,
+        {
+          TokenC: this.token,
+          IdN: IdN,
+        },
+        { headers: this.getHeaders() },
+      );
+
+      if (response.data.Status === "success") {
+        return {
+          success: true,
+          data: response.data.data || response.data.xx || [],
+        };
+      } else {
+        return {
+          success: false,
+          error:
+            response.data.Error || "Failed to fetch your pending approvals",
+        };
+      }
+    } catch (error: any) {
+      console.error("Your Pending Approvals Error:", error);
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
   async getOtherPendingApprovals(): Promise<{
     success: boolean;
     data?: any[];

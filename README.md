@@ -48,3 +48,16 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+    <!-- signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release { storeFile file('Trickyhr.jks') // your jks file name
+            storePassword 'Trickyhr@9747'
+            keyAlias 'key0'
+            keyPassword 'Trickyhr@9747' }
+    } -->

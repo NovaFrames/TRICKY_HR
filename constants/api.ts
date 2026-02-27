@@ -111,6 +111,7 @@ export const API_ENDPOINTS = {
   GET_OTHER_PENDING_APPROVALS: "/WebApi2/GetPendingApprove_OtherList",
 
   UPDATE_PENDING_APPROVAL: "/WebApi2/UpdatePendingApproval",
+  GetSup_LeaveManageById: "/WebApi2/GetSup_LeaveManageById",
 
   PEND_TIMEMNG_URL: "/WebApi2/GetSup_TimeManageById",
   PEND_CLAIM_URL: "/WebApi2/GetSup_ClaimById",

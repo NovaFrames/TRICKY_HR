@@ -53,6 +53,12 @@ const addMonths = (date: Date, months: number) => {
   return newDate;
 };
 
+const addDays = (date: Date, days: number) => {
+  const newDate = new Date(date);
+  newDate.setDate(newDate.getDate() + days);
+  return newDate;
+};
+
 const formatDateDDMMMYYYY = (date: Date) => {
   const day = date.getDate().toString().padStart(2, "0");
   const month = date.toLocaleString("en-GB", { month: "short" }); // Feb
@@ -62,7 +68,9 @@ const formatDateDDMMMYYYY = (date: Date) => {
 };
 
 const today = new Date();
-const defaultFromDate = addMonths(today, -1);
+
+const defaultFromDate = new Date();
+defaultFromDate.setDate(today.getDate() - 10);
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -90,7 +98,7 @@ export default function ApprovalDetails() {
   const [toDate, setToDate] = useState<Date>(today);
 
   useEffect(() => {
-    setToDate(addMonths(fromDate, 1));
+    setToDate(addDays(fromDate, 10));
   }, [fromDate]);
 
   useProtectedBack({
