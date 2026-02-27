@@ -76,33 +76,23 @@ export default function PendingApprovalModal({
     try {
       const currentTab = currenttab;
       console.log("currentTab: ", currentTab)
-      if (currentTab === "your") {
-        if (!data) return;
-        const result = await ApiService.GetSup_LeaveManageById(data.IdN);
 
-        if (result.success && result.data) {
-          console.log(
-            "Your Pending Data:",
-            JSON.stringify(result.data[0], null, 2),
-          );
-          setYourPendings(result.data[0]);
-        } else {
-          ConfirmModal.alert(
-            "Error",
-            result.error || "Failed to fetch your pending approvals",
-          );
-        }
+      if (!data) return;
+      const result = await ApiService.GetSup_LeaveManageById(data.IdN);
+
+      if (result.success && result.data) {
+        console.log(
+          "Your Pending Data:",
+          JSON.stringify(result.data[0], null, 2),
+        );
+        setYourPendings(result.data[0]);
       } else {
-        const result = await ApiService.getOtherPendingApprovals();
-        if (result.success && result.data) {
-          setOtherPendings(result.data[0]);
-        } else {
-          ConfirmModal.alert(
-            "Error",
-            result.error || "Failed to fetch other pending approvals",
-          );
-        }
+        ConfirmModal.alert(
+          "Error",
+          result.error || "Failed to fetch your pending approvals",
+        );
       }
+
     } catch (error: any) {
       ConfirmModal.alert(
         "Error",
@@ -111,7 +101,7 @@ export default function PendingApprovalModal({
     }
   };
 
-  useEffect(()=>{fetchPendingApprovals()},[data])
+  useEffect(() => { fetchPendingApprovals() }, [data])
 
   // Determine flag helper
   const getFlag = (desc: string) => {
@@ -408,7 +398,7 @@ export default function PendingApprovalModal({
         <DetailItem
           icon="document-text-outline"
           label="LEAVE TYPE"
-          value={yourPendings?.ReaGrpNameC || "N/A"}
+          value={yourPendings?.ReaGrpNameC || otherPendings?.ReaGrpNameC || "N/A"}
         />
 
         <DetailItem

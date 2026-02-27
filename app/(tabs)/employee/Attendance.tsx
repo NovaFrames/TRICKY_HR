@@ -678,17 +678,14 @@ const Attendance = () => {
       username: empName,
     });
 
-    if (!selectedProject) return ConfirmModal.alert("Required", "Select project");
-    if (!capturedImage) return ConfirmModal.alert("Required", "Capture your photo");
-    if (!location) return ConfirmModal.alert("Required", "Location not ready");
-    if (Number(location.accuracy ?? Number.POSITIVE_INFINITY) > LOCATION_REQUIRED_ACCURACY_METERS) {
-      return ConfirmModal.alert(
-        "Weak GPS Signal",
-        "Weak GPS Signal. Please move to open area and try again.",
-      );
-    }
+    if (!selectedProject)
+      return ConfirmModal.alert("Required", "Select project");
+
+    if (!capturedImage)
+      return ConfirmModal.alert("Required", "Capture your photo");
 
     setSubmitting(true);
+
     try {
       const token = user?.TokenC || user?.Token;
 
@@ -697,17 +694,52 @@ const Attendance = () => {
         return;
       }
 
+      // 🔥 1️⃣ ALWAYS FETCH FRESH GPS HERE
+      let latestLocation: Location.LocationObject;
+
       try {
-        await ensureBaseUrl();
+        latestLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+          mayShowUserSettingsDialog: true,
+        });
       } catch {
         ConfirmModal.alert(
-          "Configuration Error",
-          "Domain URL is missing. Please sign in again.",
+          "Location Error",
+          "Unable to fetch current location. Please enable GPS and try again."
         );
         return;
       }
+
+      const freshLocation = {
+        latitude: latestLocation.coords.latitude,
+        longitude: latestLocation.coords.longitude,
+        accuracy: latestLocation.coords.accuracy,
+      };
+
+      // 🔥 2️⃣ CHECK GPS ACCURACY
+      if (
+        Number(freshLocation.accuracy ?? Number.POSITIVE_INFINITY) >
+        LOCATION_REQUIRED_ACCURACY_METERS
+      ) {
+        ConfirmModal.alert(
+          "Weak GPS Signal",
+          "Weak GPS Signal. Please move to open area and try again."
+        );
+        return;
+      }
+
+      // Optional: update UI state with latest location
+      await updateLocationFromCoords({
+        latitude: latestLocation.coords.latitude,
+        longitude: latestLocation.coords.longitude,
+        accuracy:
+          latestLocation.coords.accuracy ?? undefined, // 🔥 convert null → undefined
+      });
+
+      await ensureBaseUrl();
+
       const project = projects.find(
-        (p) => String(p.IdN) === String(selectedProject),
+        (p) => String(p.IdN) === String(selectedProject)
       );
 
       if (!project) {
@@ -715,28 +747,20 @@ const Attendance = () => {
         return;
       }
 
-      // Only enforce geo-fencing for verified projects
+      // 🔥 3️⃣ GEO-FENCING CHECK
       if (Number(project.VerifiedAddressN) === 1) {
         const projectCoords = parseProjectCoords(project);
 
         if (!projectCoords) {
-          Sentry.captureMessage("Project location missing", {
-            level: "warning",
-            extra: {
-              projectName: project.NameC,
-              projectGPRSC: project.GPRSC,
-            },
-          });
-
           ConfirmModal.alert("Required", "Project location not available");
           return;
         }
 
         const distance = distanceMeters(
-          Number(location.latitude),
-          Number(location.longitude),
+          Number(freshLocation.latitude),
+          Number(freshLocation.longitude),
           Number(projectCoords.latitude),
-          Number(projectCoords.longitude),
+          Number(projectCoords.longitude)
         );
 
         const userRadius = Number(LOCATION_FROM_USER);
@@ -749,59 +773,44 @@ const Attendance = () => {
               ? userRadius
               : DEFAULT_ALLOWED_RADIUS_METERS;
 
-        const gpsAccuracy = Math.max(0, Number(location.accuracy ?? 0));
+        const gpsAccuracy = Math.max(0, Number(freshLocation.accuracy ?? 0));
         const driftBuffer = Math.min(gpsAccuracy, MAX_GPS_DRIFT_BUFFER_METERS);
         const effectiveRadius = allowedRadius + driftBuffer;
 
-        // 🔥 Log ONLY when mismatch happens
         if (distance > effectiveRadius) {
-
           const distanceDisplay = formatDistance(distance);
-
-          Sentry.captureMessage("Location Mismatch", {
-            level: "error",
-            extra: {
-              userName: empName,
-              userCode: empCodeC,
-              projectName: project.NameC,
-              projectCoords,
-              employeeLat: location.latitude,
-              employeeLng: location.longitude,
-              accuracy: location.accuracy,
-              distance,
-              allowedRadius,
-              effectiveRadius,
-              distanceDisplay,
-            },
-          });
-
 
           ConfirmModal.alert(
             "Location Mismatch",
-            `You are ${distanceDisplay} away from the project location (allowed ${Math.round(allowedRadius)}m).`,
+            `You are ${distanceDisplay} away from the project location (allowed ${Math.round(
+              allowedRadius
+            )}m).`
           );
 
           return;
         }
       }
 
+      // 🔥 4️⃣ SUBMIT ATTENDANCE
       const mode = attendanceType === "Check-in" ? 0 : 1;
       const serverDate = await ApiService.getRawServerTime(token);
       const createdUser = user?.EmpIdN;
+
       if (!createdUser) {
         ConfirmModal.alert("Session Error", "Please sign in again");
         return;
       }
+
       const res = await markMobileAttendance(
         token,
         empId,
         Number(selectedProject),
         mode,
-        location,
+        freshLocation, // 🔥 PASS FRESH LOCATION
         capturedImage,
         remarks,
         serverDate,
-        createdUser,
+        createdUser
       );
 
       if (res.success) {
@@ -813,7 +822,6 @@ const Attendance = () => {
               try {
                 protectedBack();
               } catch (error) {
-                console.error("Protected back navigation failed:", error);
                 router.replace("/(tabs)/dashboard");
               }
             },
@@ -824,9 +832,7 @@ const Attendance = () => {
       }
     } catch (error) {
       console.error("Attendance submit error:", error);
-
       Sentry.captureException(error);
-
       ConfirmModal.alert("Error", "Unable to submit attendance right now");
     } finally {
       setSubmitting(false);

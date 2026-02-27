@@ -11,13 +11,12 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 // Types for Attendance Data
@@ -176,11 +175,6 @@ export default function AttendanceList() {
       </View>
     </View>
   );
-
-  // single table view (SHIFT only)
-
-  // Table columns for DynamicTable (SHIFT view)
-  const tableWidth = Math.max(780, Dimensions.get("window").width);
 
   const shiftColumns: ColumnDef[] = [
     {
