@@ -2253,8 +2253,7 @@ class ApiService {
       return [];
     } catch (error: any) {
       console.log("STEP ERROR:", error?.message);
-      console.log("STEP ERROR RESPONSE:", error?.response?.data);
-      return [];
+      throw error;
     }
   }
 
