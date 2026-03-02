@@ -737,7 +737,7 @@ const Attendance = () => {
         );
 
         const userRadius = Number(LOCATION_FROM_USER);
-        const projectRadius = Number(project.AllowedRadiusN);
+        const projectRadius = Number(user?.AttDistanceN || project?.AttDistanceN);
 
         const allowedRadius =
           Number.isFinite(projectRadius) && projectRadius > 0
