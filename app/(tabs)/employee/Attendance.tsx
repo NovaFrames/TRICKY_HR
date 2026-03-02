@@ -92,6 +92,15 @@ const Attendance = () => {
     type: "info",
   });
   const [snackbarKey, setSnackbarKey] = useState(0);
+  const isMounted = React.useRef(true);
+  const submitInFlightRef = React.useRef(false);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+
+  }, []);
 
   // Camera permission state (using ImagePicker)
   const [cameraPermission, setCameraPermission] = useState<
@@ -616,10 +625,22 @@ const Attendance = () => {
     setSelectedProject("");
     setRemarks("");
     setCapturedImage(null);
+    setAttendanceType("Check-in");
+  };
+
+  const withTimeout = <T,>(promise: Promise<T>, ms: number) => {
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Request timeout")), ms)
+      ),
+    ]);
   };
 
   // Submit attendance (fresh location always taken)
   const handleSubmit = async () => {
+    if (submitInFlightRef.current || submitting) return;
+
     Sentry.setUser({
       id: String(empId),
       username: empName,
@@ -631,11 +652,13 @@ const Attendance = () => {
     if (!capturedImage)
       return ConfirmModal.alert("Required", "Capture your photo");
 
-    setSubmitting(true);
+    submitInFlightRef.current = true;
+    if (isMounted.current) {
+      setSubmitting(true);
+    }
 
     try {
       const token = user?.TokenC || user?.Token;
-
       if (!token || !empId) {
         await forceLogoutForMissingToken();
         return;
@@ -645,10 +668,13 @@ const Attendance = () => {
       let latestLocation: Location.LocationObject;
 
       try {
-        latestLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.BestForNavigation,
-          mayShowUserSettingsDialog: true,
-        });
+        latestLocation = await withTimeout(
+          Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.BestForNavigation,
+            mayShowUserSettingsDialog: true,
+          }),
+          12000
+        );
       } catch {
         ConfirmModal.alert(
           "Location Error",
@@ -745,7 +771,11 @@ const Attendance = () => {
 
       // Submit attendance
       const mode = attendanceType === "Check-in" ? 0 : 1;
-      const serverDate = await ApiService.getRawServerTime(token);
+
+      const serverDate = await withTimeout(
+        ApiService.getRawServerTime(token),
+        10000 // 10 sec timeout
+      );
       const createdUser = user?.EmpIdN;
 
       if (!createdUser) {
@@ -753,16 +783,19 @@ const Attendance = () => {
         return;
       }
 
-      const res = await markMobileAttendance(
-        token,
-        empId,
-        Number(selectedProject),
-        mode,
-        freshLocation,
-        capturedImage,
-        remarks,
-        serverDate,
-        createdUser
+      const res = await withTimeout(
+        markMobileAttendance(
+          token,
+          empId,
+          Number(selectedProject),
+          mode,
+          freshLocation,
+          capturedImage,
+          remarks,
+          serverDate,
+          createdUser
+        ),
+        15000
       );
 
       if (res.success) {
@@ -771,14 +804,11 @@ const Attendance = () => {
           {
             text: "OK",
             onPress: () => {
-              try {
-                protectedBack();
-              } catch (error) {
-                router.replace("/(tabs)/dashboard");
-              }
+              router.replace("/(tabs)/dashboard");
             },
           },
         ]);
+        return;
       } else {
         ConfirmModal.alert("Failed", res.message || "Attendance failed");
       }
@@ -787,7 +817,10 @@ const Attendance = () => {
       Sentry.captureException(error);
       ConfirmModal.alert("Error", "Unable to submit attendance right now");
     } finally {
-      setSubmitting(false);
+      submitInFlightRef.current = false;
+      if (isMounted.current) {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -844,285 +877,285 @@ const Attendance = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Mobile Attendance" />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-        alwaysBounceVertical={false}
-        overScrollMode="never"
-        contentContainerStyle={{
-          paddingTop: HEADER_HEIGHT + 24,
-        }}
-      >
-        {/* CLOCK SECTION */}
-        <View style={styles.clockHeader}>
-          <Text style={[styles.timeText, { color: theme.text }]}>
-            {currentTime.toLocaleTimeString("en-US", {
-              hour12: false,
-            })}
-          </Text>
-          <Text style={[styles.dateText, { color: theme.placeholder }]}>
-            {currentTime.toLocaleDateString("en-GB", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          </Text>
-        </View>
 
-        {/* MODE TOGGLE */}
-        {renderSegmentedControl()}
-
-        {/* FORM SECTION */}
-        <View
-          style={[
-            styles.formCard,
-            {
-              backgroundColor: theme.cardBackground,
-              borderColor: theme.inputBorder,
-            },
-          ]}
+      <View style={{ flex: 1, marginTop: HEADER_HEIGHT }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
+          contentContainerStyle={{ paddingBottom: 40 }}
         >
-          <Text style={[styles.fieldLabel, { color: theme.textLight, marginTop: 16 }]}>
-            PROJECT / SITE
-          </Text>
+          {/* CLOCK SECTION */}
+          <View style={styles.clockHeader}>
+            <Text style={[styles.timeText, { color: theme.text }]}>
+              {currentTime.toLocaleTimeString("en-US", {
+                hour12: false,
+              })}
+            </Text>
+            <Text style={[styles.dateText, { color: theme.placeholder }]}>
+              {currentTime.toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </Text>
+          </View>
 
-          {projectError !== "No projects available" &&
-            projects.length === 0 &&
-            projectRefreshAttempts < 2 && (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={projectRefreshing || projectLoading}
-                onPress={handleProjectNoDataRefresh}
-                style={[styles.projectRefreshButton, { borderColor: theme.inputBorder }]}
-              >
-                {projectRefreshing ? (
-                  <ActivityIndicator size="small" color={theme.primary} />
-                ) : (
-                  <Ionicons name="refresh" size={13} color={theme.primary} />
-                )}
-                <Text style={[styles.projectRefreshButtonText, { color: theme.primary }]}>
-                  {projectRefreshing ? "Refreshing..." : "Refresh Projects"}
-                </Text>
-              </TouchableOpacity>
-            )}
+          {/* MODE TOGGLE */}
+          {renderSegmentedControl()}
 
-          <TouchableOpacity
+          {/* FORM SECTION */}
+          <View
             style={[
-              styles.selectorContainer,
+              styles.formCard,
               {
-                backgroundColor: theme.inputBg,
+                backgroundColor: theme.cardBackground,
                 borderColor: theme.inputBorder,
               },
             ]}
-            onPress={handleOpenProjectModal}
-            activeOpacity={0.7}
           >
-            <Ionicons
-              name="briefcase-outline"
-              size={20}
-              color={theme.primary}
-            />
-            {selectedProject ? (
-              <View style={styles.selectorTextBlock}>
-                <Text
-                  style={[styles.selectorText, { color: theme.text }]}
-                  numberOfLines={1}
-                >
-                  {selectedProjectData?.NameC}
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.selectorText, { color: theme.placeholder }]}>
-                Select Project
-              </Text>
-            )}
-            <Ionicons name="chevron-down" size={20} color={theme.text + "80"} />
-          </TouchableOpacity>
+            <Text style={[styles.fieldLabel, { color: theme.textLight, marginTop: 16 }]}>
+              PROJECT / SITE
+            </Text>
 
-          <TouchableOpacity
-            style={[
-              styles.selectorContainer,
-              {
-                backgroundColor: theme.inputBg,
-                borderColor: theme.inputBorder,
-              },
-            ]}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="location-outline"
-              size={20}
-              color={theme.primary}
-            />
-            {selectedProject ? (
-              <View style={styles.selectorTextBlock}>
-                <Text
-                  style={[styles.selectorText, { color: theme.text }]}
-                >
-                  {selectedProjectLocation}
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.selectorText, { color: theme.placeholder }]}>
-                Project Location
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <Text
-            style={[
-              styles.fieldLabel,
-              { color: theme.textLight, marginTop: 16 },
-            ]}
-          >
-            REMARKS
-          </Text>
-          <TextInput
-            placeholder="Add some notes..."
-            placeholderTextColor={theme.placeholder}
-            value={remarks}
-            onChangeText={setRemarks}
-            multiline
-            style={[
-              styles.remarksInput,
-              {
-                borderColor: theme.inputBorder,
-                backgroundColor: theme.inputBg,
-                color: theme.text,
-              },
-            ]}
-          />
-        </View>
-
-        {/* LOCATION STATUS */}
-        <View style={styles.locationFooter}>
-          <Ionicons name="location" size={16} color={theme.primary} />
-
-          {location ? (
-            <>
-              <Text
-                style={[styles.locationText, { color: theme.placeholder }]}
-                numberOfLines={2}
-              >
-                <Text
-                  style={[styles.locationText, { color: theme.text }]}
-                  numberOfLines={1}
-                >
-                  {"Your Location: "}
-                </Text>
-                {location.address || "Geo-Location Active"}
-              </Text>
-            </>
-          ) : (
-            <View style={styles.locationDeniedWrap}>
-              <Text
-                style={[styles.locationText, { color: theme.placeholder }]}
-                numberOfLines={2}
-              >
-                {locationPermission === "denied"
-                  ? "Location permission is required"
-                  : "Location not available"}
-              </Text>
-              {locationPermission !== "granted" && (
+            {projectError !== "No projects available" &&
+              projects.length === 0 &&
+              projectRefreshAttempts < 2 && (
                 <TouchableOpacity
-                  onPress={handleRequestLocationPermission}
-                  style={[
-                    styles.locationAllowBtn,
-                    { backgroundColor: theme.primary },
-                  ]}
                   activeOpacity={0.8}
+                  disabled={projectRefreshing || projectLoading}
+                  onPress={handleProjectNoDataRefresh}
+                  style={[styles.projectRefreshButton, { borderColor: theme.inputBorder }]}
                 >
-                  <Text style={styles.locationAllowBtnText}>
-                    Allow Location
+                  {projectRefreshing ? (
+                    <ActivityIndicator size="small" color={theme.primary} />
+                  ) : (
+                    <Ionicons name="refresh" size={13} color={theme.primary} />
+                  )}
+                  <Text style={[styles.projectRefreshButtonText, { color: theme.primary }]}>
+                    {projectRefreshing ? "Refreshing..." : "Refresh Projects"}
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
-          )}
-        </View>
 
-        <View style={styles.employeeNameSection}>
-          <Text style={[styles.employeeNameLabel, { color: theme.textLight }]}>
-            Attendance for{" "}
-          </Text>
-          <Text
-            style={[styles.employeeName, { color: theme.text }]}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            {empName}{` (${empCodeC})`}
-          </Text>
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.selectorContainer,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
+              onPress={handleOpenProjectModal}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="briefcase-outline"
+                size={20}
+                color={theme.primary}
+              />
+              {selectedProject ? (
+                <View style={styles.selectorTextBlock}>
+                  <Text
+                    style={[styles.selectorText, { color: theme.text }]}
+                    numberOfLines={1}
+                  >
+                    {selectedProjectData?.NameC}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.selectorText, { color: theme.placeholder }]}>
+                  Select Project
+                </Text>
+              )}
+              <Ionicons name="chevron-down" size={20} color={theme.text + "80"} />
+            </TouchableOpacity>
 
-        {/* CAMERA TOGGLE - NOW USES IMAGE PICKER */}
-        <View
-          style={[
-            styles.cameraToggleCard,
-            {
-              backgroundColor: theme.cardBackground,
-              borderColor: theme.inputBorder,
-            },
-          ]}
-        >
-          <View style={styles.cameraToggleTextWrap}>
-            <Text style={[styles.cameraToggleTitle, { color: theme.text }]}>
-              Identity Capture
+            <TouchableOpacity
+              style={[
+                styles.selectorContainer,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color={theme.primary}
+              />
+              {selectedProject ? (
+                <View style={styles.selectorTextBlock}>
+                  <Text
+                    style={[styles.selectorText, { color: theme.text }]}
+                  >
+                    {selectedProjectLocation}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.selectorText, { color: theme.placeholder }]}>
+                  Project Location
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <Text
+              style={[
+                styles.fieldLabel,
+                { color: theme.textLight, marginTop: 16 },
+              ]}
+            >
+              REMARKS
             </Text>
-            <Text style={[styles.cameraToggleSubtitle, { color: theme.placeholder }]}>
-              {hasPhoto ? "Photo captured" : "Take a photo for verification"}
+            <TextInput
+              placeholder="Add some notes..."
+              placeholderTextColor={theme.placeholder}
+              value={remarks}
+              onChangeText={setRemarks}
+              multiline
+              style={[
+                styles.remarksInput,
+                {
+                  borderColor: theme.inputBorder,
+                  backgroundColor: theme.inputBg,
+                  color: theme.text,
+                },
+              ]}
+            />
+          </View>
+
+          {/* LOCATION STATUS */}
+          <View style={styles.locationFooter}>
+            <Ionicons name="location" size={16} color={theme.primary} />
+
+            {location ? (
+              <>
+                <Text
+                  style={[styles.locationText, { color: theme.placeholder }]}
+                  numberOfLines={2}
+                >
+                  <Text
+                    style={[styles.locationText, { color: theme.text }]}
+                    numberOfLines={1}
+                  >
+                    {"Your Location: "}
+                  </Text>
+                  {location.address || "Geo-Location Active"}
+                </Text>
+              </>
+            ) : (
+              <View style={styles.locationDeniedWrap}>
+                <Text
+                  style={[styles.locationText, { color: theme.placeholder }]}
+                  numberOfLines={2}
+                >
+                  {locationPermission === "denied"
+                    ? "Location permission is required"
+                    : "Location not available"}
+                </Text>
+                {locationPermission !== "granted" && (
+                  <TouchableOpacity
+                    onPress={handleRequestLocationPermission}
+                    style={[
+                      styles.locationAllowBtn,
+                      { backgroundColor: theme.primary },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.locationAllowBtnText}>
+                      Allow Location
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.employeeNameSection}>
+            <Text style={[styles.employeeNameLabel, { color: theme.textLight }]}>
+              Attendance for{" "}
+            </Text>
+            <Text
+              style={[styles.employeeName, { color: theme.text }]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {empName}{` (${empCodeC})`}
             </Text>
           </View>
-          <TouchableOpacity
-            style={[styles.cameraToggleBtn, { backgroundColor: theme.primary }]}
-            activeOpacity={0.85}
-            onPress={takePicture}
-          >
-            <Ionicons name="camera" size={18} color="#fff" />
-            <Text style={styles.cameraToggleBtnText}>
-              {isCameraGranted ? (hasPhoto ? "Retake Photo" : "Capture Photo") : "Allow Camera"}
-            </Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* CAPTURED IMAGE PREVIEW */}
-        {capturedImage && (
+          {/* CAMERA TOGGLE - NOW USES IMAGE PICKER */}
           <View
             style={[
-              styles.capturedCard,
-              { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder },
+              styles.cameraToggleCard,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.inputBorder,
+              },
             ]}
           >
-            <View style={styles.capturedHeader}>
-              <View style={styles.capturedHeaderLeft}>
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                <Text style={[styles.capturedTitle, { color: theme.text }]}>
-                  Identity Photo
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={takePicture} // Just call takePicture again
-                style={styles.retakeBtn}
-              >
-                <Text style={{ color: theme.primary, fontWeight: "700" }}>
-                  Retake
-                </Text>
-              </TouchableOpacity>
+            <View style={styles.cameraToggleTextWrap}>
+              <Text style={[styles.cameraToggleTitle, { color: theme.text }]}>
+                Identity Capture
+              </Text>
+              <Text style={[styles.cameraToggleSubtitle, { color: theme.placeholder }]}>
+                {hasPhoto ? "Photo captured" : "Take a photo for verification"}
+              </Text>
             </View>
-            <Image source={{ uri: capturedImage }} style={styles.capturedPreview} />
+            <TouchableOpacity
+              style={[styles.cameraToggleBtn, { backgroundColor: theme.primary }]}
+              activeOpacity={0.85}
+              onPress={takePicture}
+            >
+              <Ionicons name="camera" size={18} color="#fff" />
+              <Text style={styles.cameraToggleBtnText}>
+                {isCameraGranted ? (hasPhoto ? "Retake Photo" : "Capture Photo") : "Allow Camera"}
+              </Text>
+            </TouchableOpacity>
           </View>
-        )}
 
-        {/* SUBMIT BUTTON */}
-        <CustomButton
-          title="SUBMIT ATTENDANCE"
-          icon="arrow-forward"
-          isLoading={submitting}
-          disabled={!capturedImage}
-          onPress={handleSubmit}
-          style={{ marginHorizontal: 16 }}
-        />
-      </ScrollView>
+          {/* CAPTURED IMAGE PREVIEW */}
+          {capturedImage && (
+            <View
+              style={[
+                styles.capturedCard,
+                { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder },
+              ]}
+            >
+              <View style={styles.capturedHeader}>
+                <View style={styles.capturedHeaderLeft}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text style={[styles.capturedTitle, { color: theme.text }]}>
+                    Identity Photo
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={takePicture} // Just call takePicture again
+                  style={styles.retakeBtn}
+                >
+                  <Text style={{ color: theme.primary, fontWeight: "700" }}>
+                    Retake
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Image source={{ uri: capturedImage }} style={styles.capturedPreview} />
+            </View>
+          )}
+
+          {/* SUBMIT BUTTON */}
+          <CustomButton
+            title="SUBMIT ATTENDANCE"
+            icon="arrow-forward"
+            isLoading={submitting}
+            disabled={!capturedImage || submitting}
+            onPress={handleSubmit}
+            style={{ marginHorizontal: 16 }}
+          />
+        </ScrollView>
+      </View>
 
       {/* Project Selection Modal (unchanged) */}
       <CenterModalSelection
