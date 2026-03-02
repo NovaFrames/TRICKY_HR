@@ -98,6 +98,34 @@ export const loginUser = async (
   }
 };
 
+export const refreshLoginUser = async (
+  token: string,
+  empId: number | string,
+  domainUrl: string,
+  domainId?: string,
+) => {
+  try {
+    const response = await api.post(
+      API_ENDPOINTS.REFRESH_LOGIN,
+      {
+        TokenC: token,
+        EmpIdN: Number(empId),
+        ...(domainId ? { DomainId: domainId } : {}),
+      },
+      {
+        baseURL: normalizeBaseUrl(domainUrl),
+        headers: {
+          "Content-Type": "application/json",
+          Token: token,
+        },
+      },
+    );
+    return response ?? null;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const compPoliciesUpdate = async (
   domainUrl: string,
   token: string,

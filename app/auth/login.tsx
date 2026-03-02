@@ -32,6 +32,7 @@ import { useTheme } from "../../context/ThemeContext";
 import ApiService, {
   compPoliciesUpdate,
   loginUser,
+  refreshLoginUser,
   setBaseUrl,
 } from "../../services/ApiService";
 
@@ -101,7 +102,9 @@ export default function Login() {
   useEffect(() => {
     const fetchStoredDomain = async () => {
       try {
-        const storedDomainUrl = await AsyncStorage.getItem("_domain");
+        const storedDomainUrl =
+          (await AsyncStorage.getItem("_domain")) ||
+          (await AsyncStorage.getItem("domain_url"));
         const storedDomainId = await AsyncStorage.getItem("domain_id");
         if (storedDomainUrl) {
           setDomainUrl(storedDomainUrl);
@@ -116,6 +119,59 @@ export default function Login() {
 
     fetchStoredDomain();
   }, []);
+
+  useEffect(() => {
+    const tryAutoLogin = async () => {
+      try {
+        const [storedToken, storedEmpId, storedDomainUrl, legacyDomainUrl, storedDomainId] =
+          await Promise.all([
+            AsyncStorage.getItem("auth_token"),
+            AsyncStorage.getItem("emp_id"),
+            AsyncStorage.getItem("domain_url"),
+            AsyncStorage.getItem("_domain"),
+            AsyncStorage.getItem("domain_id"),
+          ]);
+
+        const resolvedDomain = storedDomainUrl || legacyDomainUrl;
+        if (!storedToken || !storedEmpId || !resolvedDomain) return;
+
+        const domain = resolvedDomain.trim();
+        const domainIdValue = storedDomainId?.trim() || undefined;
+        if (!domain) return;
+
+        setIsLoading(true);
+        await setBaseUrl(domain);
+        ApiService.setCredentials(storedToken, Number(storedEmpId));
+
+        const refreshedResponse = await refreshLoginUser(
+          storedToken,
+          storedEmpId,
+          domain,
+          domainIdValue,
+        );
+        const refreshedData =
+          refreshedResponse?.data?.data ?? refreshedResponse?.data ?? {};
+
+        const mergedUserData = {
+          ...refreshedData,
+          TokenC: refreshedData?.TokenC ?? storedToken,
+          EmpIdN: Number(refreshedData?.EmpIdN ?? storedEmpId),
+          domain_url: domain,
+          domain_id: domainIdValue ?? refreshedData?.domain_id ?? "",
+        };
+
+        await setUser(mergedUserData);
+        router.replace("/(tabs)/dashboard");
+      } catch (error) {
+        console.warn("Auto-login failed. Clearing stale session.", error);
+        await logout();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    tryAutoLogin();
+  }, [logout, router, setUser]);
 
   const showSnackbar = (
     message: string,
@@ -169,10 +225,33 @@ export default function Login() {
 
     await setBaseUrl(workingDomain);
     ApiService.setCredentials(token, empId ? Number(empId) : null);
+
+    let latestUserData = userData;
+    try {
+      const refreshResponse = await refreshLoginUser(
+        token,
+        empId,
+        workingDomain,
+        domainId,
+      );
+      const refreshedPayload =
+        refreshResponse?.data?.data ?? refreshResponse?.data;
+      if (refreshedPayload && typeof refreshedPayload === "object") {
+        latestUserData = {
+          ...userData,
+          ...refreshedPayload,
+        };
+      }
+    } catch (refreshError) {
+      console.warn("Post-login user refresh failed", refreshError);
+    }
+
     await setUser({
-      ...userData,
+      ...latestUserData,
+      TokenC: latestUserData?.TokenC ?? token,
+      EmpIdN: Number(latestUserData?.EmpIdN ?? empId),
       domain_url: workingDomain,
-      domain_id: domainId ?? userData?.domain_id ?? "",
+      domain_id: domainId ?? latestUserData?.domain_id ?? "",
     });
     router.replace("/(tabs)/dashboard");
   };

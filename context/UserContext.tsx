@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import ApiService, { setBaseUrl } from "@/services/ApiService";
+import ApiService, { refreshLoginUser, setBaseUrl } from "@/services/ApiService";
 
 export interface UserData {
   domain_url: string;
@@ -77,10 +77,52 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const parsedUser = JSON.parse(storedUser);
           setUserState(parsedUser);
-          if (parsedUser?.domain_url) {
-            await setBaseUrl(parsedUser.domain_url);
+          const domainUrl =
+            parsedUser?.domain_url ||
+            (await AsyncStorage.getItem("domain_url")) ||
+            (await AsyncStorage.getItem("_domain")) ||
+            "";
+          const normalizedDomain = String(domainUrl || "").trim();
+
+          if (normalizedDomain) {
+            await setBaseUrl(normalizedDomain);
           }
           await ApiService.refreshCredentials();
+
+          const authToken = (await AsyncStorage.getItem("auth_token"))?.trim();
+          const empId = (await AsyncStorage.getItem("emp_id"))?.trim();
+          const domainId =
+            String(
+              parsedUser?.domain_id ?? (await AsyncStorage.getItem("domain_id")) ?? "",
+            ).trim() || undefined;
+
+          if (authToken && empId && normalizedDomain) {
+            try {
+              const refreshRes = await refreshLoginUser(
+                authToken,
+                empId,
+                normalizedDomain,
+                domainId,
+              );
+              const latestData = refreshRes?.data?.data ?? refreshRes?.data;
+
+              if (latestData && typeof latestData === "object") {
+                const freshUser = {
+                  ...parsedUser,
+                  ...latestData,
+                  TokenC: latestData?.TokenC ?? authToken,
+                  EmpIdN: Number(latestData?.EmpIdN ?? empId),
+                  domain_url: normalizedDomain,
+                  domain_id: domainId ?? latestData?.domain_id ?? "",
+                };
+                setUserState(freshUser);
+                await AsyncStorage.setItem("user_data", JSON.stringify(freshUser));
+              }
+            } catch (refreshError) {
+              console.warn("Auto-login user refresh failed", refreshError);
+            }
+          }
+
           setIsUserReady(true);
         } catch (parseError) {
           console.error("Invalid user cache, clearing", parseError);
