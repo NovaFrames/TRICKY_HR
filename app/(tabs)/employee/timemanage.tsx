@@ -135,7 +135,7 @@ export default function TimeManage() {
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<Date>(defaultFromDate);
   const [toDate, setToDate] = useState<Date>(today);
-  
+
   // ✅ Whenever fromDate changes → set toDate = 1 month after fromDate
   React.useEffect(() => {
     const newToDate = addMonths(fromDate, 1);
@@ -150,12 +150,27 @@ export default function TimeManage() {
   /* ---------------- API ---------------- */
   const fetchTimeData = async () => {
     try {
+      const safeToDate = new Date(toDate);
+      safeToDate.setDate(safeToDate.getDate() + 1);
+
       const res = await ApiService.getTimeManageList(
         formatDateForApi(fromDate),
-        formatDateForApi(toDate),
+        formatDateForApi(safeToDate),
       );
-      if (res?.success) setTimeData(res.data || []);
-      // console.log("timemanageData: ", res.data);
+      
+      if (res?.success && Array.isArray(res.data)) {
+        const sorted = [...res.data].sort((a, b) => {
+          const getTime = (dateStr: string) => {
+            const match = dateStr?.match(/\d+/);
+            return match ? parseInt(match[0], 10) : 0;
+          };
+
+          return getTime(b.DateD) - getTime(a.DateD); // DESC
+        });
+
+        setTimeData(sorted);
+      }
+      console.log("timemanageData: ", res.data);
     } catch (error) {
       console.error("Error fetching time data:", error);
       ConfirmModal.alert(

@@ -727,13 +727,18 @@ const Attendance = () => {
         if (distance > effectiveRadius) {
           const distanceDisplay = formatDistance(distance);
 
-          ConfirmModal.alert(
-            "Location Mismatch",
-            `You are ${distanceDisplay} away from the project location (allowed ${Math.round(
-              allowedRadius
-            )}m).`
-          );
+          const message =
+            `You are ${distanceDisplay} away from the project location.\n\n` +
+            `Allowed Radius : ${Math.round(allowedRadius)} m from the project location\n\n` +
+            `───────────────\n\n` +
+            `📍 Your Location\n` +
+            `Latitude  : ${freshLocation.latitude.toFixed(6)}\n` +
+            `Longitude : ${freshLocation.longitude.toFixed(6)}\n\n` +
+            `🏢 Project Location\n` +
+            `Latitude  : ${projectCoords.latitude.toFixed(6)}\n` +
+            `Longitude : ${projectCoords.longitude.toFixed(6)}`;
 
+          ConfirmModal.alert("Location Mismatch", message);
           return;
         }
       }

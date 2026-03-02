@@ -128,18 +128,33 @@ export default function ApprovalDetails() {
           ? API_ENDPOINTS.SUP_DETAPPROVEFT_URL
           : API_ENDPOINTS.SUP_GETREJECTFT_URL;
 
+      const adjustedToDate = addDays(toDate, 1);
+
       const response = await api.post(endpoint, {
         TokenC: user?.TokenC,
         EmpIdN: user?.EmpIdN,
         FromDate: formatDateDDMMMYYYY(fromDate),
-        ToDate: formatDateDDMMMYYYY(toDate),
+        ToDate: formatDateDDMMMYYYY(adjustedToDate),
       });
 
       console.log("From Date: ", formatDateDDMMMYYYY(fromDate), "To Date: ", formatDateDDMMMYYYY(toDate));
 
       if (response.data?.Status === "success") {
         const rows = response.data?.data || response.data?.xx || [];
-        setData(Array.isArray(rows) ? rows : []);
+        if (Array.isArray(rows)) {
+          const sortedData = [...rows].sort((a, b) => {
+            const getTime = (dateString: string) => {
+              const match = dateString.match(/\d+/);
+              return match ? parseInt(match[0], 10) : 0;
+            };
+
+            return getTime(b.ApplyDateD) - getTime(a.ApplyDateD);
+          });
+
+          setData(sortedData);
+        } else {
+          setData([]);
+        }
       } else {
         setData([]);
       }
