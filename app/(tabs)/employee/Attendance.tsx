@@ -1196,6 +1196,25 @@ const Attendance = () => {
         </View>
       )}
 
+      {submitting && (
+        <View style={styles.submitLoadingOverlay}>
+          <View
+            style={[
+              styles.submitLoadingModal,
+              {
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+          >
+            <ActivityIndicator size="small" color={theme.primary} />
+            <Text style={[styles.submitLoadingText, { color: theme.text }]}>
+              Submitting attendance...
+            </Text>
+          </View>
+        </View>
+      )}
+
       <Snackbar
         key={snackbarKey}
         visible={snackbar.visible}
@@ -1331,6 +1350,28 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   projectLoadingText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  submitLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  submitLoadingModal: {
+    minWidth: 210,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  submitLoadingText: {
     fontSize: 13,
     fontWeight: "600",
   },
