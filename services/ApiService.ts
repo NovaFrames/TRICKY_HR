@@ -2346,6 +2346,8 @@ class ApiService {
       TokenC: token,
     });
 
+    console.log("Response: ", response.data);
+
     if (typeof response.data === "string") {
       return response.data;
     }

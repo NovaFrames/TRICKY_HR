@@ -442,9 +442,7 @@ const Attendance = () => {
     if (parts.length < 4) return null;
 
     const [day, monthStr, year, time] = parts;
-    const [hour, minute, second] = String(time || "")
-      .split(":")
-      .map(Number);
+    const [hour, minute, second] = time.split(":").map(Number);
 
     const months: Record<string, number> = {
       Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
@@ -453,7 +451,7 @@ const Attendance = () => {
 
     if (!months.hasOwnProperty(monthStr)) return null;
 
-    const date = new Date(
+    return new Date(
       Number(year),
       months[monthStr],
       Number(day),
@@ -461,41 +459,49 @@ const Attendance = () => {
       minute,
       second
     );
-
-    return isNaN(date.getTime()) ? null : date;
   };
 
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval>;
-    let baseTime = new Date();
+    let interval: ReturnType<typeof setInterval>;
+    let serverBaseTime: Date | null = null;
+    let syncStartTimestamp = 0;
 
-    setCurrentTime(baseTime);
-    timer = setInterval(() => {
-      baseTime = new Date(baseTime.getTime() + 1000);
-      setCurrentTime(new Date(baseTime));
-    }, 1000);
-
-    const syncServerTime = async () => {
+    const startServerClock = async () => {
       try {
         const token = user?.TokenC || user?.Token;
         if (!token) return;
 
+        // 🔥 Get time ONLY from ApiService
         const raw = await ApiService.getRawServerTime(token);
         const serverNow = parseServerTime(raw);
 
-        if (serverNow) {
-          baseTime = serverNow;
-          setCurrentTime(serverNow);
-        }
-      } catch (e) {
-        console.log("Server time sync failed, using local time");
+        if (!serverNow) return;
+
+        serverBaseTime = serverNow;
+        syncStartTimestamp = Date.now();
+
+        setCurrentTime(serverNow);
+
+        interval = setInterval(() => {
+          if (!serverBaseTime) return;
+
+          const elapsed = Date.now() - syncStartTimestamp;
+
+          // Add elapsed time to original server time
+          setCurrentTime(
+            new Date(serverBaseTime.getTime() + elapsed)
+          );
+        }, 1000);
+
+      } catch (error) {
+        console.log("Server clock start failed");
       }
     };
 
-    syncServerTime();
+    startServerClock();
 
     return () => {
-      clearInterval(timer);
+      if (interval) clearInterval(interval);
     };
   }, [user?.TokenC]);
 
@@ -738,7 +744,6 @@ const Attendance = () => {
 
         const userRadius = Number(LOCATION_FROM_USER);
         const projectRadius = Number(user?.AttDistanceN || project?.AttDistanceN);
-        console.log("User: ", user?.AttDistanceN, "Project: ", project?.AttDistanceN);
 
         const allowedRadius =
           Number.isFinite(projectRadius) && projectRadius > 0
