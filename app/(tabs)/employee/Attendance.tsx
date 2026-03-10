@@ -112,8 +112,8 @@ const Attendance = () => {
 
   const LOCATION_FROM_USER = user?.AttDistanceN;
   const LOCATION_MAX_RETRIES = 3;
-  const LOCATION_RETRY_DELAY_MS = 1000;
-  const LOCATION_REQUIRED_ACCURACY_METERS = 50;
+  const LOCATION_RETRY_DELAY_MS = 2000;
+  const LOCATION_REQUIRED_ACCURACY_METERS = 100;
   const DEFAULT_ALLOWED_RADIUS_METERS = 200;
   const MAX_GPS_DRIFT_BUFFER_METERS = 25;
 
@@ -288,8 +288,9 @@ const Attendance = () => {
 
       for (let attempt = 1; attempt <= LOCATION_MAX_RETRIES; attempt++) {
         const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.BestForNavigation,
+          accuracy: Location.Accuracy.High,
           mayShowUserSettingsDialog: true,
+          timeInterval: 1000,
         });
 
         const accuracy = Number(loc.coords.accuracy ?? Number.POSITIVE_INFINITY);
@@ -317,21 +318,11 @@ const Attendance = () => {
         return false;
       }
 
-      await updateLocationFromCoords({
+      updateLocationFromCoords({
         latitude: bestLocation.coords.latitude,
         longitude: bestLocation.coords.longitude,
         accuracy: Number.isFinite(bestAccuracy) ? bestAccuracy : undefined,
       });
-
-      if (bestAccuracy > LOCATION_REQUIRED_ACCURACY_METERS) {
-        if (!opts?.silent) {
-          ConfirmModal.alert(
-            "Weak GPS Signal",
-            "Weak GPS Signal. Please move to open area and try again.",
-          );
-        }
-        return false;
-      }
 
       return true;
     } catch {
@@ -671,17 +662,31 @@ const Attendance = () => {
       }
 
       // 🔥 FRESH LOCATION ON EVERY SUBMIT
-      let latestLocation: Location.LocationObject;
+      let latestLocation: Location.LocationObject | null = null;
 
-      try {
-        latestLocation = await withTimeout(
-          Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.BestForNavigation,
-            mayShowUserSettingsDialog: true,
-          }),
-          12000
-        );
-      } catch {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const loc = await withTimeout(
+            Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.High,
+              mayShowUserSettingsDialog: true,
+              timeInterval: 1000,
+            }),
+            20000
+          );
+
+          latestLocation = loc;
+          break; // success
+        } catch {
+          console.log("Submit GPS attempt failed:", attempt);
+        }
+
+        if (attempt < 3) {
+          await wait(LOCATION_RETRY_DELAY_MS);
+        }
+      }
+
+      if (!latestLocation) {
         ConfirmModal.alert(
           "Location Error",
           "Unable to fetch current location. Please enable GPS and try again."
@@ -695,20 +700,8 @@ const Attendance = () => {
         accuracy: latestLocation.coords.accuracy,
       };
 
-      // Check accuracy
-      if (
-        Number(freshLocation.accuracy ?? Number.POSITIVE_INFINITY) >
-        LOCATION_REQUIRED_ACCURACY_METERS
-      ) {
-        ConfirmModal.alert(
-          "Weak GPS Signal",
-          "Weak GPS Signal. Please move to open area and try again."
-        );
-        return;
-      }
-
       // Update UI with fresh location (optional)
-      await updateLocationFromCoords({
+      updateLocationFromCoords({
         latitude: latestLocation.coords.latitude,
         longitude: latestLocation.coords.longitude,
         accuracy:
@@ -829,6 +822,12 @@ const Attendance = () => {
       }
     }
   };
+
+  useEffect(() => {
+    if (isFocused && locationPermission === "granted") {
+      ensureLocation({ silent: true });
+    }
+  }, [isFocused, locationPermission]);
 
   // UI helpers (unchanged)
   const renderSegmentedControl = () => (

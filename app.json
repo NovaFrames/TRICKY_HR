@@ -2,7 +2,7 @@
   "expo": {
     "name": "TrickyHr",
     "slug": "trickyhr",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "trickyhr",
@@ -24,7 +24,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/adptive-icon.png",
-        "backgroundImage": "./assets/images//background.png"
+        "backgroundImage": "./assets/images/background.png"
       },
       "versionCode": 115,
       "userInterfaceStyle": "automatic",
