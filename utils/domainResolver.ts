@@ -43,17 +43,27 @@ export const resolveWorkingDomain = async (
   password: string,
   domainId?: string,
 ): Promise<string> => {
-  let cleaned = rawInput.trim();
+  const normalizedInput = rawInput.trim().replace(/\/$/, "").replace(/ /g, "");
 
-  cleaned = cleaned.replace(/\/$/, "").replace(/ /g, "");
-  cleaned = cleaned.replace(/^https?:\/\//, "");
+  const hasProtocol = /^https?:\/\//i.test(normalizedInput);
+  const withoutProtocol = normalizedInput.replace(/^https?:\/\//i, "");
+  const isLocalHost =
+    /^localhost(:\d+)?$/i.test(withoutProtocol) ||
+    /^127\.0\.0\.1(:\d+)?$/i.test(withoutProtocol);
 
-  const candidates = [`https://${cleaned}`, `http://${cleaned}`];
+  const candidates = hasProtocol
+    ? [normalizedInput]
+    : isLocalHost
+      ? [`http://${withoutProtocol}`]
+      : [`https://${withoutProtocol}`, `http://${withoutProtocol}`];
+
+  const loginPath = API_ENDPOINTS.LOGIN.replace(/^\/+/, "");
 
   for (const baseUrl of candidates) {
     try {
+      const loginUrl = `${baseUrl}/${loginPath}`;
       await axios.post(
-        `${baseUrl}/${API_ENDPOINTS.LOGIN}`,
+        loginUrl,
         {
           EmpCode: empCode,
           Password: password,

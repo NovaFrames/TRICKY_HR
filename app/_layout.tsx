@@ -3,6 +3,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { ModalManagerProvider } from "@/components/common/ModalManager";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Sentry from '@sentry/react-native';
 import * as NavigationBar from "expo-navigation-bar";
 import {
@@ -14,6 +15,7 @@ import {
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
+import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -107,13 +109,80 @@ function RootNavigator() {
         style={{
           flex: 1,
           backgroundColor: theme.background,
+          alignItems: Platform.OS === "web" ? "center" : undefined,
         }}
       >
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="auth/login" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
+        {Platform.OS === "web" && (
+          <View style={styles.webBgLayer} pointerEvents="none">
+            <LinearGradient
+              colors={isDark ? ["#0B1220", "#111A2A"] : ["#F7F9FC", "#EEF2F7"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.webBgGradient}
+            />
+            <View
+              style={[
+                styles.bgOrb,
+                styles.bgOrbTop,
+                { backgroundColor: isDark ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.14)" },
+              ]}
+            />
+            <View
+              style={[
+                styles.bgOrb,
+                styles.bgOrbBottom,
+                { backgroundColor: isDark ? "rgba(16,185,129,0.10)" : "rgba(16,185,129,0.10)" },
+              ]}
+            />
+          </View>
+        )}
+        <View
+          style={{
+            flex: 1,
+            width: Platform.OS === "web" ? "70%" : "100%",
+            maxWidth: Platform.OS === "web" ? 1400 : undefined,
+          }}
+        >
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="auth/login" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </View>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
 }
+
+const styles = {
+  webBgLayer: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: "hidden" as const,
+  },
+  webBgGradient: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  bgOrb: {
+    position: "absolute" as const,
+    borderRadius: 999,
+  },
+  bgOrbTop: {
+    width: 460,
+    height: 460,
+    top: -140,
+    right: -110,
+  },
+  bgOrbBottom: {
+    width: 520,
+    height: 520,
+    left: -180,
+    bottom: -220,
+  },
+};

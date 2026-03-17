@@ -216,6 +216,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               icon="close"
               onPress={onClose}
               disabled={loading}
+              containerStyle={styles.footerButton}
               textColor={theme.text}
               iconColor={theme.text}
               style={[
@@ -233,6 +234,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               isLoading={loading}
               disabled={loading}
               onPress={handleSubmit}
+              containerStyle={styles.footerButton}
               style={styles.submitButton}
             />
           </View>
@@ -634,16 +636,15 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cancelButton: {
-    minWidth: 132,
-    flexGrow: 0,
-    flexShrink: 0,
     padding: 10,
   },
   submitButton: {
+    padding: 10,
+  },
+  footerButton: {
     minWidth: 132,
     flexGrow: 0,
     flexShrink: 0,
-    padding: 10,
   },
 });
 

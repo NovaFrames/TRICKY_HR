@@ -190,6 +190,16 @@ export default function TimeManage() {
       if (!url) {
         throw new Error("Download URL is empty");
       }
+
+      if (Platform.OS === "web") {
+        const win = globalThis as any;
+        if (shouldShare && win?.navigator?.share) {
+          await win.navigator.share({ url, title: "Time Report" });
+        } else {
+          win?.open?.(url, "_blank", "noopener,noreferrer");
+        }
+        return;
+      }
       // Define temp path for sharing or iOS download logic
       const fileName = `TimeReport_${new Date().getTime()}.pdf`;
       const fileUri = FileSystem.documentDirectory + fileName;

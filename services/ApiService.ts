@@ -2,7 +2,11 @@ import { API_ENDPOINTS } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as FileSystem from "expo-file-system/legacy";
+import { Platform } from "react-native";
 import { getAuthTokenSafely, setDomainUrlSafely } from "./urldomain";
+
+const canUseStorage = () =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
 const normalizeBaseUrl = (domainUrl: string) => {
   const trimmed = domainUrl.trim();
@@ -11,12 +15,14 @@ const normalizeBaseUrl = (domainUrl: string) => {
 };
 
 export const getSafeDomain = async (): Promise<string | null> => {
+  if (!canUseStorage()) return null;
   const domain = await AsyncStorage.getItem("domain_url");
   const normalized = normalizeBaseUrl(domain ?? "");
   return normalized || null;
 };
 
 export const getSafeToken = async (): Promise<string | null> => {
+  if (!canUseStorage()) return null;
   const token = await getAuthTokenSafely();
   return token ?? null;
 };
@@ -551,7 +557,9 @@ class ApiService {
   private empId: number | null = null;
 
   private constructor() {
-    this.loadCredentials();
+    if (canUseStorage()) {
+      this.loadCredentials();
+    }
   }
 
   static getInstance(): ApiService {
@@ -562,6 +570,11 @@ class ApiService {
   }
 
   private async loadCredentials() {
+    if (!canUseStorage()) {
+      this.token = null;
+      this.empId = null;
+      return;
+    }
     try {
       const domainUrl = await getSafeDomain();
       if (!domainUrl) {
@@ -1622,6 +1635,10 @@ class ApiService {
 
   async downloadFile(url: string, fileName: string): Promise<string | null> {
     try {
+      if (Platform.OS === "web") {
+        return url || null;
+      }
+
       const fs = FileSystem as any;
       const downloadDir = fs.documentDirectory + "OfficeDoc/";
       const dirInfo = await fs.getInfoAsync(downloadDir);

@@ -102,6 +102,17 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
       if (!url) {
         throw new Error("Download URL is empty");
       }
+
+      if (Platform.OS === "web") {
+        const win = globalThis as any;
+        if (shouldShare && win?.navigator?.share) {
+          await win.navigator.share({ url, title: "Office Document" });
+        } else {
+          win?.open?.(url, "_blank", "noopener,noreferrer");
+        }
+        return;
+      }
+
       const fileName = `Document_${new Date().getTime()}.pdf`; // Or extract extension
       const fileUri = FileSystem.documentDirectory + fileName;
       console.log("Starting download from URL:", url);

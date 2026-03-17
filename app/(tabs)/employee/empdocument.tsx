@@ -115,6 +115,16 @@ const EmpDocument: React.FC = () => {
   const handleShare = async (document: Document) => {
     if (!document.url) return;
     try {
+      if (Platform.OS === "web") {
+        const win = globalThis as any;
+        if (win?.navigator?.share) {
+          await win.navigator.share({ url: document.url, title: document.name });
+        } else {
+          win?.open?.(document.url, "_blank", "noopener,noreferrer");
+        }
+        return;
+      }
+
       const fileUri = `${(FileSystem as any).documentDirectory}${document.name}`;
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       if (!fileInfo.exists) {

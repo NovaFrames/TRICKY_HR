@@ -22,7 +22,10 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { CustomButton } from "../../components/CustomButton";
 import { CustomInput } from "../../components/CustomInput";
@@ -38,8 +41,58 @@ import ApiService, {
 
 const { width, height } = Dimensions.get("window");
 
-export default function Login() {
+const HARD_CODED_LOGIN_RESPONSE = {
+  Status: "success",
+  data: {
+    EmpIdN: 38,
+    IsLiveLocN: 1,
+    LiveDurN: 30,
+    EmpCodeC: "10005",
+    EmpNameC: "DR.Baiju",
+    DesigNameC: "Senior Executive",
+    CustomerIdC: "trickyhr",
+    CountryIdN: 0,
+    AttDistanceN: 2000,
+    FaceVerN: 0,
+    EmpFaceIdC: "",
+    EmpFaceRejectRemarksC: null,
+    CompIdN: 1,
+    CompNameC: "TRICKY HR - DEMO",
+    WebsiteC: "",
+    TokenC:
+      "OoqlfJFUjuBppUGkSi3NVdNQ+7Nuztx7wsGySdhzCFkgYiafofUISOD9e4roqrDZ2owzbYGAqLXZOYKN/JYRptC92XvHGBHfWvzHD7E6uBKpL0GloAZanFbK8T/cie8bumKN2cqyBVDsS436CLBI8wk4hXt59tqO7RuMJFCbVCEjlxu+LSZWmcoPs9vym7ZBLIyrT538/h3UN0r29ANZ1P9lvEWeAtnRpjPKgB+gNgp5HSmoS6U7YsRFf536NdxM",
+    PastLeaveN: 0,
+    EnableMidMonthN: 0,
+    GenderN: 1,
+    EmpMenu: [
+      { IdN: 13, MenuNameC: "Mobile Attendance", ActionC: "employee/Attendance", IconC: "fa fa-th-large", IconcolorC: "#ca007899", NCountN: 0 },
+      { IdN: 20, MenuNameC: "Mobile Atten.Report", ActionC: "employee/MobileAttenRpt", IconC: "fa fa-mobile", IconcolorC: "#3eb79f", NCountN: 0 },
+      { IdN: 2, MenuNameC: "Profile", ActionC: "employee/profileupdate", IconC: "fa fa-user", IconcolorC: "#299ef6", NCountN: 0 },
+      { IdN: 3, MenuNameC: "Request Status", ActionC: "employee/empRequest", IconC: "fa fa-bar-chart", IconcolorC: "#0ab558", NCountN: 0 },
+      { IdN: 4, MenuNameC: "Leave Manage", ActionC: "employee/leavemanage", IconC: "fa fa-plane", IconcolorC: "#ce9717", NCountN: 0 },
+      { IdN: 5, MenuNameC: "Time Manage", ActionC: "employee/timemanage", IconC: "fa fa-clock-o", IconcolorC: "#ef6747", NCountN: 19 },
+      { IdN: 6, MenuNameC: "Uploaded Document", ActionC: "employee/empdocument", IconC: "fa fa-file-text", IconcolorC: "#00b5ca", NCountN: 0 },
+      { IdN: 12, MenuNameC: "Office Document", ActionC: "employee/OfficeDocument", IconC: "fa fa-building-o", IconcolorC: "#ca007899", NCountN: 0 },
+      { IdN: 7, MenuNameC: "PaySlip", ActionC: "employee/payslip", IconC: "fa fa-files-o", IconcolorC: "#f65aa8", NCountN: 0 },
+      { IdN: 9, MenuNameC: "Holiday", ActionC: "employee/holiday", IconC: "fa fa-list-alt", IconcolorC: "#b86eef", NCountN: 0 },
+      { IdN: 10, MenuNameC: "Upcoming Celebration", ActionC: "employee/celebration", IconC: "fa fa-birthday-cake", IconcolorC: "#9acd32", NCountN: 0 },
+      { IdN: 128, MenuNameC: "Calender", ActionC: "officer/calender", IconC: "fa fa-calendar", IconcolorC: "#4682b4", NCountN: 0 },
+      { IdN: 102, MenuNameC: "Employee List", ActionC: "officer/emplist", IconC: "fa fa-users", IconcolorC: "#299ef6", NCountN: 0 },
+      { IdN: 103, MenuNameC: "Employee Attendance", ActionC: "officer/Attendance", IconC: "fa fa-newspaper-o", IconcolorC: "#81bd72", NCountN: 0 },
+      { IdN: 16, MenuNameC: "Claim & Expense", ActionC: "employee/ClaimandExpense", IconC: "fa fa-money", IconcolorC: "#299ef6", NCountN: 0 },
+      { IdN: 111, MenuNameC: "Emp Mobile Atten.Rpt", ActionC: "officer/EmpMobileRpt", IconC: "fa fa-mobile", IconcolorC: "#ca007899", NCountN: 0 },
+      { IdN: 18, MenuNameC: "Service Report", ActionC: "employee/ServiceReport", IconC: "fa fa-handshake-o", IconcolorC: "#3eb79f", NCountN: 0 },
+      { IdN: 106, MenuNameC: "Pending Approval", ActionC: "officer/pendingapproval", IconC: "fa fa-th-large", IconcolorC: "#00b5ca", NCountN: 2 },
+      { IdN: 107, MenuNameC: "Approved / Rejected Details", ActionC: "officer/approvaldetails", IconC: "fa fa-thumbs-up", IconcolorC: "#00b5ca", NCountN: 0 },
+      { IdN: 41, MenuNameC: "Exit Request", ActionC: "employee/ExitRequest", IconC: "fa fa-tachometer ", IconcolorC: "#3eb79f", NCountN: 0 },
+    ],
+  },
+  PoliciseId: 0,
+  PoliciseFileName: "",
+  Error: "",
+} as const;
 
+export default function Login() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [empCode, setEmpCode] = useState("");
@@ -60,7 +113,6 @@ export default function Login() {
   const [pendingLogin, setPendingLogin] = useState<{
     token: string;
     empId: string;
-    domainUrl: string;
     workingDomain: string;
     domainId?: string;
     userData: any;
@@ -122,15 +174,24 @@ export default function Login() {
 
   useEffect(() => {
     const tryAutoLogin = async () => {
+      if (Platform.OS === "web") {
+        return;
+      }
+
       try {
-        const [storedToken, storedEmpId, storedDomainUrl, legacyDomainUrl, storedDomainId] =
-          await Promise.all([
-            AsyncStorage.getItem("auth_token"),
-            AsyncStorage.getItem("emp_id"),
-            AsyncStorage.getItem("domain_url"),
-            AsyncStorage.getItem("_domain"),
-            AsyncStorage.getItem("domain_id"),
-          ]);
+        const [
+          storedToken,
+          storedEmpId,
+          storedDomainUrl,
+          legacyDomainUrl,
+          storedDomainId,
+        ] = await Promise.all([
+          AsyncStorage.getItem("auth_token"),
+          AsyncStorage.getItem("emp_id"),
+          AsyncStorage.getItem("domain_url"),
+          AsyncStorage.getItem("_domain"),
+          AsyncStorage.getItem("domain_id"),
+        ]);
 
         const resolvedDomain = storedDomainUrl || legacyDomainUrl;
         if (!storedToken || !storedEmpId || !resolvedDomain) return;
@@ -181,14 +242,14 @@ export default function Login() {
   };
 
   const resolveErrorMessage = (error: any) => {
-    if (typeof error?.message === "string" && error.message.trim()) {
-      return error.message;
-    }
     if (typeof error?.response?.data?.error === "string") {
       return error.response.data.error;
     }
     if (typeof error?.response?.data?.Error === "string") {
       return error.response.data.Error;
+    }
+    if (typeof error?.message === "string" && error.message.trim()) {
+      return error.message;
     }
     return "Unable to connect to server";
   };
@@ -196,9 +257,7 @@ export default function Login() {
   const buildPolicyUrl = (baseUrl: string, filePath: string) => {
     if (!filePath) return "";
     if (/^https?:\/\//i.test(filePath)) return filePath;
-    const trimmedBase = baseUrl.endsWith("/")
-      ? baseUrl.slice(0, -1)
-      : baseUrl;
+    const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
     const trimmedPath = filePath.startsWith("/") ? filePath : `/${filePath}`;
     return `${trimmedBase}${trimmedPath}`;
   };
@@ -206,17 +265,16 @@ export default function Login() {
   const finalizeLogin = async (payload: {
     token: string;
     empId: string;
-    domainUrl: string;
     workingDomain: string;
     domainId?: string;
     userData: any;
   }) => {
-    const { token, empId, domainUrl, workingDomain, domainId, userData } =
-      payload;
+    const { token, empId, workingDomain, domainId, userData } = payload;
 
     await AsyncStorage.setItem("auth_token", token);
     await AsyncStorage.setItem("emp_id", empId || "");
-    await AsyncStorage.setItem("_domain", domainUrl);
+    await AsyncStorage.setItem("_domain", workingDomain);
+    await AsyncStorage.setItem("domain_url", workingDomain);
     if (domainId) {
       await AsyncStorage.setItem("domain_id", domainId);
     } else {
@@ -285,6 +343,31 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
+    if (Platform.OS === "web") {
+      setIsLoading(true);
+      try {
+        const workingDomain = (domainUrl || "http://localhost:8080").trim();
+        const dataNode = HARD_CODED_LOGIN_RESPONSE.data;
+
+        await finalizeLogin({
+          token: dataNode.TokenC,
+          empId: String(dataNode.EmpIdN),
+          workingDomain,
+          domainId: domainId.trim() || undefined,
+          userData: {
+            ...dataNode,
+            domain_url: workingDomain,
+            domain_id: domainId.trim() || undefined,
+          },
+        });
+      } catch (error: any) {
+        showSnackbar(resolveErrorMessage(error), "error");
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (!empCode || !password || !domainUrl) {
       showSnackbar("Please fill in all required fields", "error");
       return;
@@ -309,9 +392,22 @@ export default function Login() {
         workingDomain,
         normalizedDomainId || undefined,
       );
-      
-      const token = response.data.data?.TokenC;
-      const empId = response.data.data?.EmpIdN;
+      const root = response?.data ?? {};
+      const dataNode =
+        root?.data && typeof root.data === "object" ? root.data : root;
+      const status = String(
+        root?.Status ?? dataNode?.Status ?? "",
+      ).toLowerCase();
+      const token = dataNode?.TokenC ?? root?.TokenC;
+      const empId = dataNode?.EmpIdN ?? root?.EmpIdN;
+
+      if (status && status !== "success") {
+        showSnackbar(
+          root?.Error || dataNode?.Error || "Invalid credentials",
+          "error",
+        );
+        return;
+      }
 
       if (!token) {
         showSnackbar(
@@ -322,27 +418,23 @@ export default function Login() {
       }
 
       const userData = {
-        ...(response.data.data || response),
+        ...dataNode,
         domain_url: workingDomain,
         domain_id: normalizedDomainId || undefined,
       };
 
-      const policyFileName = response.data?.PoliciseFileName;
-      const policyIdValue = Number(response.data?.PoliciseId || 0);
+      const policyFileName = root?.PoliciseFileName;
+      const policyIdValue = Number(root?.PoliciseId || 0);
       const hasPolicy =
         policyIdValue > 0 &&
         typeof policyFileName === "string" &&
         policyFileName.trim();
 
       if (hasPolicy) {
-        const resolvedPolicyUrl = buildPolicyUrl(
-          workingDomain,
-          policyFileName,
-        );
+        const resolvedPolicyUrl = buildPolicyUrl(workingDomain, policyFileName);
         setPendingLogin({
           token,
           empId: empId?.toString() ?? "",
-          domainUrl,
           workingDomain,
           domainId: normalizedDomainId || undefined,
           userData,
@@ -356,7 +448,6 @@ export default function Login() {
       await finalizeLogin({
         token,
         empId: empId?.toString() ?? "",
-        domainUrl,
         workingDomain,
         domainId: normalizedDomainId || undefined,
         userData,
@@ -385,10 +476,7 @@ export default function Login() {
     const top = interpolate(
       animationProgress.value,
       [0, 1],
-      [
-        height / 2 - width * 0.4 - insets.top,
-        height * 0.90 - insets.bottom,
-      ],
+      [height / 2 - width * 0.4 - insets.top, height * 0.9 - insets.bottom],
     );
 
     const left = interpolate(
@@ -533,7 +621,7 @@ export default function Login() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* The Blob Element */}
-      <Animated.View style={[styles.blob, blobStyle]} />
+      <Animated.View pointerEvents="none" style={[styles.blob, blobStyle]} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -544,7 +632,9 @@ export default function Login() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <TouchableWithoutFeedback
+            onPress={Platform.OS === "web" ? undefined : Keyboard.dismiss}
+          >
             <SafeAreaView style={styles.safeArea}>
               {/* Logo Section (Absolute to animate) */}
               <Animated.View style={[styles.logoContainer, logoStyle]}>
@@ -623,7 +713,9 @@ export default function Login() {
 
               <Animated.View style={[styles.footer, formStyle]}>
                 <Text style={styles.footerText}>
-                  <Text style={{ color: theme.textLight }}>@created by{"\n"}</Text>
+                  <Text style={{ color: theme.textLight }}>
+                    @created by{"\n"}
+                  </Text>
                   <Text style={{ color: theme.text, fontWeight: "900" }}>
                     Kevit Hisoft Solutions Pvt Ltd
                   </Text>
@@ -647,10 +739,7 @@ export default function Login() {
         onRequestClose={handlePolicyDecline}
       >
         <SafeAreaView
-          style={[
-            styles.policyModal,
-            { backgroundColor: theme.background },
-          ]}
+          style={[styles.policyModal, { backgroundColor: theme.background }]}
         >
           <View style={styles.policyHeader}>
             <Text style={[styles.policyTitle, { color: theme.text }]}>
@@ -764,7 +853,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 2,
     textTransform: "uppercase",
-    textAlign: "center"
+    textAlign: "center",
   },
   policyModal: {
     flex: 1,

@@ -136,6 +136,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
               icon="close"
               onPress={onClose}
               disabled={loading}
+              containerStyle={styles.footerButton}
               textColor={theme.text}
               iconColor={theme.text}
               style={[
@@ -153,6 +154,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
               isLoading={loading}
               disabled={loading}
               onPress={handleSubmit}
+              containerStyle={styles.footerButton}
               style={styles.submitButton}
             />
           </View>

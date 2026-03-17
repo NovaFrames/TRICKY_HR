@@ -46,6 +46,17 @@ export default function PayslipScreen() {
   ) => {
     try {
       if (!url) throw new Error("Download URL is empty");
+
+      if (Platform.OS === "web") {
+        const win = globalThis as any;
+        if (shouldShare && win?.navigator?.share) {
+          await win.navigator.share({ url, title: "Payslip" });
+        } else {
+          win?.open?.(url, "_blank", "noopener,noreferrer");
+        }
+        return;
+      }
+
       const fileName = `PaySlip_${new Date().getTime()}.pdf`;
       const fileUri = FileSystem.documentDirectory + fileName;
       // 1. If explicit "Download" on Android -> Use Storage Access Framework

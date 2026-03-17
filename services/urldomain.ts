@@ -1,5 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const canUseStorage = () =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
 const normalize = (value?: string | null): string | undefined => {
   const trimmed = (value ?? "").trim();
   if (!trimmed) return undefined;
@@ -7,6 +10,7 @@ const normalize = (value?: string | null): string | undefined => {
 };
 
 export async function getDomainUrl(): Promise<string | undefined> {
+  if (!canUseStorage()) return undefined;
   const direct = normalize(await AsyncStorage.getItem("domain_url"));
   if (direct) return direct;
 
@@ -23,6 +27,7 @@ export async function getDomainUrl(): Promise<string | undefined> {
 }
 
 export const setDomainUrlSafely = async (domainUrl: string) => {
+  if (!canUseStorage()) return false;
   const normalized = normalize(domainUrl);
   if (!normalized) return false;
 
@@ -31,11 +36,13 @@ export const setDomainUrlSafely = async (domainUrl: string) => {
 };
 
 export async function getDomainId(): Promise<string | undefined> {
+  if (!canUseStorage()) return undefined;
   const domainId = await AsyncStorage.getItem("domain_id");
   return domainId ?? undefined;
 }
 
 export async function getAuthTokenSafely(): Promise<string | undefined> {
+  if (!canUseStorage()) return undefined;
   const token = (await AsyncStorage.getItem("auth_token"))?.trim();
   return token || undefined;
 }

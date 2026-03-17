@@ -7,6 +7,7 @@ import {
 } from "@expo/vector-icons";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MenuGrid } from "../../components/dashboard/MenuGrid";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -21,6 +22,7 @@ const STATIC_MENU_ITEMS = [
 export default function HomeScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useUser();
+  const insets = useSafeAreaInsets();
 
   const loginData: Partial<UserData> = user ?? {};
   const empName =
@@ -62,7 +64,10 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(120, insets.bottom + 96) },
+        ]}
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}
       >

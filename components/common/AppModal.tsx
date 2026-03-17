@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Animated,
     Dimensions,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -32,6 +33,7 @@ const AppModal: React.FC<AppModalProps> = ({
     footer
 }) => {
     const { theme } = useTheme();
+    const isWeb = Platform.OS === "web";
     const [scaleValue] = useState(new Animated.Value(0));
     const [opacityValue] = useState(new Animated.Value(0));
 
@@ -75,7 +77,7 @@ const AppModal: React.FC<AppModalProps> = ({
             animationType="none"
             onRequestClose={onClose}
         >
-            <View style={styles.modalOverlay}>
+            <View style={[styles.modalOverlay, { padding: isWeb ? 16 : 24 }]}>
                 <TouchableWithoutFeedback onPress={onClose}>
                     <Animated.View style={[styles.overlayBg, { opacity: opacityValue }]} />
                 </TouchableWithoutFeedback>
@@ -85,6 +87,11 @@ const AppModal: React.FC<AppModalProps> = ({
                         styles.modalContent,
                         {
                             backgroundColor: theme.cardBackground,
+                            borderColor: theme.inputBorder,
+                            borderWidth: 1,
+                            width: isWeb ? "96%" : "100%",
+                            maxWidth: isWeb ? 1480 : 560,
+                            maxHeight: isWeb ? height * 0.86 : height * 0.9,
                             transform: [{ scale: scaleValue }],
                             opacity: opacityValue
                         }
@@ -107,7 +114,12 @@ const AppModal: React.FC<AppModalProps> = ({
                     </View>
 
                     {/* Body */}
-                    <View style={styles.modalBody}>
+                    <View
+                        style={[
+                            styles.modalBody,
+                            { maxHeight: isWeb ? height * 0.68 : height * 0.72 },
+                        ]}
+                    >
                         {children}
                     </View>
 
@@ -128,7 +140,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 24,
     },
     overlayBg: {
         ...StyleSheet.absoluteFillObject,

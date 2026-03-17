@@ -3,10 +3,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import React, { useEffect, useMemo } from "react";
 import {
+    LayoutChangeEvent,
+    Platform,
     StyleSheet,
     TouchableOpacity,
     View,
-    useWindowDimensions,
 } from "react-native";
 import Animated, {
     useAnimatedProps,
@@ -37,8 +38,16 @@ const iconMap: Record<TabKey, React.ComponentProps<typeof Ionicons>["name"]> = {
 
 export function AnimatedTabBar({ state, navigation }: BottomTabBarProps) {
   const { theme, isDark } = useTheme();
-  const { width } = useWindowDimensions();
-  const tabWidth = useMemo(() => width / TAB_COUNT, [width]);
+  const [barWidth, setBarWidth] = React.useState(0);
+  const effectiveWidth = barWidth > 0 ? barWidth : 1;
+  const tabWidth = useMemo(() => effectiveWidth / TAB_COUNT, [effectiveWidth]);
+
+  const onLayout = (event: LayoutChangeEvent) => {
+    const nextWidth = event.nativeEvent.layout.width;
+    if (nextWidth > 0 && nextWidth !== barWidth) {
+      setBarWidth(nextWidth);
+    }
+  };
 
   const curveX = useSharedValue(state.index * tabWidth + tabWidth / 2);
 
@@ -63,7 +72,7 @@ export function AnimatedTabBar({ state, navigation }: BottomTabBarProps) {
         C${x + CURVE_WIDTH / 4} ${CURVE_HEIGHT},
          ${x + CURVE_WIDTH / 4} 0,
          ${x + CURVE_WIDTH / 2} 0
-        H${width}
+        H${effectiveWidth}
         V${TAB_BAR_HEIGHT}
         H0
         Z
@@ -85,10 +94,11 @@ export function AnimatedTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.background, width }]}
+      onLayout={onLayout}
+      style={[styles.container, { backgroundColor: theme.background }]}
     >
       {/* SVG CURVE */}
-      <Svg width={width} height={TAB_BAR_HEIGHT} style={styles.svg}>
+      <Svg width={effectiveWidth} height={TAB_BAR_HEIGHT} style={styles.svg}>
         <AnimatedPath animatedProps={animatedPathProps} fill={theme.primary} />
       </Svg>
 
@@ -139,6 +149,10 @@ const styles = StyleSheet.create({
   container: {
     position: "absolute",
     bottom: 0,
+    left: 0,
+    right: 0,
+    width: "100%",
+    ...(Platform.OS === "web" ? { overflow: "hidden" as const } : {}),
   },
   svg: {
     position: "absolute",
