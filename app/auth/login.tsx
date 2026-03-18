@@ -342,32 +342,124 @@ export default function Login() {
     }
   };
 
-  const handleLogin = async () => {
-    if (Platform.OS === "web") {
-      setIsLoading(true);
-      try {
-        const workingDomain = (domainUrl || "http://localhost:8080").trim();
-        const dataNode = HARD_CODED_LOGIN_RESPONSE.data;
+  // const handleLogin = async () => {
+  //   if (Platform.OS === "web") {
+  //     setIsLoading(true);
+  //     try {
+  //       const workingDomain = (domainUrl || "http://localhost:8080").trim();
+  //       const dataNode = HARD_CODED_LOGIN_RESPONSE.data;
 
-        await finalizeLogin({
-          token: dataNode.TokenC,
-          empId: String(dataNode.EmpIdN),
-          workingDomain,
-          domainId: domainId.trim() || undefined,
-          userData: {
-            ...dataNode,
-            domain_url: workingDomain,
-            domain_id: domainId.trim() || undefined,
-          },
-        });
-      } catch (error: any) {
-        showSnackbar(resolveErrorMessage(error), "error");
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
+  //       await finalizeLogin({
+  //         token: dataNode.TokenC,
+  //         empId: String(dataNode.EmpIdN),
+  //         workingDomain,
+  //         domainId: domainId.trim() || undefined,
+  //         userData: {
+  //           ...dataNode,
+  //           domain_url: workingDomain,
+  //           domain_id: domainId.trim() || undefined,
+  //         },
+  //       });
+  //     } catch (error: any) {
+  //       showSnackbar(resolveErrorMessage(error), "error");
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //     return;
+  //   }
 
+  //   if (!empCode || !password || !domainUrl) {
+  //     showSnackbar("Please fill in all required fields", "error");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   const normalizedDomainId = domainId.trim();
+
+  //   try {
+  //     // 🔥 Detect correct protocol
+  //     const workingDomain = await resolveWorkingDomain(
+  //       domainUrl,
+  //       empCode,
+  //       password,
+  //       normalizedDomainId || undefined,
+  //     );
+
+  //     // 🔥 Now login using confirmed URL
+  //     const response = await loginUser(
+  //       empCode,
+  //       password,
+  //       workingDomain,
+  //       normalizedDomainId || undefined,
+  //     );
+  //     const root = response?.data ?? {};
+  //     const dataNode =
+  //       root?.data && typeof root.data === "object" ? root.data : root;
+  //     const status = String(
+  //       root?.Status ?? dataNode?.Status ?? "",
+  //     ).toLowerCase();
+  //     const token = dataNode?.TokenC ?? root?.TokenC;
+  //     const empId = dataNode?.EmpIdN ?? root?.EmpIdN;
+
+  //     if (status && status !== "success") {
+  //       showSnackbar(
+  //         root?.Error || dataNode?.Error || "Invalid credentials",
+  //         "error",
+  //       );
+  //       return;
+  //     }
+
+  //     if (!token) {
+  //       showSnackbar(
+  //         "Invalid credentials. Please check your details.",
+  //         "error",
+  //       );
+  //       return;
+  //     }
+
+  //     const userData = {
+  //       ...dataNode,
+  //       domain_url: workingDomain,
+  //       domain_id: normalizedDomainId || undefined,
+  //     };
+
+  //     const policyFileName = root?.PoliciseFileName;
+  //     const policyIdValue = Number(root?.PoliciseId || 0);
+  //     const hasPolicy =
+  //       policyIdValue > 0 &&
+  //       typeof policyFileName === "string" &&
+  //       policyFileName.trim();
+
+  //     if (hasPolicy) {
+  //       const resolvedPolicyUrl = buildPolicyUrl(workingDomain, policyFileName);
+  //       setPendingLogin({
+  //         token,
+  //         empId: empId?.toString() ?? "",
+  //         workingDomain,
+  //         domainId: normalizedDomainId || undefined,
+  //         userData,
+  //       });
+  //       setPolicyId(policyIdValue);
+  //       setPolicyUrl(resolvedPolicyUrl);
+  //       setPolicyModalVisible(true);
+  //       return;
+  //     }
+
+  //     await finalizeLogin({
+  //       token,
+  //       empId: empId?.toString() ?? "",
+  //       workingDomain,
+  //       domainId: normalizedDomainId || undefined,
+  //       userData,
+  //     });
+  //   } catch (error: any) {
+  //     showSnackbar(resolveErrorMessage(error), "error");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+    const handleLogin = async () => {
     if (!empCode || !password || !domainUrl) {
       showSnackbar("Please fill in all required fields", "error");
       return;
@@ -392,22 +484,9 @@ export default function Login() {
         workingDomain,
         normalizedDomainId || undefined,
       );
-      const root = response?.data ?? {};
-      const dataNode =
-        root?.data && typeof root.data === "object" ? root.data : root;
-      const status = String(
-        root?.Status ?? dataNode?.Status ?? "",
-      ).toLowerCase();
-      const token = dataNode?.TokenC ?? root?.TokenC;
-      const empId = dataNode?.EmpIdN ?? root?.EmpIdN;
-
-      if (status && status !== "success") {
-        showSnackbar(
-          root?.Error || dataNode?.Error || "Invalid credentials",
-          "error",
-        );
-        return;
-      }
+      
+      const token = response.data.data?.TokenC;
+      const empId = response.data.data?.EmpIdN;
 
       if (!token) {
         showSnackbar(
@@ -418,20 +497,23 @@ export default function Login() {
       }
 
       const userData = {
-        ...dataNode,
+        ...(response.data.data || response),
         domain_url: workingDomain,
         domain_id: normalizedDomainId || undefined,
       };
 
-      const policyFileName = root?.PoliciseFileName;
-      const policyIdValue = Number(root?.PoliciseId || 0);
+      const policyFileName = response.data?.PoliciseFileName;
+      const policyIdValue = Number(response.data?.PoliciseId || 0);
       const hasPolicy =
         policyIdValue > 0 &&
         typeof policyFileName === "string" &&
         policyFileName.trim();
 
       if (hasPolicy) {
-        const resolvedPolicyUrl = buildPolicyUrl(workingDomain, policyFileName);
+        const resolvedPolicyUrl = buildPolicyUrl(
+          workingDomain,
+          policyFileName,
+        );
         setPendingLogin({
           token,
           empId: empId?.toString() ?? "",
