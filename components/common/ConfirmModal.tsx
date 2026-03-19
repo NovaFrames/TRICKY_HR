@@ -117,6 +117,7 @@ export const ConfirmModalProvider: React.FC<{ children: React.ReactNode }> = ({
         visible={visible}
         onClose={closeConfirmModal}
         title={title}
+        size="sm"
         footer={footer}
       >
         {message ? (

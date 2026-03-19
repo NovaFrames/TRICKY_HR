@@ -4,11 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import * as NavigationBar from "expo-navigation-bar";
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
@@ -34,6 +36,11 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
   selectedValue,
 }) => {
   const { theme, isDark } = useTheme();
+  const { width, height } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
+  const modalWidth = isWeb
+    ? Math.min(520, Math.max(340, width - 40))
+    : Math.min(520, width - 24);
   const [query, setQuery] = useState("");
   useEffect(() => {
     if (!visible) return;
@@ -72,7 +79,7 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
       navigationBarTranslucent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, isWeb && styles.webOverlay]}>
         <TouchableOpacity
           activeOpacity={1}
           onPress={onClose}
@@ -81,7 +88,11 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
         <View
           style={[
             styles.modalContainer,
-            { backgroundColor: theme.cardBackground },
+            {
+              width: modalWidth,
+              maxHeight: isWeb ? height * 0.84 : height * 0.72,
+              backgroundColor: theme.cardBackground
+            },
           ]}
         >
           {/* Header */}
@@ -195,15 +206,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
+  webOverlay: {
+    padding: 16,
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContainer: {
     width: "100%",
-    maxWidth: 400,
-    maxHeight: "70%",
-    borderRadius: 4,
+    maxWidth: 520,
+    borderRadius: 12,
     elevation: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },

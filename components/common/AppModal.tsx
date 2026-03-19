@@ -2,18 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     Animated,
-    Dimensions,
     Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
     TouchableWithoutFeedback,
+    useWindowDimensions,
     View
 } from 'react-native';
 import Modal from "@/components/common/SingleModal";
 import { useTheme } from '../../context/ThemeContext';
-
-const { width, height } = Dimensions.get('window');
 
 interface AppModalProps {
     visible: boolean;
@@ -22,6 +20,7 @@ interface AppModalProps {
     subtitle?: string;
     children: React.ReactNode;
     footer?: React.ReactNode;
+    size?: "sm" | "md" | "lg";
 }
 
 const AppModal: React.FC<AppModalProps> = ({
@@ -30,10 +29,19 @@ const AppModal: React.FC<AppModalProps> = ({
     title,
     subtitle,
     children,
-    footer
+    footer,
+    size = "md",
 }) => {
     const { theme } = useTheme();
     const isWeb = Platform.OS === "web";
+    const { width, height } = useWindowDimensions();
+    const isSmall = width < 420;
+    const getModalMaxWidth = () => {
+        if (size === "sm") return isWeb ? 520 : 460;
+        if (size === "lg") return isWeb ? 820 : 620;
+        return isWeb ? 640 : 560;
+    };
+    const modalMaxWidth = getModalMaxWidth();
     const [scaleValue] = useState(new Animated.Value(0));
     const [opacityValue] = useState(new Animated.Value(0));
 
@@ -77,7 +85,7 @@ const AppModal: React.FC<AppModalProps> = ({
             animationType="none"
             onRequestClose={onClose}
         >
-            <View style={[styles.modalOverlay, { padding: isWeb ? 16 : 24 }]}>
+            <View style={[styles.modalOverlay, { padding: isWeb ? 18 : 16 }]}>
                 <TouchableWithoutFeedback onPress={onClose}>
                     <Animated.View style={[styles.overlayBg, { opacity: opacityValue }]} />
                 </TouchableWithoutFeedback>
@@ -89,8 +97,8 @@ const AppModal: React.FC<AppModalProps> = ({
                             backgroundColor: theme.cardBackground,
                             borderColor: theme.inputBorder,
                             borderWidth: 1,
-                            width: isWeb ? "96%" : "100%",
-                            maxWidth: isWeb ? 1480 : 560,
+                            width: isWeb ? "92%" : "100%",
+                            maxWidth: modalMaxWidth,
                             maxHeight: isWeb ? height * 0.86 : height * 0.9,
                             transform: [{ scale: scaleValue }],
                             opacity: opacityValue
@@ -100,7 +108,14 @@ const AppModal: React.FC<AppModalProps> = ({
                     {/* Header */}
                     <View style={[styles.modalHeader, { borderBottomColor: theme.inputBorder }]}>
                         <View style={styles.titleContainer}>
-                            <Text style={[styles.modalTitle, { color: theme.primary }]}>{title}</Text>
+                            <Text
+                                style={[
+                                    styles.modalTitle,
+                                    { color: theme.primary, fontSize: isSmall ? 18 : 20 },
+                                ]}
+                            >
+                                {title}
+                            </Text>
                             {subtitle ? (
                                 <Text style={[styles.modalSubtitle, { color: theme.placeholder }]}>{subtitle}</Text>
                             ) : null}
@@ -147,7 +162,7 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         width: '100%',
-        borderRadius: 4,
+        borderRadius: 10,
         elevation: 10,
         maxHeight: '90%',
         overflow: 'hidden',
@@ -160,7 +175,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 18,
+        paddingHorizontal: 18,
+        paddingVertical: 14,
         borderBottomWidth: 1,
     },
     titleContainer: {

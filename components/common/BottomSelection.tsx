@@ -1,6 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View
+} from "react-native";
 import { useTheme } from '../../context/ThemeContext';
 import Modal from "@/components/common/SingleModal";
 interface Option {
@@ -24,6 +32,11 @@ const BottomSelection: React.FC<BottomSelectionProps> = ({
     selectedValue,
 }) => {
     const { theme } = useTheme();
+    const { width, height } = useWindowDimensions();
+    const isWeb = Platform.OS === "web";
+    const modalWidth = isWeb
+        ? Math.min(540, Math.max(340, width - 40))
+        : width;
     if (!visible) return null;
     return (
         <Modal
@@ -32,13 +45,23 @@ const BottomSelection: React.FC<BottomSelectionProps> = ({
             animationType="slide"
             onRequestClose={onClose}
         >
-            <View style={styles.overlay}>
+            <View style={[styles.overlay, isWeb && styles.webOverlay]}>
                 <TouchableOpacity
                     activeOpacity={1}
                     onPress={onClose}
                     style={styles.backdrop}
                 />
-                <View style={[styles.sheet, { backgroundColor: theme.cardBackground }]}>
+                <View
+                    style={[
+                        styles.sheet,
+                        isWeb ? styles.webSheet : styles.mobileSheet,
+                        {
+                            width: modalWidth,
+                            maxHeight: isWeb ? height * 0.84 : height * 0.7,
+                            backgroundColor: theme.cardBackground
+                        }
+                    ]}
+                >
                     <View style={[styles.header, { borderBottomColor: theme.inputBorder }]}>
                         <Text style={[styles.title, { color: theme.text }]}>
                             {title || 'Select Option'}
@@ -87,20 +110,29 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'flex-end',
     },
+    webOverlay: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+    },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     sheet: {
-        borderTopLeftRadius: 4,
-        borderTopRightRadius: 4,
-        maxHeight: '70%',
         width: '100%',
         elevation: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.1,
         shadowRadius: 10,
+    },
+    mobileSheet: {
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+    },
+    webSheet: {
+        borderRadius: 12,
     },
     header: {
         flexDirection: 'row',
