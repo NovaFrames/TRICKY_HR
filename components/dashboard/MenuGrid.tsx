@@ -3,14 +3,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo } from 'react';
 import {
-    Dimensions,
     StyleSheet,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from 'react-native';
-
-const { width } = Dimensions.get('window');
 
 interface MenuGridProps {
     menuItems: any[];
@@ -23,13 +21,17 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
     theme,
     getMenuIcon,
 }) => {
+    const { width } = useWindowDimensions();
     /* ---------------- GRID CALCULATION ---------------- */
-    const numColumns = 3;
-    const gap = 3;
-    const parentPadding = 32;
-    const availableWidth = width - parentPadding;
-    const itemWidth =
-        (availableWidth - gap * (numColumns - 1)) / numColumns;
+    const numColumns = width >= 1200 ? 5 : width >= 992 ? 4 : width >= 640 ? 3 : 2;
+    const horizontalGap = width >= 992 ? 12 : 10;
+    const verticalGap = width >= 992 ? 12 : 10;
+    const getItemBasis = () => {
+        if (numColumns === 5) return "20%";
+        if (numColumns === 4) return "25%";
+        if (numColumns === 3) return "33.3333%";
+        return "50%";
+    };
 
     /* ---------------- SPLIT SECTIONS ---------------- */
     const { employeeMenus, officerMenus } = useMemo(() => {
@@ -51,7 +53,12 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
 
     /* ---------------- RENDER GRID ---------------- */
     const renderGrid = (data: any[]) => (
-        <View style={[styles.gridContainer, { gap }]}>
+        <View
+            style={[
+                styles.gridContainer,
+                { marginHorizontal: -(horizontalGap / 2) },
+            ]}
+        >
             {data.map((item, index) => {
                 const iconConfig =
                     MENU_ICON_MAP[item.ActionC] ?? {
@@ -63,43 +70,54 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                 const iconColor = item.IconcolorC || theme.primary;
 
                 return (
-                    <TouchableOpacity
+                    <View
                         key={`${item.IdN}-${index}`}
                         style={[
-                            styles.gridItem,
+                            styles.gridCell,
                             {
-                                width: itemWidth,
-                                backgroundColor: theme.cardBackground,
+                                flexBasis: getItemBasis(),
+                                paddingHorizontal: horizontalGap / 2,
+                                marginBottom: verticalGap,
                             },
                         ]}
-                        activeOpacity={0.75}
-                        onPress={() =>
-                            router.push({
-                                pathname: item.ActionC,
-                                params: { from: 'home' },
-                            })
-                        }
                     >
-                        <View
+                        <TouchableOpacity
                             style={[
-                                styles.gridIconBox,
-                                { backgroundColor: iconColor + '18' },
+                                styles.gridItem,
+                                {
+                                    backgroundColor: theme.cardBackground,
+                                    borderColor: theme.inputBorder,
+                                },
                             ]}
+                            activeOpacity={0.75}
+                            onPress={() =>
+                                router.push({
+                                    pathname: item.ActionC,
+                                    params: { from: 'home' },
+                                })
+                            }
                         >
-                            <IconLib
-                                name={iconConfig.name as any}
-                                size={24}
-                                color={iconColor}
-                            />
-                        </View>
+                            <View
+                                style={[
+                                    styles.gridIconBox,
+                                    { backgroundColor: iconColor + '18' },
+                                ]}
+                            >
+                                <IconLib
+                                    name={iconConfig.name as any}
+                                    size={width >= 992 ? 24 : 22}
+                                    color={iconColor}
+                                />
+                            </View>
 
-                        <Text
-                            style={[styles.gridLabel, { color: theme.text }]}
-                            numberOfLines={2}
-                        >
-                            {item.MenuNameC}
-                        </Text>
-                    </TouchableOpacity>
+                            <Text
+                                style={[styles.gridLabel, { color: theme.text }]}
+                                numberOfLines={2}
+                            >
+                                {item.MenuNameC}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 );
             })}
         </View>
@@ -155,29 +173,36 @@ const styles = StyleSheet.create({
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        alignItems: 'stretch',
+    },
+
+    gridCell: {
+        minWidth: 0,
     },
 
     gridItem: {
+        width: '100%',
         alignItems: 'center',
-        borderRadius: 4,
-        paddingVertical: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingVertical: 14,
         paddingHorizontal: 8,
         elevation: 3,
     },
 
     gridIconBox: {
-        width: 52,
-        height: 52,
-        borderRadius: 4,
+        width: 48,
+        height: 48,
+        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
     },
 
     gridLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         textAlign: 'center',
-        lineHeight: 14,
+        lineHeight: 16,
     },
 });

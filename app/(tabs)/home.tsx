@@ -6,7 +6,7 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MenuGrid } from "../../components/dashboard/MenuGrid";
 import { useTheme } from "../../context/ThemeContext";
@@ -23,15 +23,11 @@ export default function HomeScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useUser();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isSmall = width < 480;
+  const isTablet = width >= 768;
 
   const loginData: Partial<UserData> = user ?? {};
-  const empName =
-    loginData.EmpNameC || loginData.EmpName || loginData.Name || "User";
-
-  // Critical: Token extraction
-  const token = loginData.Token || loginData.TokenC;
-
-  // console.log('Extracted Token for Projects:', token);
 
   // Dynamic Menu Items
   const menuItems =
@@ -66,7 +62,10 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(120, insets.bottom + 96) },
+          {
+            paddingHorizontal: isSmall ? 12 : isTablet ? 20 : 16,
+            paddingBottom: Math.max(120, insets.bottom + 96),
+          },
         ]}
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}

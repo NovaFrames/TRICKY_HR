@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -12,8 +12,11 @@ type ScheduleProps = {
 };
 
 export const Schedule = () => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const { isUserReady, user } = useUser();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const cardWidth = isTablet ? 220 : 180;
   const [shedule, setShedule] = useState<ScheduleProps[]>([]);
 
   useEffect(() => {
@@ -26,7 +29,20 @@ export const Schedule = () => {
         const sheduleData = data.Schedule;
         // Ensure array
         if (!cancelled) {
-          setShedule(Array.isArray(sheduleData) ? sheduleData : []);
+          const unique = Array.isArray(sheduleData)
+            ? sheduleData.filter(
+              (item, index, self) =>
+                index ===
+                self.findIndex(
+                  (t) =>
+                    t.DateD === item.DateD &&
+                    t.ShiftNameC === item.ShiftNameC &&
+                    t.ReasonNameC === item.ReasonNameC
+                )
+            )
+            : [];
+
+          setShedule(unique);
         }
       } catch (err) {
         console.error("Team fetch error:", err);
@@ -75,89 +91,89 @@ export const Schedule = () => {
   };
 
   return (
-   <View style={styles.wrapper}>
-  <View
-    style={[
-      styles.card,
-      { backgroundColor: theme.cardBackground },
-    ]}
-  >
-    {sortedSchedule.length === 0 ? (
-      <Text style={[styles.emptyText, { color: theme.textLight }]}>
-        No upcoming schedule
-      </Text>
-    ) : (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.list}
+    <View style={styles.wrapper}>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.cardBackground },
+        ]}
       >
-        {sortedSchedule.map((item, index) => {
-          const parsedDate = parseScheduleDate(item.DateD);
-          const weekday = parsedDate?.toLocaleDateString("en-US", {
-            weekday: "short",
-          });
-          const day = parsedDate?.getDate();
-          const month = parsedDate?.toLocaleDateString("en-US", {
-            month: "short",
-          });
+        {sortedSchedule.length === 0 ? (
+          <Text style={[styles.emptyText, { color: theme.textLight }]}>
+            No upcoming schedule
+          </Text>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.list}
+          >
+            {sortedSchedule.map((item, index) => {
+              const parsedDate = parseScheduleDate(item.DateD);
+              const weekday = parsedDate?.toLocaleDateString("en-US", {
+                weekday: "short",
+              });
+              const day = parsedDate?.getDate();
+              const month = parsedDate?.toLocaleDateString("en-US", {
+                month: "short",
+              });
 
-          const reason = item.ReasonNameC?.trim();
-          const reasonStyle = getReasonStyle(reason || "");
+              const reason = item.ReasonNameC?.trim();
+              const reasonStyle = getReasonStyle(reason || "");
 
-          return (
-            <View
-              key={`${item.DateD}-${index}`}
-              style={[
-                styles.scheduleCard,
-                { backgroundColor: theme.inputBg },
-              ]}
-            >
-              {/* Date */}
-              <View style={styles.dateColumn}>
-                <Text style={[styles.weekday, { color: theme.textLight }]}>
-                  {weekday}
-                </Text>
-                <Text style={[styles.day, { color: theme.text }]}>
-                  {day}
-                </Text>
-                <Text style={[styles.month, { color: theme.textLight }]}>
-                  {month}
-                </Text>
-              </View>
-
-              {/* Info */}
-              <View style={styles.infoColumn}>
-                <Text
-                  numberOfLines={1}
-                  style={[styles.shift, { color: theme.text }]}
-                >
-                  {item.ShiftNameC || "General Shift"}
-                </Text>
-
+              return (
                 <View
+                  key={`${item.DateD}-${index}`}
                   style={[
-                    styles.reasonPill,
-                    { backgroundColor: reasonStyle.bg },
+                    styles.scheduleCard,
+                    { backgroundColor: theme.inputBg, minWidth: cardWidth },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.reasonText,
-                      { color: reasonStyle.text },
-                    ]}
-                  >
-                    {reason || "Scheduled"}
-                  </Text>
+                  {/* Date */}
+                  <View style={styles.dateColumn}>
+                    <Text style={[styles.weekday, { color: theme.textLight }]}>
+                      {weekday}
+                    </Text>
+                    <Text style={[styles.day, { color: theme.text }]}>
+                      {day}
+                    </Text>
+                    <Text style={[styles.month, { color: theme.textLight }]}>
+                      {month}
+                    </Text>
+                  </View>
+
+                  {/* Info */}
+                  <View style={styles.infoColumn}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.shift, { color: theme.text }]}
+                    >
+                      {item.ShiftNameC || "General Shift"}
+                    </Text>
+
+                    <View
+                      style={[
+                        styles.reasonPill,
+                        { backgroundColor: reasonStyle.bg },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.reasonText,
+                          { color: reasonStyle.text },
+                        ]}
+                      >
+                        {reason || "Scheduled"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          );
-        })}
-      </ScrollView>
-    )}
-  </View>
-</View>
+              );
+            })}
+          </ScrollView>
+        )}
+      </View>
+    </View>
 
   );
 };
@@ -199,7 +215,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 12,
     marginRight: 4,
-    minWidth: 180,
   },
 
   dateColumn: {

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TextInput, TextInputProps, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 interface CustomInputProps extends TextInputProps {
@@ -19,6 +19,8 @@ export const CustomInput: React.FC<CustomInputProps> = ({
     ...props
 }) => {
     const { theme } = useTheme();
+    const { width } = useWindowDimensions();
+    const isSmall = width < 380;
     const [isFocused, setIsFocused] = React.useState(false);
 
     const handleFocus = (e: any) => {
@@ -48,7 +50,14 @@ export const CustomInput: React.FC<CustomInputProps> = ({
                 </View>
             )}
             <TextInput
-                style={[styles.input, { color: theme.text }, style]}
+                style={[
+                    styles.input,
+                    {
+                        color: theme.text,
+                        fontSize: isSmall ? 14 : 15,
+                    },
+                    style
+                ]}
                 placeholderTextColor={theme.placeholder}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -73,14 +82,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderRadius: 4,
-        height: 52,
+        minHeight: 48,
         paddingHorizontal: 16,
     },
     input: {
         flex: 1,
-        fontSize: 15,
         fontWeight: '500',
-        height: '100%',
+        paddingVertical: 12,
     },
     iconContainer: {
         marginRight: 12,

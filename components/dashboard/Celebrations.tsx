@@ -18,6 +18,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from "react-native";
 
@@ -26,6 +27,8 @@ import {
 export default function Celebrations() {
     const { theme } = useTheme();
     const { user } = useUser();
+    const { width } = useWindowDimensions();
+    const isSmall = width < 390;
 
     useProtectedBack({ home: "/dashboard" });
 
@@ -237,6 +240,7 @@ export default function Celebrations() {
                                         backgroundColor: theme.cardBackground,
                                         borderColor: theme.inputBorder ?? theme.primary + "33", // fallback
                                         borderWidth: 1,
+                                        paddingHorizontal: isSmall ? 12 : 16,
                                     },
                                 ]}
                                 onPress={() => router.push({

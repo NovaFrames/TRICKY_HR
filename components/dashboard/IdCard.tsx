@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 import { useUser } from "@/context/UserContext";
 import { ThemeType } from "../../theme/theme";
@@ -23,6 +23,10 @@ export const IdCard: React.FC<IdCardProps> = ({
   initial,
   theme,
 }) => {
+  const { width } = useWindowDimensions();
+  const isSmall = width < 390;
+  const isTablet = width >= 768;
+  const avatarSize = isTablet ? 88 : isSmall ? 64 : 80;
 
   const { user } = useUser();
 
@@ -43,17 +47,22 @@ export const IdCard: React.FC<IdCardProps> = ({
           <View
             style={[
               styles.avatarLarge,
+              {
+                width: avatarSize,
+                height: avatarSize,
+                marginRight: isSmall ? 12 : 16,
+              },
             ]}
           >
             <ProfileImage
               customerIdC={user?.CustomerIdC}
               compIdN={user?.CompIdN}
               empIdN={user?.EmpIdN}
-              size={80}
+              size={avatarSize}
             />
           </View>
           <View style={styles.idCardInfo}>
-            <Text style={[styles.idName, { color: theme.text }]}>
+            <Text style={[styles.idName, { color: theme.text, fontSize: isSmall ? 17 : 20 }]}>
               {empName}
             </Text>
             <Text style={[styles.idRole, { color: theme.placeholder }]}>

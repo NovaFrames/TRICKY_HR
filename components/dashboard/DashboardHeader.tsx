@@ -1,7 +1,7 @@
 import { useUser } from '@/context/UserContext';
 import { getCompanyLogoUrl } from '@/hooks/useGetImage';
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 interface DashboardHeaderProps {
     isDark: boolean;
@@ -9,9 +9,13 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-    isDark,
+    isDark: _isDark,
     theme,
 }) => {
+    const { width } = useWindowDimensions();
+    const isSmall = width < 420;
+    const logoWidth = isSmall ? 110 : 125;
+    const logoHeight = isSmall ? 42 : 48;
 
     const { user } = useUser();
     const [logoError, setLogoError] = React.useState(false);
@@ -55,8 +59,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                             onError={() => setLogoError(true)}
                             style={{
                                 marginTop: 0,
-                                width: 125,
-                                height: 48,
+                                width: logoWidth,
+                                height: logoHeight,
                                 resizeMode: 'contain',
                             }}
                         />
@@ -65,7 +69,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </View>
                 <Text style={{
                     color: theme.text,
-                    fontSize: 14,
+                    fontSize: isSmall ? 12 : 14,
                     fontWeight: '800',
                     textAlign: 'center',
                     letterSpacing: 2,

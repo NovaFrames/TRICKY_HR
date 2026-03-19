@@ -15,7 +15,7 @@ import {
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
-import { Platform, View } from "react-native";
+import { Platform, useWindowDimensions, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -60,6 +60,7 @@ function RootNavigator() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, isDark } = useTheme();
+  const { width } = useWindowDimensions();
 
   const { user, isLoading } = useUser();
   const isAuthenticated = !!user;
@@ -98,6 +99,11 @@ function RootNavigator() {
   }, [isAuthenticated, isLoading, pathname]);
 
   if (isLoading) return null;
+
+  const isMobile = width < 768;
+  const contentWidth = Platform.OS === "web" ? (isMobile ? "100%" : "92%") : "100%";
+  const contentMaxWidth =
+    Platform.OS === "web" ? (width >= 1440 ? 1400 : width >= 1024 ? 1200 : 980) : undefined;
 
   return (
     <GestureHandlerRootView
@@ -139,8 +145,8 @@ function RootNavigator() {
         <View
           style={{
             flex: 1,
-            width: Platform.OS === "web" ? "70%" : "100%",
-            maxWidth: Platform.OS === "web" ? 1400 : undefined,
+            width: contentWidth,
+            maxWidth: contentMaxWidth,
           }}
         >
           <Stack screenOptions={{ headerShown: false }}>

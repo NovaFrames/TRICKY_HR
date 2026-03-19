@@ -122,7 +122,6 @@ export const refreshLoginUser = async (
         baseURL: normalizeBaseUrl(domainUrl),
         headers: {
           "Content-Type": "application/json",
-          Token: token,
         },
       },
     );
@@ -149,7 +148,7 @@ export const compPoliciesUpdate = async (
         baseURL: normalized,
         headers: {
           "Content-Type": "application/json",
-          Token: token,
+          // Token: token,
         },
       },
     );
@@ -659,7 +658,7 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -696,7 +695,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -733,7 +732,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: IdN,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -772,7 +771,7 @@ class ApiService {
           THrsN: thrsN,
           unit: unit,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -809,7 +808,7 @@ class ApiService {
           TokenC: this.token,
           lap: leaveData,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
       // console.log(this.token);
       // console.log(this.empId);
@@ -853,7 +852,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -890,7 +889,7 @@ class ApiService {
           TokenC: this.token,
           data: surrenderData,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       return {
@@ -919,7 +918,7 @@ class ApiService {
           TokenC: this.token,
           Id: surrenderId,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -957,7 +956,7 @@ class ApiService {
       const response = await api.post(
         API_ENDPOINTS.SAVE_APPROVAL,
         requestPayload,
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // console.log("Cancel Leave Response:", JSON.stringify(response.data));
@@ -1104,14 +1103,10 @@ class ApiService {
         await this.loadCredentials();
       }
 
-      const response = await api.post(
-        API_ENDPOINTS.GET_EMP_REQUEST_STATUS,
-        {
-          TokenC: this.token,
-          EmpIdN: this.empId,
-        },
-        { headers: this.getHeaders() },
-      );
+      const response = await api.post(API_ENDPOINTS.GET_EMP_REQUEST_STATUS, {
+        TokenC: this.token,
+        EmpIdN: this.empId,
+      });
 
       if (response.data.Status === "success") {
         return {
@@ -1207,7 +1202,7 @@ class ApiService {
       const response = await api.post(
         API_ENDPOINTS.GET_TIME_MANAGE_LIST,
         payload,
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1351,7 +1346,7 @@ class ApiService {
           FolderName: category === "All" ? "" : category,
           DocName: "All", // Required parameter
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // console.log("Get Documents Request - Category:", category);
@@ -1419,7 +1414,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1482,7 +1477,7 @@ class ApiService {
             PayPeriod: payPeriod,
             PayTypeC: paySlip.PayTypeC,
           },
-          { headers: this.getHeaders() },
+          // { headers: this.getHeaders() },
         );
       } catch (e) {
         console.log("Trigger PDF gen error (ignoring if URL works):", e);
@@ -1584,7 +1579,7 @@ class ApiService {
           Id: this.empId,
           FolderName: folderName,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1616,7 +1611,7 @@ class ApiService {
           Id: this.empId,
           FolderName: folderName,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Error === "ok") {
@@ -1681,7 +1676,7 @@ class ApiService {
           Year: year,
           Month: month,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1712,7 +1707,7 @@ class ApiService {
           TokenC: this.token,
           StartDate: dateStr,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1743,7 +1738,7 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -1781,7 +1776,7 @@ class ApiService {
       const response = await api.post(
         API_ENDPOINTS.GET_MOBILE_ATTENDANCE_REPORT,
         payload,
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // console.log("Attendance Report Response Status:", response.data.Status);
@@ -1818,7 +1813,7 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // console.log("Client List Response Status:", response.data.Status);
@@ -1948,7 +1943,7 @@ class ApiService {
           EmpIdN: this.empId,
           Type: 0,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // console.log(
@@ -1993,7 +1988,7 @@ class ApiService {
           TokenC: this.token,
           IdN: IdN,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2033,7 +2028,7 @@ class ApiService {
           TokenC: this.token,
           EmpIdN: this.empId,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // console.log(
@@ -2078,7 +2073,7 @@ class ApiService {
           TokenC: this.token,
           where: whereClause,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // C# returns { Error, data, FileList }
@@ -2103,7 +2098,7 @@ class ApiService {
         {
           TokenC: this.token,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // C# returns { Error, reason }
@@ -2133,7 +2128,7 @@ class ApiService {
       const response = await api.post(
         API_ENDPOINTS.UPDATE_EXIT_REQUEST,
         payload,
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // C# returns { Error }
@@ -2161,7 +2156,7 @@ class ApiService {
       const response = await api.post(
         API_ENDPOINTS.REVOKE_EXIT_REQUEST,
         payload,
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       // C# returns { Status, Error }
@@ -2656,7 +2651,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2686,7 +2681,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2716,7 +2711,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2746,7 +2741,7 @@ class ApiService {
           TokenC: this.token,
           Id: id,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2779,7 +2774,7 @@ class ApiService {
           blnEmpMaster: false,
           ViewReject: false,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2809,7 +2804,7 @@ class ApiService {
           TokenC: this.token,
           id: id,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2841,7 +2836,7 @@ class ApiService {
           FolderName: "/EmpPortal/ClaimDoc",
           DocName: "ClaimDoc",
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {
@@ -2875,7 +2870,7 @@ class ApiService {
           FolderName: folderName,
           DocName: docName,
         },
-        { headers: this.getHeaders() },
+        // { headers: this.getHeaders() },
       );
 
       if (response.data.Status === "success") {

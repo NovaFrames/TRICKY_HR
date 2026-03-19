@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   TouchableOpacityProps,
+  useWindowDimensions,
   View,
   ViewStyle,
 } from "react-native";
@@ -40,6 +41,8 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   ...props
 }) => {
   const { theme } = useTheme();
+  const { width } = useWindowDimensions();
+  const isSmall = width < 380;
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -69,7 +72,12 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
         ) : (
           <View style={styles.content}>
             {title && (
-              <Text style={[styles.buttonText, { color: textColor || "#fff" }]}>
+              <Text
+                style={[
+                  styles.buttonText,
+                  { color: textColor || "#fff", fontSize: isSmall ? 14 : 16 },
+                ]}
+              >
                 {title}
               </Text>
             )}

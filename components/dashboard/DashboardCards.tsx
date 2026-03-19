@@ -4,47 +4,44 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import {
-  Dimensions,
+  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
-/* -------------------- FALLBACK MENU -------------------- */
 const STATIC_MENU_ITEMS = [
   {
     MenuNameC: "Mobile Attendance",
     IconcolorC: "#10B981",
     ActionC: "employee/Attendance",
-    IconC: "fa fa-th-large",
   },
   {
     MenuNameC: "Leave Manage",
     IconcolorC: "#F59E0B",
     ActionC: "employee/leavemanage",
-    IconC: "fa fa-plane",
   },
 ];
 
-/* -------------------- DASHBOARD ALLOWED ACTIONS -------------------- */
 const DASHBOARD_MENU_ACTIONS = [
   "employee/Attendance",
   "employee/leavemanage",
 ];
 
-/* -------------------- LAYOUT -------------------- */
-const { width } = Dimensions.get("window");
-const GAP = 4;
-const CARD_WIDTH = (width - 32 - GAP) / 2;
+type PlaceholderItem = { __placeholder: true; key: string };
 
 export default function DashboardCards() {
   const { theme } = useTheme();
   const { user } = useUser();
+  const { width } = useWindowDimensions();
+
+  const columns = width >= 1200 ? 4 : width >= 900 ? 3 : width >= 600 ? 2 : 1;
+  const gap = width >= 600 ? 10 : 8;
 
   const loginData: Partial<UserData> = user ?? {};
-
   const menuItems =
     Array.isArray(loginData.EmpMenu) && loginData.EmpMenu.length > 0
       ? loginData.EmpMenu
@@ -54,103 +51,118 @@ export default function DashboardCards() {
     DASHBOARD_MENU_ACTIONS.includes(item.ActionC),
   );
 
+  const gridData: (any | PlaceholderItem)[] = [...filteredMenuItems];
+  if (columns > 1) {
+    const remainder = gridData.length % columns;
+    if (remainder !== 0) {
+      const fillers = columns - remainder;
+      for (let i = 0; i < fillers; i += 1) {
+        gridData.push({ __placeholder: true, key: `placeholder-${i}` });
+      }
+    }
+  }
+
   return (
-    <View style={styles.container}>
-      {filteredMenuItems.map((item: any, index: number) => (
-        <TouchableOpacity
-          key={index}
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.cardBackground,
-              borderColor: theme.inputBorder,
-              borderWidth: 1,
-            },
-          ]}
-          activeOpacity={0.7}
-          onPress={() =>
-            router.push({
-              pathname: item.ActionC,
-              params: { from: "dashboard" },
-            })
-          }
-        >
-          {(() => {
-            const iconConfig =
-              MENU_ICON_MAP[item.ActionC] ?? {
-                lib: Ionicons,
-                name: "apps",
-              };
-            const IconLib = iconConfig.lib;
-            const iconColor = item.IconcolorC || theme.primary;
+    <FlatList
+      key={`dashboard-grid-${columns}`}
+      data={gridData}
+      numColumns={columns}
+      scrollEnabled={false}
+      contentContainerStyle={styles.container}
+      columnWrapperStyle={
+        columns > 1 ? { gap, marginBottom: gap } : undefined
+      }
+      keyExtractor={(item: any, index) =>
+        item.__placeholder ? `${item.key}-${index}` : `${item.ActionC}-${index}`
+      }
+      renderItem={({ item, index }) => {
+        if (item.__placeholder) {
+          return <View style={[styles.card, styles.placeholderCard]} />;
+        }
 
-            return (
-              <View
-                style={[
-                  styles.iconBox,
-                  { backgroundColor: iconColor + "15" },
-                ]}
-              >
-                <IconLib
-                  name={iconConfig.name as any}
-                  size={20}
-                  color={iconColor}
-                />
-              </View>
-            );
-          })()}
+        const iconConfig = MENU_ICON_MAP[item.ActionC] ?? {
+          lib: Ionicons,
+          name: "apps",
+        };
+        const IconLib = iconConfig.lib;
+        const iconColor = item.IconcolorC || theme.primary;
 
-          <Text style={[styles.title, { color: theme.text }]}>
-            {item.MenuNameC}
-          </Text>
+        return (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.card,
+              {
+                marginBottom: columns === 1 ? gap : 0,
+                backgroundColor: theme.cardBackground,
+                borderColor: theme.inputBorder,
+              },
+            ]}
+            activeOpacity={0.85}
+            onPress={() =>
+              router.push({
+                pathname: item.ActionC,
+                params: { from: "dashboard" },
+              })
+            }
+          >
+            <View style={[styles.iconBox, { backgroundColor: `${iconColor}15` }]}>
+              <IconLib
+                name={iconConfig.name as any}
+                size={width >= 992 ? 24 : 22}
+                color={iconColor}
+              />
+            </View>
 
-          <Text style={[styles.subtitle, { color: theme.placeholder }]}>
-            Access your {item.MenuNameC.toLowerCase()}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+            <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
+              {item.MenuNameC}
+            </Text>
+
+            <Text style={[styles.subtitle, { color: theme.placeholder }]} numberOfLines={2}>
+              Access your {item.MenuNameC.toLowerCase()}
+            </Text>
+          </TouchableOpacity>
+        );
+      }}
+    />
   );
 }
 
-/* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 14,
   },
-
   card: {
-    width: CARD_WIDTH,
-    borderRadius: 4,
-    padding: 12, // Reduced from 16
-    marginBottom: 4, // Reduced from 16
-    shadowColor: "#000", // Neutral shadow
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
+    padding: 12,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
+    alignItems: "center",
   },
-
+  placeholderCard: {
+    opacity: 0,
+  },
   iconBox: {
-    width: 40, // Reduced from 48
-    height: 40, // Reduced from 48
-    borderRadius: 4,
+    width: 42,
+    height: 42,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8, // Reduced from 16
   },
-
   title: {
-    fontSize: 14, // Reduced from 16
+    fontSize: 14,
     fontWeight: "700",
-    marginBottom: 2, // Reduced from 4
+    textAlign: "center",
   },
-
   subtitle: {
-    fontSize: 11, // Reduced from 12
+    fontSize: 11,
     fontWeight: "500",
+    textAlign: "center",
   },
 });
