@@ -15,7 +15,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
+import CrossPlatformWebView from "@/components/common/CrossPlatformWebView";
 import { CustomButton } from "../../components/CustomButton";
 import { CustomInput } from "../../components/CustomInput";
 import Modal from "../../components/common/SingleModal";
@@ -448,7 +448,7 @@ export default function Login() {
           </View>
           <View style={styles.policyBody}>
             {policyUrl ? (
-              <WebView
+              <CrossPlatformWebView
                 source={{ uri: policyUrl }}
                 style={{ flex: 1 }}
                 startInLoadingState={true}

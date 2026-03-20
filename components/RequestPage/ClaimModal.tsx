@@ -1,5 +1,6 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import Modal from "@/components/common/SingleModal";
+import { getDocumentViewerUri } from "@/components/common/documentViewer";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
@@ -7,7 +8,6 @@ import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
+import CrossPlatformWebView from "@/components/common/CrossPlatformWebView";
 import AppModal from "../../components/common/AppModal";
 import DynamicTable, { ColumnDef } from "../../components/DynamicTable";
 import { useTheme } from "../../context/ThemeContext";
@@ -99,7 +99,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     { label: "Dec", value: "12" },
   ];
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
-  const imageExtRegex = /\.(jpg|jpeg|png|gif|bmp|webp|heic|heif)$/i;
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
   if (status.toLowerCase().includes("approv"))
@@ -292,13 +291,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     }
   };
   const getViewerUri = (url: string) => {
-    if (imageExtRegex.test(url)) {
-      return url;
-    }
-    if (Platform.OS === "android") {
-      return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
-    }
-    return url;
+    return getDocumentViewerUri(url);
   };
   const handleOpenInBrowser = async (url: string) => {
     try {
@@ -865,7 +858,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
           <View style={{ flex: 1 }}>
             {viewingDoc?.url && (
               <>
-                <WebView
+                <CrossPlatformWebView
                   source={{ uri: getViewerUri(viewingDoc.url) }}
                   style={{ flex: 1 }}
                   originWhitelist={["*"]}

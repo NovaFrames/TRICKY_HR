@@ -6,7 +6,8 @@ import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ConfirmModal from "@/components/common/ConfirmModal";
-import { WebView } from "react-native-webview";
+import { getDocumentViewerUri } from "@/components/common/documentViewer";
+import CrossPlatformWebView from "@/components/common/CrossPlatformWebView";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { PaySlip } from "../../../services/ApiService";
 import Modal from "@/components/common/SingleModal";
@@ -255,13 +256,8 @@ export default function PayslipScreen() {
           </View>
           <View style={{ flex: 1 }}>
             {viewingUrl && (
-              <WebView
-                source={{
-                  uri:
-                    Platform.OS === "android"
-                      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingUrl)}`
-                      : viewingUrl,
-                }}
+              <CrossPlatformWebView
+                source={{ uri: getDocumentViewerUri(viewingUrl) }}
                 style={{ flex: 1 }}
                 startInLoadingState={true}
                 renderLoading={() => (

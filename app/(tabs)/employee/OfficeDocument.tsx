@@ -1,4 +1,5 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { getDocumentViewerUri } from "@/components/common/documentViewer";
 import Modal from "@/components/common/SingleModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
@@ -9,7 +10,7 @@ import * as Sharing from "expo-sharing";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
+import CrossPlatformWebView from "@/components/common/CrossPlatformWebView";
 import { useTheme } from "../../../context/ThemeContext";
 import { useUser } from "../../../context/UserContext";
 import ApiService from "../../../services/ApiService";
@@ -230,8 +231,6 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
     </View>
   );
 
-  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
-  const isHtml = (url: string) => /\.(html|htm)$/i.test(url);
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -371,15 +370,8 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
           </View>
           <View style={{ flex: 1 }}>
             {viewingUrl && (
-              <WebView
-                source={{
-                  uri:
-                    Platform.OS === "android" &&
-                    !isImage(viewingUrl) &&
-                    !isHtml(viewingUrl)
-                      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingUrl)}`
-                      : viewingUrl,
-                }}
+              <CrossPlatformWebView
+                source={{ uri: getDocumentViewerUri(viewingUrl) }}
                 style={{ flex: 1 }}
                 startInLoadingState={true}
                 renderLoading={() => (

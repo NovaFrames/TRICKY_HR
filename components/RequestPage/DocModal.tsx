@@ -1,10 +1,11 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { getDocumentViewerUri } from "@/components/common/documentViewer";
 import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
+import CrossPlatformWebView from "@/components/common/CrossPlatformWebView";
 import AppModal from "../../components/common/AppModal";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
@@ -369,14 +370,8 @@ const DocModal: React.FC<DocModalProps> = ({
           </View>
           <View style={{ flex: 1 }}>
             {viewingDoc?.url && (
-              <WebView
-                source={{
-                  uri:
-                    Platform.OS === "android" &&
-                    !/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(viewingDoc.url)
-                      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingDoc.url)}`
-                      : viewingDoc.url,
-                }}
+              <CrossPlatformWebView
+                source={{ uri: getDocumentViewerUri(viewingDoc.url) }}
                 style={{ flex: 1 }}
                 startInLoadingState={true}
                 renderLoading={() => (

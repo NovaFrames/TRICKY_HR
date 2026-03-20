@@ -1,4 +1,5 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { getDocumentViewerUri } from "@/components/common/documentViewer";
 import Modal from "@/components/common/SingleModal";
 import DatePicker from "@/components/DatePicker";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
@@ -16,7 +17,7 @@ import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
+import CrossPlatformWebView from "@/components/common/CrossPlatformWebView";
 import TimeRequestModal from "../../../components/TimeManage/TimeRequestModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
@@ -440,13 +441,8 @@ export default function TimeManage() {
           </View>
           <View style={{ flex: 1 }}>
             {viewingUrl && (
-              <WebView
-                source={{
-                  uri:
-                    Platform.OS === "android"
-                      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingUrl)}`
-                      : viewingUrl,
-                }}
+              <CrossPlatformWebView
+                source={{ uri: getDocumentViewerUri(viewingUrl) }}
                 style={{ flex: 1 }}
                 startInLoadingState={true}
                 renderLoading={() => (
