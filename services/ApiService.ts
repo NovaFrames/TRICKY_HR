@@ -1270,7 +1270,7 @@ class ApiService {
       // console.log("Download Report Payload:", payload);
 
       const response = await api.post(API_ENDPOINTS.DOWNLOAD_REPORT, payload, {
-        headers: this.getHeaders(),
+        // headers: this.getHeaders(),
       });
 
       // console.log("Download Report Response Status:", response.data.Status);

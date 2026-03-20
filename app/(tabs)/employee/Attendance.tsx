@@ -23,6 +23,8 @@ import {
   Dimensions,
   Image,
   Linking,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -98,6 +100,11 @@ const Attendance = () => {
   useEffect(() => {
     return () => {
       isMounted.current = false;
+      const stream = webCameraStreamRef.current;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        webCameraStreamRef.current = null;
+      }
     };
 
   }, []);
@@ -109,6 +116,10 @@ const Attendance = () => {
 
   const [locationPermission, setLocationPermission] =
     useState<Location.PermissionStatus | null>(null);
+  const [showWebCameraModal, setShowWebCameraModal] = useState(false);
+  const [webCameraReady, setWebCameraReady] = useState(false);
+  const webVideoRef = React.useRef<HTMLVideoElement | null>(null);
+  const webCameraStreamRef = React.useRef<MediaStream | null>(null);
 
   const LOCATION_FROM_USER = user?.AttDistanceN;
   const LOCATION_MAX_RETRIES = 3;
@@ -593,8 +604,104 @@ const Attendance = () => {
     }
   };
 
+  const stopWebCamera = () => {
+    const stream = webCameraStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      webCameraStreamRef.current = null;
+    }
+    const video = webVideoRef.current;
+    if (video) {
+      video.srcObject = null;
+    }
+  };
+
+  const closeWebCameraModal = () => {
+    setWebCameraReady(false);
+    setShowWebCameraModal(false);
+    stopWebCamera();
+  };
+
+  const bindStreamToVideo = React.useCallback((stream: MediaStream, attempt = 0) => {
+    const video = webVideoRef.current;
+    if (!video) {
+      if (attempt < 20) {
+        setTimeout(() => bindStreamToVideo(stream, attempt + 1), 50);
+      }
+      return;
+    }
+
+    video.srcObject = stream;
+    video.play().catch(() => { });
+  }, []);
+
+  const openWebCamera = async () => {
+    if (Platform.OS !== "web") return;
+
+    try {
+      setWebCameraReady(false);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      webCameraStreamRef.current = stream;
+      setShowWebCameraModal(true);
+      bindStreamToVideo(stream);
+    } catch (error) {
+      console.error("Web camera open failed:", error);
+      ConfirmModal.alert("Camera Error", "Unable to open camera in browser.");
+    }
+  };
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    if (!showWebCameraModal) return;
+    const stream = webCameraStreamRef.current;
+    if (!stream) return;
+    bindStreamToVideo(stream);
+  }, [bindStreamToVideo, showWebCameraModal]);
+
+  const captureWebPhoto = () => {
+    if (Platform.OS !== "web") return;
+    if (!webCameraReady) {
+      ConfirmModal.alert("Camera Error", "Camera is not ready yet.");
+      return;
+    }
+
+    const video = webVideoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      ConfirmModal.alert("Camera Error", "Camera is not ready yet.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      ConfirmModal.alert("Camera Error", "Unable to capture photo.");
+      return;
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageUri = canvas.toDataURL("image/jpeg", 0.8);
+    setCapturedImage(imageUri);
+    closeWebCameraModal();
+  };
+
   // ✅ New camera capture using ImagePicker
   const takePicture = async () => {
+    if (Platform.OS === "web") {
+      await openWebCamera();
+      return;
+    }
+
     if (!isCameraGranted) {
       await handleRequestCameraPermission();
       return;
@@ -1117,7 +1224,11 @@ const Attendance = () => {
             >
               <Ionicons name="camera" size={18} color="#fff" />
               <Text style={styles.cameraToggleBtnText}>
-                {isCameraGranted ? (hasPhoto ? "Retake Photo" : "Capture Photo") : "Allow Camera"}
+                {Platform.OS === "web"
+                  ? (hasPhoto ? "Retake Photo" : "Open Camera")
+                  : isCameraGranted
+                    ? (hasPhoto ? "Retake Photo" : "Capture Photo")
+                    : "Allow Camera"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1212,6 +1323,80 @@ const Attendance = () => {
             </Text>
           </View>
         </View>
+      )}
+
+      {Platform.OS === "web" && (
+        <Modal
+          visible={showWebCameraModal}
+          transparent
+          animationType="fade"
+          onRequestClose={closeWebCameraModal}
+        >
+          <View style={styles.webCameraBackdrop}>
+            <View
+              style={[
+                styles.webCameraCard,
+                {
+                  backgroundColor: theme.cardBackground,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
+            >
+              <Text style={[styles.webCameraTitle, { color: theme.text }]}>
+                Capture Photo
+              </Text>
+              <View style={styles.webCameraPreviewWrap}>
+                <video
+                  ref={webVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  onLoadedMetadata={() => setWebCameraReady(true)}
+                  onCanPlay={() => setWebCameraReady(true)}
+                  onPlaying={() => setWebCameraReady(true)}
+                  style={styles.webCameraVideo as any}
+                />
+                {!webCameraReady && (
+                  <View style={styles.webCameraLoadingOverlay}>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text style={styles.webCameraLoadingText}>
+                      Starting camera...
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.webCameraActions}>
+                <TouchableOpacity
+                  style={[
+                    styles.webCameraBtn,
+                    { borderColor: theme.inputBorder, backgroundColor: theme.inputBg },
+                  ]}
+                  onPress={closeWebCameraModal}
+                >
+                  <Text style={[styles.webCameraBtnText, { color: theme.text }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.webCameraBtn,
+                    {
+                      backgroundColor: theme.primary,
+                      borderColor: theme.primary,
+                      opacity: webCameraReady ? 1 : 0.6,
+                    },
+                  ]}
+                  onPress={captureWebPhoto}
+                  disabled={!webCameraReady}
+                >
+                  <Text style={[styles.webCameraBtnText, { color: "#fff" }]}>
+                    Capture
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       )}
 
       <Snackbar
@@ -1439,6 +1624,65 @@ const styles = StyleSheet.create({
   retakeBtn: {
     paddingHorizontal: 8,
     paddingVertical: 4,
+  },
+  webCameraBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 16,
+  },
+  webCameraCard: {
+    width: "100%",
+    maxWidth: 640,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+  },
+  webCameraTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  webCameraPreviewWrap: {
+    position: "relative",
+  },
+  webCameraVideo: {
+    width: "100%",
+    maxHeight: 420,
+    minHeight: 260,
+    borderRadius: 8,
+    backgroundColor: "#000",
+    objectFit: "cover",
+  },
+  webCameraLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  webCameraLoadingText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  webCameraActions: {
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
+  webCameraBtn: {
+    borderRadius: 6,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  webCameraBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
   locationFooter: {
     flexDirection: "row",
