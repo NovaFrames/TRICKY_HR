@@ -1,9 +1,11 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -94,6 +96,50 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       date.setHours(hour, minute, 0, 0);
     }
     return date;
+  };
+
+  const openDateField = () => {
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: "date",
+        value: formData.date,
+        onSelect: (date) => setFormData((prev) => ({ ...prev, date })),
+      });
+      return;
+    }
+    setShowDatePicker(true);
+  };
+
+  const openInTimeField = () => {
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: "time",
+        value: getTimePickerDate(formData.inTime),
+        onSelect: (date) => {
+          const hours = String(date.getHours()).padStart(2, "0");
+          const minutes = String(date.getMinutes()).padStart(2, "0");
+          setFormData((prev) => ({ ...prev, inTime: `${hours}:${minutes}` }));
+        },
+      });
+      return;
+    }
+    setShowInTimePicker(true);
+  };
+
+  const openOutTimeField = () => {
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: "time",
+        value: getTimePickerDate(formData.outTime),
+        onSelect: (date) => {
+          const hours = String(date.getHours()).padStart(2, "0");
+          const minutes = String(date.getMinutes()).padStart(2, "0");
+          setFormData((prev) => ({ ...prev, outTime: `${hours}:${minutes}` }));
+        },
+      });
+      return;
+    }
+    setShowOutTimePicker(true);
   };
 
   const handleSubmit = async () => {
@@ -218,7 +264,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
             <Text style={labelStyle}>Date</Text>
             <TouchableOpacity
               style={inputStyle}
-              onPress={() => setShowDatePicker(true)}
+              onPress={openDateField}
             >
               <Text style={{ color: theme.text }}>
                 {formData.date.toLocaleDateString()}
@@ -267,7 +313,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
                   <Text style={labelStyle}>In Time</Text>
                   <TouchableOpacity
                     style={inputStyle}
-                    onPress={() => setShowInTimePicker(true)}
+                    onPress={openInTimeField}
                   >
                     <Text style={{ color: theme.text }}>{formData.inTime}</Text>
                     <Ionicons name="time-outline" size={20} color={theme.icon} />
@@ -280,7 +326,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
                   <Text style={labelStyle}>Out Time</Text>
                   <TouchableOpacity
                     style={inputStyle}
-                    onPress={() => setShowOutTimePicker(true)}
+                    onPress={openOutTimeField}
                   >
                     <Text style={{ color: theme.text }}>{formData.outTime}</Text>
                     <Ionicons name="time-outline" size={20} color={theme.icon} />
@@ -316,7 +362,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       </AppModal>
 
       {/* Time Pickers */}
-      {showDatePicker && (
+      {showDatePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={formData.date}
           mode="date"
@@ -329,7 +375,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
           }}
         />
       )}
-      {showInTimePicker && (
+      {showInTimePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={getTimePickerDate(formData.inTime)}
           mode="time"
@@ -348,7 +394,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
           }}
         />
       )}
-      {showOutTimePicker && (
+      {showOutTimePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={getTimePickerDate(formData.outTime)}
           mode="time"

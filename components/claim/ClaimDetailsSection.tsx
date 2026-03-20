@@ -2,8 +2,9 @@ import { ThemeType } from '@/theme/theme';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CenterModalSelection from '../common/CenterModalSelection';
+import { openWebDateTimePicker } from '../common/webDateTimePicker';
 
 interface ClaimDetailsSectionProps {
     theme: ThemeType;
@@ -53,6 +54,32 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
     const [showClaimModal, setShowClaimModal] = useState(false);
     const [showCurrencyModal, setShowCurrencyModal] = useState(false);
 
+    const handleFromPress = () => {
+        if (Platform.OS === "web") {
+            openWebDateTimePicker({
+                mode: "date",
+                value: fromDate,
+                max: new Date(),
+                onSelect: (selected) => onFromDateChange({ type: "set" } as any, selected),
+            });
+            return;
+        }
+        onFromDatePress();
+    };
+
+    const handleToPress = () => {
+        if (Platform.OS === "web") {
+            openWebDateTimePicker({
+                mode: "date",
+                value: toDate,
+                max: new Date(),
+                onSelect: (selected) => onToDateChange({ type: "set" } as any, selected),
+            });
+            return;
+        }
+        onToDatePress();
+    };
+
     return (
         <>
             <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
@@ -95,7 +122,7 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                         <Text style={[styles.label, { color: theme.text }]}>From Date *</Text>
                         <TouchableOpacity
                             style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                            onPress={onFromDatePress}
+                            onPress={handleFromPress}
                         >
                             <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(fromDate)}</Text>
                             <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
@@ -106,7 +133,7 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                         <Text style={[styles.label, { color: theme.text }]}>To Date *</Text>
                         <TouchableOpacity
                             style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                            onPress={onToDatePress}
+                            onPress={handleToPress}
                         >
                             <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(toDate)}</Text>
                             <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
@@ -114,7 +141,7 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                     </View>
                 </View>
 
-                {showFromDatePicker && (
+                {showFromDatePicker && Platform.OS !== "web" && (
                     <DateTimePicker
                         value={fromDate}
                         mode="date"
@@ -124,7 +151,7 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                     />
                 )}
 
-                {showToDatePicker && (
+                {showToDatePicker && Platform.OS !== "web" && (
                     <DateTimePicker
                         value={toDate}
                         mode="date"

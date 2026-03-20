@@ -1,4 +1,5 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { formatDateForApi } from "@/constants/timeFormat";
@@ -17,6 +18,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
 } from "react-native";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService from "../../../services/ApiService";
@@ -312,7 +314,23 @@ export default function EmpMobileRpt() {
           >
             <TouchableOpacity
               style={styles.dateInput}
-              onPress={() => setShowFromPicker(true)}
+              onPress={() => {
+                if (Platform.OS === "web") {
+                  openWebDateTimePicker({
+                    mode: "date",
+                    value: fromDate,
+                    onSelect: (date) => {
+                      if (date > toDate) {
+                        ConfirmModal.alert("Invalid Date", "From date cannot be after To date");
+                        return;
+                      }
+                      setFromDate(date);
+                    },
+                  });
+                  return;
+                }
+                setShowFromPicker(true);
+              }}
             >
               <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
                 From Date
@@ -338,7 +356,23 @@ export default function EmpMobileRpt() {
 
             <TouchableOpacity
               style={styles.dateInput}
-              onPress={() => setShowToPicker(true)}
+              onPress={() => {
+                if (Platform.OS === "web") {
+                  openWebDateTimePicker({
+                    mode: "date",
+                    value: toDate,
+                    onSelect: (date) => {
+                      if (date < fromDate) {
+                        ConfirmModal.alert("Invalid Date", "To date cannot be before From date");
+                        return;
+                      }
+                      setToDate(date);
+                    },
+                  });
+                  return;
+                }
+                setShowToPicker(true);
+              }}
             >
               <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
                 To Date
@@ -392,7 +426,7 @@ export default function EmpMobileRpt() {
       </ScrollView>
 
       {/* Date Pickers */}
-      {showFromPicker && (
+      {showFromPicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={fromDate}
           mode="date"
@@ -400,7 +434,7 @@ export default function EmpMobileRpt() {
           onChange={onChangeFrom}
         />
       )}
-      {showToPicker && (
+      {showToPicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={toDate}
           mode="date"

@@ -1,10 +1,12 @@
 // SurrenderLeaveModal.tsx
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -125,6 +127,19 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
     { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
   ];
 
+  const openPayoutDatePicker = () => {
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: "date",
+        value: payoutDate,
+        min: new Date(),
+        onSelect: setPayoutDate,
+      });
+      return;
+    }
+    setShowDatePicker(true);
+  };
+
   return (
     <>
       <AppModal visible={visible} onClose={onClose} title="Leave Surrender"
@@ -212,7 +227,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
             <Text style={labelStyle}>Payout Date</Text>
             <TouchableOpacity
               style={dateInputStyle}
-              onPress={() => setShowDatePicker(true)}
+              onPress={openPayoutDatePicker}
             >
               <Text style={{ color: theme.text }}>
                 {payoutDate.toLocaleDateString()}
@@ -237,7 +252,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
 
       </AppModal>
 
-      {showDatePicker && (
+      {showDatePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={payoutDate}
           mode="date"

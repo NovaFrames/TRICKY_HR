@@ -1,5 +1,6 @@
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -502,7 +503,19 @@ export default function ExitRequestScreen() {
                     : theme.inputBg,
                 },
               ]}
-              onPress={() => !isReadOnly && setShowDatePicker(true)}
+              onPress={() => {
+                if (isReadOnly) return;
+                if (Platform.OS === "web") {
+                  openWebDateTimePicker({
+                    mode: "date",
+                    value: selectedDate,
+                    min: new Date(),
+                    onSelect: setSelectedDate,
+                  });
+                  return;
+                }
+                setShowDatePicker(true);
+              }}
               disabled={isReadOnly}
               activeOpacity={0.7}
             >
@@ -527,7 +540,7 @@ export default function ExitRequestScreen() {
                 />
               )}
             </TouchableOpacity>
-            {showDatePicker && (
+            {showDatePicker && Platform.OS !== "web" && (
               <DateTimePicker
                 value={selectedDate}
                 mode="date"

@@ -1,9 +1,11 @@
 // ApplyLeaveModal.tsx
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -203,6 +205,66 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     { backgroundColor: theme.inputBg, borderColor: theme.inputBorder },
   ];
 
+  const openFromDateField = () => {
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: "date",
+        value: fromDate,
+        onSelect: setFromDate,
+      });
+      return;
+    }
+    setShowFromDatePicker(true);
+  };
+
+  const openToDateField = () => {
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: "date",
+        value: toDate,
+        onSelect: setToDate,
+      });
+      return;
+    }
+    setShowToDatePicker(true);
+  };
+
+  const openFromTimeField = () => {
+    if (Platform.OS === "web") {
+      const [h, m] = fromTime.split(".").map(Number);
+      const d = new Date();
+      d.setHours(h || 9, m || 0, 0, 0);
+      openWebDateTimePicker({
+        mode: "time",
+        value: d,
+        onSelect: (date) =>
+          handleFromTimeChange(
+            `${date.getHours()}.${date.getMinutes().toString().padStart(2, "0")}`,
+          ),
+      });
+      return;
+    }
+    setShowFromTimePicker(true);
+  };
+
+  const openToTimeField = () => {
+    if (Platform.OS === "web") {
+      const [h, m] = toTime.split(".").map(Number);
+      const d = new Date();
+      d.setHours(h || 17, m || 0, 0, 0);
+      openWebDateTimePicker({
+        mode: "time",
+        value: d,
+        onSelect: (date) =>
+          handleToTimeChange(
+            `${date.getHours()}.${date.getMinutes().toString().padStart(2, "0")}`,
+          ),
+      });
+      return;
+    }
+    setShowToTimePicker(true);
+  };
+
   return (
     <>
       <AppModal
@@ -276,7 +338,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               <Text style={labelStyle}>From Date</Text>
               <TouchableOpacity
                 style={dateInputStyle}
-                onPress={() => setShowFromDatePicker(true)}
+                onPress={openFromDateField}
               >
                 <Text style={{ color: theme.text }}>
                   {fromDate.toLocaleDateString()}
@@ -289,7 +351,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               <Text style={labelStyle}>To Date</Text>
               <TouchableOpacity
                 style={dateInputStyle}
-                onPress={() => setShowToDatePicker(true)}
+                onPress={openToDateField}
               >
                 <Text style={{ color: theme.text }}>
                   {toDate.toLocaleDateString()}
@@ -363,7 +425,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                   </Text>
                   <TouchableOpacity
                     style={dateInputStyle}
-                    onPress={() => setShowFromTimePicker(true)}
+                    onPress={openFromTimeField}
                   >
                     <Text style={{ color: theme.text }}>{fromTime}</Text>
                     <Icon name="access-time" size={20} color={theme.icon} />
@@ -377,7 +439,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                   </Text>
                   <TouchableOpacity
                     style={dateInputStyle}
-                    onPress={() => setShowToTimePicker(true)}
+                    onPress={openToTimeField}
                   >
                     <Text style={{ color: theme.text }}>{toTime}</Text>
                     <Icon name="access-time" size={20} color={theme.icon} />
@@ -402,7 +464,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         </ScrollView>
       </AppModal>
 
-      {showFromDatePicker && (
+      {showFromDatePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={fromDate}
           mode="date"
@@ -414,7 +476,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         />
       )}
 
-      {showToDatePicker && (
+      {showToDatePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={toDate}
           mode="date"
@@ -426,7 +488,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         />
       )}
 
-      {showFromTimePicker && (
+      {showFromTimePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={(() => {
             const [h, m] = fromTime.split(".").map(Number);
@@ -448,7 +510,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         />
       )}
 
-      {showToTimePicker && (
+      {showToTimePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={(() => {
             const [h, m] = toTime.split(".").map(Number);

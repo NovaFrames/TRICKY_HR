@@ -1,5 +1,6 @@
 import AppModal from "@/components/common/AppModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -304,7 +305,17 @@ export default function CalendarScreen() {
                   styles.monthSelector,
                   { backgroundColor: theme.cardBackground },
                 ]}
-                onPress={() => setShowDatePicker(true)}
+                onPress={() => {
+                  if (Platform.OS === "web") {
+                    openWebDateTimePicker({
+                      mode: "date",
+                      value: selectedDate,
+                      onSelect: setSelectedDate,
+                    });
+                    return;
+                  }
+                  setShowDatePicker(true);
+                }}
                 activeOpacity={0.7}
               >
                 <View style={styles.monthSelectorContent}>
@@ -335,7 +346,7 @@ export default function CalendarScreen() {
               </TouchableOpacity>
             </View>
 
-            {showDatePicker && (
+            {showDatePicker && Platform.OS !== "web" && (
               <DateTimePicker
                 value={selectedDate}
                 mode="date"

@@ -1,6 +1,7 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import ProfileImage from "@/components/common/ProfileImage";
 import Modal from "@/components/common/SingleModal";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import { CustomButton } from "@/components/CustomButton";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { formatDateForApi, formatDisplayDate } from "@/constants/timeFormat";
@@ -658,6 +659,14 @@ export default function UserProfile() {
     currentValue?: string,
   ) => {
     const parsed = parseDateValue(currentValue);
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: "date",
+        value: parsed || new Date(),
+        onSelect: (selected) => applyPickedDate(target, selected),
+      });
+      return;
+    }
     setDatePickerState({
       visible: true,
       target,
@@ -2268,7 +2277,7 @@ export default function UserProfile() {
           )}
         </CollapsibleCard>
       </ScrollView>
-      {datePickerState.visible && datePickerState.target && (
+      {datePickerState.visible && datePickerState.target && Platform.OS !== "web" && (
         <DateTimePicker
           value={datePickerState.initialDate}
           mode="date"

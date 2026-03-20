@@ -1,4 +1,5 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import DynamicTable, { ColumnDef } from "@/components/DynamicTable";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { API_ENDPOINTS } from "@/constants/api";
@@ -155,7 +156,18 @@ export default function AttendanceList() {
         >
           <TouchableOpacity
             style={styles.dateInput}
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => {
+              if (Platform.OS === "web") {
+                openWebDateTimePicker({
+                  mode: "date",
+                  value: selectedDate,
+                  max: new Date(),
+                  onSelect: (date) => setSelectedDate(normalizeDate(date)),
+                });
+                return;
+              }
+              setShowDatePicker(true);
+            }}
           >
             <Text style={[styles.dateLabel, { color: theme.textLight }]}>
               Date
@@ -295,7 +307,7 @@ export default function AttendanceList() {
         </ScrollView>
       </View>
 
-      {showDatePicker && (
+      {showDatePicker && Platform.OS !== "web" && (
         <DateTimePicker
           value={selectedDate}
           mode="date"

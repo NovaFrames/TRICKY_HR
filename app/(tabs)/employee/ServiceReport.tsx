@@ -1,5 +1,6 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import { openWebDateTimePicker } from "@/components/common/webDateTimePicker";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -8,6 +9,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -174,6 +176,31 @@ export default function ServiceReport() {
       else if (type === "start") setStartTime(selectedDate);
       else if (type === "followup") setFollowUpDate(selectedDate);
     }
+  };
+
+  const openDateTimeField = (
+    type: "call" | "appointment" | "start" | "followup",
+    value: Date,
+  ) => {
+    if (Platform.OS === "web") {
+      openWebDateTimePicker({
+        mode: type === "followup" ? "date" : "datetime-local",
+        value,
+        onSelect: (selected) => {
+          if (type === "call") setCallTime(selected);
+          else if (type === "appointment") setAppointmentTime(selected);
+          else if (type === "start") setStartTime(selected);
+          else setFollowUpDate(selected);
+        },
+      });
+      return;
+    }
+
+    setShowDatePicker({
+      visible: true,
+      type,
+      mode: "date",
+    });
   };
 
   const resetForm = () => {
@@ -482,7 +509,7 @@ export default function ServiceReport() {
                 },
               ]}
               onPress={() =>
-                setShowDatePicker({ visible: true, type: "call", mode: "date" })
+                openDateTimeField("call", callTime)
               }
             >
               <Text style={[styles.inputText, { color: theme.text }]}>
@@ -509,11 +536,7 @@ export default function ServiceReport() {
                 },
               ]}
               onPress={() =>
-                setShowDatePicker({
-                  visible: true,
-                  type: "appointment",
-                  mode: "date",
-                })
+                openDateTimeField("appointment", appointmentTime)
               }
             >
               <Text style={[styles.inputText, { color: theme.text }]}>
@@ -540,11 +563,7 @@ export default function ServiceReport() {
                 },
               ]}
               onPress={() =>
-                setShowDatePicker({
-                  visible: true,
-                  type: "start",
-                  mode: "date",
-                })
+                openDateTimeField("start", startTime)
               }
             >
               <Text style={[styles.inputText, { color: theme.text }]}>
@@ -880,7 +899,7 @@ export default function ServiceReport() {
         />
 
         {/* Date/Time Picker */}
-        {showDatePicker.visible && showDatePicker.type && (
+        {showDatePicker.visible && showDatePicker.type && Platform.OS !== "web" && (
           <DateTimePicker
             value={
               showDatePicker.type === "call"
