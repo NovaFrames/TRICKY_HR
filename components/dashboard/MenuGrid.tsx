@@ -18,6 +18,13 @@ interface MenuGridProps {
     getMenuIcon?: (name: string) => { lib: any; name: string; };
 }
 
+const OFFICER_LOCATION_MENU = {
+    IdN: 'officer-location',
+    MenuNameC: 'Location',
+    IconcolorC: '#0EA5E9',
+    ActionC: 'officer/location',
+};
+
 export const MenuGrid: React.FC<MenuGridProps> = ({
     menuItems,
     theme,
@@ -45,6 +52,14 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
                 officer.push(item);
             }
         });
+
+        const hasOfficerLocation = officer.some(
+            item => item?.ActionC === OFFICER_LOCATION_MENU.ActionC,
+        );
+
+        if (officer.length > 0 && !hasOfficerLocation) {
+            officer.push(OFFICER_LOCATION_MENU);
+        }
 
         return { employeeMenus: employee, officerMenus: officer };
     }, [menuItems]);

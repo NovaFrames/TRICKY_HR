@@ -25,6 +25,7 @@ export const MENU_ICON_MAP: Record<
   'officer/emplist': { lib: Ionicons, name: 'people' },
   'officer/Attendance': { lib: Ionicons, name: 'newspaper' },
   'officer/EmpMobileRpt': { lib: Ionicons, name: 'phone-portrait' },
+  'officer/location': { lib: Ionicons, name: 'location' },
   'officer/pendingapproval': { lib: Ionicons, name: 'alert-circle' },
   'officer/Otherpendingapproval': { lib: Ionicons, name: 'laptop' },
   'officer/approvaldetails': { lib: Ionicons, name: 'checkmark-done' },
