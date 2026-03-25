@@ -2,15 +2,20 @@ import ProfileImage from "@/components/common/ProfileImage";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
+import ApiService from "@/services/ApiService";
 import {
   Feather,
   FontAwesome5,
   Ionicons,
   MaterialIcons,
 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Alert,
+  Linking,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -34,6 +39,8 @@ interface SettingItem {
   color: string;
   type?: "navigation" | "switch" | "action";
   onPress?: () => void;
+  switchValue?: boolean;
+  onValueChange?: (value: boolean) => void;
 }
 
 interface SettingSection {
@@ -46,8 +53,202 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, setPrimaryColor } = useTheme();
   const { logout, user } = useUser();
   const router = useRouter();
+  const [isLiveLocationEnabled, setIsLiveLocationEnabled] = useState(false);
+  const locationWatcherRef = useRef<Location.LocationSubscription | null>(null);
+  const liveLocationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+  const latestCoordsRef = useRef<{ latitude: number; longitude: number } | null>(
+    null,
+  );
+  const mountedRef = useRef(true);
+
+  const stopLiveLocationTracking = useCallback(() => {
+    if (locationWatcherRef.current) {
+      locationWatcherRef.current.remove();
+      locationWatcherRef.current = null;
+    }
+    if (liveLocationIntervalRef.current) {
+      clearInterval(liveLocationIntervalRef.current);
+      liveLocationIntervalRef.current = null;
+    }
+  }, []);
+
+  const postLiveLocation = useCallback(
+    async (latitude: number, longitude: number) => {
+      const token = user?.TokenC || user?.Token || "";
+      const empId = Number(user?.EmpIdN ?? 0);
+
+      if (!token || !empId) return;
+
+      await ApiService.updateLiveLocation(token, empId, latitude, longitude);
+    },
+    [user?.EmpIdN, user?.Token, user?.TokenC],
+  );
+
+  const sendLiveLocationTick = useCallback(async () => {
+    try {
+      const current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      latestCoordsRef.current = {
+        latitude: current.coords.latitude,
+        longitude: current.coords.longitude,
+      };
+      await postLiveLocation(current.coords.latitude, current.coords.longitude);
+      return;
+    } catch (error) {
+      const lastCoords = latestCoordsRef.current;
+      if (lastCoords) {
+        await postLiveLocation(lastCoords.latitude, lastCoords.longitude);
+      } else {
+        console.error("Live location tick failed and no last coordinates:", error);
+      }
+    }
+  }, [postLiveLocation]);
+
+  const startLiveLocationTracking = useCallback(async () => {
+    try {
+      const token = user?.TokenC || user?.Token || "";
+      const empId = Number(user?.EmpIdN ?? 0);
+      if (!token || !empId) {
+        Alert.alert("Live Location", "User session is not ready. Please login again.");
+        return false;
+      }
+
+      const currentPermission = await Location.getForegroundPermissionsAsync();
+      let status = currentPermission.status;
+      let canAskAgain = currentPermission.canAskAgain;
+
+      if (status !== "granted") {
+        const requested = await Location.requestForegroundPermissionsAsync();
+        status = requested.status;
+        canAskAgain = requested.canAskAgain;
+      }
+
+      if (status !== "granted") {
+        if (canAskAgain === false) {
+          Alert.alert(
+            "Location Permission Blocked",
+            "Enable location permission from settings to use live location tracking.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Open Settings", onPress: () => Linking.openSettings() },
+            ],
+          );
+        } else {
+          Alert.alert("Permission Required", "Location permission is required.");
+        }
+        return false;
+      }
+
+      stopLiveLocationTracking();
+
+      const initial = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      latestCoordsRef.current = {
+        latitude: initial.coords.latitude,
+        longitude: initial.coords.longitude,
+      };
+      await postLiveLocation(initial.coords.latitude, initial.coords.longitude);
+
+      const watcher = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000,
+          distanceInterval: 0,
+        },
+        async (position) => {
+          latestCoordsRef.current = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          await postLiveLocation(
+            position.coords.latitude,
+            position.coords.longitude,
+          );
+        },
+      );
+
+      locationWatcherRef.current = watcher;
+      if (liveLocationIntervalRef.current) {
+        clearInterval(liveLocationIntervalRef.current);
+      }
+      liveLocationIntervalRef.current = setInterval(() => {
+        void sendLiveLocationTick();
+      }, 15000);
+      return true;
+    } catch (error) {
+      console.error("Failed to start live location tracking:", error);
+      return false;
+    }
+  }, [
+    postLiveLocation,
+    sendLiveLocationTick,
+    stopLiveLocationTracking,
+    user?.EmpIdN,
+    user?.Token,
+    user?.TokenC,
+  ]);
+
+  const handleToggleLiveLocation = useCallback(
+    async (enabled: boolean) => {
+      if (enabled) {
+        const started = await startLiveLocationTracking();
+        if (!started) {
+          setIsLiveLocationEnabled(false);
+          await AsyncStorage.setItem("live_location_enabled", "false");
+          return;
+        }
+      } else {
+        stopLiveLocationTracking();
+      }
+
+      setIsLiveLocationEnabled(enabled);
+      await AsyncStorage.setItem(
+        "live_location_enabled",
+        enabled ? "true" : "false",
+      );
+    },
+    [startLiveLocationTracking, stopLiveLocationTracking],
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    let isActive = true;
+
+    const bootstrapLiveLocation = async () => {
+      const saved = await AsyncStorage.getItem("live_location_enabled");
+      const enabled = saved === "true";
+
+      if (!isActive || !mountedRef.current) return;
+
+      setIsLiveLocationEnabled(enabled);
+
+      if (enabled) {
+        const started = await startLiveLocationTracking();
+        if (!started && isActive && mountedRef.current) {
+          setIsLiveLocationEnabled(false);
+          await AsyncStorage.setItem("live_location_enabled", "false");
+        }
+      } else {
+        stopLiveLocationTracking();
+      }
+    };
+
+    bootstrapLiveLocation();
+
+    return () => {
+      isActive = false;
+      mountedRef.current = false;
+      stopLiveLocationTracking();
+    };
+  }, [startLiveLocationTracking, stopLiveLocationTracking]);
 
   const handleLogout = async () => {
+    stopLiveLocationTracking();
+    await AsyncStorage.setItem("live_location_enabled", "false");
     await logout();
     router.replace("../auth/login");
   };
@@ -91,6 +292,17 @@ export default function SettingsScreen() {
           icon: <Ionicons name="moon" />,
           color: "#6366f1",
           type: "switch",
+          switchValue: isDark,
+          onValueChange: toggleTheme,
+        },
+        {
+          label: "Allow Live Location",
+          description: "Continuously send your live location to server",
+          icon: <Ionicons name="location" />,
+          color: "#0ea5e9",
+          type: "switch",
+          switchValue: isLiveLocationEnabled,
+          onValueChange: handleToggleLiveLocation,
         },
         {
           label: "Choose Theme",
@@ -135,15 +347,13 @@ export default function SettingsScreen() {
     item: SettingItem;
     isLast: boolean;
   }) => {
-    const { setPrimaryColor } = useTheme();
-
     const rightElement =
       item.type === "switch" ? (
         <Switch
           trackColor={{ false: theme.inputBorder, true: `${theme.primary}80` }}
           thumbColor={isDark ? theme.primary : theme.inputBg}
-          onValueChange={toggleTheme}
-          value={isDark}
+          onValueChange={item.onValueChange ?? toggleTheme}
+          value={item.switchValue ?? isDark}
         />
       ) : item.type === "action" ? (
         <Feather name="chevron-right" size={20} color={`${theme.text}80`} />
@@ -209,7 +419,7 @@ export default function SettingsScreen() {
                             <Feather name="check" size={14} color="#FFF" />
                           )}
                         </TouchableOpacity>
-                        <Text style={{color:theme.text}}>{color.label}</Text>
+                        <Text style={{ color: theme.text }}>{color.label}</Text>
                       </View>
                     );
                   })}
@@ -266,7 +476,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {SETTINGS_SECTIONS.map((section, sectionIndex) => (
+        {SETTINGS_SECTIONS.map((section) => (
           <View key={section.title} style={styles.section}>
             <SectionHeader title={section.title} />
             {section.items.map((item, index) => (
@@ -296,7 +506,7 @@ const styles = StyleSheet.create({
   headerContainer: { padding: 12 }, // Reduced from 20
   screenTitle: { fontSize: 22, fontWeight: "700", marginBottom: 8 }, // Smaller title
   profileCard: { borderRadius: 4, padding: 12, elevation: 2 }, // Compact card
-  profileContent: { flexDirection: "row", alignItems: "center", gap:12 },
+  profileContent: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: { width: 50, height: 50, borderRadius: 4, marginRight: 12 }, // Smaller avatar
   userInfo: { flex: 1 },
   userName: { fontSize: 18, fontWeight: "600" },

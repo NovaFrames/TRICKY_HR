@@ -2323,6 +2323,96 @@ class ApiService {
     }
   }
 
+  async getLiveLocation(
+    token: string,
+    empId: number,
+    date: Date = new Date(),
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!token) {
+        return { success: false, error: "Token not available" };
+      }
+
+      await this.ensureApiReady();
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = date.toLocaleString("en-US", { month: "short" });
+      const year = date.getFullYear();
+      const formattedDate = `${day} ${month} ${year}`;
+
+      const response = await api.post(API_ENDPOINTS.GET_LIVE_LOCATION, null, {
+        params: {
+          TokenC: token,
+          EmpId: empId,
+          Date: formattedDate,
+        },
+        headers: {
+          ...this.getHeaders(),
+          Token: token,
+        },
+      });
+
+      console.log("Getting Location: ", response.data);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      console.log("Getting Location: ", error);
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
+  async updateLiveLocation(
+    token: string,
+    empId: number,
+    lat: number,
+    lon: number,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!token) {
+        return { success: false, error: "Token not available" };
+      }
+
+      await this.ensureApiReady();
+
+      const response = await api.post(
+        API_ENDPOINTS.UPDATE_LIVE_LOCATION,
+        null,
+        {
+          params: {
+            TokenC: token,
+            EmpIdN: empId,
+            Lat: String(lat),
+            Lon: String(lon),
+          },
+          headers: {
+            ...this.getHeaders(),
+            Token: token,
+          },
+        },
+      );
+
+      if (
+        response.data?.Status === "success" ||
+        response.data?.status === "success" ||
+        response.data?.Success === true
+      ) {
+        return { success: true, data: response.data };
+      }
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
   async getServerTime(
     token: string,
     overrideDate?: string | Date,
