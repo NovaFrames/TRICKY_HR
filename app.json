@@ -15,12 +15,19 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
+        "UIBackgroundModes": ["location"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.mykevit.www.trickyhr",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/adptive-icon.png",

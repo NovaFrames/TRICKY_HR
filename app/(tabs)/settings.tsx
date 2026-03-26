@@ -2,7 +2,12 @@ import ProfileImage from "@/components/common/ProfileImage";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
-import ApiService from "@/services/ApiService";
+import {
+  clearLiveLocationCredentials,
+  saveLiveLocationCredentials,
+  startLiveLocationTask,
+  stopLiveLocationTask,
+} from "@/services/liveLocationBackground";
 import {
   Feather,
   FontAwesome5,
@@ -10,7 +15,6 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -54,58 +58,11 @@ export default function SettingsScreen() {
   const { logout, user } = useUser();
   const router = useRouter();
   const [isLiveLocationEnabled, setIsLiveLocationEnabled] = useState(false);
-  const locationWatcherRef = useRef<Location.LocationSubscription | null>(null);
-  const liveLocationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
-  const latestCoordsRef = useRef<{ latitude: number; longitude: number } | null>(
-    null,
-  );
   const mountedRef = useRef(true);
 
   const stopLiveLocationTracking = useCallback(() => {
-    if (locationWatcherRef.current) {
-      locationWatcherRef.current.remove();
-      locationWatcherRef.current = null;
-    }
-    if (liveLocationIntervalRef.current) {
-      clearInterval(liveLocationIntervalRef.current);
-      liveLocationIntervalRef.current = null;
-    }
+    void stopLiveLocationTask();
   }, []);
-
-  const postLiveLocation = useCallback(
-    async (latitude: number, longitude: number) => {
-      const token = user?.TokenC || user?.Token || "";
-      const empId = Number(user?.EmpIdN ?? 0);
-
-      if (!token || !empId) return;
-
-      await ApiService.updateLiveLocation(token, empId, latitude, longitude);
-    },
-    [user?.EmpIdN, user?.Token, user?.TokenC],
-  );
-
-  const sendLiveLocationTick = useCallback(async () => {
-    try {
-      const current = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      latestCoordsRef.current = {
-        latitude: current.coords.latitude,
-        longitude: current.coords.longitude,
-      };
-      await postLiveLocation(current.coords.latitude, current.coords.longitude);
-      return;
-    } catch (error) {
-      const lastCoords = latestCoordsRef.current;
-      if (lastCoords) {
-        await postLiveLocation(lastCoords.latitude, lastCoords.longitude);
-      } else {
-        console.error("Live location tick failed and no last coordinates:", error);
-      }
-    }
-  }, [postLiveLocation]);
 
   const startLiveLocationTracking = useCallback(async () => {
     try {
@@ -116,81 +73,26 @@ export default function SettingsScreen() {
         return false;
       }
 
-      const currentPermission = await Location.getForegroundPermissionsAsync();
-      let status = currentPermission.status;
-      let canAskAgain = currentPermission.canAskAgain;
-
-      if (status !== "granted") {
-        const requested = await Location.requestForegroundPermissionsAsync();
-        status = requested.status;
-        canAskAgain = requested.canAskAgain;
-      }
-
-      if (status !== "granted") {
-        if (canAskAgain === false) {
-          Alert.alert(
-            "Location Permission Blocked",
-            "Enable location permission from settings to use live location tracking.",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Open Settings", onPress: () => Linking.openSettings() },
-            ],
-          );
-        } else {
-          Alert.alert("Permission Required", "Location permission is required.");
-        }
+      await saveLiveLocationCredentials(token, empId);
+      const started = await startLiveLocationTask();
+      if (!started) {
+        Alert.alert(
+          "Background Permission Required",
+          "Allow 'All the time' location access to keep live location running in background.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ],
+        );
         return false;
       }
 
-      stopLiveLocationTracking();
-
-      const initial = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      latestCoordsRef.current = {
-        latitude: initial.coords.latitude,
-        longitude: initial.coords.longitude,
-      };
-      await postLiveLocation(initial.coords.latitude, initial.coords.longitude);
-
-      const watcher = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 0,
-        },
-        async (position) => {
-          latestCoordsRef.current = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          await postLiveLocation(
-            position.coords.latitude,
-            position.coords.longitude,
-          );
-        },
-      );
-
-      locationWatcherRef.current = watcher;
-      if (liveLocationIntervalRef.current) {
-        clearInterval(liveLocationIntervalRef.current);
-      }
-      liveLocationIntervalRef.current = setInterval(() => {
-        void sendLiveLocationTick();
-      }, 15000);
       return true;
     } catch (error) {
       console.error("Failed to start live location tracking:", error);
       return false;
     }
-  }, [
-    postLiveLocation,
-    sendLiveLocationTick,
-    stopLiveLocationTracking,
-    user?.EmpIdN,
-    user?.Token,
-    user?.TokenC,
-  ]);
+  }, [user?.EmpIdN, user?.Token, user?.TokenC]);
 
   const handleToggleLiveLocation = useCallback(
     async (enabled: boolean) => {
@@ -199,10 +101,13 @@ export default function SettingsScreen() {
         if (!started) {
           setIsLiveLocationEnabled(false);
           await AsyncStorage.setItem("live_location_enabled", "false");
+          await stopLiveLocationTask();
+          await clearLiveLocationCredentials();
           return;
         }
       } else {
-        stopLiveLocationTracking();
+        await stopLiveLocationTask();
+        await clearLiveLocationCredentials();
       }
 
       setIsLiveLocationEnabled(enabled);
@@ -231,9 +136,12 @@ export default function SettingsScreen() {
         if (!started && isActive && mountedRef.current) {
           setIsLiveLocationEnabled(false);
           await AsyncStorage.setItem("live_location_enabled", "false");
+          await stopLiveLocationTask();
+          await clearLiveLocationCredentials();
         }
       } else {
-        stopLiveLocationTracking();
+        await stopLiveLocationTask();
+        await clearLiveLocationCredentials();
       }
     };
 
@@ -242,12 +150,13 @@ export default function SettingsScreen() {
     return () => {
       isActive = false;
       mountedRef.current = false;
-      stopLiveLocationTracking();
+      void stopLiveLocationTask();
     };
-  }, [startLiveLocationTracking, stopLiveLocationTracking]);
+  }, [startLiveLocationTracking]);
 
   const handleLogout = async () => {
-    stopLiveLocationTracking();
+    await stopLiveLocationTask();
+    await clearLiveLocationCredentials();
     await AsyncStorage.setItem("live_location_enabled", "false");
     await logout();
     router.replace("../auth/login");

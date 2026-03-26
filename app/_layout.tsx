@@ -3,6 +3,14 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { ModalManagerProvider } from "@/components/common/ModalManager";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
+import "@/services/liveLocationBackground";
+import {
+  clearLiveLocationCredentials,
+  saveLiveLocationCredentials,
+  startLiveLocationTask,
+  stopLiveLocationTask,
+} from "@/services/liveLocationBackground";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Sentry from '@sentry/react-native';
 import * as NavigationBar from "expo-navigation-bar";
 import {
@@ -94,6 +102,46 @@ function RootNavigator() {
       router.replace("/(tabs)/dashboard");
     }
   }, [isAuthenticated, isLoading, pathname]);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    let cancelled = false;
+
+    const syncLiveLocationTracking = async () => {
+      const enabled = (await AsyncStorage.getItem("live_location_enabled")) === "true";
+
+      if (!enabled || !isAuthenticated) {
+        await stopLiveLocationTask();
+        await clearLiveLocationCredentials();
+        return;
+      }
+
+      const token = (user?.TokenC || user?.Token || "").trim();
+      const empId = Number(user?.EmpIdN ?? 0);
+
+      if (!token || !empId) {
+        await stopLiveLocationTask();
+        await clearLiveLocationCredentials();
+        return;
+      }
+
+      await saveLiveLocationCredentials(token, empId);
+      const started = await startLiveLocationTask();
+
+      if (!started && !cancelled) {
+        await AsyncStorage.setItem("live_location_enabled", "false");
+        await stopLiveLocationTask();
+        await clearLiveLocationCredentials();
+      }
+    };
+
+    void syncLiveLocationTracking();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, isLoading, user?.EmpIdN, user?.Token, user?.TokenC]);
 
   if (isLoading) return null;
 

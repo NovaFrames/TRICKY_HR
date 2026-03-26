@@ -2350,8 +2350,14 @@ class ApiService {
           ...this.getHeaders(),
           Token: token,
         },
+        timeout: 8000,
       });
 
+      console.log(
+        "Getting location: ",
+        response.status,
+        new Date().toLocaleTimeString(),
+      );
       return { success: true, data: response.data };
     } catch (error: any) {
       console.log("Getting Location: ", error);
@@ -2389,16 +2395,15 @@ class ApiService {
             ...this.getHeaders(),
             Token: token,
           },
+          timeout: 8000,
         },
       );
 
-      if (
-        response.data?.Status === "success" ||
-        response.data?.status === "success" ||
-        response.data?.Success === true
-      ) {
-        return { success: true, data: response.data };
-      }
+      console.log(
+        "Updating location:",
+        response.data,
+        new Date().toLocaleTimeString(),
+      );
 
       return {
         success: true,
