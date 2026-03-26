@@ -2333,12 +2333,14 @@ class ApiService {
         return { success: false, error: "Token not available" };
       }
 
+      console.log("getting empid: ", empId);
+
       await this.ensureApiReady();
 
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = date.toLocaleString("en-US", { month: "short" });
       const year = date.getFullYear();
-      const formattedDate = `${day} ${month} ${year}`;
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
 
       const response = await api.post(API_ENDPOINTS.GET_LIVE_LOCATION, null, {
         params: {
@@ -2374,6 +2376,7 @@ class ApiService {
     lat: number,
     lon: number,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
+    console.log("updating empid: ", empId);
     try {
       if (!token) {
         return { success: false, error: "Token not available" };
