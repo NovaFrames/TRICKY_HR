@@ -2333,8 +2333,6 @@ class ApiService {
         return { success: false, error: "Token not available" };
       }
 
-      console.log("getting empid: ", empId);
-
       await this.ensureApiReady();
 
       const year = date.getFullYear();

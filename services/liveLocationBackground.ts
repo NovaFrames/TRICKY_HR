@@ -6,6 +6,7 @@ import ApiService from "./ApiService";
 export const LIVE_LOCATION_TASK_NAME = "trickyhr-live-location-task";
 const LIVE_LOCATION_TOKEN_KEY = "live_location_token";
 const LIVE_LOCATION_EMP_ID_KEY = "live_location_emp_id";
+const LIVE_LOCATION_UPDATE_MS = 10_000;
 
 type TaskData = {
   locations?: Array<{
@@ -86,13 +87,18 @@ export const startLiveLocationTask = async (): Promise<boolean> => {
   const started = await Location.hasStartedLocationUpdatesAsync(
     LIVE_LOCATION_TASK_NAME,
   );
-  if (started) return true;
+  if (started) {
+    // Restart to ensure updated interval/accuracy options are applied.
+    await Location.stopLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME);
+  }
 
   await Location.startLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME, {
-    accuracy: Location.Accuracy.Balanced,
-    timeInterval: 10000,
+    accuracy: Location.Accuracy.Highest,
+    timeInterval: LIVE_LOCATION_UPDATE_MS,
+    deferredUpdatesInterval: LIVE_LOCATION_UPDATE_MS,
     distanceInterval: 0,
     pausesUpdatesAutomatically: false,
+    mayShowUserSettingsDialog: true,
     foregroundService: {
       notificationTitle: "TrickyHr Live Location",
       notificationBody: "Live location sharing is active.",

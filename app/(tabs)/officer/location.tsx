@@ -1,10 +1,18 @@
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
+import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
+import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { WebView } from "react-native-webview";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type Coordinates = {
   latitude: number;
@@ -31,19 +39,6 @@ type EmployeeMarker = {
   dateD: string;
   coords: Coordinates;
 };
-
-let MapViewComponent: any = null;
-let MarkerComponent: any = null;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const maps = require("react-native-maps");
-  MapViewComponent = maps.default;
-  MarkerComponent = maps.Marker;
-} catch {
-  MapViewComponent = null;
-  MarkerComponent = null;
-}
 
 const LIVE_REFRESH_MS = 10000;
 
@@ -86,25 +81,46 @@ const normalizeMarker = (row: LiveLocationRow): EmployeeMarker | null => {
         ? row.EmpNameC.trim()
         : `Employee ${empId}`,
     dateD: typeof row.DateD === "string" ? row.DateD : "",
-    coords: {
-      latitude,
-      longitude,
-    },
+    coords: { latitude, longitude },
   };
 };
 
-export default function OfficerLocationScreen() {
+const areMarkersEqual = (a: EmployeeMarker[], b: EmployeeMarker[]) => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const left = a[i];
+    const right = b[i];
+    if (
+      left.empId !== right.empId ||
+      left.empCode !== right.empCode ||
+      left.empName !== right.empName ||
+      left.dateD !== right.dateD ||
+      left.coords.latitude !== right.coords.latitude ||
+      left.coords.longitude !== right.coords.longitude
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+export default function OfficerLocationListScreen() {
   const { theme } = useTheme();
   const { user } = useUser();
+  const router = useRouter();
 
   const [markers, setMarkers] = useState<EmployeeMarker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   const mountedRef = useRef(true);
   const inFlightRef = useRef(false);
-
   const token = (user?.TokenC || user?.Token || "").trim();
+
+  useProtectedBack({
+    home: "/home",
+    settings: "/settings",
+    dashboard: "/dashboard",
+  });
 
   const syncLocations = useCallback(
     async (options?: { initial?: boolean }) => {
@@ -115,12 +131,7 @@ export default function OfficerLocationScreen() {
 
       inFlightRef.current = true;
       const initial = !!options?.initial;
-
-      if (initial) {
-        if (mountedRef.current) setLoading(true);
-      } else {
-        if (mountedRef.current) setRefreshing(true);
-      }
+      if (initial && mountedRef.current) setLoading(true);
 
       try {
         const requestDate = new Date();
@@ -145,27 +156,23 @@ export default function OfficerLocationScreen() {
           }
 
           const existingMs = parseDotNetDateMs(existing.dateD);
-          if (markerMs > existingMs) {
-            latestByEmpId.set(marker.empId, marker);
-          }
+          if (markerMs > existingMs) latestByEmpId.set(marker.empId, marker);
         }
 
-        const nextMarkers = Array.from(latestByEmpId.values()).sort(
-          (a, b) => a.empName.localeCompare(b.empName),
+        const nextMarkers = Array.from(latestByEmpId.values()).sort((a, b) =>
+          a.empName.localeCompare(b.empName),
         );
 
         if (mountedRef.current) {
-          setMarkers(nextMarkers);
+          setMarkers((prev) =>
+            areMarkersEqual(prev, nextMarkers) ? prev : nextMarkers,
+          );
         }
       } catch (error) {
         console.log("Live location fetch error:", error);
       } finally {
         inFlightRef.current = false;
-        if (initial) {
-          if (mountedRef.current) setLoading(false);
-        } else {
-          if (mountedRef.current) setRefreshing(false);
-        }
+        if (initial && mountedRef.current) setLoading(false);
       }
     },
     [token],
@@ -175,10 +182,7 @@ export default function OfficerLocationScreen() {
     mountedRef.current = true;
 
     void syncLocations({ initial: true });
-
-    const intervalId = setInterval(() => {
-      void syncLocations();
-    }, LIVE_REFRESH_MS);
+    const intervalId = setInterval(() => void syncLocations(), LIVE_REFRESH_MS);
 
     return () => {
       mountedRef.current = false;
@@ -186,89 +190,107 @@ export default function OfficerLocationScreen() {
     };
   }, [syncLocations]);
 
-  const region = useMemo(() => {
-    if (markers.length === 0) return null;
+  const formatLastUpdated = useCallback((value: string) => {
+    const ms = parseDotNetDateMs(value);
+    if (!ms) return "N/A";
+    return new Date(ms).toLocaleString();
+  }, []);
 
-    const first = markers[0].coords;
-    let minLat = first.latitude;
-    let maxLat = first.latitude;
-    let minLon = first.longitude;
-    let maxLon = first.longitude;
-
-    for (const marker of markers) {
-      minLat = Math.min(minLat, marker.coords.latitude);
-      maxLat = Math.max(maxLat, marker.coords.latitude);
-      minLon = Math.min(minLon, marker.coords.longitude);
-      maxLon = Math.max(maxLon, marker.coords.longitude);
-    }
-
-    const latitude = (minLat + maxLat) / 2;
-    const longitude = (minLon + maxLon) / 2;
-    const latitudeDelta = Math.max(0.01, (maxLat - minLat) * 1.4);
-    const longitudeDelta = Math.max(0.01, (maxLon - minLon) * 1.4);
-
-    return {
-      latitude,
-      longitude,
-      latitudeDelta,
-      longitudeDelta,
-    };
-  }, [markers]);
-
-  const fallbackMapUrl = useMemo(() => {
-    if (markers.length === 0) return "";
-    const first = markers[0].coords;
-    return `https://maps.google.com/maps?q=loc:${first.latitude},${first.longitude}&z=13&output=embed`;
+  const encodedAllMarkers = useMemo(() => {
+    const minimal = markers.map((m) => ({
+      empId: m.empId,
+      empCode: m.empCode,
+      empName: m.empName,
+      dateD: m.dateD,
+      latitude: m.coords.latitude,
+      longitude: m.coords.longitude,
+    }));
+    return JSON.stringify(minimal);
   }, [markers]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}> 
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Location" />
 
       <View style={styles.body}>
-        <View style={[styles.infoBar, { backgroundColor: theme.cardBackground }]}> 
-          <Text style={[styles.infoTitle, { color: theme.text }]}>Live Employee Locations</Text>
+        <View style={[styles.infoBar, { backgroundColor: theme.cardBackground }]}>
+          <Text style={[styles.infoTitle, { color: theme.text }]}>
+            Live Employee Locations
+          </Text>
           <Text style={[styles.infoValue, { color: theme.placeholder }]}>
             Employees: {markers.length}
           </Text>
-          {refreshing ? (
-            <Text style={[styles.refreshingText, { color: theme.placeholder }]}>Refreshing...</Text>
-          ) : null}
         </View>
 
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={theme.primary} />
-            <Text style={[styles.messageText, { color: theme.placeholder }]}>Loading live locations...</Text>
+            <Text style={[styles.messageText, { color: theme.placeholder }]}>
+              Loading live locations...
+            </Text>
           </View>
-        ) : markers.length === 0 || !region ? (
+        ) : markers.length === 0 ? (
           <View style={styles.center}>
-            <Text style={[styles.messageText, { color: theme.placeholder }]}>No live location data found for today</Text>
+            <Text style={[styles.messageText, { color: theme.placeholder }]}>
+              No live location data found for today
+            </Text>
           </View>
         ) : (
-          <View style={[styles.mapCard, { backgroundColor: theme.cardBackground }]}> 
-            {MapViewComponent && MarkerComponent ? (
-              <MapViewComponent style={styles.map} region={region}>
-                {markers.map((marker) => (
-                  <MarkerComponent
-                    key={String(marker.empId)}
-                    coordinate={marker.coords}
-                    title={marker.empName}
-                    description={marker.empCode ? `Code: ${marker.empCode}` : undefined}
-                    tracksViewChanges={false}
-                  />
-                ))}
-              </MapViewComponent>
-            ) : (
-              <WebView
-                source={{ uri: fallbackMapUrl }}
-                style={styles.map}
-                originWhitelist={["*"]}
-                javaScriptEnabled
-                domStorageEnabled
-              />
-            )}
-          </View>
+          <ScrollView
+            style={styles.listContainer}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <TouchableOpacity
+              style={[styles.userCard, { backgroundColor: theme.cardBackground }]}
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/officer/location-map",
+                  params: { mode: "all", markers: encodedAllMarkers, from: "location" },
+                })
+              }
+            >
+              <Text style={[styles.userName, { color: theme.text }]}>All Locations</Text>
+              <Text style={[styles.userCode, { color: theme.placeholder }]}>
+                Show all users on one map
+              </Text>
+              <Text style={[styles.userUpdated, { color: theme.placeholder }]}>
+                Users: {markers.length}
+              </Text>
+            </TouchableOpacity>
+
+            {markers.map((marker) => (
+              <TouchableOpacity
+                key={String(marker.empId)}
+                style={[styles.userCard, { backgroundColor: theme.cardBackground }]}
+                activeOpacity={0.8}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/officer/location-map",
+                    params: {
+                      mode: "single",
+                      from: "location",
+                      empId: String(marker.empId),
+                      empCode: marker.empCode,
+                      empName: marker.empName,
+                      dateD: marker.dateD,
+                      lat: String(marker.coords.latitude),
+                      lon: String(marker.coords.longitude),
+                    },
+                  })
+                }
+              >
+                <Text style={[styles.userName, { color: theme.text }]}>{marker.empName}</Text>
+                <Text style={[styles.userCode, { color: theme.placeholder }]}>
+                  Code: {marker.empCode || "N/A"}
+                </Text>
+                <Text style={[styles.userUpdated, { color: theme.placeholder }]}>
+                  Last updated: {formatLastUpdated(marker.dateD)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         )}
       </View>
     </View>
@@ -300,11 +322,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginTop: 2,
   },
-  refreshingText: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 2,
-  },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -317,12 +334,29 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
-  mapCard: {
+  listContainer: {
     flex: 1,
-    borderRadius: 12,
-    overflow: "hidden",
   },
-  map: {
-    flex: 1,
+  listContent: {
+    gap: 10,
+    paddingBottom: 10,
+  },
+  userCard: {
+    borderRadius: 12,
+    padding: 12,
+  },
+  userName: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  userCode: {
+    marginTop: 3,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  userUpdated: {
+    marginTop: 3,
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
