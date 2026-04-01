@@ -53,13 +53,13 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
             }
         });
 
-        const hasOfficerLocation = officer.some(
-            item => item?.ActionC === OFFICER_LOCATION_MENU.ActionC,
-        );
+        // const hasOfficerLocation = officer.some(
+        //     item => item?.ActionC === OFFICER_LOCATION_MENU.ActionC,
+        // );
 
-        if (officer.length > 0 && !hasOfficerLocation) {
-            officer.push(OFFICER_LOCATION_MENU);
-        }
+        // if (officer.length > 0 && !hasOfficerLocation) {
+        //     officer.push(OFFICER_LOCATION_MENU);
+        // }
 
         return { employeeMenus: employee, officerMenus: officer };
     }, [menuItems]);
