@@ -568,7 +568,9 @@ export default function PendingApproval() {
       </View>
 
       {showModal && selectedItem && (
-        selectedItem.DescC === "LEAVE" ? (
+        (selectedItem.DescC || "").toLowerCase().includes("leave") ||
+        (selectedItem.DescC || "").toLowerCase().includes("onduty") ||
+        (selectedItem.DescC || "").toLowerCase().includes("permission") ? (
           <PendingApprovalModal
             visible={showModal}
             onClose={() => {
