@@ -121,8 +121,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       } else if (formData.requestType === "Out Time") {
         requests.push({ InTimeN: "00:00", OutTimeN: formData.outTime });
       } else if (formData.requestType === "In & Out Time") {
-        requests.push({ InTimeN: formData.inTime, OutTimeN: "00:00" });
-        requests.push({ InTimeN: "00:00", OutTimeN: formData.outTime });
+        requests.push({ InTimeN: formData.inTime, OutTimeN: formData.outTime });
       }
 
       let successCount = 0;
