@@ -316,11 +316,6 @@ export default function OfficerLocationMapScreen() {
               </MapViewComponent>
             ) : (
               <>
-                {!androidMapsApiKey.trim() && Platform.OS === "android" ? (
-                  <Text style={[styles.keyWarningText, { color: theme.placeholder }]}>
-                    Google Maps API key is missing. Showing fallback map.
-                  </Text>
-                ) : null}
                 <WebView
                   originWhitelist={["*"]}
                   source={{ html: mapHtml }}
