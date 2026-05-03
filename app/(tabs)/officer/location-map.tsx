@@ -155,7 +155,8 @@ export default function OfficerLocationMapScreen() {
   // Safety-first behavior:
   // Android release builds can crash at native map init on some devices/configs.
   // Keep Android on WebView map path to prevent app-close crashes in production.
-const canUseNativeMap = MapViewComponent && MarkerComponent;
+  const canUseNativeMap =
+    Platform.OS !== "android" && MapViewComponent && MarkerComponent;
 
   const singleMarker = useMemo(() => {
     const empId = Number(toParamString(params.empId));
@@ -210,41 +211,66 @@ const canUseNativeMap = MapViewComponent && MarkerComponent;
     };
   }, [visibleMarkers]);
 
-  const fallbackWebViewSource = useMemo(() => {
-    if (!region) return { uri: "" };
-    const zoom = mode === "all" ? 10 : 14;
+  const mapHtml = useMemo(() => {
+    if (!region) return "";
 
-    if (androidMapsApiKey.trim()) {
-      const center = `${region.latitude},${region.longitude}`;
-      return {
-        uri:
-          `https://www.google.com/maps?q=LAT,LNG&z=14` +
-          `?key=${encodeURIComponent(androidMapsApiKey)}` +
-          `&center=${encodeURIComponent(center)}` +
-          `&zoom=${zoom}` +
-          `&maptype=roadmap`,
-      };
-    }
+    return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+            <style>
+              html, body, #map { height: 100%; margin: 0; }
+                .leaflet-control-attribution {
+                  display: none !important;
+                }
+            </style>
+            </head>
+            <body>
+            <div id="map"></div>
 
-    return {
-      uri:
-        `https://www.openstreetmap.org/?mlat=${region.latitude}` +
-        `&mlon=${region.longitude}` +
-        `#map=${zoom}/${region.latitude}/${region.longitude}`,
-    };
-  }, [androidMapsApiKey, mode, region]);
+            <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+            <script>
+              const markers = ${JSON.stringify(visibleMarkers)};
+
+              const map = L.map('map');
+
+              if (markers.length === 0) {
+                map.setView([0, 0], 2);
+              }
+
+              if (markers.length === 1) {
+                map.setView([markers[0].coords.latitude, markers[0].coords.longitude], 14);
+              } else {
+                const bounds = markers.map(m => [m.coords.latitude, m.coords.longitude]);
+                map.fitBounds(bounds);
+              }
+
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: ''
+              }).addTo(map);
+
+              markers.forEach(m => {
+                const marker = L.marker([m.coords.latitude, m.coords.longitude]).addTo(map);
+                marker.bindPopup("<b>" + (m.empName || "Employee") + "</b>");
+              });
+            </script>
+            </body>
+            </html>
+            `;
+  }, [region, visibleMarkers]);
 
   const titleText =
     mode === "all" ? "All Locations" : singleMarker?.empName || "Location";
   const subtitleText =
     mode === "all"
       ? `Users: ${visibleMarkers.length}`
-      : `Last updated: ${
-          (() => {
-            const ms = parseDotNetDateMs(singleMarker?.dateD);
-            return ms ? new Date(ms).toLocaleString() : "N/A";
-          })()
-        }`;
+      : `Last updated: ${(() => {
+        const ms = parseDotNetDateMs(singleMarker?.dateD);
+        return ms ? new Date(ms).toLocaleString() : "N/A";
+      })()
+      }`;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -296,9 +322,9 @@ const canUseNativeMap = MapViewComponent && MarkerComponent;
                   </Text>
                 ) : null}
                 <WebView
-                  source={fallbackWebViewSource}
-                  style={styles.map}
                   originWhitelist={["*"]}
+                  source={{ html: mapHtml }}
+                  style={styles.map}
                   javaScriptEnabled
                   domStorageEnabled
                 />
