@@ -3,6 +3,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
+import { setAllLocationMarkers } from "@/utils/locationMapStore";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -197,7 +198,7 @@ export default function OfficerLocationListScreen() {
   }, []);
 
   const encodedAllMarkers = useMemo(() => {
-    const minimal = markers.map((m) => ({
+    return markers.map((m) => ({
       empId: m.empId,
       empCode: m.empCode,
       empName: m.empName,
@@ -205,7 +206,6 @@ export default function OfficerLocationListScreen() {
       latitude: m.coords.latitude,
       longitude: m.coords.longitude,
     }));
-    return JSON.stringify(minimal);
   }, [markers]);
 
   return (
@@ -244,12 +244,13 @@ export default function OfficerLocationListScreen() {
             <TouchableOpacity
               style={[styles.userCard, { backgroundColor: theme.cardBackground }]}
               activeOpacity={0.8}
-              onPress={() =>
+              onPress={() => {
+                setAllLocationMarkers(encodedAllMarkers);
                 router.push({
                   pathname: "/(tabs)/officer/location-map",
-                  params: { mode: "all", markers: encodedAllMarkers, from: "location" },
-                })
-              }
+                  params: { mode: "all", from: "location" },
+                });
+              }}
             >
               <Text style={[styles.userName, { color: theme.text }]}>All Locations</Text>
               <Text style={[styles.userCode, { color: theme.placeholder }]}>

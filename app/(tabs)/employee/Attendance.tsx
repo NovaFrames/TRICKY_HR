@@ -117,8 +117,57 @@ const Attendance = () => {
   const DEFAULT_ALLOWED_RADIUS_METERS = 200;
   const MAX_GPS_DRIFT_BUFFER_METERS = 25;
 
+
   const wait = (ms: number) =>
     new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  const resetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startResetTimer = () => {
+    // Clear existing timer
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+    }
+
+    // Start new timer
+    resetTimerRef.current = setTimeout(() => {
+      if (!submitting && (capturedImage || selectedProject || remarks)) {
+
+        ConfirmModal.alert(
+          "Session Timeout",
+          "Please refill to continue.",
+          [
+            {
+              text: "Continue",
+              onPress: () => resetForm(),
+            },
+          ]
+        );
+
+      }
+    }, 30000);
+  };
+
+  const clearResetTimer = () => {
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (capturedImage || selectedProject) {
+      startResetTimer();
+    }
+
+    return () => clearResetTimer();
+  }, [capturedImage, selectedProject]);
+
+  useEffect(() => {
+    if (submitting) {
+      clearResetTimer();
+    }
+  }, [submitting]);
 
   const updateLocationFromCoords = async (coords: {
     latitude: number;
@@ -1152,7 +1201,7 @@ const Attendance = () => {
 
           {/* SUBMIT BUTTON */}
           <CustomButton
-            title="SUBMIT ATTENDANCE"
+            title={submitting ? "Submitting..." : "Submit Attendance"}
             icon="arrow-forward"
             isLoading={submitting}
             disabled={!capturedImage || submitting}

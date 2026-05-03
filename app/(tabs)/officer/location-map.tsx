@@ -1,6 +1,7 @@
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
+import { getAllLocationMarkers } from "@/utils/locationMapStore";
 import Constants from "expo-constants";
 import { useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
@@ -109,9 +110,12 @@ export default function OfficerLocationMapScreen() {
 
   const allMarkers = useMemo(() => {
     const raw = toParamString(params.markers);
-    if (!raw) return [] as MarkerData[];
+    const source = raw
+      ? raw
+      : JSON.stringify(getAllLocationMarkers());
+    if (!source) return [] as MarkerData[];
     try {
-      const parsed = JSON.parse(raw) as Array<{
+      const parsed = JSON.parse(source) as Array<{
         empId: number;
         empCode: string;
         empName: string;
@@ -140,6 +144,18 @@ export default function OfficerLocationMapScreen() {
       return [] as MarkerData[];
     }
   }, [params.markers]);
+
+  const androidMapsApiKey = useMemo(() => {
+    const envKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    const expoConfigKey = Constants.expoConfig?.android?.config?.googleMaps?.apiKey || "";
+    const expoExtraKey = Constants.expoConfig?.extra?.googleMapsApiKey || "";
+    return [envKey, expoConfigKey, expoExtraKey].find((value) => value.trim()) || "";
+  }, []);
+
+  // Safety-first behavior:
+  // Android release builds can crash at native map init on some devices/configs.
+  // Keep Android on WebView map path to prevent app-close crashes in production.
+const canUseNativeMap = MapViewComponent && MarkerComponent;
 
   const singleMarker = useMemo(() => {
     const empId = Number(toParamString(params.empId));
@@ -194,21 +210,29 @@ export default function OfficerLocationMapScreen() {
     };
   }, [visibleMarkers]);
 
-  const androidMapsApiKey =
-    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-    Constants.expoConfig?.android?.config?.googleMaps?.apiKey ||
-    "";
-  const canUseNativeMap =
-    MapViewComponent &&
-    MarkerComponent &&
-    (Platform.OS !== "android" || !!androidMapsApiKey.trim());
-
   const fallbackWebViewSource = useMemo(() => {
     if (!region) return { uri: "" };
+    const zoom = mode === "all" ? 10 : 14;
+
+    if (androidMapsApiKey.trim()) {
+      const center = `${region.latitude},${region.longitude}`;
+      return {
+        uri:
+          `https://www.google.com/maps?q=LAT,LNG&z=14` +
+          `?key=${encodeURIComponent(androidMapsApiKey)}` +
+          `&center=${encodeURIComponent(center)}` +
+          `&zoom=${zoom}` +
+          `&maptype=roadmap`,
+      };
+    }
+
     return {
-      uri: `https://maps.google.com/maps?q=loc:${region.latitude},${region.longitude}&z=14&output=embed`,
+      uri:
+        `https://www.openstreetmap.org/?mlat=${region.latitude}` +
+        `&mlon=${region.longitude}` +
+        `#map=${zoom}/${region.latitude}/${region.longitude}`,
     };
-  }, [region]);
+  }, [androidMapsApiKey, mode, region]);
 
   const titleText =
     mode === "all" ? "All Locations" : singleMarker?.empName || "Location";
