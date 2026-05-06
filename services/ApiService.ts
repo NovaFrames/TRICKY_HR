@@ -4,6 +4,15 @@ import axios from "axios";
 import * as FileSystem from "expo-file-system/legacy";
 import { getAuthTokenSafely, setDomainUrlSafely } from "./urldomain";
 
+export interface LiveLocationItem {
+  EmpIdN: number;
+  EmpCodeC: string;
+  EmpNameC: string;
+  DateD: string;
+  LatC: string;
+  LonC: string;
+}
+
 const normalizeBaseUrl = (domainUrl: string) => {
   const trimmed = domainUrl.trim();
   if (!trimmed) return "";
@@ -2423,21 +2432,30 @@ class ApiService {
       const day = String(date.getDate()).padStart(2, "0");
       const formattedDate = `${year}-${month}-${day}`;
 
-      const response = await api.post(API_ENDPOINTS.GET_LIVE_LOCATION, null, {
-        params: {
-          TokenC: token,
-          EmpId: empId,
-          Date: formattedDate,
-        },
+      // Select endpoint based on whether we want all users or a specific one
+      const endpoint =
+        empId === 0 ? "WebApi2/GetLiveLocAll" : "WebApi2/GetLiveLoc";
+
+      const payload: any = {
+        TokenC: token,
+        Date: formattedDate,
+      };
+
+      // Add EmpId only for single user lookup
+      if (empId !== 0) {
+        payload.EmpId = empId;
+      }
+
+      const response = await api.post(endpoint, payload, {
         headers: {
           ...this.getHeaders(),
-          Token: token,
+          TokenC: token,
         },
-        timeout: 8000,
+        timeout: 10000,
       });
 
       console.log(
-        "Getting location: ",
+        `[ApiService] GetLocation ${empId === 0 ? "All" : empId}:`,
         response.status,
         new Date().toLocaleTimeString(),
       );
@@ -2451,13 +2469,130 @@ class ApiService {
     }
   }
 
+  async getAllLiveLocations(
+    token: string,
+    date: Date = new Date(),
+  ): Promise<{
+    success: boolean;
+    data?: LiveLocationItem[];
+    error?: string;
+  }> {
+    try {
+      if (!token) {
+        return {
+          success: false,
+          error: "Token not available",
+        };
+      }
+
+      await this.ensureApiReady();
+
+      const formattedDate = date.toISOString().split("T")[0];
+
+      console.log(API_ENDPOINTS.GET_LIVE_LOCATION_ALL);
+
+      // IMPORTANT:
+      // SEND AS QUERY PARAMS
+      // NOT JSON BODY
+
+      const response = await api.post(
+        API_ENDPOINTS.GET_LIVE_LOCATION_ALL,
+
+        null,
+
+        {
+          params: {
+            TokenC: token,
+            Date: formattedDate,
+          },
+
+          headers: {
+            ...this.getHeaders(),
+            TokenC: token,
+          },
+
+          timeout: 10000,
+        },
+      );
+
+      console.log("[ApiService] Get All Locations:", response.status);
+
+      return {
+        success: true,
+        data: response.data?.data || [],
+      };
+    } catch (error: any) {
+      console.log("Get All Location Error:", error);
+
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
+  async getEmployeeLiveLocation(
+    token: string,
+    empId: number,
+    date: Date = new Date(),
+  ): Promise<{
+    success: boolean;
+    data?: LiveLocationItem[];
+    error?: string;
+  }> {
+    try {
+      if (!token) {
+        return {
+          success: false,
+          error: "Token not available",
+        };
+      }
+
+      await this.ensureApiReady();
+
+      const formattedDate = date.toISOString().split("T")[0];
+
+      const response = await api.post(
+        "WebApi2/GetLiveLoc",
+        {
+          TokenC: token,
+          EmpId: empId,
+          Date: formattedDate,
+        },
+        {
+          headers: {
+            ...this.getHeaders(),
+            TokenC: token,
+          },
+          timeout: 10000,
+        },
+      );
+
+      console.log(
+        `[ApiService] Get Employee Location: ${empId}`,
+        response.status,
+      );
+
+      return {
+        success: true,
+        data: response.data?.data || [],
+      };
+    } catch (error: any) {
+      console.log("Get Employee Location Error:", error);
+
+      return {
+        success: false,
+        error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
   async updateLiveLocation(
     token: string,
     empId: number,
     lat: number,
     lon: number,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
-    console.log("updating empid: ", empId);
     try {
       if (!token) {
         return { success: false, error: "Token not available" };
@@ -2465,9 +2600,16 @@ class ApiService {
 
       await this.ensureApiReady();
 
+      const logTime = new Date().toLocaleTimeString();
+      console.log(
+        `[ApiService] Updating location: EmpId ${empId} at (${lat}, ${lon}) @ ${logTime}`,
+      );
+
       const response = await api.post(
         API_ENDPOINTS.UPDATE_LIVE_LOCATION,
-        null,
+        {
+          TokenC: token,
+        },
         {
           params: {
             TokenC: token,
@@ -2477,16 +2619,10 @@ class ApiService {
           },
           headers: {
             ...this.getHeaders(),
-            Token: token,
+            TokenC: token,
           },
           timeout: 8000,
         },
-      );
-
-      console.log(
-        "Updating location:",
-        response.data,
-        new Date().toLocaleTimeString(),
       );
 
       return {

@@ -5,6 +5,7 @@ import {
   startLiveLocationTask,
   stopLiveLocationTask,
 } from "@/services/liveLocationBackground";
+import { startForegroundLiveLocation, stopForegroundLiveLocation } from "@/services/liveLocationForeground";
 import { resolveWorkingDomain } from "@/utils/domainResolver";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -169,9 +170,15 @@ export default function Login() {
         // Auto-sync live location based on user profile policy
         if (mergedUserData.IsLiveLocN === 1) {
           await saveLiveLocationCredentials(
-            mergedUserData.TokenC, 
-            mergedUserData.EmpIdN, 
+            mergedUserData.TokenC,
+            mergedUserData.EmpIdN,
             mergedUserData.LiveDurN
+          );
+          
+          await startForegroundLiveLocation(
+            mergedUserData.TokenC,
+            mergedUserData.EmpIdN,
+            mergedUserData.LiveDurN * 1000,
           );
           await startLiveLocationTask();
         } else {
@@ -190,6 +197,7 @@ export default function Login() {
 
     tryAutoLogin();
   }, [logout, router, setUser]);
+
 
   const showSnackbar = (
     message: string,
@@ -275,14 +283,21 @@ export default function Login() {
     // Trigger background tracking if enabled in profile
     if (finalUserData.IsLiveLocN === 1) {
       await saveLiveLocationCredentials(
-        finalUserData.TokenC, 
-        finalUserData.EmpIdN, 
+        finalUserData.TokenC,
+        finalUserData.EmpIdN,
         finalUserData.LiveDurN
+      );
+
+      await startForegroundLiveLocation(
+        finalUserData.TokenC,
+        finalUserData.EmpIdN,
+        finalUserData.LiveDurN * 1000,
       );
       await startLiveLocationTask();
     } else {
       await stopLiveLocationTask();
       await clearLiveLocationCredentials();
+      stopForegroundLiveLocation();
     }
 
     await setUser(finalUserData);
@@ -342,7 +357,7 @@ export default function Login() {
         workingDomain,
         normalizedDomainId || undefined,
       );
-      
+
       const token = response.data.data?.TokenC;
       const empId = response.data.data?.EmpIdN;
 

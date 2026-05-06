@@ -127,12 +127,16 @@ export default function SettingsScreen() {
     const shouldTrack = user.IsLiveLocN === 1;
     setIsLiveLocationEnabled(shouldTrack);
 
-    if (shouldTrack) {
-      void startLiveLocationTracking();
-    } else {
-      void stopLiveLocationTask();
-      void clearLiveLocationCredentials();
-    }
+    const syncTask = async () => {
+      if (shouldTrack) {
+        await startLiveLocationTracking();
+      } else {
+        await stopLiveLocationTask();
+        await clearLiveLocationCredentials();
+      }
+    };
+
+    syncTask();
   }, [user?.IsLiveLocN, startLiveLocationTracking]);
 
   const handleLogout = async () => {

@@ -14,6 +14,7 @@ export const API_ENDPOINTS = {
 
   ATTENDANCE_REPORT: "/WebApi2/GetMobileAttenRpt",
   GET_LIVE_LOCATION: "/WebApi2/GetLiveLoc",
+  GET_LIVE_LOCATION_ALL: "/WebApi2/GetLiveLocAll",
   UPDATE_LIVE_LOCATION: "/WebApi2/UpdateLiveLoc",
 
   // Projects

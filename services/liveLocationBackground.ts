@@ -1,3 +1,4 @@
+import { useUser } from "@/context/UserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
@@ -7,7 +8,6 @@ export const LIVE_LOCATION_TASK_NAME = "trickyhr-live-location-task";
 const LIVE_LOCATION_TOKEN_KEY = "live_location_token";
 const LIVE_LOCATION_EMP_ID_KEY = "live_location_emp_id";
 const LIVE_LOCATION_INTERVAL_KEY = "live_location_interval";
-const DEFAULT_INTERVAL_MS = 30000; // Default 30 seconds
 
 type TaskData = {
   locations?: Array<{
@@ -25,6 +25,11 @@ if (!TaskManager.isTaskDefined(LIVE_LOCATION_TASK_NAME)) {
     try {
       const payload = data as TaskData | undefined;
       const latest = payload?.locations?.[payload.locations.length - 1];
+
+      console.log(
+        `[Background Service] Task triggered. Location count: ${payload?.locations?.length ?? 0}`,
+      );
+
       const latitude = latest?.coords?.latitude;
       const longitude = latest?.coords?.longitude;
 
@@ -78,6 +83,9 @@ export const stopLiveLocationTask = async () => {
 export const startLiveLocationTask = async (): Promise<boolean> => {
   const foreground = await Location.getForegroundPermissionsAsync();
   let foregroundStatus = foreground.status;
+  const { user } = useUser();
+
+  const DEFAULT_INTERVAL_MS = user?.LiveDurN || 30;
 
   if (foregroundStatus !== "granted") {
     const requestedForeground =
@@ -101,20 +109,30 @@ export const startLiveLocationTask = async (): Promise<boolean> => {
   const started = await Location.hasStartedLocationUpdatesAsync(
     LIVE_LOCATION_TASK_NAME,
   );
-  if (started) {
-    // Restart to ensure updated interval/accuracy options are applied.
-    await Location.stopLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME);
-  }
 
   const intervalValue = await AsyncStorage.getItem(LIVE_LOCATION_INTERVAL_KEY);
   const intervalMs = intervalValue
     ? Number(intervalValue) * 1000
     : DEFAULT_INTERVAL_MS;
 
+  // Prevent redundant restarts which reset the update timer
+  if (started) {
+    console.log(
+      `[LiveLocation] Task already running at ${intervalMs}ms interval.`,
+    );
+    return true;
+  }
+
+  console.log(
+    `[LiveLocation] Initializing background task. Interval: ${intervalMs}ms`,
+  );
+
   await Location.startLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME, {
-    accuracy: Location.Accuracy.Highest,
+    accuracy: Location.Accuracy.High,
+    activityType: Location.ActivityType.Other,
+    deferredUpdatesDistance: 0,
     timeInterval: intervalMs,
-    deferredUpdatesInterval: intervalMs,
+    deferredUpdatesInterval: 0,
     distanceInterval: 0,
     pausesUpdatesAutomatically: false,
     mayShowUserSettingsDialog: true,
@@ -122,6 +140,7 @@ export const startLiveLocationTask = async (): Promise<boolean> => {
       notificationTitle: "TrickyHr Live Location",
       notificationBody: "Live location sharing is active.",
       notificationColor: "#e46a23",
+      killServiceOnDestroy: false,
     },
     showsBackgroundLocationIndicator: true,
   });
