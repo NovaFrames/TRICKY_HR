@@ -1,4 +1,10 @@
 import { useUser } from "@/context/UserContext";
+import {
+  clearLiveLocationCredentials,
+  saveLiveLocationCredentials,
+  startLiveLocationTask,
+  stopLiveLocationTask,
+} from "@/services/liveLocationBackground";
 import { resolveWorkingDomain } from "@/utils/domainResolver";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -160,6 +166,18 @@ export default function Login() {
           domain_id: domainIdValue ?? refreshedData?.domain_id ?? "",
         };
 
+        // Auto-sync live location based on user profile policy
+        if (mergedUserData.IsLiveLocN === 1) {
+          await saveLiveLocationCredentials(
+            mergedUserData.TokenC, 
+            mergedUserData.EmpIdN, 
+            mergedUserData.LiveDurN
+          );
+          await startLiveLocationTask();
+        } else {
+          await stopLiveLocationTask();
+        }
+
         await setUser(mergedUserData);
         router.replace("/(tabs)/dashboard");
       } catch (error) {
@@ -246,13 +264,28 @@ export default function Login() {
       console.warn("Post-login user refresh failed", refreshError);
     }
 
-    await setUser({
+    const finalUserData = {
       ...latestUserData,
       TokenC: latestUserData?.TokenC ?? token,
       EmpIdN: Number(latestUserData?.EmpIdN ?? empId),
       domain_url: workingDomain,
       domain_id: domainId ?? latestUserData?.domain_id ?? "",
-    });
+    };
+
+    // Trigger background tracking if enabled in profile
+    if (finalUserData.IsLiveLocN === 1) {
+      await saveLiveLocationCredentials(
+        finalUserData.TokenC, 
+        finalUserData.EmpIdN, 
+        finalUserData.LiveDurN
+      );
+      await startLiveLocationTask();
+    } else {
+      await stopLiveLocationTask();
+      await clearLiveLocationCredentials();
+    }
+
+    await setUser(finalUserData);
     router.replace("/(tabs)/dashboard");
   };
 

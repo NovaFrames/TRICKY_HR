@@ -73,7 +73,8 @@ export default function SettingsScreen() {
         return false;
       }
 
-      await saveLiveLocationCredentials(token, empId);
+      const interval = Number(user?.LiveDurN ?? 0);
+      await saveLiveLocationCredentials(token, empId, interval > 0 ? interval : undefined);
       const started = await startLiveLocationTask();
       if (!started) {
         Alert.alert(
@@ -120,39 +121,19 @@ export default function SettingsScreen() {
   );
 
   useEffect(() => {
-    mountedRef.current = true;
-    let isActive = true;
+    if (!user) return;
 
-    const bootstrapLiveLocation = async () => {
-      const saved = await AsyncStorage.getItem("live_location_enabled");
-      const enabled = saved === "true";
+    // Sync tracking state with company policy in user profile
+    const shouldTrack = user.IsLiveLocN === 1;
+    setIsLiveLocationEnabled(shouldTrack);
 
-      if (!isActive || !mountedRef.current) return;
-
-      setIsLiveLocationEnabled(enabled);
-
-      if (enabled) {
-        const started = await startLiveLocationTracking();
-        if (!started && isActive && mountedRef.current) {
-          setIsLiveLocationEnabled(false);
-          await AsyncStorage.setItem("live_location_enabled", "false");
-          await stopLiveLocationTask();
-          await clearLiveLocationCredentials();
-        }
-      } else {
-        await stopLiveLocationTask();
-        await clearLiveLocationCredentials();
-      }
-    };
-
-    bootstrapLiveLocation();
-
-    return () => {
-      isActive = false;
-      mountedRef.current = false;
+    if (shouldTrack) {
+      void startLiveLocationTracking();
+    } else {
       void stopLiveLocationTask();
-    };
-  }, [startLiveLocationTracking]);
+      void clearLiveLocationCredentials();
+    }
+  }, [user?.IsLiveLocN, startLiveLocationTracking]);
 
   const handleLogout = async () => {
     await stopLiveLocationTask();
@@ -205,13 +186,12 @@ export default function SettingsScreen() {
           onValueChange: toggleTheme,
         },
         {
-          label: "Allow Live Location",
-          description: "Continuously send your live location to server",
+          label: "Live Location",
+          description: user?.IsLiveLocN === 1 
+            ? "Enabled (Managed by Organization)" 
+            : "Disabled for your account",
           icon: <Ionicons name="location" />,
           color: "#0ea5e9",
-          type: "switch",
-          switchValue: isLiveLocationEnabled,
-          onValueChange: handleToggleLiveLocation,
         },
         {
           label: "Choose Theme",

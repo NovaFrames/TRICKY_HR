@@ -6,7 +6,8 @@ import ApiService from "./ApiService";
 export const LIVE_LOCATION_TASK_NAME = "trickyhr-live-location-task";
 const LIVE_LOCATION_TOKEN_KEY = "live_location_token";
 const LIVE_LOCATION_EMP_ID_KEY = "live_location_emp_id";
-const LIVE_LOCATION_UPDATE_MS = 10_000;
+const LIVE_LOCATION_INTERVAL_KEY = "live_location_interval";
+const DEFAULT_INTERVAL_MS = 30000; // Default 30 seconds
 
 type TaskData = {
   locations?: Array<{
@@ -42,15 +43,26 @@ if (!TaskManager.isTaskDefined(LIVE_LOCATION_TASK_NAME)) {
   });
 }
 
-export const saveLiveLocationCredentials = async (token: string, empId: number) => {
+export const saveLiveLocationCredentials = async (
+  token: string,
+  empId: number,
+  intervalSeconds?: number,
+) => {
   await AsyncStorage.setItem(LIVE_LOCATION_TOKEN_KEY, token);
   await AsyncStorage.setItem(LIVE_LOCATION_EMP_ID_KEY, String(empId));
+  if (intervalSeconds !== undefined) {
+    await AsyncStorage.setItem(
+      LIVE_LOCATION_INTERVAL_KEY,
+      String(intervalSeconds),
+    );
+  }
 };
 
 export const clearLiveLocationCredentials = async () => {
   await AsyncStorage.multiRemove([
     LIVE_LOCATION_TOKEN_KEY,
     LIVE_LOCATION_EMP_ID_KEY,
+    LIVE_LOCATION_INTERVAL_KEY,
   ]);
 };
 
@@ -68,7 +80,8 @@ export const startLiveLocationTask = async (): Promise<boolean> => {
   let foregroundStatus = foreground.status;
 
   if (foregroundStatus !== "granted") {
-    const requestedForeground = await Location.requestForegroundPermissionsAsync();
+    const requestedForeground =
+      await Location.requestForegroundPermissionsAsync();
     foregroundStatus = requestedForeground.status;
   }
 
@@ -78,7 +91,8 @@ export const startLiveLocationTask = async (): Promise<boolean> => {
   let backgroundStatus = background.status;
 
   if (backgroundStatus !== "granted") {
-    const requestedBackground = await Location.requestBackgroundPermissionsAsync();
+    const requestedBackground =
+      await Location.requestBackgroundPermissionsAsync();
     backgroundStatus = requestedBackground.status;
   }
 
@@ -92,10 +106,15 @@ export const startLiveLocationTask = async (): Promise<boolean> => {
     await Location.stopLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME);
   }
 
+  const intervalValue = await AsyncStorage.getItem(LIVE_LOCATION_INTERVAL_KEY);
+  const intervalMs = intervalValue
+    ? Number(intervalValue) * 1000
+    : DEFAULT_INTERVAL_MS;
+
   await Location.startLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME, {
     accuracy: Location.Accuracy.Highest,
-    timeInterval: LIVE_LOCATION_UPDATE_MS,
-    deferredUpdatesInterval: LIVE_LOCATION_UPDATE_MS,
+    timeInterval: intervalMs,
+    deferredUpdatesInterval: intervalMs,
     distanceInterval: 0,
     pausesUpdatesAutomatically: false,
     mayShowUserSettingsDialog: true,

@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
@@ -29,6 +30,8 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [leaveData, setLeaveData] = useState<any>(null);
+  const [cancelRemarks, setCancelRemarks] = useState("");
+  const [showCancelPrompt, setShowCancelPrompt] = useState(false);
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -136,6 +139,54 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
         },
       ],
     );
+  };
+
+  const handleCancelApproved = async () => {
+    if (!cancelRemarks.trim()) {
+      ConfirmModal.alert("Error", "Please enter remarks for cancellation.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const requestId = item.IdN || item.Id || item.id;
+      
+      const parseDate = (dateStr: string | undefined) => {
+        if (!dateStr) return new Date();
+        try {
+          if (typeof dateStr === "string" && dateStr.includes("/Date(")) {
+            const timestamp = parseInt(dateStr.replace(/\/Date\((-?\d+)\)\//, "$1"));
+            return new Date(timestamp);
+          }
+          return new Date(dateStr);
+        } catch (e) {
+          return new Date();
+        }
+      };
+
+      const fromDate = parseDate(item.LFromDateD || item.FromDate);
+      const toDate = parseDate(item.LToDateD || item.ToDate);
+
+      const result = await ApiService.cancelApprovedRequest(
+        requestId,
+        "Lev",
+        fromDate,
+        toDate,
+        cancelRemarks
+      );
+
+      if (result.success) {
+        ConfirmModal.alert("Success", "Approved leave cancelled successfully");
+        setShowCancelPrompt(false);
+        onClose();
+        onRefresh?.();
+      } else {
+        ConfirmModal.alert("Error", result.error || "Failed to cancel approved leave.");
+      }
+    } catch (error: any) {
+      ConfirmModal.alert("Error", error.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderContent = () => {
@@ -360,17 +411,65 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
       title="Leave Manage"
       subtitle={`Ref: #${item.IdN || "N/A"}`}
       footer={
-        status.toLowerCase().includes("waiting") ||
-        status.toLowerCase().includes("pending") ? (
-          <CustomButton
-            title="Cancel Request"
-            icon="close"
-            isLoading={loading}
-            disabled={loading}
-            onPress={handleCancelRequest}
-            style={styles.cancelButton}
-          />
-        ) : null
+        (() => {
+          if (status.toLowerCase().includes("waiting") || status.toLowerCase().includes("pending")) {
+            return (
+              <CustomButton
+                title="Cancel Request"
+                icon="close"
+                isLoading={loading}
+                disabled={loading}
+                onPress={handleCancelRequest}
+                style={styles.cancelButton}
+              />
+            );
+          } else if (status.toLowerCase().includes("approv")) {
+            return (
+              <View style={styles.cancelPromptContainer}>
+                {showCancelPrompt ? (
+                  <View style={styles.cancelPromptInner}>
+                    <TextInput 
+                      placeholder="Enter cancellation remarks..."
+                      placeholderTextColor={theme.placeholder}
+                      value={cancelRemarks}
+                      onChangeText={setCancelRemarks}
+                      style={[styles.cancelInput, { borderColor: theme.inputBorder, color: theme.text, backgroundColor: theme.inputBg }]}
+                      multiline
+                    />
+                    <View style={styles.cancelPromptButtons}>
+                      <CustomButton 
+                        title="Back"
+                        onPress={() => setShowCancelPrompt(false)}
+                        style={[styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
+                        textColor={theme.text}
+                      />
+                      <CustomButton 
+                        title="Confirm"
+                        isLoading={loading}
+                        disabled={loading || !cancelRemarks.trim()}
+                        onPress={handleCancelApproved}
+                        style={[styles.cancelButton, {  backgroundColor: "#DC2626", borderColor: "#DC2626" }]}
+                        textColor="#fff"
+                      />
+                    </View>
+                  </View>
+                ) : (
+                  <CustomButton
+                    title="Cancel Approved Leave"
+                    icon="close-circle"
+                    isLoading={loading}
+                    disabled={loading}
+                    onPress={() => setShowCancelPrompt(true)}
+                    style={[styles.cancelButton, { borderColor: "#DC2626", backgroundColor: "#FEE2E2" }]}
+                    textColor="#DC2626"
+                    iconColor="#DC2626"
+                  />
+                )}
+              </View>
+            );
+          }
+          return null;
+        })()
       }
     >
       <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
@@ -460,6 +559,25 @@ const styles = StyleSheet.create({
     color: "#DC2626",
     fontWeight: "700",
     fontSize: 16,
+  },
+  cancelPromptContainer: {
+    width: "100%",
+  },
+  cancelPromptInner: {
+    gap: 10,
+  },
+  cancelInput: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 12,
+    minHeight: 80,
+    textAlignVertical: "top",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  cancelPromptButtons: {
+    flexDirection: "row",
+    gap: 10,
   },
   loadingContainer: {
     alignItems: "center",

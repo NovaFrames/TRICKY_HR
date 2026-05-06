@@ -1080,6 +1080,89 @@ class ApiService {
     }
   }
 
+  async cancelApprovedRequest(
+    requestId: number | string,
+    requestType: string,
+    fromDate: Date | undefined,
+    toDate: Date | undefined,
+    remarks: string,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token || !this.empId) {
+        await this.loadCredentials();
+      }
+
+      if (!this.token || !this.empId) {
+        return {
+          success: false,
+          error: "Authentication token not found. Please login again.",
+        };
+      }
+
+      const formatDate = (date?: Date) => {
+        if (!date) return new Date().toISOString();
+        return date.toISOString();
+      };
+
+      const payload = {
+        TokenC: this.token,
+        EmpId: this.empId,
+        Type: requestType,
+        Id: Number(requestId),
+        FromDate: formatDate(fromDate),
+        ToDate: formatDate(toDate),
+        RemarksC: remarks,
+      };
+
+      await this.ensureApiReady();
+
+      let response;
+      try {
+        response = await api.post(API_ENDPOINTS.GET_DELETE_APPLY, payload, {
+          headers: this.getHeaders(),
+        });
+      } catch (e: any) {
+        const fallbackEndpoint =
+          (API_ENDPOINTS as any).GET_DELETE_APPLY || "EmpPortal/GetDeletApply";
+        response = await api.post(fallbackEndpoint, payload, {
+          headers: this.getHeaders(),
+        });
+      }
+
+      const status =
+        response.data?.Status ||
+        response.data?.status ||
+        response.data?.success;
+
+      if (status === "success" || status === "Success" || status === true) {
+        return { success: true, data: response.data };
+      } else {
+        const errorMessage =
+          response.data?.Error ||
+          response.data?.Message ||
+          response.data?.error ||
+          response.data?.message ||
+          "Failed to cancel approved request";
+
+        return {
+          success: false,
+          error:
+            errorMessage !== "ok"
+              ? errorMessage
+              : "Failed to cancel approved request",
+        };
+      }
+    } catch (error: any) {
+      console.error("Cancel Approved Request API Error:", error);
+      const errorMessage =
+        error.response?.data?.Error ||
+        error.response?.data?.Message ||
+        error.message ||
+        "Network error";
+      return { success: false, error: errorMessage };
+    }
+  }
+
   // Request Status
   async getEmpRequestStatus(): Promise<{
     success: boolean;
