@@ -1,4 +1,5 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { useUser } from "@/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -24,6 +25,11 @@ interface TimeRequestModalProps {
 }
 
 const RequestTypes = [
+  { label: "In Time", value: "In Time" },
+  { label: "Out Time", value: "Out Time" },
+];
+
+const RequestTypesTwo = [
   { label: "In Time", value: "In Time" },
   { label: "Out Time", value: "Out Time" },
   { label: "In & Out Time", value: "In & Out Time" },
@@ -53,6 +59,8 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
     outTime: "00:00",
     remarks: "",
   });
+
+  const {user} = useUser();
 
   useEffect(() => {
     if (visible) {
@@ -379,7 +387,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
         visible={showRequestTypeSelector}
         onClose={() => setShowRequestTypeSelector(false)}
         title="Select Request Type"
-        options={RequestTypes}
+        options={user?.TRInorOutN === 1 ? RequestTypes : RequestTypesTwo}
         selectedValue={formData.requestType}
         onSelect={(val) =>
           setFormData((prev) => ({ ...prev, requestType: val }))

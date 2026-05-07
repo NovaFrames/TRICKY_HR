@@ -1,32 +1,26 @@
 import { useUser } from "@/context/UserContext";
-import {
-  saveLiveLocationCredentials,
-  startLiveLocationTask
-} from "@/services/liveLocationBackground";
-import { startForegroundLiveLocation } from "@/services/liveLocationForeground";
 import { resolveWorkingDomain } from "@/utils/domainResolver";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableWithoutFeedback,
-  View,
+    Dimensions,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 import Animated, {
-  Easing,
-  interpolate,
-  interpolateColor,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    Easing,
+    interpolate,
+    interpolateColor,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -36,10 +30,10 @@ import Modal from "../../components/common/SingleModal";
 import Snackbar from "../../components/common/Snackbar";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, {
-  compPoliciesUpdate,
-  loginUser,
-  refreshLoginUser,
-  setBaseUrl,
+    compPoliciesUpdate,
+    loginUser,
+    refreshLoginUser,
+    setBaseUrl,
 } from "../../services/ApiService";
 
 const { width, height } = Dimensions.get("window");
@@ -166,32 +160,6 @@ export default function Login() {
           domain_id: domainIdValue ?? refreshedData?.domain_id ?? "",
         };
 
-        // Auto-sync live location based on user profile policy
-        if (mergedUserData.IsLiveLocN === 1) {
-          await saveLiveLocationCredentials(
-            mergedUserData.TokenC,
-            mergedUserData.EmpIdN,
-            mergedUserData.LiveDurN
-          );
-
-          await startForegroundLiveLocation(
-            mergedUserData.TokenC,
-            mergedUserData.EmpIdN,
-            mergedUserData.LiveDurN * 1000,
-          );
-
-          const alreadyRunning =
-            await Location.hasStartedLocationUpdatesAsync(
-              "trickyhr-live-location-task",
-            );
-
-          if (!alreadyRunning) {
-            await startLiveLocationTask(
-              mergedUserData.LiveDurN,
-            );
-          }
-        }
-
         await setUser(mergedUserData);
         router.replace("/(tabs)/dashboard");
       } catch (error) {
@@ -286,22 +254,6 @@ export default function Login() {
       domain_url: workingDomain,
       domain_id: domainId ?? latestUserData?.domain_id ?? "",
     };
-
-    // Trigger background tracking if enabled in profile
-    if (finalUserData.IsLiveLocN === 1) {
-      await saveLiveLocationCredentials(
-        finalUserData.TokenC,
-        finalUserData.EmpIdN,
-        finalUserData.LiveDurN
-      );
-
-      await startForegroundLiveLocation(
-        finalUserData.TokenC,
-        finalUserData.EmpIdN,
-        finalUserData.LiveDurN * 1000,
-      );
-      await startLiveLocationTask(finalUserData.LiveDurN,);
-    }
 
     await setUser(finalUserData);
     router.replace("/(tabs)/dashboard");

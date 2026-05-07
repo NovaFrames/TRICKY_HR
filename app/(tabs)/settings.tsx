@@ -136,23 +136,14 @@ export default function SettingsScreen() {
   );
 
   useEffect(() => {
-    if (!user) return;
-
-    // Sync tracking state with company policy in user profile
-    const shouldTrack = user.IsLiveLocN === 1;
-    setIsLiveLocationEnabled(shouldTrack);
-
-    const syncTask = async () => {
-      if (shouldTrack) {
-        await startLiveLocationTracking();
-      } else {
-        await stopLiveLocationTask();
-        await clearLiveLocationCredentials();
+    const loadTrackingState = async () => {
+      const stored = await AsyncStorage.getItem("live_location_enabled");
+      if (stored !== null) {
+        setIsLiveLocationEnabled(stored === "true");
       }
     };
-
-    syncTask();
-  }, [user?.IsLiveLocN, startLiveLocationTracking]);
+    loadTrackingState();
+  }, []);
 
   const handleLogout = async () => {
     await stopLiveLocationTask();
@@ -172,7 +163,7 @@ export default function SettingsScreen() {
           description: "Update your profile information",
           icon: <FontAwesome5 name="user" />,
           color: "#3b82f6",
-          type: "action",
+          type: "action" as const,
           onPress: () => {
             router.push({
               pathname: "/(tabs)/employee/profileupdate",
@@ -185,7 +176,7 @@ export default function SettingsScreen() {
           description: "Update your password",
           icon: <MaterialIcons name="lock" />,
           color: "#f59e0b",
-          type: "action",
+          type: "action" as const,
           onPress: () => {
             router.push("/settings/ChangePassword");
           },
@@ -200,18 +191,25 @@ export default function SettingsScreen() {
           description: "Toggle dark theme",
           icon: <Ionicons name="moon" />,
           color: "#6366f1",
-          type: "switch",
+          type: "switch" as const,
           switchValue: isDark,
           onValueChange: toggleTheme,
         },
-        {
-          label: "Live Location",
-          description: user?.IsLiveLocN === 1
-            ? "Enabled (Managed by Organization)"
-            : "Disabled for your account",
-          icon: <Ionicons name="location" />,
-          color: "#0ea5e9",
-        },
+        ...(user?.IsLiveLocN === 1
+          ? [
+              {
+                label: "Live Location",
+                description: isLiveLocationEnabled
+                  ? "Tracking is currently active"
+                  : "Turn on to share location in background",
+                icon: <Ionicons name="location" />,
+                color: "#0ea5e9",
+                type: "switch" as const,
+                switchValue: isLiveLocationEnabled,
+                onValueChange: handleToggleLiveLocation,
+              },
+            ]
+          : []),
         {
           label: "Choose Theme",
           description: "",
@@ -228,7 +226,7 @@ export default function SettingsScreen() {
           description: "Log out from your account",
           icon: <Ionicons name="log-out-outline" />,
           color: "#ef4444",
-          type: "action",
+          type: "action" as const,
           onPress: handleLogout,
         },
       ],

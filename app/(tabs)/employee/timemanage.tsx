@@ -170,7 +170,6 @@ export default function TimeManage() {
 
         setTimeData(sorted);
       }
-      console.log("timemanageData: ", res.data);
     } catch (error) {
       console.error("Error fetching time data:", error);
       ConfirmModal.alert(
