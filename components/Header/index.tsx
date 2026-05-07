@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Href, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
-  BackHandler,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    BackHandler,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -21,14 +21,16 @@ export const BACK_FALLBACKS: Record<string, Href> = {
   dashboard: "/dashboard",
   approvaldetails: "/officer/approvaldetails",
   employeelist: "/officer/emplist",
+  location: "/(tabs)/officer/location",
 };
 
-export default function Header({ title }: { title: string }) {
+export default function Header({ title, onBack }: { title: string; onBack?: () => void }) {
   const { theme } = useTheme();
   const router = useRouter();
   const { from } = useLocalSearchParams<{ from?: string }>();
 
   const handleBack = () => {
+    if (onBack) return onBack();
     if (typeof from === "string" && BACK_FALLBACKS[from]) {
       router.replace(BACK_FALLBACKS[from]);
       return;

@@ -3,7 +3,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -161,6 +161,7 @@ export default function OfficerLocationListScreen() {
   const { theme } = useTheme();
   const { user } = useUser();
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
 
   const LIVE_REFRESH_MS =
     (Number(user?.LiveDurN) || 30) * 1000;
@@ -185,7 +186,7 @@ export default function OfficerLocationListScreen() {
 
   const inFlightRef = useRef(false);
 
-  useProtectedBack({
+  const protectedBack = useProtectedBack({
     home: "/home",
     settings: "/settings",
     dashboard: "/dashboard",
@@ -450,7 +451,7 @@ export default function OfficerLocationListScreen() {
         },
       ]}
     >
-      <Header title="Location" />
+      <Header title="Location" onBack={protectedBack} />
 
       <View style={styles.body}>
         {/* =========================
@@ -586,6 +587,8 @@ export default function OfficerLocationListScreen() {
                   pathname: "/(tabs)/officer/location-map",
                   params: {
                     mode: "all",
+                    from: "location",
+                    parentFrom: from,
                   },
                 });
               }}
@@ -656,6 +659,8 @@ export default function OfficerLocationListScreen() {
                         mode: "single",
                         empId: String(marker.empId),
                         empName: marker.empName,
+                        from: "location",
+                        parentFrom: from,
                       },
                     })
                   }

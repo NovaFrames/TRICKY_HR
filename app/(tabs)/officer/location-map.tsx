@@ -3,7 +3,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -171,6 +171,8 @@ export default function OfficerLocationMapScreen() {
     dateD?: string | string[];
     lat?: string | string[];
     lon?: string | string[];
+    from?: string | string[];
+    parentFrom?: string | string[];
   }>();
 
   const mode = toParamString(params.mode) === "all" ? "all" : "single";
@@ -198,11 +200,13 @@ export default function OfficerLocationMapScreen() {
   const LIVE_REFRESH_MS =
     (user?.LiveDurN ?? 30) * 1000;
 
+  const router = useRouter();
+
   const protectedBack = useProtectedBack({
-    home: "/home",
-    settings: "/settings",
-    dashboard: "/dashboard",
-    location: "/officer/location",
+    location: {
+      pathname: "/(tabs)/officer/location",
+      params: { from: toParamString(params.parentFrom) || "home" },
+    },
   });
 
   // Safety-first behavior:
@@ -437,7 +441,7 @@ export default function OfficerLocationMapScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Header title="Location" />
+      <Header title="Location" onBack={protectedBack} />
 
       <View style={styles.body}>
         {loading ? (
