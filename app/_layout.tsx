@@ -109,7 +109,10 @@ function RootNavigator() {
     let cancelled = false;
 
     const syncLiveLocationTracking = async () => {
-      const enabled = (await AsyncStorage.getItem("live_location_enabled")) === "true";
+      const storedEnabled = (await AsyncStorage.getItem("live_location_enabled")) === "true";
+      // Check if location tracking is required by company policy (IsLiveLocN === 0)
+      const policyEnabled = user?.IsLiveLocN === 0;
+      const enabled = storedEnabled || policyEnabled;
 
       if (!enabled || !isAuthenticated) {
         await stopLiveLocationTask();
@@ -154,7 +157,15 @@ function RootNavigator() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isLoading, user?.EmpIdN, user?.Token, user?.TokenC]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    user?.EmpIdN,
+    user?.Token,
+    user?.TokenC,
+    user?.LiveDurN,
+    user?.IsLiveLocN,
+  ]);
 
   if (isLoading) return null;
 

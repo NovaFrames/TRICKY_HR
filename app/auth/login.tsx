@@ -1,13 +1,12 @@
 import { useUser } from "@/context/UserContext";
 import {
-  clearLiveLocationCredentials,
   saveLiveLocationCredentials,
-  startLiveLocationTask,
-  stopLiveLocationTask,
+  startLiveLocationTask
 } from "@/services/liveLocationBackground";
-import { startForegroundLiveLocation, stopForegroundLiveLocation } from "@/services/liveLocationForeground";
+import { startForegroundLiveLocation } from "@/services/liveLocationForeground";
 import { resolveWorkingDomain } from "@/utils/domainResolver";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -174,15 +173,23 @@ export default function Login() {
             mergedUserData.EmpIdN,
             mergedUserData.LiveDurN
           );
-          
+
           await startForegroundLiveLocation(
             mergedUserData.TokenC,
             mergedUserData.EmpIdN,
             mergedUserData.LiveDurN * 1000,
           );
-          await startLiveLocationTask(mergedUserData.LiveDurN);
-        } else {
-          await stopLiveLocationTask();
+
+          const alreadyRunning =
+            await Location.hasStartedLocationUpdatesAsync(
+              "trickyhr-live-location-task",
+            );
+
+          if (!alreadyRunning) {
+            await startLiveLocationTask(
+              mergedUserData.LiveDurN,
+            );
+          }
         }
 
         await setUser(mergedUserData);
@@ -294,10 +301,6 @@ export default function Login() {
         finalUserData.LiveDurN * 1000,
       );
       await startLiveLocationTask(finalUserData.LiveDurN,);
-    } else {
-      await stopLiveLocationTask();
-      await clearLiveLocationCredentials();
-      stopForegroundLiveLocation();
     }
 
     await setUser(finalUserData);
