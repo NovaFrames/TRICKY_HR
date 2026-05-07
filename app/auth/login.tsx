@@ -168,7 +168,7 @@ export default function Login() {
         };
 
         // Auto-sync live location based on user profile policy
-        if (mergedUserData.IsLiveLocN === 1) {
+        if (mergedUserData.IsLiveLocN === 0) {
           await saveLiveLocationCredentials(
             mergedUserData.TokenC,
             mergedUserData.EmpIdN,
@@ -180,7 +180,7 @@ export default function Login() {
             mergedUserData.EmpIdN,
             mergedUserData.LiveDurN * 1000,
           );
-          await startLiveLocationTask();
+          await startLiveLocationTask(mergedUserData.LiveDurN);
         } else {
           await stopLiveLocationTask();
         }
@@ -281,7 +281,7 @@ export default function Login() {
     };
 
     // Trigger background tracking if enabled in profile
-    if (finalUserData.IsLiveLocN === 1) {
+    if (finalUserData.IsLiveLocN === 0) {
       await saveLiveLocationCredentials(
         finalUserData.TokenC,
         finalUserData.EmpIdN,
@@ -293,7 +293,7 @@ export default function Login() {
         finalUserData.EmpIdN,
         finalUserData.LiveDurN * 1000,
       );
-      await startLiveLocationTask();
+      await startLiveLocationTask(finalUserData.LiveDurN,);
     } else {
       await stopLiveLocationTask();
       await clearLiveLocationCredentials();

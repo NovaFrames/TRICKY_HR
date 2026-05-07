@@ -3,7 +3,6 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
-import { setAllLocationMarkers } from "@/utils/locationMapStore";
 import { useRouter } from "expo-router";
 import React, {
   useCallback,
@@ -583,18 +582,10 @@ export default function OfficerLocationListScreen() {
               ]}
               activeOpacity={0.8}
               onPress={() => {
-                setAllLocationMarkers(
-                  encodedAllMarkers,
-                );
-
                 router.push({
-                  pathname:
-                    "/(tabs)/officer/location-map",
-
+                  pathname: "/(tabs)/officer/location-map",
                   params: {
                     mode: "all",
-                    from:
-                      "location",
                   },
                 });
               }}
@@ -660,40 +651,11 @@ export default function OfficerLocationListScreen() {
                   }
                   onPress={() =>
                     router.push({
-                      pathname:
-                        "/(tabs)/officer/location-map",
-
+                      pathname: "/(tabs)/officer/location-map",
                       params: {
                         mode: "single",
-
-                        from:
-                          "location",
-
-                        empId:
-                          String(
-                            marker.empId,
-                          ),
-
-                        empCode:
-                          marker.empCode,
-
-                        empName:
-                          marker.empName,
-
-                        dateD:
-                          marker.dateD,
-
-                        lat: String(
-                          marker
-                            .coords
-                            .latitude,
-                        ),
-
-                        lon: String(
-                          marker
-                            .coords
-                            .longitude,
-                        ),
+                        empId: String(marker.empId),
+                        empName: marker.empName,
                       },
                     })
                   }

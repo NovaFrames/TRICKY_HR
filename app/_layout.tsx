@@ -119,15 +119,28 @@ function RootNavigator() {
 
       const token = (user?.TokenC || user?.Token || "").trim();
       const empId = Number(user?.EmpIdN ?? 0);
+      const interval =
+        Number(user?.LiveDurN ?? 0);
 
       if (!token || !empId) {
         await stopLiveLocationTask();
         await clearLiveLocationCredentials();
         return;
       }
+      await saveLiveLocationCredentials(
+        token,
+        empId,
+        interval > 0
+          ? interval
+          : undefined,
+      );
 
-      await saveLiveLocationCredentials(token, empId);
-      const started = await startLiveLocationTask();
+      const started =
+        await startLiveLocationTask(
+          interval > 0
+            ? interval
+            : undefined,
+        );
 
       if (!started && !cancelled) {
         await AsyncStorage.setItem("live_location_enabled", "false");

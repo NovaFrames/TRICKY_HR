@@ -1,10 +1,16 @@
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
+import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
-import { getAllLocationMarkers } from "@/utils/locationMapStore";
-import Constants from "expo-constants";
+import ApiService from "@/services/ApiService";
 import { useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { WebView } from "react-native-webview";
 
@@ -16,6 +22,72 @@ type MarkerData = {
   coords: {
     latitude: number;
     longitude: number;
+  };
+};
+
+type LiveLocationRow = {
+  EmpIdN?: number | string;
+  EmpCodeC?: string;
+  EmpNameC?: string;
+  DateD?: string;
+  LatC?: number | string;
+  LatN?: number | string;
+  Latitude?: number | string;
+  LonC?: number | string;
+  LonN?: number | string;
+  Longitude?: number | string;
+};
+
+const parseCoordinate = (value: unknown) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
+
+const normalizeMarker = (
+  row: LiveLocationRow,
+): MarkerData | null => {
+  const empId = Number(row.EmpIdN ?? 0);
+
+  if (!Number.isFinite(empId) || empId <= 0) {
+    return null;
+  }
+
+  const latitude =
+    parseCoordinate(row.LatC) ??
+    parseCoordinate(row.LatN) ??
+    parseCoordinate(row.Latitude);
+
+  const longitude =
+    parseCoordinate(row.LonC) ??
+    parseCoordinate(row.LonN) ??
+    parseCoordinate(row.Longitude);
+
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return {
+    empId,
+
+    empCode:
+      typeof row.EmpCodeC === "string"
+        ? row.EmpCodeC
+        : "",
+
+    empName:
+      typeof row.EmpNameC === "string"
+        ? row.EmpNameC
+        : `Employee ${empId}`,
+
+    dateD:
+      typeof row.DateD === "string"
+        ? row.DateD
+        : "",
+
+    coords: {
+      latitude,
+      longitude,
+    },
   };
 };
 
@@ -88,6 +160,8 @@ const DARK_MAP_STYLE = [
 
 export default function OfficerLocationMapScreen() {
   const { theme, isDark } = useTheme();
+  const { user } = useUser();
+
   const params = useLocalSearchParams<{
     mode?: string | string[];
     markers?: string | string[];
@@ -101,6 +175,29 @@ export default function OfficerLocationMapScreen() {
 
   const mode = toParamString(params.mode) === "all" ? "all" : "single";
 
+  const token = (
+    user?.TokenC ||
+    user?.Token ||
+    ""
+  ).trim();
+
+  const [visibleMarkers, setVisibleMarkers] =
+    useState<MarkerData[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const mountedRef = useRef(true);
+
+  const inFlightRef = useRef(false);
+
+  const empId = Number(
+    toParamString(params.empId),
+  );
+
+  const LIVE_REFRESH_MS =
+    (user?.LiveDurN ?? 30) * 1000;
+
   const protectedBack = useProtectedBack({
     home: "/home",
     settings: "/settings",
@@ -108,76 +205,12 @@ export default function OfficerLocationMapScreen() {
     location: "/officer/location",
   });
 
-  const allMarkers = useMemo(() => {
-    const raw = toParamString(params.markers);
-    const source = raw
-      ? raw
-      : JSON.stringify(getAllLocationMarkers());
-    if (!source) return [] as MarkerData[];
-    try {
-      const parsed = JSON.parse(source) as Array<{
-        empId: number;
-        empCode: string;
-        empName: string;
-        dateD: string;
-        latitude: number;
-        longitude: number;
-      }>;
-      return parsed
-        .map((item) => ({
-          empId: Number(item.empId),
-          empCode: item.empCode || "",
-          empName: item.empName || `Employee ${item.empId}`,
-          dateD: item.dateD || "",
-          coords: {
-            latitude: Number(item.latitude),
-            longitude: Number(item.longitude),
-          },
-        }))
-        .filter(
-          (item) =>
-            Number.isFinite(item.empId) &&
-            Number.isFinite(item.coords.latitude) &&
-            Number.isFinite(item.coords.longitude),
-        );
-    } catch {
-      return [] as MarkerData[];
-    }
-  }, [params.markers]);
-
-  const androidMapsApiKey = useMemo(() => {
-    const envKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-    const expoConfigKey = Constants.expoConfig?.android?.config?.googleMaps?.apiKey || "";
-    const expoExtraKey = Constants.expoConfig?.extra?.googleMapsApiKey || "";
-    return [envKey, expoConfigKey, expoExtraKey].find((value) => value.trim()) || "";
-  }, []);
-
   // Safety-first behavior:
   // Android release builds can crash at native map init on some devices/configs.
   // Keep Android on WebView map path to prevent app-close crashes in production.
   const canUseNativeMap =
     Platform.OS !== "android" && MapViewComponent && MarkerComponent;
 
-  const singleMarker = useMemo(() => {
-    const empId = Number(toParamString(params.empId));
-    const latitude = Number(toParamString(params.lat));
-    const longitude = Number(toParamString(params.lon));
-    if (!Number.isFinite(empId) || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      return null;
-    }
-    return {
-      empId,
-      empCode: toParamString(params.empCode),
-      empName: toParamString(params.empName) || `Employee ${empId}`,
-      dateD: toParamString(params.dateD),
-      coords: { latitude, longitude },
-    } as MarkerData;
-  }, [params.dateD, params.empCode, params.empId, params.empName, params.lat, params.lon]);
-
-  const visibleMarkers = useMemo(() => {
-    if (mode === "all") return allMarkers;
-    return singleMarker ? [singleMarker] : [];
-  }, [allMarkers, mode, singleMarker]);
 
   const region = useMemo(() => {
     if (visibleMarkers.length === 0) return null;
@@ -262,22 +295,166 @@ export default function OfficerLocationMapScreen() {
   }, [region, visibleMarkers]);
 
   const titleText =
-    mode === "all" ? "All Locations" : singleMarker?.empName || "Location";
+    mode === "all"
+      ? "All Locations"
+      : toParamString(
+        params.empName,
+      ) || "Location";
+
   const subtitleText =
     mode === "all"
       ? `Users: ${visibleMarkers.length}`
       : `Last updated: ${(() => {
-        const ms = parseDotNetDateMs(singleMarker?.dateD);
-        return ms ? new Date(ms).toLocaleString() : "N/A";
-      })()
-      }`;
+        const ms =
+          parseDotNetDateMs(
+            visibleMarkers[0]
+              ?.dateD,
+          );
+
+        return ms
+          ? new Date(
+            ms,
+          ).toLocaleString()
+          : "N/A";
+      })()}`;
+
+
+  const fetchLocations = useCallback(async () => {
+    if (
+      !token ||
+      inFlightRef.current
+    ) {
+      return;
+    }
+
+    inFlightRef.current = true;
+
+    try {
+      const requestDate =
+        new Date();
+
+      // =========================
+      // ALL USERS
+      // =========================
+
+      if (mode === "all") {
+        const response =
+          await ApiService.getAllLiveLocations(
+            token,
+            requestDate,
+          );
+
+        const rows: LiveLocationRow[] =
+          Array.isArray(response?.data)
+            ? response.data
+            : [];
+
+        const normalized = rows
+          .map((row) =>
+            normalizeMarker(row),
+          )
+          .filter(
+            (
+              row,
+            ): row is MarkerData =>
+              !!row,
+          );
+
+        if (mountedRef.current) {
+          setVisibleMarkers(
+            normalized,
+          );
+        }
+
+        return;
+      }
+
+      // =========================
+      // SINGLE USER
+      // =========================
+
+      const response =
+        await ApiService.getEmployeeLiveLocation(
+          token,
+          empId,
+          requestDate,
+        );
+
+      const rows: LiveLocationRow[] =
+        Array.isArray(response?.data)
+          ? response.data
+          : [];
+
+      const normalized = rows
+        .map((row) =>
+          normalizeMarker(row),
+        )
+        .filter(
+          (
+            row,
+          ): row is MarkerData =>
+            !!row,
+        );
+
+      if (mountedRef.current) {
+        setVisibleMarkers(
+          normalized,
+        );
+      }
+    } catch (error) {
+      console.log(
+        "Location fetch error:",
+        error,
+      );
+    } finally {
+      inFlightRef.current =
+        false;
+
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [mode, empId, token]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    fetchLocations();
+
+    const interval = setInterval(() => {
+      fetchLocations();
+    }, LIVE_REFRESH_MS);
+
+    return () => {
+      mountedRef.current = false;
+
+      clearInterval(interval);
+    };
+  }, [
+    fetchLocations,
+    LIVE_REFRESH_MS,
+  ]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Location" />
 
       <View style={styles.body}>
-        {!region ? (
+        {loading ? (
+          <View style={styles.center}>
+            <Text
+              style={[
+                styles.messageText,
+                {
+                  color:
+                    theme.placeholder,
+                },
+              ]}
+            >
+              Loading locations...
+            </Text>
+          </View>
+        ) : !region ? (
           <View style={styles.center}>
             <Text style={[styles.messageText, { color: theme.placeholder }]}>
               Location data not available

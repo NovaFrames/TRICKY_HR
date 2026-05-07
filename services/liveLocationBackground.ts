@@ -1,4 +1,3 @@
-import { useUser } from "@/context/UserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
@@ -80,12 +79,13 @@ export const stopLiveLocationTask = async () => {
   }
 };
 
-export const startLiveLocationTask = async (): Promise<boolean> => {
+export const startLiveLocationTask = async (
+  liveDuration?: number,
+): Promise<boolean> => {
   const foreground = await Location.getForegroundPermissionsAsync();
   let foregroundStatus = foreground.status;
-  const { user } = useUser();
 
-  const DEFAULT_INTERVAL_MS = user?.LiveDurN || 30;
+  const DEFAULT_INTERVAL_MS = (liveDuration ?? 30) * 1000;
 
   if (foregroundStatus !== "granted") {
     const requestedForeground =

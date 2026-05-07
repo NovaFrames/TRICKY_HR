@@ -73,9 +73,24 @@ export default function SettingsScreen() {
         return false;
       }
 
-      const interval = Number(user?.LiveDurN ?? 0);
-      await saveLiveLocationCredentials(token, empId, interval > 0 ? interval : undefined);
-      const started = await startLiveLocationTask();
+      const interval =
+        Number(user?.LiveDurN ?? 0);
+
+      await saveLiveLocationCredentials(
+        token,
+        empId,
+        interval > 0
+          ? interval
+          : undefined,
+      );
+
+      const started =
+        await startLiveLocationTask(
+          interval > 0
+            ? interval
+            : undefined,
+        );
+
       if (!started) {
         Alert.alert(
           "Background Permission Required",
@@ -124,7 +139,7 @@ export default function SettingsScreen() {
     if (!user) return;
 
     // Sync tracking state with company policy in user profile
-    const shouldTrack = user.IsLiveLocN === 1;
+    const shouldTrack = user.IsLiveLocN === 0;
     setIsLiveLocationEnabled(shouldTrack);
 
     const syncTask = async () => {
@@ -191,8 +206,8 @@ export default function SettingsScreen() {
         },
         {
           label: "Live Location",
-          description: user?.IsLiveLocN === 1 
-            ? "Enabled (Managed by Organization)" 
+          description: user?.IsLiveLocN === 0
+            ? "Enabled (Managed by Organization)"
             : "Disabled for your account",
           icon: <Ionicons name="location" />,
           color: "#0ea5e9",

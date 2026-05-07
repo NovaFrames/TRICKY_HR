@@ -2489,7 +2489,7 @@ class ApiService {
 
       const formattedDate = date.toISOString().split("T")[0];
 
-      console.log(API_ENDPOINTS.GET_LIVE_LOCATION_ALL);
+      console.log("All Location Accessed");
 
       // IMPORTANT:
       // SEND AS QUERY PARAMS
@@ -2547,6 +2547,8 @@ class ApiService {
           error: "Token not available",
         };
       }
+
+      console.log(empId, "Location Accessed");
 
       await this.ensureApiReady();
 
