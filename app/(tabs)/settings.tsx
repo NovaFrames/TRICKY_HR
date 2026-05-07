@@ -139,7 +139,7 @@ export default function SettingsScreen() {
     if (!user) return;
 
     // Sync tracking state with company policy in user profile
-    const shouldTrack = user.IsLiveLocN === 0;
+    const shouldTrack = user.IsLiveLocN === 1;
     setIsLiveLocationEnabled(shouldTrack);
 
     const syncTask = async () => {
@@ -206,7 +206,7 @@ export default function SettingsScreen() {
         },
         {
           label: "Live Location",
-          description: user?.IsLiveLocN === 0
+          description: user?.IsLiveLocN === 1
             ? "Enabled (Managed by Organization)"
             : "Disabled for your account",
           icon: <Ionicons name="location" />,

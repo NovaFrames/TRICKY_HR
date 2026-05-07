@@ -110,8 +110,8 @@ function RootNavigator() {
 
     const syncLiveLocationTracking = async () => {
       const storedEnabled = (await AsyncStorage.getItem("live_location_enabled")) === "true";
-      // Check if location tracking is required by company policy (IsLiveLocN === 0)
-      const policyEnabled = user?.IsLiveLocN === 0;
+      // Check if location tracking is required by company policy (IsLiveLocN === 1)
+      const policyEnabled = user?.IsLiveLocN === 1;
       const enabled = storedEnabled || policyEnabled;
 
       if (!enabled || !isAuthenticated) {
