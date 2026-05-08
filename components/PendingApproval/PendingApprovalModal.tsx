@@ -75,16 +75,12 @@ export default function PendingApprovalModal({
   const fetchPendingApprovals = async () => {
     try {
       const currentTab = currenttab;
-      console.log("currentTab: ", currentTab)
 
       if (!data) return;
       const result = await ApiService.GetSup_LeaveManageById(data.IdN);
 
       if (result.success && result.data) {
-        console.log(
-          "Your Pending Data:",
-          JSON.stringify(result.data[0], null, 2),
-        );
+
         setYourPendings(result.data[0]);
       } else {
         ConfirmModal.alert(

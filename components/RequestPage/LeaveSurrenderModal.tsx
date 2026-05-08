@@ -87,10 +87,17 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
           onPress: async () => {
             setLoading(true);
             try {
+
+              const currentStatus = String(item?.StatusC || "")
+                .toLowerCase()
+                .trim();
+
+              const type = item.DescC === 'CANCEL Leave Surrender' ? 'CancelLVSurrender' : 'LVSurrender';
+
               const requestId = item.IdN || item.Id || item.id;
               const result = await ApiService.deleteRequest(
                 requestId,
-                "LVSurrender",
+                type,
                 undefined,
                 undefined,
                 "Cancelled by user",
@@ -131,10 +138,10 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
     setLoading(true);
     try {
       const requestId = item.IdN || item.Id || item.id;
-      
-      const result = await ApiService.cancelApprovedRequest(
+
+      const result = await ApiService.deleteRequest(
         requestId,
-        "LVSurrender",
+        'CancelEmpLvSurrender',
         new Date(),
         new Date(),
         cancelRemarks
@@ -288,7 +295,42 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
       subtitle={`Ref: #${item.IdN || "N/A"}`}
       footer={
         (() => {
-          if (status.toLowerCase().includes("waiting") || status.toLowerCase().includes("pending")) {
+          const currentStatus = String(status || "")
+            .toLowerCase()
+            .trim();
+
+          // -----------------------------------------
+          // STATUS CHECKS
+          // -----------------------------------------
+
+          const isApprovedCancelFlow =
+            currentStatus.includes("approved(cancel");
+
+          const isApproved =
+            currentStatus === "approved";
+
+          const isWaiting =
+            currentStatus === "waiting" ||
+            currentStatus === "pending";
+
+          const isRejectedOrCancelled =
+            currentStatus.includes("reject") ||
+            currentStatus.includes("cancelled");
+
+          // -----------------------------------------
+          // APPROVED CANCEL FLOW
+          // NO BUTTON
+          // -----------------------------------------
+
+          if (isApprovedCancelFlow) {
+            return null;
+          }
+
+          // -----------------------------------------
+          // WAITING / PENDING
+          // -----------------------------------------
+
+          if (isWaiting) {
             return (
               <CustomButton
                 title="Cancel Request"
@@ -299,32 +341,59 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
                 style={styles.cancelButton}
               />
             );
-          } else if (status.toLowerCase().includes("approv")) {
+          }
+
+          // -----------------------------------------
+          // APPROVED
+          // -----------------------------------------
+
+          if (isApproved) {
             return (
               <View style={styles.cancelPromptContainer}>
                 {showCancelPrompt ? (
                   <View style={styles.cancelPromptInner}>
-                    <TextInput 
+                    <TextInput
                       placeholder="Enter cancellation remarks..."
                       placeholderTextColor={theme.placeholder}
                       value={cancelRemarks}
                       onChangeText={setCancelRemarks}
-                      style={[styles.cancelInput, { borderColor: theme.inputBorder, color: theme.text, backgroundColor: theme.inputBg }]}
+                      style={[
+                        styles.cancelInput,
+                        {
+                          borderColor: theme.inputBorder,
+                          color: theme.text,
+                          backgroundColor: theme.inputBg,
+                        },
+                      ]}
                       multiline
                     />
+
                     <View style={styles.cancelPromptButtons}>
-                      <CustomButton 
+                      <CustomButton
                         title="Back"
                         onPress={() => setShowCancelPrompt(false)}
-                        style={[styles.cancelButton, { flex: 1, backgroundColor: theme.background, borderColor: theme.inputBorder }]}
+                        style={[
+                          styles.cancelButton,
+                          {
+                            backgroundColor: theme.background,
+                            borderColor: theme.inputBorder,
+                          },
+                        ]}
                         textColor={theme.text}
                       />
-                      <CustomButton 
+
+                      <CustomButton
                         title="Confirm"
                         isLoading={loading}
                         disabled={loading || !cancelRemarks.trim()}
                         onPress={handleCancelApproved}
-                        style={[styles.cancelButton, { flex: 1, backgroundColor: "#DC2626", borderColor: "#DC2626" }]}
+                        style={[
+                          styles.cancelButton,
+                          {
+                            backgroundColor: "#DC2626",
+                            borderColor: "#DC2626",
+                          },
+                        ]}
                         textColor="#fff"
                       />
                     </View>
@@ -336,7 +405,13 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
                     isLoading={loading}
                     disabled={loading}
                     onPress={() => setShowCancelPrompt(true)}
-                    style={[styles.cancelButton, { borderColor: "#DC2626", backgroundColor: "#FEE2E2" }]}
+                    style={[
+                      styles.cancelButton,
+                      {
+                        borderColor: "#DC2626",
+                        backgroundColor: "#FEE2E2",
+                      },
+                    ]}
                     textColor="#DC2626"
                     iconColor="#DC2626"
                   />
@@ -344,6 +419,16 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
               </View>
             );
           }
+
+          // -----------------------------------------
+          // REJECTED / CANCELLED
+          // NO BUTTON
+          // -----------------------------------------
+
+          if (isRejectedOrCancelled) {
+            return null;
+          }
+
           return null;
         })()
       }

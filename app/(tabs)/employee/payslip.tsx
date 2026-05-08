@@ -1,21 +1,26 @@
+import ConfirmModal from "@/components/common/ConfirmModal";
+import Modal from "@/components/common/SingleModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
+import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { WebView } from "react-native-webview";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { PaySlip } from "../../../services/ApiService";
-import Modal from "@/components/common/SingleModal";
+
 export default function PayslipScreen() {
+  
   const { theme, isDark } = useTheme();
   const [payslips, setPayslips] = useState<PaySlip[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
+  const {user} = useUser();
+
   useEffect(() => {
     loadPayslips();
   }, []);
@@ -223,24 +228,29 @@ export default function PayslipScreen() {
             >
               Payslip Preview
             </Text>
-            <View style={{ flexDirection: "row" }}>
-              <TouchableOpacity
-                onPress={() =>
-                  viewingUrl && handleDownloadedFile(viewingUrl, true)
-                }
-                style={styles.iconButton}
-              >
-                <Ionicons name="share-social-outline" size={24} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() =>
-                  viewingUrl && handleDownloadedFile(viewingUrl, false)
-                }
-                style={styles.iconButton}
-              >
-                <Ionicons name="download-outline" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
+
+            {user?.DownloadPayslipN === 1 ? (
+              <View style={{ flexDirection: "row" }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    viewingUrl && handleDownloadedFile(viewingUrl, true)
+                  }
+                  style={styles.iconButton}
+                >
+                  <Ionicons name="share-social-outline" size={24} color="white" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                    viewingUrl && handleDownloadedFile(viewingUrl, false)
+                  }
+                  style={styles.iconButton}
+                >
+                  <Ionicons name="download-outline" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+            ) : ''
+            }
+
           </View>
           <View style={{ flex: 1 }}>
             {viewingUrl && (

@@ -20,6 +20,88 @@ interface LeaveModalProps {
   onRefresh?: () => void;
 }
 
+const extractLeaveDates = (lvDesc: string = "") => {
+  try {
+    // Example:
+    // "From : 18 May 2026, To : 18 May 2026"
+
+    const regex =
+      /From\s*:\s*([0-9]{1,2}\s+[A-Za-z]+\s+[0-9]{4})\s*,\s*To\s*:\s*([0-9]{1,2}\s+[A-Za-z]+\s+[0-9]{4})/i;
+
+    const match = lvDesc.match(regex);
+
+    if (!match) {
+      return {
+        fromDateText: "N/A",
+        toDateText: "N/A",
+        fromDate: undefined,
+        toDate: undefined,
+      };
+    }
+
+    const fromText = match[1].trim();
+    const toText = match[2].trim();
+
+    // Parse manually to avoid timezone / invalid parsing issues
+    const parseDate = (dateStr: string) => {
+      try {
+        // "10 May 2026"
+
+        const parts = dateStr.trim().split(" ");
+
+        if (parts.length !== 3) return undefined;
+
+        const day = parseInt(parts[0], 10);
+
+        const monthMap: Record<string, number> = {
+          jan: 0,
+          feb: 1,
+          mar: 2,
+          apr: 3,
+          may: 4,
+          jun: 5,
+          jul: 6,
+          aug: 7,
+          sep: 8,
+          oct: 9,
+          nov: 10,
+          dec: 11,
+        };
+
+        const month = monthMap[parts[1].substring(0, 3).toLowerCase()];
+
+        const year = parseInt(parts[2], 10);
+
+        if (
+          isNaN(day) ||
+          month === undefined ||
+          isNaN(year)
+        ) {
+          return undefined;
+        }
+
+        return new Date(year, month, day);
+      } catch {
+        return undefined;
+      }
+    };
+
+    return {
+      fromDateText: fromText,
+      toDateText: toText,
+      fromDate: parseDate(fromText),
+      toDate: parseDate(toText),
+    };
+  } catch (e) {
+    return {
+      fromDateText: "N/A",
+      toDateText: "N/A",
+      fromDate: undefined,
+      toDate: undefined,
+    };
+  }
+};
+
 const LeaveModal: React.FC<LeaveModalProps> = ({
   visible,
   onClose,
@@ -32,6 +114,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
   const [leaveData, setLeaveData] = useState<any>(null);
   const [cancelRemarks, setCancelRemarks] = useState("");
   const [showCancelPrompt, setShowCancelPrompt] = useState(false);
+
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -106,12 +189,21 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
                 }
               };
 
-              const fromDate = parseDate(item.LFromDateD || item.FromDate);
-              const toDate = parseDate(item.LToDateD || item.ToDate);
+              const extractedDates = extractLeaveDates(item?.LvDescC);
+
+              const fromDate =
+                extractedDates.fromDate ||
+                parseDate(item.LFromDateD || item.FromDate);
+
+              const toDate =
+                extractedDates.toDate ||
+                parseDate(item.LToDateD || item.ToDate);
+
+              const type = item.DescC === 'CANCEL LEAVE' ? 'CALLev' : 'Lev';
 
               const result = await ApiService.deleteRequest(
                 requestId,
-                "Lev",
+                type,
                 fromDate,
                 toDate,
                 "Cancelled by user",
@@ -149,7 +241,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
     setLoading(true);
     try {
       const requestId = item.IdN || item.Id || item.id;
-      
+
       const parseDate = (dateStr: string | undefined) => {
         if (!dateStr) return new Date();
         try {
@@ -163,12 +255,20 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
         }
       };
 
-      const fromDate = parseDate(item.LFromDateD || item.FromDate);
-      const toDate = parseDate(item.LToDateD || item.ToDate);
+      const extractedDates = extractLeaveDates(item?.LvDescC);
+      console.log(extractedDates, " ", item?.LvDescC);
 
-      const result = await ApiService.cancelApprovedRequest(
+      const fromDate =
+        extractedDates.fromDate ||
+        parseDate(item.LFromDateD || item.FromDate);
+
+      const toDate =
+        extractedDates.toDate ||
+        parseDate(item.LToDateD || item.ToDate);
+
+      const result = await ApiService.deleteRequest(
         requestId,
-        "Lev",
+        "CancelApprovedLev",
         fromDate,
         toDate,
         cancelRemarks
@@ -263,17 +363,35 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
     };
 
     // Pre-calculate all display values
+    const extractedDates = extractLeaveDates(item?.LvDescC);
+
     const displayValues = {
-      fromDate: formatDate(leaveData.LFromDateD),
-      toDate: formatDate(leaveData.LToDateD),
+      fromDate:
+        item?.LvDescC
+          ? extractedDates.fromDateText
+          : formatDate(leaveData.LFromDateD),
+
+      toDate:
+        item?.LvDescC
+          ? extractedDates.toDateText
+          : formatDate(leaveData.LToDateD),
+
       leaveType: safeString(leaveData.ReaGrpNameC),
+
       remarks:
         safeString(leaveData.LVRemarksC) === "N/A"
           ? "No remarks"
           : safeString(leaveData.LVRemarksC),
+
+      cancelremarks:
+        safeString(leaveData.LVCancelRemarksC) === "N/A"
+          ? "No remarks"
+          : safeString(leaveData.LVCancelRemarksC),
+
       fromTime: formatNumber(leaveData.FHN),
       toTime: formatNumber(leaveData.THN),
       totalHours: formatNumber(leaveData.THrsN),
+
       claimAmount:
         leaveData.MLClaimAmtN && leaveData.MLClaimAmtN > 0
           ? `${Number(leaveData.MLClaimAmtN).toFixed(2)}`
@@ -332,6 +450,38 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
             {`: ${displayValues.remarks}`}
           </Text>
         </View>
+
+        {leaveData.LVCancelRemarksC ? (
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.textLight }]}>
+              Cancel Remarks
+            </Text>
+            <Text
+              style={[styles.infoValue, { color: theme.text }]}
+              numberOfLines={3}
+            >
+              {`: ${displayValues.cancelremarks}`}
+            </Text>
+          </View>
+        ) : ''
+
+        }
+
+        {leaveData.FinalRemarkC ? (
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: theme.textLight }]}>
+              Final Remarks
+            </Text>
+            <Text
+              style={[styles.infoValue, { color: theme.text }]}
+              numberOfLines={3}
+            >
+              {`: ${leaveData.FinalRemarkC}`}
+            </Text>
+          </View>
+        ) : ''
+
+        }
 
         {hasPermission ? (
           <View
@@ -412,7 +562,39 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
       subtitle={`Ref: #${item.IdN || "N/A"}`}
       footer={
         (() => {
-          if (status.toLowerCase().includes("waiting") || status.toLowerCase().includes("pending")) {
+          const currentStatus = String(status || "")
+            .toLowerCase()
+            .trim();
+
+          // IMPORTANT:
+          // Check special approved cancel cases FIRST
+
+          const isApprovedCancelFlow =
+            currentStatus.includes("approved(cancel");
+
+          const isApproved =
+            currentStatus === "approved";
+
+          const isWaiting =
+            currentStatus === "waiting" ||
+            currentStatus === "pending";
+
+          const isRejectedOrCancelled =
+            currentStatus.includes("reject") ||
+            currentStatus.includes("cancelled");
+
+          // -----------------------------------------
+          // APPROVED CANCEL FLOW
+          // NO BUTTON
+          // -----------------------------------------
+          if (isApprovedCancelFlow) {
+            return null;
+          }
+
+          // -----------------------------------------
+          // WAITING / PENDING
+          // -----------------------------------------
+          if (isWaiting) {
             return (
               <CustomButton
                 title="Cancel Request"
@@ -423,32 +605,58 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
                 style={styles.cancelButton}
               />
             );
-          } else if (status.toLowerCase().includes("approv")) {
+          }
+
+          // -----------------------------------------
+          // APPROVED
+          // -----------------------------------------
+          if (isApproved) {
             return (
               <View style={styles.cancelPromptContainer}>
                 {showCancelPrompt ? (
                   <View style={styles.cancelPromptInner}>
-                    <TextInput 
+                    <TextInput
                       placeholder="Enter cancellation remarks..."
                       placeholderTextColor={theme.placeholder}
                       value={cancelRemarks}
                       onChangeText={setCancelRemarks}
-                      style={[styles.cancelInput, { borderColor: theme.inputBorder, color: theme.text, backgroundColor: theme.inputBg }]}
+                      style={[
+                        styles.cancelInput,
+                        {
+                          borderColor: theme.inputBorder,
+                          color: theme.text,
+                          backgroundColor: theme.inputBg,
+                        },
+                      ]}
                       multiline
                     />
+
                     <View style={styles.cancelPromptButtons}>
-                      <CustomButton 
+                      <CustomButton
                         title="Back"
                         onPress={() => setShowCancelPrompt(false)}
-                        style={[styles.cancelButton, { backgroundColor: theme.background, borderColor: theme.inputBorder }]}
+                        style={[
+                          styles.cancelButton,
+                          {
+                            backgroundColor: theme.background,
+                            borderColor: theme.inputBorder,
+                          },
+                        ]}
                         textColor={theme.text}
                       />
-                      <CustomButton 
+
+                      <CustomButton
                         title="Confirm"
                         isLoading={loading}
                         disabled={loading || !cancelRemarks.trim()}
                         onPress={handleCancelApproved}
-                        style={[styles.cancelButton, {  backgroundColor: "#DC2626", borderColor: "#DC2626" }]}
+                        style={[
+                          styles.cancelButton,
+                          {
+                            backgroundColor: "#DC2626",
+                            borderColor: "#DC2626",
+                          },
+                        ]}
                         textColor="#fff"
                       />
                     </View>
@@ -460,7 +668,13 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
                     isLoading={loading}
                     disabled={loading}
                     onPress={() => setShowCancelPrompt(true)}
-                    style={[styles.cancelButton, { borderColor: "#DC2626", backgroundColor: "#FEE2E2" }]}
+                    style={[
+                      styles.cancelButton,
+                      {
+                        borderColor: "#DC2626",
+                        backgroundColor: "#FEE2E2",
+                      },
+                    ]}
                     textColor="#DC2626"
                     iconColor="#DC2626"
                   />
@@ -468,6 +682,14 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
               </View>
             );
           }
+
+          // -----------------------------------------
+          // REJECTED / CANCELLED
+          // -----------------------------------------
+          if (isRejectedOrCancelled) {
+            return null;
+          }
+
           return null;
         })()
       }

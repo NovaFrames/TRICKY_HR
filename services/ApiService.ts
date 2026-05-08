@@ -1015,12 +1015,6 @@ class ApiService {
         headers: this.getHeaders(),
       });
 
-      console.log("Delete Request Response Status:", response.status);
-      console.log(
-        "Delete Request Response Data:",
-        JSON.stringify(response.data, null, 2),
-      );
-
       // Check for success in the response
       const status = response.data.Status || response.data.status;
 
