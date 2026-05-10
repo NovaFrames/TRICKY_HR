@@ -4,37 +4,73 @@ import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, AppState, AppStateStatus, FlatList, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, { PaySlip } from "../../../services/ApiService";
 
 export default function PayslipScreen() {
-  
+
   const { theme, isDark } = useTheme();
   const [payslips, setPayslips] = useState<PaySlip[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
-  const {user} = useUser();
+  const { user } = useUser();
 
+  const appState = useRef(AppState.currentState);
+  const isFetching = useRef(false);
+
+  // Refresh whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadPayslips();
+    }, [])
+  );
+
+  // Refresh when app comes from background
   useEffect(() => {
-    loadPayslips();
+    const subscription = AppState.addEventListener(
+      "change",
+      (nextAppState: AppStateStatus) => {
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === "active"
+        ) {
+          loadPayslips();
+        }
+
+        appState.current = nextAppState;
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
+
   useProtectedBack({
     home: "/home",
   });
+
   const loadPayslips = async () => {
+    // Prevent parallel calls
+    if (isFetching.current) return;
+    
     try {
+      isFetching.current = true;
       setLoading(true);
+
       const response = await ApiService.getPaySlipList();
+
       if (response.success && response.data) {
         setPayslips([...response.data].reverse());
       } else {
-        // Silent fail or empty handling
+        setPayslips([]);
       }
     } catch (error) {
       ConfirmModal.alert(
@@ -42,9 +78,11 @@ export default function PayslipScreen() {
         "An unexpected error occurred while fetching payslips",
       );
     } finally {
+      isFetching.current = false;
       setLoading(false);
     }
   };
+
   const handleDownloadedFile = async (
     url: string,
     shouldShare: boolean = false,

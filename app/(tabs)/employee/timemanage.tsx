@@ -10,11 +10,12 @@ import {
 } from "@/constants/timeFormat";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system/legacy";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, AppState, AppStateStatus, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import TimeRequestModal from "../../../components/TimeManage/TimeRequestModal";
@@ -136,6 +137,8 @@ export default function TimeManage() {
   const [fromDate, setFromDate] = useState<Date>(defaultFromDate);
   const [toDate, setToDate] = useState<Date>(today);
 
+  const appState = useRef(AppState.currentState);
+
   // ✅ Whenever fromDate changes → set toDate = 1 month after fromDate
   React.useEffect(() => {
     const newToDate = addMonths(fromDate, 1);
@@ -157,7 +160,7 @@ export default function TimeManage() {
         formatDateForApi(fromDate),
         formatDateForApi(safeToDate),
       );
-      
+
       if (res?.success && Array.isArray(res.data)) {
         const sorted = [...res.data].sort((a, b) => {
           const getTime = (dateStr: string) => {
@@ -178,9 +181,33 @@ export default function TimeManage() {
       );
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTimeData();
+    }, [fromDate, toDate])
+  );
+
   useEffect(() => {
-    fetchTimeData();
-  }, [fromDate, toDate]);
+    const subscription = AppState.addEventListener(
+      "change",
+      (nextAppState: AppStateStatus) => {
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === "active"
+        ) {
+          fetchTimeData();
+        }
+
+        appState.current = nextAppState;
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   const handleDownloadedFile = async (
     url: string,
     shouldShare: boolean = false,
