@@ -22,7 +22,7 @@ const OFFICER_LOCATION_MENU = {
     IdN: 'officer-location',
     MenuNameC: 'Location',
     IconcolorC: '#0EA5E9',
-    ActionC: 'officer/location',
+    ActionC: 'officer/LiveLocation',
 };
 
 export const MenuGrid: React.FC<MenuGridProps> = ({
@@ -68,7 +68,7 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
     const renderGrid = (data: any[]) => (
         <View style={[styles.gridContainer, { gap }]}>
             {data.map((item, index) => {
-                const iconConfig =
+                const iconConfig = 
                     MENU_ICON_MAP[item.ActionC] ?? {
                         lib: Ionicons,
                         name: 'apps',

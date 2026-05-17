@@ -1,3 +1,4 @@
+import DatePicker from "@/components/DatePicker";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -164,7 +165,15 @@ export default function OfficerLocationListScreen() {
   const { from } = useLocalSearchParams<{ from?: string }>();
 
   const LIVE_REFRESH_MS =
-    (Number(user?.LiveDurN) || 30) * 1000;
+    useMemo(() => {
+      // backend value is in minutes
+      const minutes = Math.max(
+        Number(user?.LiveDurN) || 1,
+        1,
+      );
+
+      return minutes * 60 * 1000;
+    }, [user?.LiveDurN]);
 
   const token = (
     user?.TokenC ||
@@ -182,9 +191,24 @@ export default function OfficerLocationListScreen() {
   const [refreshing, setRefreshing] =
     useState(false);
 
+  const createDateOnly = (
+    date: Date,
+  ) =>
+    new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+
+  const [selectedDate, setSelectedDate] =
+    useState(
+      createDateOnly(new Date()),
+    );
+
   const mountedRef = useRef(true);
 
   const inFlightRef = useRef(false);
+
 
   const protectedBack = useProtectedBack({
     home: "/home",
@@ -240,14 +264,14 @@ export default function OfficerLocationListScreen() {
 
       try {
         const requestDate =
-          new Date();
+          selectedDate;
 
         // ==================================
         // GET ALL USERS LOCATION
         // ==================================
 
         const response =
-          await ApiService.getAllLiveLocations(
+          await ApiService.getLiveLocationEmployees(
             token,
             requestDate,
           );
@@ -372,7 +396,7 @@ export default function OfficerLocationListScreen() {
         }
       }
     },
-    [token],
+    [token, selectedDate],
   );
 
   /* ============================================
@@ -386,6 +410,19 @@ export default function OfficerLocationListScreen() {
       initial: true,
     });
 
+    const today =
+      new Date().toDateString();
+
+    const selected =
+      selectedDate.toDateString();
+
+    // no auto refresh for old dates
+    if (today !== selected) {
+      return () => {
+        mountedRef.current = false;
+      };
+    }
+
     const intervalId =
       setInterval(() => {
         void syncLocations();
@@ -393,10 +430,9 @@ export default function OfficerLocationListScreen() {
 
     return () => {
       mountedRef.current = false;
-
       clearInterval(intervalId);
     };
-  }, [syncLocations]);
+  }, [selectedDate]);
 
   /* ============================================
      FORMAT DATE
@@ -454,6 +490,25 @@ export default function OfficerLocationListScreen() {
       <Header title="Location" onBack={protectedBack} />
 
       <View style={styles.body}>
+
+
+        {/* =========================
+            DATE PICKER
+        ========================= */}
+
+        <DatePicker
+          fromDate={selectedDate}
+          toDate={selectedDate}
+          onFromChange={(date) => {
+            setSelectedDate(
+              createDateOnly(date),
+            );
+          }}
+          labelFrom="Select Date"
+          labelTo="Live Location"
+        />
+
+
         {/* =========================
             TOP INFO
         ========================= */}
@@ -589,6 +644,8 @@ export default function OfficerLocationListScreen() {
                     mode: "all",
                     from: "location",
                     parentFrom: from,
+                    selectedDate:
+                      selectedDate.toISOString(),
                   },
                 });
               }}
@@ -661,6 +718,8 @@ export default function OfficerLocationListScreen() {
                         empName: marker.empName,
                         from: "location",
                         parentFrom: from,
+                        selectedDate:
+                          selectedDate.toISOString(),
                       },
                     })
                   }

@@ -61,3 +61,7 @@ Join our community of developers creating universal apps.
             keyAlias 'key0'
             keyPassword 'Trickyhr@9747' }
     } -->
+
+         <!-- "ACCESS_BACKGROUND_LOCATION",
+         "FOREGROUND_SERVICE",
+         "FOREGROUND_SERVICE_LOCATION" -->

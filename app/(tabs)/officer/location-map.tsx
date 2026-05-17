@@ -3,7 +3,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService from "@/services/ApiService";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -93,15 +93,21 @@ const normalizeMarker = (
 
 let MapViewComponent: any = null;
 let MarkerComponent: any = null;
+let PolylineComponent: any = null;
 
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const maps = require("react-native-maps");
+
   MapViewComponent = maps.default;
+
   MarkerComponent = maps.Marker;
+
+  PolylineComponent =
+    maps.Polyline;
 } catch {
   MapViewComponent = null;
   MarkerComponent = null;
+  PolylineComponent = null;
 }
 
 const parseDotNetDateMs = (value?: string) => {
@@ -173,6 +179,7 @@ export default function OfficerLocationMapScreen() {
     lon?: string | string[];
     from?: string | string[];
     parentFrom?: string | string[];
+    selectedDate?: string | string[];
   }>();
 
   const mode = toParamString(params.mode) === "all" ? "all" : "single";
@@ -197,14 +204,32 @@ export default function OfficerLocationMapScreen() {
     toParamString(params.empId),
   );
 
-  const LIVE_REFRESH_MS =
-    (user?.LiveDurN ?? 30) * 1000;
+  const selectedDateParam =
+    toParamString(
+      params.selectedDate,
+    );
 
-  const router = useRouter();
+  const selectedDate =
+    selectedDateParam
+      ? new Date(
+        selectedDateParam,
+      )
+      : new Date();
+
+  const LIVE_REFRESH_MS =
+    useMemo(() => {
+      // backend value is in minutes
+      const minutes = Math.max(
+        Number(user?.LiveDurN) || 1,
+        1,
+      );
+
+      return minutes * 60 * 1000;
+    }, [user?.LiveDurN]);
 
   const protectedBack = useProtectedBack({
     location: {
-      pathname: "/(tabs)/officer/location",
+      pathname: "/(tabs)/officer/LiveLocation",
       params: { from: toParamString(params.parentFrom) || "home" },
     },
   });
@@ -227,6 +252,7 @@ export default function OfficerLocationMapScreen() {
       };
     }
 
+
     const first = visibleMarkers[0].coords;
     let minLat = first.latitude;
     let maxLat = first.latitude;
@@ -243,59 +269,461 @@ export default function OfficerLocationMapScreen() {
     return {
       latitude: (minLat + maxLat) / 2,
       longitude: (minLon + maxLon) / 2,
-      latitudeDelta: Math.max(0.01, (maxLat - minLat) * 1.4),
-      longitudeDelta: Math.max(0.01, (maxLon - minLon) * 1.4),
+      latitudeDelta: Math.max(
+        0.02,
+        (maxLat - minLat) * 2,
+      ),
+      longitudeDelta: Math.max(
+        0.02,
+        (maxLon - minLon) * 2,
+      ),
     };
   }, [visibleMarkers]);
+
+  const employeeGroups =
+    useMemo(() => {
+      const grouped: Record<
+        number,
+        MarkerData[]
+      > = {};
+
+      visibleMarkers.forEach(
+        (marker) => {
+          if (
+            !grouped[
+            marker.empId
+            ]
+          ) {
+            grouped[
+              marker.empId
+            ] = [];
+          }
+
+          grouped[
+            marker.empId
+          ].push(marker);
+        },
+      );
+
+      Object.values(grouped).forEach(
+        (group) => {
+          group.sort((a, b) => {
+            return (
+              parseDotNetDateMs(
+                a.dateD,
+              ) -
+              parseDotNetDateMs(
+                b.dateD,
+              )
+            );
+          });
+        },
+      );
+
+      return grouped;
+    }, [visibleMarkers]);
 
   const mapHtml = useMemo(() => {
     if (!region) return "";
 
     return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-            <style>
-              html, body, #map { height: 100%; margin: 0; }
-                .leaflet-control-attribution {
-                  display: none !important;
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet/dist/leaflet.css"
+    />
+
+    <style>
+      html,
+      body,
+      #map {
+        height: 100%;
+        margin: 0;
+      }
+
+      .leaflet-control-attribution {
+        display: none !important;
+      }
+
+      .custom-popup {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+
+      .route-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      }
+
+      .start-marker {
+        border-radius: 50%;
+      }
+
+      .end-marker {
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+
+      const markers =
+        ${JSON.stringify(
+      visibleMarkers
+    )};
+
+      const map = L.map("map");
+
+      // INITIAL REGION
+      if (markers.length === 1) {
+
+        map.setView(
+          [
+            markers[0].coords.latitude,
+            markers[0].coords.longitude
+          ],
+          16
+        );
+
+      } else {
+
+        const bounds =
+          markers.map(m => [
+            m.coords.latitude,
+            m.coords.longitude
+          ]);
+
+        map.fitBounds(bounds, {
+          padding: [30, 30]
+        });
+      }
+
+      // TILE
+      L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution: ""
+        }
+      ).addTo(map);
+
+      // DATE FORMAT
+      const formatDate = (
+        value
+      ) => {
+
+        const match =
+          value.match(
+            /\\/Date\\((\\d+)\\)\\//
+          );
+
+        if (!match) {
+          return "Unknown";
+        }
+
+        const date =
+          new Date(
+            Number(match[1])
+          );
+
+        return date.toLocaleString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+          }
+        );
+      };
+
+      // COLORS
+      const routeColors = [
+        "#2563EB",
+        "#DC2626",
+        "#16A34A",
+        "#9333EA",
+        "#EA580C",
+        "#0891B2",
+        "#DB2777",
+        "#CA8A04",
+        "#4F46E5",
+        "#65A30D"
+      ];
+
+      const getEmployeeColor =
+        (index) =>
+          routeColors[
+            index %
+            routeColors.length
+          ];
+
+      // GROUP EMPLOYEES
+      const grouped = {};
+
+      markers.forEach(marker => {
+
+        const key =
+          marker.empId;
+
+        if (!grouped[key]) {
+          grouped[key] = [];
+        }
+
+        grouped[key].push(marker);
+      });
+
+      // RENDER ROUTES
+      Object.values(grouped)
+        .forEach(
+          (
+            group,
+            groupIndex
+          ) => {
+
+            const employeeColor =
+              getEmployeeColor(
+                groupIndex
+              );
+
+            // SORT BY TIME
+            group.sort(
+              (a, b) => {
+
+                const getMs =
+                  (value) => {
+
+                    const match =
+                      value.match(
+                        /\\/Date\\((\\d+)\\)\\//
+                      );
+
+                    return match
+                      ? Number(
+                          match[1]
+                        )
+                      : 0;
+                  };
+
+                return (
+                  getMs(
+                    a.dateD
+                  ) -
+                  getMs(
+                    b.dateD
+                  )
+                );
+              }
+            );
+
+            // SINGLE LOCATION
+            if (
+              group.length === 1
+            ) {
+
+              const marker =
+                group[0];
+
+              const singleMarker =
+                L.marker([
+                  marker.coords.latitude,
+                  marker.coords.longitude
+                ]).addTo(map);
+
+              singleMarker.bindPopup(
+                '<div class="custom-popup">' +
+                '<b>' +
+                marker.empName +
+                '</b><br/>' +
+                'Updated: ' +
+                formatDate(
+                  marker.dateD
+                ) +
+                '</div>'
+              );
+
+              return;
+            }
+
+            // ROUTE LINE
+            const routeCoords =
+              group.map(m => [
+                m.coords.latitude,
+                m.coords.longitude
+              ]);
+
+            const polyline =
+              L.polyline(
+                routeCoords,
+                {
+                  color:
+                    employeeColor,
+                  weight: 5,
+                  opacity: 0.9
                 }
-            </style>
-            </head>
-            <body>
-            <div id="map"></div>
+              ).addTo(map);
 
-            <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-            <script>
-              const markers = ${JSON.stringify(visibleMarkers)};
+            // START
+            const start =
+              group[0];
 
-              const map = L.map('map');
-
-              if (markers.length === 0) {
-                map.setView([0, 0], 2);
-              }
-
-              if (markers.length === 1) {
-                map.setView([markers[0].coords.latitude, markers[0].coords.longitude], 14);
-              } else {
-                const bounds = markers.map(m => [m.coords.latitude, m.coords.longitude]);
-                map.fitBounds(bounds);
-              }
-
-              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: ''
-              }).addTo(map);
-
-              markers.forEach(m => {
-                const marker = L.marker([m.coords.latitude, m.coords.longitude]).addTo(map);
-                marker.bindPopup("<b>" + (m.empName || "Employee") + "</b>");
+            const startIcon =
+              L.divIcon({
+                html:
+                  '<div class="route-marker start-marker" style="background:' +
+                  employeeColor +
+                  ';width:18px;height:18px;"></div>',
+                className: "",
+                iconSize: [18, 18]
               });
-            </script>
-            </body>
-            </html>
-            `;
+
+            const startMarker =
+              L.marker(
+                [
+                  start.coords.latitude,
+                  start.coords.longitude
+                ],
+                {
+                  icon:
+                    startIcon
+                }
+              ).addTo(map);
+
+            startMarker.bindPopup(
+              '<div class="custom-popup">' +
+              '<b>START - ' +
+              start.empName +
+              '</b><br/>' +
+              'Updated: ' +
+              formatDate(
+                start.dateD
+              ) +
+              '</div>'
+            );
+
+            // END
+            const end =
+              group[
+                group.length - 1
+              ];
+
+            const endIcon =
+              L.divIcon({
+                html:
+                  '<div class="route-marker end-marker" style="background:' +
+                  employeeColor +
+                  ';width:18px;height:18px;"></div>',
+                className: "",
+                iconSize: [18, 18]
+              });
+
+            const endMarker =
+              L.marker(
+                [
+                  end.coords.latitude,
+                  end.coords.longitude
+                ],
+                {
+                  icon:
+                    endIcon
+                }
+              ).addTo(map);
+
+            endMarker.bindPopup(
+              '<div class="custom-popup">' +
+              '<b>END - ' +
+              end.empName +
+              '</b><br/>' +
+              'Updated: ' +
+              formatDate(
+                end.dateD
+              ) +
+              '</div>'
+            );
+
+            // CLICK ROUTE
+            polyline.on(
+              "click",
+              function(e) {
+
+                const clicked =
+                  e.latlng;
+
+                let nearest =
+                  null;
+
+                let nearestDistance =
+                  Infinity;
+
+                group.forEach(
+                  point => {
+
+                    const distance =
+                      clicked.distanceTo([
+                        point.coords.latitude,
+                        point.coords.longitude
+                      ]);
+
+                    if (
+                      distance <
+                      nearestDistance
+                    ) {
+
+                      nearestDistance =
+                        distance;
+
+                      nearest =
+                        point;
+                    }
+                  }
+                );
+
+                if (!nearest) {
+                  return;
+                }
+
+                L.popup()
+                  .setLatLng(
+                    clicked
+                  )
+                  .setContent(
+                    '<div class="custom-popup">' +
+                    '<b>' +
+                    nearest.empName +
+                    '</b><br/>' +
+                    'Updated: ' +
+                    formatDate(
+                      nearest.dateD
+                    ) +
+                    '</div>'
+                  )
+                  .openOn(map);
+              }
+            );
+          }
+        );
+    </script>
+  </body>
+  </html>
+  `;
   }, [region, visibleMarkers]);
 
   const titleText =
@@ -335,52 +763,14 @@ export default function OfficerLocationMapScreen() {
 
     try {
       const requestDate =
-        new Date();
-
-      // =========================
-      // ALL USERS
-      // =========================
-
-      if (mode === "all") {
-        const response =
-          await ApiService.getAllLiveLocations(
-            token,
-            requestDate,
-          );
-
-        const rows: LiveLocationRow[] =
-          Array.isArray(response?.data)
-            ? response.data
-            : [];
-
-        const normalized = rows
-          .map((row) =>
-            normalizeMarker(row),
-          )
-          .filter(
-            (
-              row,
-            ): row is MarkerData =>
-              !!row,
-          );
-
-        if (mountedRef.current) {
-          setVisibleMarkers(
-            normalized,
-          );
-        }
-
-        return;
-      }
-
-      // =========================
-      // SINGLE USER
-      // =========================
+        selectedDate;
 
       const response =
-        await ApiService.getEmployeeLiveLocation(
+        await ApiService.getLiveLocations(
           token,
-          empId,
+          mode === "all"
+            ? 0
+            : empId,
           requestDate,
         );
 
@@ -398,7 +788,17 @@ export default function OfficerLocationMapScreen() {
             row,
           ): row is MarkerData =>
             !!row,
-        );
+        )
+        .sort((a, b) => {
+          return (
+            parseDotNetDateMs(
+              a.dateD,
+            ) -
+            parseDotNetDateMs(
+              b.dateD,
+            )
+          );
+        });
 
       if (mountedRef.current) {
         setVisibleMarkers(
@@ -424,6 +824,19 @@ export default function OfficerLocationMapScreen() {
     mountedRef.current = true;
 
     fetchLocations();
+
+    const today =
+      new Date().toDateString();
+
+    const selected =
+      selectedDate.toDateString();
+
+    // don't refresh old dates
+    if (today !== selected) {
+      return () => {
+        mountedRef.current = false;
+      };
+    }
 
     const interval = setInterval(() => {
       fetchLocations();
@@ -485,15 +898,108 @@ export default function OfficerLocationMapScreen() {
                 initialRegion={region}
                 customMapStyle={isDark ? DARK_MAP_STYLE : undefined}
               >
-                {visibleMarkers.map((marker) => (
-                  <MarkerComponent
-                    key={String(marker.empId)}
-                    coordinate={marker.coords}
-                    title={marker.empName}
-                    description={marker.empCode ? `Code: ${marker.empCode}` : undefined}
-                    tracksViewChanges={false}
-                  />
-                ))}
+                {/* ROUTES */}
+                {PolylineComponent &&
+                  Object.values(
+                    employeeGroups,
+                  ).map((group) => {
+                    // only draw path if employee has multiple locations
+                    if (group.length <= 1) {
+                      return null;
+                    }
+
+                    return (
+                      <PolylineComponent
+                        key={`route-${group[0].empId}`}
+                        coordinates={group.map(
+                          (marker) => ({
+                            latitude:
+                              marker.coords
+                                .latitude,
+                            longitude:
+                              marker.coords
+                                .longitude,
+                          }),
+                        )}
+                        strokeWidth={4}
+                        strokeColor="#2563EB"
+                      />
+                    );
+                  })}
+
+                {/* MARKERS */}
+                {Object.values(
+                  employeeGroups,
+                ).flatMap((group) => {
+                  // SINGLE LOCATION
+                  if (group.length === 1) {
+                    const marker = group[0];
+
+                    return (
+                      <MarkerComponent
+                        key={`single-${marker.empId}`}
+                        coordinate={
+                          marker.coords
+                        }
+                        title={
+                          marker.empName
+                        }
+                        description={
+                          marker.empCode
+                            ? `Code: ${marker.empCode}`
+                            : undefined
+                        }
+                        pinColor="orange"
+                        tracksViewChanges={
+                          false
+                        }
+                      />
+                    );
+                  }
+
+                  // MULTIPLE LOCATIONS
+                  return group.map(
+                    (marker, index) => {
+                      const isStart =
+                        index === 0;
+
+                      const isEnd =
+                        index ===
+                        group.length - 1;
+
+                      return (
+                        <MarkerComponent
+                          key={`${marker.empId}-${index}`}
+                          coordinate={
+                            marker.coords
+                          }
+                          title={
+                            isStart
+                              ? `Start - ${marker.empName}`
+                              : isEnd
+                                ? `End - ${marker.empName}`
+                                : marker.empName
+                          }
+                          description={
+                            marker.empCode
+                              ? `Code: ${marker.empCode}`
+                              : undefined
+                          }
+                          pinColor={
+                            isStart
+                              ? "green"
+                              : isEnd
+                                ? "red"
+                                : "orange"
+                          }
+                          tracksViewChanges={
+                            false
+                          }
+                        />
+                      );
+                    },
+                  );
+                })}
               </MapViewComponent>
             ) : (
               <>

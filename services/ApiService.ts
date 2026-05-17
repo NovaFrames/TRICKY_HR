@@ -2409,66 +2409,12 @@ class ApiService {
     }
   }
 
-  async getLiveLocation(
-    token: string,
-    empId: number,
-    date: Date = new Date(),
-  ): Promise<{ success: boolean; data?: any; error?: string }> {
-    try {
-      if (!token) {
-        return { success: false, error: "Token not available" };
-      }
-
-      await this.ensureApiReady();
-
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const formattedDate = `${year}-${month}-${day}`;
-
-      // Select endpoint based on whether we want all users or a specific one
-      const endpoint =
-        empId === 0 ? "WebApi2/GetLiveLocAll" : "WebApi2/GetLiveLoc";
-
-      const payload: any = {
-        TokenC: token,
-        Date: formattedDate,
-      };
-
-      // Add EmpId only for single user lookup
-      if (empId !== 0) {
-        payload.EmpId = empId;
-      }
-
-      const response = await api.post(endpoint, payload, {
-        headers: {
-          ...this.getHeaders(),
-          TokenC: token,
-        },
-        timeout: 10000,
-      });
-
-      console.log(
-        `[ApiService] GetLocation ${empId === 0 ? "All" : empId}:`,
-        response.status,
-        new Date().toLocaleTimeString(),
-      );
-      return { success: true, data: response.data };
-    } catch (error: any) {
-      console.log("Getting Location: ", error);
-      return {
-        success: false,
-        error: error.response?.data?.Error || error.message || "Network error",
-      };
-    }
-  }
-
-  async getAllLiveLocations(
+  async getLiveLocationEmployees(
     token: string,
     date: Date = new Date(),
   ): Promise<{
     success: boolean;
-    data?: LiveLocationItem[];
+    data?: any[];
     error?: string;
   }> {
     try {
@@ -2481,42 +2427,34 @@ class ApiService {
 
       await this.ensureApiReady();
 
-      const formattedDate = date.toISOString().split("T")[0];
+      const formattedDate = `${date.getFullYear()}-${String(
+        date.getMonth() + 1,
+      ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-      console.log("All Location Accessed");
-
-      // IMPORTANT:
-      // SEND AS QUERY PARAMS
-      // NOT JSON BODY
+      console.log("Formatted Date:", formattedDate, new Date());
 
       const response = await api.post(
-        API_ENDPOINTS.GET_LIVE_LOCATION_ALL,
-
-        null,
-
+        "WebApi2/GetLiveLocEmpList",
         {
-          params: {
-            TokenC: token,
-            Date: formattedDate,
-          },
-
+          TokenC: token,
+          Date: formattedDate,
+        },
+        {
           headers: {
             ...this.getHeaders(),
+            "Content-Type": "application/json",
             TokenC: token,
           },
-
           timeout: 10000,
         },
       );
-
-      console.log("[ApiService] Get All Locations:", response.status);
 
       return {
         success: true,
         data: response.data?.data || [],
       };
     } catch (error: any) {
-      console.log("Get All Location Error:", error);
+      console.log("GetLiveLocEmpList Error:", error);
 
       return {
         success: false,
@@ -2525,13 +2463,13 @@ class ApiService {
     }
   }
 
-  async getEmployeeLiveLocation(
+  async getLiveLocations(
     token: string,
-    empId: number,
+    empId: number = 0,
     date: Date = new Date(),
   ): Promise<{
     success: boolean;
-    data?: LiveLocationItem[];
+    data?: any[];
     error?: string;
   }> {
     try {
@@ -2542,11 +2480,11 @@ class ApiService {
         };
       }
 
-      console.log(empId, "Location Accessed");
-
       await this.ensureApiReady();
 
-      const formattedDate = date.toISOString().split("T")[0];
+      const formattedDate = `${date.getFullYear()}-${String(
+        date.getMonth() + 1,
+      ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
       const response = await api.post(
         "WebApi2/GetLiveLoc",
@@ -2558,23 +2496,21 @@ class ApiService {
         {
           headers: {
             ...this.getHeaders(),
+            "Content-Type": "application/json",
             TokenC: token,
           },
           timeout: 10000,
         },
       );
 
-      console.log(
-        `[ApiService] Get Employee Location: ${empId}`,
-        response.status,
-      );
+      console.log("Response data: ", response.data?.data);
 
       return {
         success: true,
         data: response.data?.data || [],
       };
     } catch (error: any) {
-      console.log("Get Employee Location Error:", error);
+      console.log("GetLiveLoc Error:", error);
 
       return {
         success: false,
