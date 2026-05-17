@@ -12,10 +12,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mykevit.kevit",
+      "buildNumber": "2",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Location is required to mark attendance and verify work location.",
-        "UIBackgroundModes": ["location"],
+        "NSLocationWhenInUseUsageDescription": "This app uses location to mark employee attendance and verify work locations during duty hours.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "For employees assigned to live tracking duties, this app collects location updates in the background during working hours for attendance verification and field staff monitoring.",
+        "NSLocationAlwaysUsageDescription": "For employees assigned to live tracking duties, this app tracks location in the background during working hours for monitoring and attendance purposes.",
+        "UIBackgroundModes": ["location", "fetch"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
