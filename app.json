@@ -12,24 +12,40 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mykevit.kevit",
-      "buildNumber": "2",
+      "buildNumber": "3",
+
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app uses location to mark employee attendance and verify work locations during duty hours.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "For employees assigned to live tracking duties, this app collects location updates in the background during working hours for attendance verification and field staff monitoring.",
-        "NSLocationAlwaysUsageDescription": "For employees assigned to live tracking duties, this app tracks location in the background during working hours for monitoring and attendance purposes.",
+        "NSCameraUsageDescription": "TrickyHR uses the camera to scan attendance QR codes and upload employee profile or attendance photos.",
+
+        "NSPhotoLibraryUsageDescription": "TrickyHR uses the photo library so employees can upload profile and attendance images.",
+
+        "NSMicrophoneUsageDescription": "TrickyHR uses the microphone for voice or video communication features.",
+
+        "NSLocationWhenInUseUsageDescription": "TrickyHR uses your location during attendance check-ins and workplace verification while using the app.",
+
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "TrickyHR allows employees assigned to field duties to optionally enable live location sharing during active work shifts for attendance verification and field staff monitoring. Live tracking can be turned off anytime from Settings.",
+
+        "NSLocationAlwaysUsageDescription": "TrickyHR allows employees assigned to field duties to optionally enable background live location tracking during active work shifts. Users can disable live tracking anytime from Settings.",
+
         "UIBackgroundModes": ["location", "fetch"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.mykevit.www.trickyhr",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/adptive-icon.png",
         "backgroundImage": "./assets/images/background.png"
       },
-      "versionCode": 115,
+      "versionCode": 116,
       "userInterfaceStyle": "automatic",
       "predictiveBackGestureEnabled": false
     },
@@ -42,8 +58,10 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow location access for live tracking.",
-          "locationWhenInUsePermission": "Allow location access while using the app.",
+          "locationAlwaysAndWhenInUsePermission": "TrickyHR allows optional live location sharing for employees assigned to field duties during active work shifts.",
+
+          "locationWhenInUsePermission": "TrickyHR uses your location during attendance check-ins and workplace verification while using the app.",
+
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }

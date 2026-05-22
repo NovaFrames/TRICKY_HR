@@ -5,6 +5,7 @@ import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
 import "@/services/liveLocationBackground";
 import {
+  LIVE_LOCATION_TASK_NAME,
   clearLiveLocationCredentials,
   saveLiveLocationCredentials,
   startLiveLocationTask,
@@ -12,6 +13,7 @@ import {
 } from "@/services/liveLocationBackground";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Sentry from '@sentry/react-native';
+import * as Location from "expo-location";
 import * as NavigationBar from "expo-navigation-bar";
 import {
   SplashScreen,
@@ -120,6 +122,7 @@ function RootNavigator() {
     let cancelled = false;
 
     const syncLiveLocationTracking = async () => {
+
       const enabled =
         (await AsyncStorage.getItem("live_location_enabled")) === "true";
 
@@ -129,36 +132,51 @@ function RootNavigator() {
         return;
       }
 
+      // ONLY restore existing tracking session
+      // NEVER trigger permission popup automatically
+
+      const foreground =
+        await Location.getForegroundPermissionsAsync();
+
+      const background =
+        await Location.getBackgroundPermissionsAsync();
+
+      if (
+        foreground.status !== "granted" ||
+        background.status !== "granted"
+      ) {
+        return;
+      }
+
+      const alreadyStarted =
+        await Location.hasStartedLocationUpdatesAsync(
+          LIVE_LOCATION_TASK_NAME
+        );
+
+      if (alreadyStarted) {
+        return;
+      }
+
       const token = (user?.TokenC || user?.Token || "").trim();
+
       const empId = Number(user?.EmpIdN ?? 0);
+
       const interval =
         Number(user?.LiveDurN ?? 0);
 
       if (!token || !empId) {
-        await stopLiveLocationTask();
-        await clearLiveLocationCredentials();
         return;
       }
+
       await saveLiveLocationCredentials(
         token,
         empId,
-        interval > 0
-          ? interval
-          : undefined,
+        interval > 0 ? interval : undefined
       );
 
-      const started =
-        await startLiveLocationTask(
-          interval > 0
-            ? interval
-            : undefined,
-        );
-
-      if (!started && !cancelled) {
-        await AsyncStorage.setItem("live_location_enabled", "false");
-        await stopLiveLocationTask();
-        await clearLiveLocationCredentials();
-      }
+      await startLiveLocationTask(
+        interval > 0 ? interval : undefined
+      );
     };
 
     void syncLiveLocationTracking();
@@ -166,6 +184,7 @@ function RootNavigator() {
     return () => {
       cancelled = true;
     };
+
   }, [
     isAuthenticated,
     isLoading,
@@ -174,7 +193,6 @@ function RootNavigator() {
     user?.TokenC,
     user?.LiveDurN,
   ]);
-
   if (isLoading) return null;
 
   return (

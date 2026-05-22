@@ -114,27 +114,73 @@ export default function SettingsScreen() {
 
   const handleToggleLiveLocation = useCallback(
     async (enabled: boolean) => {
+
       if (enabled) {
-        const started = await startLiveLocationTracking();
-        if (!started) {
-          setIsLiveLocationEnabled(false);
-          await AsyncStorage.setItem("live_location_enabled", "false");
-          await stopLiveLocationTask();
-          await clearLiveLocationCredentials();
-          return;
-        }
-      } else {
-        await stopLiveLocationTask();
-        await clearLiveLocationCredentials();
+
+        Alert.alert(
+          "Enable Live Location",
+          "When enabled, TrickyHR will share your live location during active work shifts for attendance verification and field staff monitoring. You can turn this off anytime from Settings.",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: async () => {
+                setIsLiveLocationEnabled(false);
+                await AsyncStorage.setItem(
+                  "live_location_enabled",
+                  "false"
+                );
+              },
+            },
+
+            {
+              text: "Continue",
+
+              onPress: async () => {
+
+                const started = await startLiveLocationTracking();
+
+                if (!started) {
+                  setIsLiveLocationEnabled(false);
+
+                  await AsyncStorage.setItem(
+                    "live_location_enabled",
+                    "false"
+                  );
+
+                  await stopLiveLocationTask();
+                  await clearLiveLocationCredentials();
+
+                  return;
+                }
+
+                setIsLiveLocationEnabled(true);
+
+                await AsyncStorage.setItem(
+                  "live_location_enabled",
+                  "true"
+                );
+              },
+            },
+          ]
+        );
+
+        return;
       }
 
-      setIsLiveLocationEnabled(enabled);
+      await stopLiveLocationTask();
+
+      await clearLiveLocationCredentials();
+
+      setIsLiveLocationEnabled(false);
+
       await AsyncStorage.setItem(
         "live_location_enabled",
-        enabled ? "true" : "false",
+        "false"
       );
+
     },
-    [startLiveLocationTracking, stopLiveLocationTracking],
+    [startLiveLocationTracking, stopLiveLocationTracking]
   );
 
   useEffect(() => {
