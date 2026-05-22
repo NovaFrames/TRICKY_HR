@@ -2503,8 +2503,6 @@ class ApiService {
         },
       );
 
-      console.log("Response data: ", response.data?.data);
-
       return {
         success: true,
         data: response.data?.data || [],
@@ -2556,6 +2554,8 @@ class ApiService {
           timeout: 8000,
         },
       );
+
+      console.log("[Response Data]", JSON.stringify(response.data, null, 2));
 
       return {
         success: true,

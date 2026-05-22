@@ -1,5 +1,4 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
-import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
@@ -18,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import AppModal from "../../components/common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import DynamicTable, { ColumnDef } from "../../components/DynamicTable";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
@@ -68,6 +68,10 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   const [processingAction, setProcessingAction] = useState<
     "Approved" | "Rejected" | null
   >(null);
+  const [confirmAction, setConfirmAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [rejectRemarks, setRejectRemarks] = useState("");
   const [approveAmt, setApproveAmt] = useState("");
   const [receiveYear, setReceiveYear] = useState("");
@@ -78,6 +82,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     url: string;
     name: string;
   } | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [viewerError, setViewerError] = useState<string | null>(null);
   const isApprovalMode = mode === "approval";
   const currentYear = new Date().getFullYear();
@@ -184,6 +189,8 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     const now = new Date();
     setRejectRemarks("");
     setProcessingAction(null);
+    setConfirmAction(null);
+    setValidationMessage(null);
     setReceiveYear(String(now.getFullYear()));
     setReceiveMonth(String(now.getMonth() + 2));
     if (item.EmpRemarksC) {
@@ -197,15 +204,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-    ConfirmModal.alert(
-      "Cancel Request",
-      "Are you sure you want to cancel this claim request?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
             setLoading(true);
             try {
               const parseDate = (dateStr: string | undefined) => {
@@ -238,10 +236,11 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                 ? await onCancelRequest(item)
                 : await defaultCancel();
               if (result.success) {
-                ConfirmModal.alert("Success", "Claim request cancelled successfully");
+                setShowCancelConfirm(false);
                 onClose();
                 onRefresh?.();
                 onSuccess?.();
+                ConfirmModal.alert("Success", "Claim request cancelled successfully");
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -256,10 +255,6 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
             } finally {
               setLoading(false);
             }
-          },
-        },
-      ],
-    );
   };
   const handleViewDocument = async (fileName: string) => {
     try {
@@ -312,15 +307,12 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     actionStatus: "Approved" | "Rejected",
   ) => {
     if (actionStatus === "Rejected" && rejectRemarks.trim().length < 11) {
-      ConfirmModal.alert(
-        "Validation Error",
-        "Remarks should be more than 10 characters",
-      );
+      setValidationMessage("Remarks should be more than 10 characters");
       return;
     }
 
     if (actionStatus === "Approved" && (!approveAmt || parseFloat(approveAmt) <= 0)) {
-      ConfirmModal.alert("Validation Error", "Enter approved amount");
+      setValidationMessage("Enter approved amount");
       return;
     }
     const parsedReceiveYear = parseInt(receiveYear, 10);
@@ -330,7 +322,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       parsedReceiveYear < 1900 ||
       parsedReceiveYear > 9999
     ) {
-      ConfirmModal.alert("Validation Error", "Enter a valid receive year");
+      setValidationMessage("Enter a valid receive year");
       return;
     }
     if (
@@ -338,10 +330,11 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
       parsedReceiveMonth < 1 ||
       parsedReceiveMonth > 12
     ) {
-      ConfirmModal.alert("Validation Error", "Enter receive month between 1 and 12");
+      setValidationMessage("Enter receive month between 1 and 12");
       return;
     }
 
+    setConfirmAction(null);
     setProcessingAction(actionStatus);
     try {
       const amount = parseFloat(approveAmt) || 0;
@@ -418,36 +411,14 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
     }
   };
   const handleApprove = () => {
-    ConfirmModal.alert(
-      "Approve Request",
-      "Are you sure you want to approve this request?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Approve",
-          style: "default",
-          onPress: () => handleApprovalSubmission("Approved"),
-        },
-      ],
-    );
+    setConfirmAction("Approved");
   };
   const handleReject = () => {
     if (!rejectRemarks.trim()) {
-      ConfirmModal.alert("Error", "Please enter reject remarks");
+      setValidationMessage("Please enter reject remarks");
       return;
     }
-    ConfirmModal.alert(
-      "Reject Request",
-      "Are you sure you want to reject this request?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reject",
-          style: "destructive",
-          onPress: () => handleApprovalSubmission("Rejected"),
-        },
-      ],
-    );
+    setConfirmAction("Rejected");
   };
   const getTravelTypeLabel = (type: number) => {
     const types = [
@@ -700,7 +671,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
               icon="close"
               isLoading={loading}
               disabled={loading}
-              onPress={handleCancelRequest}
+              onPress={() => setShowCancelConfirm(true)}
               style={styles.cancelButton}
             />
           );
@@ -708,21 +679,22 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         return null;
       })()}
     >
-      <ScrollView style={styles.modalBody} contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
-        <View style={styles.badgeRow}>
-          <View
-            style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
-          >
-            <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
-            <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
-              {statusInfo.label}
-            </Text>
+      <View style={styles.contentFrame}>
+        <ScrollView style={styles.modalBody} contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+          <View style={styles.badgeRow}>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
+            >
+              <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+              <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
+                {statusInfo.label}
+              </Text>
+            </View>
           </View>
-        </View>
-        {renderContent()}
-        {isApprovalMode && (
-          <>
-            <View style={styles.receiveRow}>
+          {renderContent()}
+          {isApprovalMode && (
+            <>
+              <View style={styles.receiveRow}>
               <View style={[styles.inputContainer, styles.halfInputContainer]}>
                 <Text style={[styles.fieldLabel, { color: theme.text }]}>
                   Receive Month
@@ -830,41 +802,32 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                   textAlignVertical="top"
                 />
               </View>
-            </View>
-          </>
-        )}
-      </ScrollView>
-      <Modal
-        visible={!!viewingDoc}
-        transparent={true}
-        onRequestClose={() => {
-          setViewingDoc(null);
-          setViewerError(null);
-        }}
-        animationType="slide"
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
-          <View style={styles.viewerHeader}>
-            <TouchableOpacity
-              onPress={() => {
-                setViewingDoc(null);
-                setViewerError(null);
-              }}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={24} color="white" />
-            </TouchableOpacity>
-            <Text
-              style={{ color: "white", fontWeight: "bold" }}
-              numberOfLines={1}
-            >
-              {viewingDoc?.name}
-            </Text>
-            <View style={{ width: 40 }} />
-          </View>
-          <View style={{ flex: 1 }}>
-            {viewingDoc?.url && (
-              <>
+              </View>
+            </>
+          )}
+        </ScrollView>
+        {viewingDoc && (
+          <View style={styles.viewerOverlay}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
+              <View style={styles.viewerHeader}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setViewingDoc(null);
+                    setViewerError(null);
+                  }}
+                  style={styles.closeButton}
+                >
+                  <Ionicons name="close" size={24} color="white" />
+                </TouchableOpacity>
+                <Text
+                  style={{ color: "white", fontWeight: "bold" }}
+                  numberOfLines={1}
+                >
+                  {viewingDoc.name}
+                </Text>
+                <View style={{ width: 40 }} />
+              </View>
+              <View style={{ flex: 1 }}>
                 <WebView
                   source={{ uri: getViewerUri(viewingDoc.url) }}
                   style={{ flex: 1 }}
@@ -908,11 +871,47 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
                     </TouchableOpacity>
                   </View>
                 )}
-              </>
-            )}
+              </View>
+            </SafeAreaView>
           </View>
-        </SafeAreaView>
-      </Modal>
+        )}
+        <InModalConfirmDialog
+          visible={validationMessage !== null}
+          title="Validation Error"
+          message={validationMessage || ""}
+          confirmLabel="OK"
+          onCancel={() => setValidationMessage(null)}
+          onConfirm={() => setValidationMessage(null)}
+        />
+        <InModalConfirmDialog
+          visible={confirmAction !== null}
+          title={confirmAction === "Approved" ? "Approve Request" : "Reject Request"}
+          message={
+            confirmAction === "Approved"
+              ? "Are you sure you want to approve this request?"
+              : "Are you sure you want to reject this request?"
+          }
+          confirmLabel={confirmAction === "Approved" ? "Approve" : "Reject"}
+          cancelLabel="Cancel"
+          destructive={confirmAction === "Rejected"}
+          loading={processingAction === confirmAction}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() =>
+            confirmAction && handleApprovalSubmission(confirmAction)
+          }
+        />
+        <InModalConfirmDialog
+          visible={showCancelConfirm}
+          title="Cancel Request"
+          message="Are you sure you want to cancel this claim request?"
+          confirmLabel="Yes, Cancel"
+          cancelLabel="No"
+          destructive
+          loading={loading}
+          onCancel={() => setShowCancelConfirm(false)}
+          onConfirm={handleCancelRequest}
+        />
+      </View>
     </AppModal>
   );
 };
@@ -932,9 +931,18 @@ const InfoRow = ({
   </View>
 );
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+    flexShrink: 1,
+  },
   modalBody: {
     padding: 18,
     flexShrink: 1,
+  },
+  viewerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "black",
+    zIndex: 30,
   },
   badgeRow: {
     flexDirection: "row",

@@ -11,6 +11,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -58,6 +59,7 @@ const defaultFromDate = addMonths(today, -1);
 
 export default function EmpMobileRpt() {
   const { theme } = useTheme();
+  const isIOS = Platform.OS === "ios";
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
@@ -65,7 +67,7 @@ export default function EmpMobileRpt() {
   // Date states
   const [fromDate, setFromDate] = useState<Date>(defaultFromDate);
   const [toDate, setToDate] = useState<Date>(today);
-  
+
   // ✅ Whenever fromDate changes → set toDate = 1 month after fromDate
   React.useEffect(() => {
     const newToDate = addMonths(fromDate, 1);
@@ -310,24 +312,51 @@ export default function EmpMobileRpt() {
               },
             ]}
           >
-            <TouchableOpacity
-              style={styles.dateInput}
-              onPress={() => setShowFromPicker(true)}
-            >
-              <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
-                From Date
-              </Text>
-              <View style={styles.dateRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={18}
-                  color={theme.primary}
-                />
-                <Text style={[styles.dateValue, { color: theme.text }]}>
-                  {formatDisplayDate(fromDate)}
+            {isIOS ? (
+              <View
+                style={[
+                  styles.dateButton,
+                  styles.compactPickerWrapper,
+                ]}
+              >
+                <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
+                  From Date
                 </Text>
+
+                <View style={styles.pickerCenter}>
+                  <DateTimePicker
+                    value={fromDate}
+                    mode="date"
+                    display="compact"
+                    onChange={(_, date) => {
+                      if (date) onChangeFrom(_, date);
+                    }}
+                    maximumDate={new Date()}
+                  />
+                </View>
               </View>
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowFromPicker(true)}
+              >
+                <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
+                  From Date
+                </Text>
+
+                <View style={styles.dateRow}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={18}
+                    color={theme.primary}
+                  />
+
+                  <Text style={[styles.dateValue, { color: theme.text }]}>
+                    {formatDisplayDate(fromDate)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
 
             <View
               style={[
@@ -336,24 +365,51 @@ export default function EmpMobileRpt() {
               ]}
             />
 
-            <TouchableOpacity
-              style={styles.dateInput}
-              onPress={() => setShowToPicker(true)}
-            >
-              <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
-                To Date
-              </Text>
-              <View style={styles.dateRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={18}
-                  color={theme.primary}
-                />
-                <Text style={[styles.dateValue, { color: theme.text }]}>
-                  {formatDisplayDate(toDate)}
+            {isIOS ? (
+              <View
+                style={[
+                  styles.dateButton,
+                  styles.compactPickerWrapper,
+                ]}
+              >
+                <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
+                  To Date
                 </Text>
+
+                <View style={styles.pickerCenter}>
+                  <DateTimePicker
+                    value={toDate}
+                    mode="date"
+                    display="compact"
+                    onChange={(_, date) => {
+                      if (date) onChangeTo(_, date);
+                    }}
+                    maximumDate={new Date()}
+                  />
+                </View>
               </View>
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowToPicker(true)}
+              >
+                <Text style={[styles.dateLabel, { color: theme.placeholder }]}>
+                  To Date
+                </Text>
+
+                <View style={styles.dateRow}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={18}
+                    color={theme.primary}
+                  />
+
+                  <Text style={[styles.dateValue, { color: theme.text }]}>
+                    {formatDisplayDate(toDate)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -392,7 +448,7 @@ export default function EmpMobileRpt() {
       </ScrollView>
 
       {/* Date Pickers */}
-      {showFromPicker && (
+      {!isIOS && showFromPicker && (
         <DateTimePicker
           value={fromDate}
           mode="date"
@@ -400,7 +456,7 @@ export default function EmpMobileRpt() {
           onChange={onChangeFrom}
         />
       )}
-      {showToPicker && (
+      {!isIOS && showToPicker && (
         <DateTimePicker
           value={toDate}
           mode="date"
@@ -484,4 +540,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
+  dateButton: {
+  flex: 1,
+  borderWidth: 1,
+  borderRadius: 4,
+  paddingHorizontal: 12,
+  paddingVertical: 10,
+},
+
+compactPickerWrapper: {
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+pickerCenter: {
+  width: "100%",
+  alignItems: "center",
+  justifyContent: "center",
+}, 
 });

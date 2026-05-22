@@ -5,6 +5,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,6 +29,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const isIOS = Platform.OS === "ios";
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [checkingEligibility, setCheckingEligibility] = useState(false);
@@ -208,15 +210,29 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
 
           <View style={styles.formGroup}>
             <Text style={labelStyle}>Payout Date</Text>
-            <TouchableOpacity
-              style={dateInputStyle}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={{ color: theme.text }}>
-                {payoutDate.toLocaleDateString()}
-              </Text>
-              <Icon name="calendar-today" size={20} color={theme.icon} />
-            </TouchableOpacity>
+            {isIOS ? (
+              <View style={dateInputStyle}>
+                <DateTimePicker
+                  value={payoutDate}
+                  mode="date"
+                  display="compact"
+                  minimumDate={new Date()}
+                  onChange={(_, date) => {
+                    if (date) setPayoutDate(date);
+                  }}
+                />
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={dateInputStyle}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={{ color: theme.text }}>
+                  {payoutDate.toLocaleDateString()}
+                </Text>
+                <Icon name="calendar-today" size={20} color={theme.icon} />
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.formGroup}>
@@ -235,7 +251,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
 
       </AppModal>
 
-      {showDatePicker && (
+      {!isIOS && showDatePicker && (
         <DateTimePicker
           value={payoutDate}
           mode="date"

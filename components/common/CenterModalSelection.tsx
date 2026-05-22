@@ -1,7 +1,6 @@
 import Modal from "@/components/common/SingleModal";
 import { lockAndroidNavigationBar } from "@/utils/systemUI";
 import { Ionicons } from "@expo/vector-icons";
-import * as NavigationBar from "expo-navigation-bar";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
@@ -24,6 +23,7 @@ interface CenterModalSelectionProps {
   options: Option[];
   title?: string;
   selectedValue?: any;
+  inline?: boolean;
 }
 const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
   visible,
@@ -32,16 +32,11 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
   options,
   title,
   selectedValue,
+  inline = false,
 }) => {
   const { theme, isDark } = useTheme();
   const [query, setQuery] = useState("");
-  useEffect(() => {
-    if (!visible) return;
-    void NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-    return () => {
-      void NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-    };
-  }, [visible, theme.background, isDark]);
+
   useEffect(() => {
     if (!visible) return;
     // LOCK nav bar when modal opens
@@ -62,129 +57,138 @@ const CenterModalSelection: React.FC<CenterModalSelectionProps> = ({
       return haystack.includes(trimmed);
     });
   }, [options, query]);
-  if (!visible) return null;
-  return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      statusBarTranslucent
-      navigationBarTranslucent
-      onRequestClose={onClose}
+  const content = (
+    <View
+      style={inline ? styles.inlineOverlay : styles.overlay}
+      pointerEvents="box-none"
     >
-      <View style={styles.overlay}>
+      <View style={styles.backdrop}>
         <TouchableOpacity
           activeOpacity={1}
           onPress={onClose}
-          style={styles.backdrop}
+          style={StyleSheet.absoluteFillObject}
         />
+      </View>
+      <View
+        style={[
+          styles.modalContainer,
+          { backgroundColor: theme.cardBackground },
+        ]}
+      >
+        {/* Header */}
+        <View
+          style={[styles.header, { borderBottomColor: theme.inputBorder }]}
+        >
+          <Text style={[styles.title, { color: theme.text }]}>
+            {title || "Select Option"}
+          </Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={24} color={theme.icon} />
+          </TouchableOpacity>
+        </View>
+        {/* Search */}
         <View
           style={[
-            styles.modalContainer,
-            { backgroundColor: theme.cardBackground },
+            styles.searchRow,
+            { borderBottomColor: theme.inputBorder },
           ]}
         >
-          {/* Header */}
-          <View
-            style={[styles.header, { borderBottomColor: theme.inputBorder }]}
-          >
-            <Text style={[styles.title, { color: theme.text }]}>
-              {title || "Select Option"}
-            </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={theme.icon} />
-            </TouchableOpacity>
-          </View>
-          {/* Search */}
-          <View
+          <Ionicons name="search" size={18} color={theme.icon} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search..."
+            placeholderTextColor={theme.placeholder}
             style={[
-              styles.searchRow,
-              { borderBottomColor: theme.inputBorder },
+              styles.searchInput,
+              {
+                backgroundColor: theme.inputBg,
+                borderColor: theme.inputBorder,
+                color: theme.text,
+              },
             ]}
-          >
-            <Ionicons name="search" size={18} color={theme.icon} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search..."
-              placeholderTextColor={theme.placeholder}
-              style={[
-                styles.searchInput,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
-              ]}
-            />
-            {!!query && (
-              <TouchableOpacity
-                onPress={() => setQuery("")}
-                accessibilityLabel="Clear search"
-                style={styles.clearButton}
-              >
-                <Ionicons name="close-circle" size={18} color={theme.icon} />
-              </TouchableOpacity>
-            )}
-          </View>
-          {/* Options List */}
-          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-            {filteredOptions.map((option, index) => {
-              const isSelected = selectedValue === option.value;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.option,
-                    isSelected && { backgroundColor: theme.primary + "10" },
-                  ]}
-                  onPress={() => {
-                    onSelect(option.value);
-                    onClose();
-                  }}
-                >
-                  <View style={styles.optionTextBlock}>
-                    <Text
-                      style={[
-                        styles.optionText,
-                        { color: theme.text },
-                        isSelected && { color: theme.primary, fontWeight: "700" },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {option.label}
-                    </Text>
-                    {/* {option.subLabel ? (
-                      <Text
-                        style={[
-                          styles.optionSubText,
-                          { color: theme.textLight },
-                        ]}
-                        // numberOfLines={2}
-                      >
-                        {option.subLabel}
-                      </Text>
-                    ) : null} */}
-                  </View>
-                  {isSelected && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={theme.primary}
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-            {filteredOptions.length === 0 && (
-              <Text style={[styles.emptyText, { color: theme.textLight }]}>
-                No results found.
-              </Text>
-            )}
-            <View style={{ height: 20 }} />
-          </ScrollView>
+          />
+          {!!query && (
+            <TouchableOpacity
+              onPress={() => setQuery("")}
+              accessibilityLabel="Clear search"
+              style={styles.clearButton}
+            >
+              <Ionicons name="close-circle" size={18} color={theme.icon} />
+            </TouchableOpacity>
+          )}
         </View>
+        {/* Options List */}
+        <ScrollView
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+          onStartShouldSetResponder={() => true}
+        >
+          {filteredOptions.map((option, index) => {
+            const isSelected = selectedValue === option.value;
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.option,
+                  isSelected && { backgroundColor: theme.primary + "10" },
+                ]}
+                onPress={() => {
+                  onSelect(option.value);
+                  onClose();
+                }}
+              >
+                <View style={styles.optionTextBlock}>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      { color: theme.text },
+                      isSelected && { color: theme.primary, fontWeight: "700" },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {option.label}
+                  </Text>
+                </View>
+                {isSelected && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={theme.primary}
+                  />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+          {filteredOptions.length === 0 && (
+            <Text style={[styles.emptyText, { color: theme.textLight }]}>
+              No results found.
+            </Text>
+          )}
+          <View style={{ height: 20 }} />
+        </ScrollView>
       </View>
+    </View>
+  );
+
+  if (!visible) return null;
+  if (inline) {
+    return content;
+  }
+
+  return (
+    <Modal
+      transparent={true}
+      visible={visible}
+      animationType="fade"
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      {content}
     </Modal>
   );
 };
@@ -193,23 +197,40 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 12,
+  },
+  inlineOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+    zIndex: 20,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
   },
+
   modalContainer: {
     width: "100%",
-    maxWidth: 400,
-    maxHeight: "70%",
-    borderRadius: 4,
-    elevation: 10,
+    maxHeight: "80%",
+    minHeight: 350,
+
+    borderRadius: 24,
+
+    overflow: "hidden",
+
+    elevation: 12,
+
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -245,8 +266,13 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   list: {
+    flex: 1,
+  },
+
+  listContent: {
     paddingHorizontal: 20,
     paddingTop: 10,
+    paddingBottom: 40,
   },
   option: {
     flexDirection: "row",

@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
@@ -50,8 +51,13 @@ const TimeModal: React.FC<TimeModalProps> = ({
   const [processingAction, setProcessingAction] = useState<
     "Approved" | "Rejected" | null
   >(null);
+  const [confirmAction, setConfirmAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [remarks, setRemarks] = useState("");
   const [timeData, setTimeData] = useState<any>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const isApprovalMode = mode === "approval";
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
@@ -131,21 +137,14 @@ const TimeModal: React.FC<TimeModalProps> = ({
   useEffect(() => {
     if (!visible || !isApprovalMode) return;
     setProcessingAction(null);
+    setConfirmAction(null);
+    setValidationMessage(null);
     setRemarks("");
   }, [visible, isApprovalMode]);
 
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-    ConfirmModal.alert(
-      "Cancel Request",
-      "Are you sure you want to cancel this time update request?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
             setLoading(true);
             try {
               const defaultCancel = async () => {
@@ -176,13 +175,14 @@ const TimeModal: React.FC<TimeModalProps> = ({
                 : await defaultCancel();
 
               if (result.success) {
+                setShowCancelConfirm(false);
+                onClose();
+                onRefresh?.();
+                onSuccess?.();
                 ConfirmModal.alert(
                   "Success",
                   "Time update request cancelled successfully",
                 );
-                onClose();
-                onRefresh?.();
-                onSuccess?.();
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -197,21 +197,15 @@ const TimeModal: React.FC<TimeModalProps> = ({
             } finally {
               setLoading(false);
             }
-          },
-        },
-      ],
-    );
   };
 
   const handleApprovalSubmission = async (status: "Approved" | "Rejected") => {
     if (status === "Rejected" && remarks.trim().length < 11) {
-      ConfirmModal.alert(
-        "Validation Error",
-        "Remarks should be more than 10 characters",
-      );
+      setValidationMessage("Remarks should be more than 10 characters");
       return;
     }
 
+    setConfirmAction(null);
     setProcessingAction(status);
     try {
       const defaultAction = async () => {
@@ -272,38 +266,16 @@ const TimeModal: React.FC<TimeModalProps> = ({
   };
 
   const handleApprove = () => {
-    ConfirmModal.alert(
-      "Approve Request",
-      "Are you sure you want to approve this request?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Approve",
-          style: "default",
-          onPress: () => handleApprovalSubmission("Approved"),
-        },
-      ],
-    );
+    setConfirmAction("Approved");
   };
 
   const handleReject = () => {
     if (!remarks.trim()) {
-      ConfirmModal.alert("Error", "Please enter reject remarks");
+      setValidationMessage("Please enter reject remarks");
       return;
     }
 
-    ConfirmModal.alert(
-      "Reject Request",
-      "Are you sure you want to reject this request?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reject",
-          style: "destructive",
-          onPress: () => handleApprovalSubmission("Rejected"),
-        },
-      ],
-    );
+    setConfirmAction("Rejected");
   };
 
   const renderContent = () => {
@@ -419,7 +391,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
               icon="close"
               isLoading={loading}
               disabled={loading}
-              onPress={handleCancelRequest}
+              onPress={() => setShowCancelConfirm(true)}
               style={styles.cancelButton}
             />
           );
@@ -428,6 +400,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
         return null;
       })()}
     >
+      <View style={styles.contentFrame}>
       <ScrollView
         style={styles.modalBody}
         contentContainerStyle={{ paddingBottom: 20 }}
@@ -482,6 +455,43 @@ const TimeModal: React.FC<TimeModalProps> = ({
           </View>
         )}
       </ScrollView>
+      <InModalConfirmDialog
+        visible={validationMessage !== null}
+        title="Validation Error"
+        message={validationMessage || ""}
+        confirmLabel="OK"
+        onCancel={() => setValidationMessage(null)}
+        onConfirm={() => setValidationMessage(null)}
+      />
+      <InModalConfirmDialog
+        visible={confirmAction !== null}
+        title={confirmAction === "Approved" ? "Approve Request" : "Reject Request"}
+        message={
+          confirmAction === "Approved"
+            ? "Are you sure you want to approve this request?"
+            : "Are you sure you want to reject this request?"
+        }
+        confirmLabel={confirmAction === "Approved" ? "Approve" : "Reject"}
+        cancelLabel="Cancel"
+        destructive={confirmAction === "Rejected"}
+        loading={processingAction === confirmAction}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() =>
+          confirmAction && handleApprovalSubmission(confirmAction)
+        }
+      />
+      <InModalConfirmDialog
+        visible={showCancelConfirm}
+        title="Cancel Request"
+        message="Are you sure you want to cancel this time update request?"
+        confirmLabel="Yes, Cancel"
+        cancelLabel="No"
+        destructive
+        loading={loading}
+        onCancel={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelRequest}
+      />
+      </View>
     </AppModal>
   );
 };
@@ -503,6 +513,9 @@ const InfoRow = ({
 );
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+  },
   modalBody: {
     padding: 18,
     flexShrink: 1,

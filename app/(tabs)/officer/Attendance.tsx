@@ -58,6 +58,7 @@ export default function AttendanceList() {
   );
 
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const isIOS = Platform.OS === "ios";
 
   const [loading, setLoading] = useState(false);
   const [shiftData, setShiftData] = useState<AttendanceShift[]>([]);
@@ -153,24 +154,45 @@ export default function AttendanceList() {
             },
           ]}
         >
-          <TouchableOpacity
-            style={styles.dateInput}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={[styles.dateLabel, { color: theme.textLight }]}>
-              Date
-            </Text>
-            <View style={styles.dateRow}>
-              <Ionicons
-                name="calendar-outline"
-                size={18}
-                color={theme.primary}
+          {isIOS ? (
+            <View
+              style={[
+                styles.dateButton,
+                styles.compactPickerWrapper,
+              ]}
+            >
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="compact"
+                onChange={(_, date) => {
+                  if (date) onChangeDate(_, date);
+                }}
+                maximumDate={new Date()}
               />
-              <Text style={[styles.dateValue, { color: theme.text }]}>
-                {formatDisplayDate(selectedDate)}
-              </Text>
             </View>
-          </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.dateInput}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={[styles.dateLabel, { color: theme.textLight }]}>
+                Date
+              </Text>
+
+              <View style={styles.dateRow}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={18}
+                  color={theme.primary}
+                />
+
+                <Text style={[styles.dateValue, { color: theme.text }]}>
+                  {formatDisplayDate(selectedDate)}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -295,7 +317,7 @@ export default function AttendanceList() {
         </ScrollView>
       </View>
 
-      {showDatePicker && (
+      {!isIOS && showDatePicker && (
         <DateTimePicker
           value={selectedDate}
           mode="date"
@@ -356,6 +378,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
   },
+
+  dateButton: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+
+  compactPickerWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+  },
+
   dateInput: {
     flex: 1,
     paddingVertical: 12,

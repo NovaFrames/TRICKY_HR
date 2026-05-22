@@ -11,6 +11,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import AppModal from "../common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { CustomButton } from "../CustomButton";
 
 interface RequestModalProps {
@@ -30,6 +31,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailedData, setDetailedData] = useState<any>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Helper to format ASP.NET JSON Date /Date(1234567890)/
   const formatDate = (dateString: string) => {
@@ -159,15 +161,6 @@ const RequestModal: React.FC<RequestModalProps> = ({
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-    ConfirmModal.alert(
-      "Cancel Request",
-      "Are you sure you want to cancel this request?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
             setLoading(true);
             try {
               const requestId = item.IdN || item.Id || item.id;
@@ -211,9 +204,10 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 });
 
                 if (result.success) {
-                  ConfirmModal.alert("Success", "Request cancelled successfully");
+                  setShowCancelConfirm(false);
                   onClose();
                   onRefresh?.();
+                  ConfirmModal.alert("Success", "Request cancelled successfully");
                 } else {
                   ConfirmModal.alert(
                     "Error",
@@ -262,9 +256,10 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 );
 
                 if (result.success) {
-                  ConfirmModal.alert("Success", "Request cancelled successfully");
+                  setShowCancelConfirm(false);
                   onClose();
                   onRefresh?.();
+                  ConfirmModal.alert("Success", "Request cancelled successfully");
                 } else {
                   ConfirmModal.alert(
                     "Error",
@@ -280,10 +275,6 @@ const RequestModal: React.FC<RequestModalProps> = ({
             } finally {
               setLoading(false);
             }
-          },
-        },
-      ],
-    );
   };
 
   const DetailItem = ({
@@ -731,7 +722,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
             icon="close-circle"
             isLoading={loading}
             disabled={loading}
-            onPress={handleCancelRequest}
+            onPress={() => setShowCancelConfirm(true)}
             style={[
               styles.cancelButton,
               { backgroundColor: "#EF4444" }, // danger red
@@ -740,6 +731,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
         ) : null
       }
     >
+      <View style={styles.contentFrame}>
       <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
         <View style={styles.badgeRow}>
           <View
@@ -754,11 +746,27 @@ const RequestModal: React.FC<RequestModalProps> = ({
 
         {renderDetailedContent()}
       </ScrollView>
+      <InModalConfirmDialog
+        visible={showCancelConfirm}
+        title="Cancel Request"
+        message="Are you sure you want to cancel this request?"
+        confirmLabel="Yes, Cancel"
+        cancelLabel="No"
+        destructive
+        loading={loading}
+        onCancel={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelRequest}
+      />
+      </View>
     </AppModal>
   );
 };
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+    flexShrink: 1,
+  },
   modalBody: {
     padding: 18,
     flexShrink: 1,

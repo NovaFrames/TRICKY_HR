@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
@@ -32,6 +33,7 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
   const [surrenderData, setSurrenderData] = useState<any>(null);
   const [cancelRemarks, setCancelRemarks] = useState("");
   const [showCancelPrompt, setShowCancelPrompt] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -76,15 +78,6 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-    ConfirmModal.alert(
-      "Cancel Request",
-      "Are you sure you want to cancel this leave surrender request?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
             setLoading(true);
             try {
 
@@ -104,12 +97,13 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
               );
 
               if (result.success) {
+                setShowCancelConfirm(false);
+                onClose();
+                onRefresh?.();
                 ConfirmModal.alert(
                   "Success",
                   "Leave surrender request cancelled successfully",
                 );
-                onClose();
-                onRefresh?.();
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -124,10 +118,6 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
             } finally {
               setLoading(false);
             }
-          },
-        },
-      ],
-    );
   };
 
   const handleCancelApproved = async () => {
@@ -337,7 +327,7 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
                 icon="close"
                 isLoading={loading}
                 disabled={loading}
-                onPress={handleCancelRequest}
+                onPress={() => setShowCancelConfirm(true)}
                 style={styles.cancelButton}
               />
             );
@@ -433,6 +423,7 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
         })()
       }
     >
+      <View style={styles.contentFrame}>
       <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
         <View style={styles.badgeRow}>
           <View
@@ -447,11 +438,26 @@ const LeaveSurrenderModal: React.FC<LeaveSurrenderModalProps> = ({
 
         {renderContent()}
       </ScrollView>
+      <InModalConfirmDialog
+        visible={showCancelConfirm}
+        title="Cancel Request"
+        message="Are you sure you want to cancel this leave surrender request?"
+        confirmLabel="Yes, Cancel"
+        cancelLabel="No"
+        destructive
+        loading={loading}
+        onCancel={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelRequest}
+      />
+      </View>
     </AppModal>
   );
 };
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+  },
   modalBody: {
     padding: 18,
     flexShrink: 1,

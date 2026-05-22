@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -40,6 +41,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const isIOS = Platform.OS === "ios";
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [showProjectSelector, setShowProjectSelector] = useState(false);
@@ -102,6 +104,23 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       date.setHours(hour, minute, 0, 0);
     }
     return date;
+  };
+
+  const closeTransientPanels = () => {
+    setShowProjectSelector(false);
+    setShowRequestTypeSelector(false);
+    setShowDatePicker(false);
+    setShowInTimePicker(false);
+    setShowOutTimePicker(false);
+  };
+
+  const openSelector = (type: "project" | "requestType") => {
+    closeTransientPanels();
+    if (type === "project") {
+      setShowProjectSelector(true);
+      return;
+    }
+    setShowRequestTypeSelector(true);
   };
 
   const handleSubmit = async () => {
@@ -181,7 +200,10 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
 
   return (
     <>
-      <AppModal visible={visible} onClose={onClose} title="Time Request"
+      <AppModal visible={visible} onClose={() => {
+        closeTransientPanels();
+        onClose();
+      }} title="Time Request"
         footer={
           <View style={styles.footerRow}>
             <CustomButton
@@ -215,23 +237,39 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
             />
           </View>
         }>
-        <ScrollView
-          style={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        <View style={styles.contentFrame}>
+          <ScrollView
+            style={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           {/* Date Field */}
           <View style={styles.formGroup}>
             <Text style={labelStyle}>Date</Text>
-            <TouchableOpacity
-              style={inputStyle}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={{ color: theme.text }}>
-                {formData.date.toLocaleDateString()}
-              </Text>
-              <Ionicons name="calendar-outline" size={20} color={theme.icon} />
-            </TouchableOpacity>
+            {isIOS ? (
+              <View style={inputStyle}>
+                <DateTimePicker
+                  value={formData.date}
+                  mode="date"
+                  display="compact"
+                  onChange={(_, date) => {
+                    if (date) {
+                      setFormData((prev) => ({ ...prev, date }));
+                    }
+                  }}
+                />
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={inputStyle}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={{ color: theme.text }}>
+                  {formData.date.toLocaleDateString()}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color={theme.icon} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Project Dropdown */}
@@ -239,7 +277,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
             <Text style={labelStyle}>Project</Text>
             <TouchableOpacity
               style={inputStyle}
-              onPress={() => setShowProjectSelector(true)}
+              onPress={() => openSelector("project")}
             >
               <Text
                 style={{
@@ -259,7 +297,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
             <Text style={labelStyle}>Request Type</Text>
             <TouchableOpacity
               style={inputStyle}
-              onPress={() => setShowRequestTypeSelector(true)}
+              onPress={() => openSelector("requestType")}
             >
               <Text style={{ color: theme.text }}>{formData.requestType}</Text>
               <Ionicons name="chevron-down" size={24} color={theme.icon} />
@@ -272,26 +310,68 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
               formData.requestType === "In & Out Time") && (
                 <View style={styles.timeGroup}>
                   <Text style={labelStyle}>In Time</Text>
-                  <TouchableOpacity
-                    style={inputStyle}
-                    onPress={() => setShowInTimePicker(true)}
-                  >
-                    <Text style={{ color: theme.text }}>{formData.inTime}</Text>
-                    <Ionicons name="time-outline" size={20} color={theme.icon} />
-                  </TouchableOpacity>
+                  {isIOS ? (
+                    <View style={inputStyle}>
+                      <DateTimePicker
+                        value={getTimePickerDate(formData.inTime)}
+                        mode="time"
+                        is24Hour={true}
+                        display="compact"
+                        onChange={(_, date) => {
+                          if (date) {
+                            const hours = String(date.getHours()).padStart(2, "0");
+                            const minutes = String(date.getMinutes()).padStart(2, "0");
+                            setFormData((prev) => ({
+                              ...prev,
+                              inTime: `${hours}:${minutes}`,
+                            }));
+                          }
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={inputStyle}
+                      onPress={() => setShowInTimePicker(true)}
+                    >
+                      <Text style={{ color: theme.text }}>{formData.inTime}</Text>
+                      <Ionicons name="time-outline" size={20} color={theme.icon} />
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             {(formData.requestType === "Out Time" ||
               formData.requestType === "In & Out Time") && (
                 <View style={styles.timeGroup}>
                   <Text style={labelStyle}>Out Time</Text>
-                  <TouchableOpacity
-                    style={inputStyle}
-                    onPress={() => setShowOutTimePicker(true)}
-                  >
-                    <Text style={{ color: theme.text }}>{formData.outTime}</Text>
-                    <Ionicons name="time-outline" size={20} color={theme.icon} />
-                  </TouchableOpacity>
+                  {isIOS ? (
+                    <View style={inputStyle}>
+                      <DateTimePicker
+                        value={getTimePickerDate(formData.outTime)}
+                        mode="time"
+                        is24Hour={true}
+                        display="compact"
+                        onChange={(_, date) => {
+                          if (date) {
+                            const hours = String(date.getHours()).padStart(2, "0");
+                            const minutes = String(date.getMinutes()).padStart(2, "0");
+                            setFormData((prev) => ({
+                              ...prev,
+                              outTime: `${hours}:${minutes}`,
+                            }));
+                          }
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={inputStyle}
+                      onPress={() => setShowOutTimePicker(true)}
+                    >
+                      <Text style={{ color: theme.text }}>{formData.outTime}</Text>
+                      <Ionicons name="time-outline" size={20} color={theme.icon} />
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
           </View>
@@ -319,11 +399,33 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
             />
           </View>
 
-        </ScrollView>
+          </ScrollView>
+
+          <CenterModalSelection
+            inline
+            visible={showProjectSelector}
+            onClose={() => setShowProjectSelector(false)}
+            title="Select Project"
+            options={projects}
+            selectedValue={formData.projectId}
+            onSelect={(val) => setFormData((prev) => ({ ...prev, projectId: val }))}
+          />
+          <CenterModalSelection
+            inline
+            visible={showRequestTypeSelector}
+            onClose={() => setShowRequestTypeSelector(false)}
+            title="Select Request Type"
+            options={user?.TRInorOutN === 1 ? RequestTypes : RequestTypesTwo}
+            selectedValue={formData.requestType}
+            onSelect={(val) =>
+              setFormData((prev) => ({ ...prev, requestType: val }))
+            }
+          />
+        </View>
       </AppModal>
 
       {/* Time Pickers */}
-      {showDatePicker && (
+      {!isIOS && showDatePicker && (
         <DateTimePicker
           value={formData.date}
           mode="date"
@@ -336,7 +438,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
           }}
         />
       )}
-      {showInTimePicker && (
+      {!isIOS && showInTimePicker && (
         <DateTimePicker
           value={getTimePickerDate(formData.inTime)}
           mode="time"
@@ -355,7 +457,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
           }}
         />
       )}
-      {showOutTimePicker && (
+      {!isIOS && showOutTimePicker && (
         <DateTimePicker
           value={getTimePickerDate(formData.outTime)}
           mode="time"
@@ -374,30 +476,15 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
           }}
         />
       )}
-
-      <CenterModalSelection
-        visible={showProjectSelector}
-        onClose={() => setShowProjectSelector(false)}
-        title="Select Project"
-        options={projects}
-        selectedValue={formData.projectId}
-        onSelect={(val) => setFormData((prev) => ({ ...prev, projectId: val }))}
-      />
-      <CenterModalSelection
-        visible={showRequestTypeSelector}
-        onClose={() => setShowRequestTypeSelector(false)}
-        title="Select Request Type"
-        options={user?.TRInorOutN === 1 ? RequestTypes : RequestTypesTwo}
-        selectedValue={formData.requestType}
-        onSelect={(val) =>
-          setFormData((prev) => ({ ...prev, requestType: val }))
-        }
-      />
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+    flexShrink: 1,
+  },
   scrollContent: {
     padding: 18,
     paddingBottom: 24,

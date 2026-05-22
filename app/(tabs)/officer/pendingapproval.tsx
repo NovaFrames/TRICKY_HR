@@ -4,7 +4,7 @@ import ClaimModal from "@/components/RequestPage/ClaimModal";
 import TimeModal from "@/components/RequestPage/TimeModal";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -47,7 +47,6 @@ interface PendingApproval {
 
 export default function PendingApproval() {
   const { theme } = useTheme();
-  const router = useRouter();
   const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: "your", title: "YOUR PENDING" },
@@ -266,6 +265,16 @@ export default function PendingApproval() {
     setShowModal(true);
   };
 
+  const handleModalClose = () => {
+    setShowModal(false);
+    setSelectedItem(null);
+  };
+
+  const handleModalSuccess = () => {
+    handleModalClose();
+    fetchPendingApprovals();
+  };
+
   const getFlag = (desc: string) => {
     const d = (desc || "").toLowerCase().trim();
     if (d.includes("claim") && !d.includes("expense")) return "Claim";
@@ -314,32 +323,6 @@ export default function PendingApproval() {
       PayTypeN: 0,
       ClaimExpenseDtl1: claimExpenses,
     });
-  };
-
-  const renderCustomTab = () => {
-    return (
-      <View style={[styles.tabBar, { backgroundColor: theme.cardBackground }]}>
-        {routes.map((item, i) => (
-          <TouchableOpacity
-            key={item.key}
-            style={[
-              styles.tabItem,
-              index === i && { borderBottomColor: theme.primary },
-            ]}
-            onPress={() => setIndex(i)}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                { color: index === i ? theme.primary : theme.textLight },
-              ]}
-            >
-              {item.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
   };
 
   const renderPendingItem = ({
@@ -437,19 +420,95 @@ export default function PendingApproval() {
     );
   };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      {renderCustomTab()}
-      <Ionicons
-        name="document-text-outline"
-        size={64}
-        color={theme.placeholder}
-      />
-      <Text style={[styles.emptyText, { color: theme.placeholder }]}>
-        No pending approvals
-      </Text>
-    </View>
-  );
+  const renderSelectedModal = () => {
+    if (!showModal || !selectedItem) return null;
+
+    const description = (selectedItem.DescC || "").toLowerCase();
+    const isLeaveRequest =
+      description.includes("leave") ||
+      description.includes("onduty") ||
+      description.includes("permission");
+
+    if (isLeaveRequest) {
+      return (
+        <PendingApprovalModal
+          visible={showModal}
+          onClose={handleModalClose}
+          onSuccess={handleModalSuccess}
+          data={selectedItem}
+          currenttab={currentTab}
+        />
+      );
+    }
+
+    if (description.includes("claim")) {
+      return (
+        <ClaimModal
+          visible={showModal}
+          mode="approval"
+          onClose={handleModalClose}
+          onSuccess={handleModalSuccess}
+          item={selectedItem}
+          onApprove={({
+            item,
+            remarks,
+            approveAmount,
+            receiveYear,
+            receiveMonth,
+            claimExpenses,
+          }) =>
+            handleApprovalAction(
+              item,
+              "Approved",
+              remarks,
+              approveAmount,
+              receiveYear,
+              receiveMonth,
+              claimExpenses,
+            )
+          }
+          onReject={({
+            item,
+            remarks,
+            approveAmount,
+            receiveYear,
+            receiveMonth,
+            claimExpenses,
+          }) =>
+            handleApprovalAction(
+              item,
+              "Rejected",
+              remarks,
+              approveAmount,
+              receiveYear,
+              receiveMonth,
+              claimExpenses,
+            )
+          }
+        />
+      );
+    }
+
+    if (description.includes("time")) {
+      return (
+        <TimeModal
+          visible={showModal}
+          mode="approval"
+          onClose={handleModalClose}
+          onSuccess={handleModalSuccess}
+          item={selectedItem}
+          onApprove={({ item, remarks }) =>
+            handleApprovalAction(item, "Approved", remarks, 0)
+          }
+          onReject={({ item, remarks }) =>
+            handleApprovalAction(item, "Rejected", remarks, 0)
+          }
+        />
+      );
+    }
+
+    return null;
+  };
 
   const currentData =
     routes[index].key === "your" ? yourPendings : otherPendings;
@@ -567,84 +626,7 @@ export default function PendingApproval() {
         />
       </View>
 
-      {showModal && selectedItem && (
-        (selectedItem.DescC || "").toLowerCase().includes("leave") ||
-        (selectedItem.DescC || "").toLowerCase().includes("onduty") ||
-        (selectedItem.DescC || "").toLowerCase().includes("permission") ? (
-          <PendingApprovalModal
-            visible={showModal}
-            onClose={() => {
-              setShowModal(false);
-              setSelectedItem(null);
-            }}
-            onSuccess={() => {
-              setShowModal(false);
-              setSelectedItem(null);
-              fetchPendingApprovals();
-            }}
-            data={selectedItem}
-            currenttab={currentTab}
-          />
-        ) : selectedItem.DescC === "Claim" ? (
-          <ClaimModal
-            visible={showModal}
-            mode="approval"
-            onClose={() => {
-              setShowModal(false);
-              setSelectedItem(null);
-            }}
-            onSuccess={() => {
-              setShowModal(false);
-              setSelectedItem(null);
-              fetchPendingApprovals();
-            }}
-            item={selectedItem}
-            onApprove={({ item, remarks, approveAmount, receiveYear, receiveMonth, claimExpenses }) =>
-              handleApprovalAction(
-                item,
-                "Approved",
-                remarks,
-                approveAmount,
-                receiveYear,
-                receiveMonth,
-                claimExpenses,
-              )
-            }
-            onReject={({ item, remarks, approveAmount, receiveYear, receiveMonth, claimExpenses }) =>
-              handleApprovalAction(
-                item,
-                "Rejected",
-                remarks,
-                approveAmount,
-                receiveYear,
-                receiveMonth,
-                claimExpenses,
-              )
-            }
-          />
-        ) : selectedItem.DescC.toLowerCase().includes("time") ? (
-          <TimeModal
-            visible={showModal}
-            mode="approval"
-            onClose={() => {
-              setShowModal(false);
-              setSelectedItem(null);
-            }}
-            onSuccess={() => {
-              setShowModal(false);
-              setSelectedItem(null);
-              fetchPendingApprovals();
-            }}
-            item={selectedItem}
-            onApprove={({ item, remarks }) =>
-              handleApprovalAction(item, "Approved", remarks, 0)
-            }
-            onReject={({ item, remarks }) =>
-              handleApprovalAction(item, "Rejected", remarks, 0)
-            }
-          />
-        ) : ('')
-      )}
+      {renderSelectedModal()}
     </View>
   );
 }

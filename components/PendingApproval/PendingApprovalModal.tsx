@@ -11,6 +11,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import AppModal from "../common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { CustomButton } from "../CustomButton";
 
 interface PendingApprovalData {
@@ -67,6 +68,10 @@ export default function PendingApprovalModal({
   const [processingAction, setProcessingAction] = useState<
     "Approved" | "Rejected" | null
   >(null);
+  const [confirmAction, setConfirmAction] = useState<
+    "Approved" | "Rejected" | null
+  >(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const [yourPendings, setYourPendings] = useState<LeaveManageDetail | null>(null);;
   const [otherPendings, setOtherPendings] = useState<LeaveManageDetail | null>(null);;
@@ -159,6 +164,8 @@ export default function PendingApprovalModal({
     if (visible && data) {
       setRejectRemarks("");
       setProcessingAction(null);
+      setConfirmAction(null);
+      setValidationMessage(null);
 
       // For claims, pre-fill amount from remarks if possible
       if (getFlag(data.DescC) === "Claim" && data.EmpRemarksC) {
@@ -242,16 +249,14 @@ export default function PendingApprovalModal({
     // Validation based on Java snippets
     if (status === "Rejected") {
       if (remarks.trim().length < 11) {
-        ConfirmModal.alert(
-          "Validation Error",
-          "Remarks should be more than 10 characters",
-        );
+        setValidationMessage("Remarks should be more than 10 characters");
         return;
       }
     }
 
     let amount = 0;
 
+    setConfirmAction(null);
     setProcessingAction(status);
 
     try {
@@ -308,38 +313,16 @@ export default function PendingApprovalModal({
   }
 
   const handleApprove = () => {
-    ConfirmModal.alert(
-      "Approve Request",
-      "Are you sure you want to approve this request?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Approve",
-          style: "default",
-          onPress: () => handleSubmission("Approved", rejectRemarks),
-        },
-      ],
-    );
+    setConfirmAction("Approved");
   };
 
   const handleReject = () => {
     if (!rejectRemarks.trim()) {
-      ConfirmModal.alert("Error", "Please enter reject remarks");
+      setValidationMessage("Please enter reject remarks");
       return;
     }
 
-    ConfirmModal.alert(
-      "Reject Request",
-      "Are you sure you want to reject this request?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reject",
-          style: "destructive",
-          onPress: () => handleSubmission("Rejected", rejectRemarks),
-        },
-      ],
-    );
+    setConfirmAction("Rejected");
   };
 
   const DetailItem = ({
@@ -373,157 +356,187 @@ export default function PendingApprovalModal({
       title="Approval Request"
       subtitle={`Employee: ${data.NameC} • Ref: #${data.IdN}`}
     >
-      <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-        <View style={styles.badgeRow}>
-          <View
-            style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
-          >
-            <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
-            <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
-              {data.StatusC}
-            </Text>
+      <View style={styles.contentFrame}>
+        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+          <View style={styles.badgeRow}>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
+            >
+              <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+              <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
+                {data.StatusC}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <DetailItem
-          icon="person-outline"
-          label="EMPLOYEE CODE"
-          value={data.CodeC}
-        />
-
-        <DetailItem
-          icon="document-text-outline"
-          label="LEAVE TYPE"
-          value={yourPendings?.ReaGrpNameC || otherPendings?.ReaGrpNameC || "N/A"}
-        />
-
-        <DetailItem
-          icon="calendar-outline"
-          label="FROM DATE"
-          value={formatFromDate(data.FromDateC)}
-        />
-
-        <DetailItem
-          icon="calendar-outline"
-          label="TO DATE"
-          value={formatToDate(data.ToDateC)}
-        />
-
-        <DetailItem
-          icon="calendar-outline"
-          label="TOTAL DAYS"
-          value={`${yourPendings?.LeaveDaysN || "0"} day(s)`}
-        />
-
-        {data.LvDescC && (
           <DetailItem
-            icon="time-outline"
-            label="SCHEDULE/DURATION"
-            value={data.LvDescC}
+            icon="person-outline"
+            label="EMPLOYEE CODE"
+            value={data.CodeC}
           />
-        )}
 
-        {data.LeaveDaysN !== null && (
           <DetailItem
-            icon="timer-outline"
-            label="LEAVE DAYS"
-            value={data.LeaveDaysN}
+            icon="document-text-outline"
+            label="LEAVE TYPE"
+            value={yourPendings?.ReaGrpNameC || otherPendings?.ReaGrpNameC || "N/A"}
           />
-        )}
 
-        {data.EmpRemarksC && (
           <DetailItem
-            icon="chatbubble-outline"
-            label="EMPLOYEE REMARKS"
-            value={data.EmpRemarksC}
+            icon="calendar-outline"
+            label="FROM DATE"
+            value={formatFromDate(data.FromDateC)}
           />
-        )}
 
-        {isClaim && (
-          <View style={styles.inputContainer}>
-            <Text style={[styles.fieldLabel, { color: theme.text }]}>
-              Approve Amount
+          <DetailItem
+            icon="calendar-outline"
+            label="TO DATE"
+            value={formatToDate(data.ToDateC)}
+          />
+
+          <DetailItem
+            icon="calendar-outline"
+            label="TOTAL DAYS"
+            value={`${yourPendings?.LeaveDaysN || "0"} day(s)`}
+          />
+
+          {data.LvDescC && (
+            <DetailItem
+              icon="time-outline"
+              label="SCHEDULE/DURATION"
+              value={data.LvDescC}
+            />
+          )}
+
+          {data.LeaveDaysN !== null && (
+            <DetailItem
+              icon="timer-outline"
+              label="LEAVE DAYS"
+              value={data.LeaveDaysN}
+            />
+          )}
+
+          {data.EmpRemarksC && (
+            <DetailItem
+              icon="chatbubble-outline"
+              label="EMPLOYEE REMARKS"
+              value={data.EmpRemarksC}
+            />
+          )}
+
+          {isClaim && (
+            <View style={styles.inputContainer}>
+              <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                Approve Amount
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
+                placeholder="Enter amount"
+                placeholderTextColor={theme.placeholder}
+                value={approveAmt}
+                onChangeText={setApproveAmt}
+                keyboardType="numeric"
+              />
+            </View>
+          )}
+
+          {/* Approval Section */}
+          <View style={styles.approvalSection}>
+            <Text style={[styles.sectionTitle, { color: theme.primary }]}>
+              APPROVAL DECISION
             </Text>
-            <TextInput
+
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                Remarks
+              </Text>
+              <TextInput
+                style={[
+                  styles.textArea,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
+                placeholder="Enter your remarks here (required for rejection)"
+                placeholderTextColor={theme.placeholder}
+                value={rejectRemarks}
+                onChangeText={setRejectRemarks}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+
+          <View style={styles.footerButtons}>
+            <CustomButton
+              title="Reject"
+              icon="close-circle-outline"
+              onPress={handleReject}
+              isLoading={processingAction === "Rejected"}
+              disabled={processingAction !== null}
+              textColor="#DC2626"
+              iconColor="#DC2626"
+              indicatorColor="#DC2626"
+              style={[styles.actionButton, styles.rejectButton]}
+            />
+
+            <CustomButton
+              title="Approve"
+              icon="checkmark-circle-outline"
+              onPress={handleApprove}
+              isLoading={processingAction === "Approved"}
+              disabled={processingAction !== null}
               style={[
-                styles.input,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
+                styles.actionButton,
+                styles.approveButton,
+                { backgroundColor: theme.primary },
               ]}
-              placeholder="Enter amount"
-              placeholderTextColor={theme.placeholder}
-              value={approveAmt}
-              onChangeText={setApproveAmt}
-              keyboardType="numeric"
             />
           </View>
-        )}
-
-        {/* Approval Section */}
-        <View style={styles.approvalSection}>
-          <Text style={[styles.sectionTitle, { color: theme.primary }]}>
-            APPROVAL DECISION
-          </Text>
-
-          <View style={styles.fieldContainer}>
-            <Text style={[styles.fieldLabel, { color: theme.text }]}>
-              Remarks
-            </Text>
-            <TextInput
-              style={[
-                styles.textArea,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
-              ]}
-              placeholder="Enter your remarks here (required for rejection)"
-              placeholderTextColor={theme.placeholder}
-              value={rejectRemarks}
-              onChangeText={setRejectRemarks}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
-        </View>
-
-        <View style={styles.footerButtons}>
-          <CustomButton
-            title="Reject"
-            icon="close-circle-outline"
-            onPress={handleReject}
-            isLoading={processingAction === "Rejected"}
-            disabled={processingAction !== null}
-            textColor="#DC2626"
-            iconColor="#DC2626"
-            indicatorColor="#DC2626"
-            style={[styles.actionButton, styles.rejectButton]}
-          />
-
-          <CustomButton
-            title="Approve"
-            icon="checkmark-circle-outline"
-            onPress={handleApprove}
-            isLoading={processingAction === "Approved"}
-            disabled={processingAction !== null}
-            style={[
-              styles.actionButton,
-              styles.approveButton,
-              { backgroundColor: theme.primary },
-            ]}
-          />
-        </View>
-      </ScrollView>
+        </ScrollView>
+        <InModalConfirmDialog
+          visible={validationMessage !== null}
+          title="Validation Error"
+          message={validationMessage || ""}
+          confirmLabel="OK"
+          onCancel={() => setValidationMessage(null)}
+          onConfirm={() => setValidationMessage(null)}
+        />
+        <InModalConfirmDialog
+          visible={confirmAction !== null}
+          title={confirmAction === "Approved" ? "Approve Request" : "Reject Request"}
+          message={
+            confirmAction === "Approved"
+              ? "Are you sure you want to approve this request?"
+              : "Are you sure you want to reject this request?"
+          }
+          confirmLabel={confirmAction === "Approved" ? "Approve" : "Reject"}
+          cancelLabel="Cancel"
+          destructive={confirmAction === "Rejected"}
+          loading={processingAction === confirmAction}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() =>
+            confirmAction && handleSubmission(confirmAction, rejectRemarks)
+          }
+        />
+      </View>
     </AppModal>
   );
 }
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+  },
   modalBody: {
     padding: 18,
   },

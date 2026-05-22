@@ -11,7 +11,8 @@ import ApiService from "@/services/ApiService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import { Animated, Dimensions, Easing, FlatList, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
@@ -690,6 +691,14 @@ export default function UserProfile() {
     }
     handleCompanyChange(target.index, target.field, formatted);
   };
+
+  // Refresh whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserData();
+    }, [])
+  );
+
   /* -------------------- API -------------------- */
   const fetchUserData = async () => {
     try {

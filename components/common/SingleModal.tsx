@@ -7,6 +7,9 @@ let modalIdCounter = 0;
 const SingleModal: React.FC<ModalProps> = ({
   visible = false,
   onRequestClose,
+  presentationStyle,
+  statusBarTranslucent,
+  transparent,
   ...rest
 }) => {
   const manager = useModalManager();
@@ -57,6 +60,11 @@ const SingleModal: React.FC<ModalProps> = ({
     <RNModal
       {...rest}
       visible={visible}
+      transparent={transparent}
+      presentationStyle={
+        presentationStyle ?? (transparent ? "overFullScreen" : undefined)
+      }
+      statusBarTranslucent={statusBarTranslucent ?? transparent}
       onRequestClose={handleRequestClose}
     />
   );

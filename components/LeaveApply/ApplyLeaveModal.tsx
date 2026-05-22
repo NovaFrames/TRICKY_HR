@@ -4,21 +4,21 @@ import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, {
-    AvailableLeaveType,
-    LeaveApplicationData,
-    LeaveBalanceResponse,
+  AvailableLeaveType,
+  LeaveApplicationData,
+  LeaveBalanceResponse,
 } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
-import CenterModalSelection from "../common/CenterModalSelection";
 import { CustomButton } from "../CustomButton";
 
 interface ApplyLeaveModalProps {
@@ -36,6 +36,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
   availableLeaves,
   leaveData,
 }) => {
+  const isIOS = Platform.OS === "ios";
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -103,6 +104,47 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     setTotalTime(calculateTimeDifference(fromTime, time));
   };
 
+  const getTimePickerDate = (time: string, fallbackHour: number) => {
+    const [hours, minutes] = time.split(".").map(Number);
+    const date = new Date();
+    date.setHours(hours || fallbackHour, minutes || 0, 0, 0);
+    return date;
+  };
+
+  const closeTransientPanels = () => {
+    setShowLeaveTypeSelector(false);
+    setShowFromDatePicker(false);
+    setShowToDatePicker(false);
+    setShowFromTimePicker(false);
+    setShowToTimePicker(false);
+  };
+
+  const toggleLeaveTypeSelector = () => {
+    closeTransientPanels();
+    setShowLeaveTypeSelector(true);
+  };
+
+  const handleLeaveTypeSelect = (leaveType: AvailableLeaveType) => {
+    setSelectedLeaveType(leaveType);
+    checkLeaveTypeChange(leaveType);
+    setShowLeaveTypeSelector(false);
+  };
+
+  const togglePicker = (
+    setter: React.Dispatch<React.SetStateAction<boolean>>,
+    picker: "fromDate" | "toDate" | "fromTime" | "toTime",
+  ) => {
+    if (isIOS) return;
+
+    setShowLeaveTypeSelector(false);
+    setShowFromDatePicker(picker === "fromDate" ? (current) => !current : false);
+    setShowToDatePicker(picker === "toDate" ? (current) => !current : false);
+    setShowFromTimePicker(picker === "fromTime" ? (current) => !current : false);
+    setShowToTimePicker(picker === "toTime" ? (current) => !current : false);
+
+    setter(true);
+  };
+
   const formatDateForAPI = (date: Date): string => {
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const day = date.getDate().toString().padStart(2, "0");
@@ -166,7 +208,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
             : selectedLeaveType.ReaTypeN === 4
               ? 0
               : selectedLeaveType.ReaTypeN === 2 ||
-                  selectedLeaveType.ReaTypeN === 3
+                selectedLeaveType.ReaTypeN === 3
                 ? 0.5
                 : 1,
         MLClaimAmtN: parseFloat(claimAmount) || 0,
@@ -207,7 +249,10 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     <>
       <AppModal
         visible={visible}
-        onClose={onClose}
+        onClose={() => {
+          closeTransientPanels();
+          onClose();
+        }}
         title="Apply Leave"
         footer={
           <View style={styles.footerRow}>
@@ -238,169 +283,368 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
           </View>
         }
       >
-        <ScrollView
-          style={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.formGroup}>
-            <Text style={labelStyle}>Leave Type</Text>
-            <TouchableOpacity
-              style={[
-                styles.selectorContainer,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
-              onPress={() => setShowLeaveTypeSelector(true)}
-            >
-              <Text
+        <View style={styles.contentFrame}>
+          <ScrollView
+            style={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+          >
+            <View style={styles.formGroup}>
+              <Text style={labelStyle}>Leave Type</Text>
+              <TouchableOpacity
                 style={[
-                  styles.selectorText,
-                  { color: selectedLeaveType ? theme.text : theme.placeholder },
+                  styles.selectorContainer,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                  },
+                ]}
+                onPress={toggleLeaveTypeSelector}
+              >
+                <Text
+                  style={[
+                    styles.selectorText,
+                    { color: selectedLeaveType ? theme.text : theme.placeholder },
+                  ]}
+                >
+                  {selectedLeaveType
+                    ? selectedLeaveType.ReaNameC
+                    : "Select Leave Type"}
+                </Text>
+                <Icon name="keyboard-arrow-down" size={24} color={theme.icon} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.dateRow}>
+              <View style={styles.dateGroup}>
+                <Text style={labelStyle}>From D te</Text>
+                {isIOS ? (
+                  <View
+                    style={[
+                      styles.compactPickerWrapper,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <DateTimePicker
+                      value={fromDate}
+                      mode="date"
+                      display="compact"
+                      onChange={(_, date) => {
+                        if (date) setFromDate(date);
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={dateInputStyle}
+                    onPress={() =>
+                      togglePicker(setShowFromDatePicker, "fromDate")
+                    }
+                  >
+                    <Text style={{ color: theme.text }}>
+                      {fromDate.toLocaleDateString()}
+                    </Text>
+                    <Icon name="calendar-today" size={20} color={theme.icon} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.dateGroup}>
+                <Text style={labelStyle}>To Date</Text>
+                {isIOS ? (
+                  <View
+                    style={[
+                      styles.compactPickerWrapper,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
+                    <DateTimePicker
+                      value={toDate}
+                      mode="date"
+                      display="compact"
+                      onChange={(_, date) => {
+                        if (date) setToDate(date);
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={dateInputStyle}
+                    onPress={() => togglePicker(setShowToDatePicker, "toDate")}
+                  >
+                    <Text style={{ color: theme.text }}>
+                      {toDate.toLocaleDateString()}
+                    </Text>
+                    <Icon name="calendar-today" size={20} color={theme.icon} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={labelStyle}>Past Leave</Text>
+              <View style={styles.radioGroup}>
+                <TouchableOpacity
+                  style={styles.radioOption}
+                  onPress={() => {
+                    setPastLeaveYes(true);
+                    setPastLeaveNo(false);
+                  }}
+                >
+                  <View
+                    style={[styles.radioCircle, { borderColor: theme.primary }]}
+                  >
+                    {pastLeaveYes && (
+                      <View
+                        style={[
+                          styles.radioSelected,
+                          { backgroundColor: theme.primary },
+                        ]}
+                      />
+                    )}
+                  </View>
+                  <Text style={[styles.radioLabel, { color: theme.text }]}>
+                    Yes
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.radioOption}
+                  onPress={() => {
+                    setPastLeaveYes(false);
+                    setPastLeaveNo(true);
+                  }}
+                >
+                  <View
+                    style={[styles.radioCircle, { borderColor: theme.primary }]}
+                  >
+                    {pastLeaveNo && (
+                      <View
+                        style={[
+                          styles.radioSelected,
+                          { backgroundColor: theme.primary },
+                        ]}
+                      />
+                    )}
+                  </View>
+                  <Text style={[styles.radioLabel, { color: theme.text }]}>
+                    No
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {showTimeSection && (
+              <View style={styles.formGroup}>
+                <Text style={labelStyle}>Time Details</Text>
+                <View style={styles.timeRow}>
+                  <View style={styles.timeGroup}>
+                    <Text
+                      style={[styles.timeLabel, { color: theme.placeholder }]}
+                    >
+                      From Time
+                    </Text>
+                    {isIOS ? (
+                      <View
+                        style={[
+                          styles.compactPickerWrapper,
+                          {
+                            backgroundColor: theme.inputBg,
+                            borderColor: theme.inputBorder,
+                          },
+                        ]}
+                      >
+                        <DateTimePicker
+                          value={getTimePickerDate(fromTime, 9)}
+                          mode="time"
+                          display="compact"
+                          onChange={(_, date) => {
+                            if (date) {
+                              handleFromTimeChange(
+                                `${date.getHours()}.${date
+                                  .getMinutes()
+                                  .toString()
+                                  .padStart(2, "0")}`,
+                              );
+                            }
+                          }}
+                        />
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={dateInputStyle}
+                        onPress={() =>
+                          togglePicker(setShowFromTimePicker, "fromTime")
+                        }
+                      >
+                        <Text style={{ color: theme.text }}>{fromTime}</Text>
+                        <Icon name="access-time" size={20} color={theme.icon} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.timeGroup}>
+                    <Text
+                      style={[styles.timeLabel, { color: theme.placeholder }]}
+                    >
+                      To Time
+                    </Text>
+                    {isIOS ? (
+                      <View
+                        style={[
+                          styles.compactPickerWrapper,
+                          {
+                            backgroundColor: theme.inputBg,
+                            borderColor: theme.inputBorder,
+                          },
+                        ]}
+                      >
+                        <DateTimePicker
+                          value={getTimePickerDate(toTime, 17)}
+                          mode="time"
+                          display="compact"
+                          onChange={(_, date) => {
+                            if (date) {
+                              handleToTimeChange(
+                                `${date.getHours()}.${date
+                                  .getMinutes()
+                                  .toString()
+                                  .padStart(2, "0")}`,
+                              );
+                            }
+                          }}
+                        />
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={dateInputStyle}
+                        onPress={() =>
+                          togglePicker(setShowToTimePicker, "toTime")
+                        }
+                      >
+                        <Text style={{ color: theme.text }}>{toTime}</Text>
+                        <Icon name="access-time" size={20} color={theme.icon} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.formGroup}>
+              <Text style={labelStyle}>Remarks</Text>
+              <TextInput
+                style={[inputStyle, styles.textArea]}
+                placeholder="Enter remarks (min. 10 characters)"
+                placeholderTextColor={theme.placeholder}
+                multiline
+                numberOfLines={4}
+                value={remarks}
+                onChangeText={setRemarks}
+              />
+            </View>
+          </ScrollView>
+
+          {showLeaveTypeSelector && (
+            <View style={styles.overlayRoot}>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => setShowLeaveTypeSelector(false)}
+                style={styles.overlayBackdrop}
+              />
+              <View
+                style={[
+                  styles.leaveTypeModalCard,
+                  {
+                    backgroundColor: theme.cardBackground,
+                    borderColor: theme.inputBorder,
+                  },
                 ]}
               >
-                {selectedLeaveType
-                  ? selectedLeaveType.ReaNameC
-                  : "Select Leave Type"}
-              </Text>
-              <Icon name="keyboard-arrow-down" size={24} color={theme.icon} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.dateRow}>
-            <View style={styles.dateGroup}>
-              <Text style={labelStyle}>From Date</Text>
-              <TouchableOpacity
-                style={dateInputStyle}
-                onPress={() => setShowFromDatePicker(true)}
-              >
-                <Text style={{ color: theme.text }}>
-                  {fromDate.toLocaleDateString()}
-                </Text>
-                <Icon name="calendar-today" size={20} color={theme.icon} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.dateGroup}>
-              <Text style={labelStyle}>To Date</Text>
-              <TouchableOpacity
-                style={dateInputStyle}
-                onPress={() => setShowToDatePicker(true)}
-              >
-                <Text style={{ color: theme.text }}>
-                  {toDate.toLocaleDateString()}
-                </Text>
-                <Icon name="calendar-today" size={20} color={theme.icon} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={labelStyle}>Past Leave</Text>
-            <View style={styles.radioGroup}>
-              <TouchableOpacity
-                style={styles.radioOption}
-                onPress={() => {
-                  setPastLeaveYes(true);
-                  setPastLeaveNo(false);
-                }}
-              >
                 <View
-                  style={[styles.radioCircle, { borderColor: theme.primary }]}
+                  style={[
+                    styles.leaveTypeModalHeader,
+                    { borderBottomColor: theme.inputBorder },
+                  ]}
                 >
-                  {pastLeaveYes && (
-                    <View
-                      style={[
-                        styles.radioSelected,
-                        { backgroundColor: theme.primary },
-                      ]}
-                    />
-                  )}
-                </View>
-                <Text style={[styles.radioLabel, { color: theme.text }]}>
-                  Yes
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.radioOption}
-                onPress={() => {
-                  setPastLeaveYes(false);
-                  setPastLeaveNo(true);
-                }}
-              >
-                <View
-                  style={[styles.radioCircle, { borderColor: theme.primary }]}
-                >
-                  {pastLeaveNo && (
-                    <View
-                      style={[
-                        styles.radioSelected,
-                        { backgroundColor: theme.primary },
-                      ]}
-                    />
-                  )}
-                </View>
-                <Text style={[styles.radioLabel, { color: theme.text }]}>
-                  No
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {showTimeSection && (
-            <View style={styles.formGroup}>
-              <Text style={labelStyle}>Time Details</Text>
-              <View style={styles.timeRow}>
-                <View style={styles.timeGroup}>
-                  <Text
-                    style={[styles.timeLabel, { color: theme.placeholder }]}
-                  >
-                    From Time
+                  <Text style={[styles.leaveTypeModalTitle, { color: theme.text }]}>
+                    Select Leave Type
                   </Text>
                   <TouchableOpacity
-                    style={dateInputStyle}
-                    onPress={() => setShowFromTimePicker(true)}
+                    onPress={() => setShowLeaveTypeSelector(false)}
+                    style={[
+                      styles.leaveTypeCloseButton,
+                      { backgroundColor: theme.inputBg },
+                    ]}
                   >
-                    <Text style={{ color: theme.text }}>{fromTime}</Text>
-                    <Icon name="access-time" size={20} color={theme.icon} />
+                    <Icon name="close" size={20} color={theme.icon} />
                   </TouchableOpacity>
                 </View>
-                <View style={styles.timeGroup}>
-                  <Text
-                    style={[styles.timeLabel, { color: theme.placeholder }]}
-                  >
-                    To Time
-                  </Text>
-                  <TouchableOpacity
-                    style={dateInputStyle}
-                    onPress={() => setShowToTimePicker(true)}
-                  >
-                    <Text style={{ color: theme.text }}>{toTime}</Text>
-                    <Icon name="access-time" size={20} color={theme.icon} />
-                  </TouchableOpacity>
-                </View>
+
+                <ScrollView
+                  style={styles.leaveTypeList}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {availableLeaves.map((leaveType) => {
+                    const isSelected =
+                      selectedLeaveType?.ReaIdN === leaveType.ReaIdN;
+
+                    return (
+                      <TouchableOpacity
+                        key={leaveType.ReaIdN}
+                        style={[
+                          styles.leaveTypeRow,
+                          {
+                            borderBottomColor: theme.inputBorder,
+                            backgroundColor: isSelected
+                              ? `${theme.primary}14`
+                              : "transparent",
+                          },
+                        ]}
+                        onPress={() => handleLeaveTypeSelect(leaveType)}
+                      >
+                        <View style={styles.leaveTypeTextBlock}>
+                          <Text
+                            style={[
+                              styles.leaveTypeNameText,
+                              { color: isSelected ? theme.primary : theme.text },
+                            ]}
+                          >
+                            {leaveType.ReaNameC}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.leaveTypeMetaText,
+                              { color: theme.placeholder },
+                            ]}
+                          >
+                            {leaveType.ReaTypeN === 4 || leaveType.ReaGrpIdN === 8
+                              ? "Hourly leave"
+                              : "Regular leave"}
+                          </Text>
+                        </View>
+                        {isSelected && (
+                          <Icon
+                            name="check-circle"
+                            size={20}
+                            color={theme.primary}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               </View>
             </View>
           )}
-
-          <View style={styles.formGroup}>
-            <Text style={labelStyle}>Remarks</Text>
-            <TextInput
-              style={[inputStyle, styles.textArea]}
-              placeholder="Enter remarks (min. 10 characters)"
-              placeholderTextColor={theme.placeholder}
-              multiline
-              numberOfLines={4}
-              value={remarks}
-              onChangeText={setRemarks}
-            />
-          </View>
-        </ScrollView>
+        </View>
       </AppModal>
 
-      {showFromDatePicker && (
+      {!isIOS && showFromDatePicker && (
         <DateTimePicker
           value={fromDate}
           mode="date"
@@ -412,7 +656,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         />
       )}
 
-      {showToDatePicker && (
+      {!isIOS && showToDatePicker && (
         <DateTimePicker
           value={toDate}
           mode="date"
@@ -424,14 +668,9 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         />
       )}
 
-      {showFromTimePicker && (
+      {!isIOS && showFromTimePicker && (
         <DateTimePicker
-          value={(() => {
-            const [h, m] = fromTime.split(".").map(Number);
-            const d = new Date();
-            d.setHours(h || 9, m || 0);
-            return d;
-          })()}
+          value={getTimePickerDate(fromTime, 9)}
           mode="time"
           is24Hour={true}
           display="default"
@@ -446,14 +685,9 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         />
       )}
 
-      {showToTimePicker && (
+      {!isIOS && showToTimePicker && (
         <DateTimePicker
-          value={(() => {
-            const [h, m] = toTime.split(".").map(Number);
-            const d = new Date();
-            d.setHours(h || 17, m || 0);
-            return d;
-          })()}
+          value={getTimePickerDate(toTime, 17)}
           mode="time"
           is24Hour={true}
           display="default"
@@ -468,28 +702,15 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         />
       )}
 
-      <CenterModalSelection
-        visible={showLeaveTypeSelector}
-        onClose={() => setShowLeaveTypeSelector(false)}
-        title="Select Leave Type"
-        options={availableLeaves.map((l) => ({
-          label: l.ReaNameC,
-          value: l.ReaIdN,
-        }))}
-        selectedValue={selectedLeaveType?.ReaIdN}
-        onSelect={(val: number) => {
-          const selected = availableLeaves.find((l) => l.ReaIdN === val);
-          if (selected) {
-            setSelectedLeaveType(selected);
-            checkLeaveTypeChange(selected);
-          }
-        }}
-      />
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+    flexShrink: 1,
+  },
   scrollContent: {
     flexShrink: 1,
     paddingHorizontal: 16,
@@ -518,7 +739,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   dateRow: {
-    flexDirection: "row",
+    flexDirection:  "row",
     justifyContent: "space-between",
     gap: 12,
     marginBottom: 20,
@@ -534,6 +755,73 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  compactPickerWrapper: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    justifyContent: "center",
+  },
+  overlayRoot: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  overlayBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(15, 23, 42, 0.42)",
+  },
+  leaveTypeModalCard: {
+    width: "100%",
+    maxHeight: "72%",
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  leaveTypeModalHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  leaveTypeModalTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  leaveTypeCloseButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  leaveTypeList: {
+    maxHeight: 360,
+  },
+  leaveTypeRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  leaveTypeTextBlock: {
+    flex: 1,
+  },
+  leaveTypeNameText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  leaveTypeMetaText: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 4,
   },
   leaveTypeGrid: {
     flexDirection: "row",

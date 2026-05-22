@@ -1,5 +1,4 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
-import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
@@ -767,36 +766,28 @@ const ApprovalClaimModal: React.FC<ClaimModalProps> = ({
                     </View>
                 )}
             </ScrollView>
-            <Modal
-                visible={!!viewingDoc}
-                transparent={true}
-                onRequestClose={() => {
-                    setViewingDoc(null);
-                    setViewerError(null);
-                }}
-                animationType="slide"
-            >
-                <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
-                    <View style={styles.viewerHeader}>
-                        <TouchableOpacity
-                            onPress={() => {
-                                setViewingDoc(null);
-                                setViewerError(null);
-                            }}
-                            style={styles.closeButton}
-                        >
-                            <Ionicons name="close" size={24} color="white" />
-                        </TouchableOpacity>
-                        <Text
-                            style={{ color: "white", fontWeight: "bold" }}
-                            numberOfLines={1}
-                        >
-                            {viewingDoc?.name}
-                        </Text>
-                        <View style={{ width: 40 }} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        {viewingDoc?.url && (
+            {viewingDoc && (
+                <View style={styles.viewerOverlay}>
+                    <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
+                        <View style={styles.viewerHeader}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setViewingDoc(null);
+                                    setViewerError(null);
+                                }}
+                                style={styles.closeButton}
+                            >
+                                <Ionicons name="close" size={24} color="white" />
+                            </TouchableOpacity>
+                            <Text
+                                style={{ color: "white", fontWeight: "bold" }}
+                                numberOfLines={1}
+                            >
+                                {viewingDoc.name}
+                            </Text>
+                            <View style={{ width: 40 }} />
+                        </View>
+                        <View style={{ flex: 1 }}>
                             <>
                                 <WebView
                                     source={{ uri: getViewerUri(viewingDoc.url) }}
@@ -842,10 +833,10 @@ const ApprovalClaimModal: React.FC<ClaimModalProps> = ({
                                     </View>
                                 )}
                             </>
-                        )}
-                    </View>
-                </SafeAreaView>
-            </Modal>
+                        </View>
+                    </SafeAreaView>
+                </View>
+            )}
         </AppModal>
     );
 };
@@ -865,6 +856,11 @@ const InfoRow = ({
     </View>
 );
 const styles = StyleSheet.create({
+    viewerOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "black",
+        zIndex: 30,
+    },
     modalBody: {
         padding: 18,
         flexShrink: 1,

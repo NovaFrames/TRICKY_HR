@@ -40,6 +40,15 @@
     "plugins": [
       "expo-router",
       [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow location access for live tracking.",
+          "locationWhenInUsePermission": "Allow location access while using the app.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

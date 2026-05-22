@@ -2,9 +2,9 @@ import Modal from "@/components/common/SingleModal";
 import { CustomButton } from "@/components/CustomButton";
 import { ThemeType } from "@/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import CenterModalSelection from "../common/CenterModalSelection";
 interface TravelExpenseModalProps {
   visible: boolean;
   theme: ThemeType;
@@ -42,80 +42,87 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
   setDestination,
   setPnr,
   setAmount,
-}) => (
-  <Modal
-    visible={visible}
-    animationType="fade"
-    transparent={true}
-    onRequestClose={onCancel}
-  >
-    <View style={styles.overlay}>
-      <View style={[styles.modal, { backgroundColor: theme.cardBackground }]}>
-        <View style={[styles.header, { borderBottomColor: theme.inputBorder }]}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            {editIndex !== null ? "Edit Travel" : "Add Travel/Expense"}
-          </Text>
-          <TouchableOpacity onPress={onCancel}>
-            <Ionicons name="close" size={24} color={theme.text} />
-          </TouchableOpacity>
-        </View>
-        <ScrollView
-          style={styles.body}
-          contentContainerStyle={styles.bodyContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>Type</Text>
-            <View
-              style={[
-                styles.pickerContainer,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                },
-              ]}
-            >
-              <Picker
-                selectedValue={travelType}
-                onValueChange={(itemValue: number) => setTravelType(itemValue)}
-                style={[styles.picker, { color: theme.text }]}
-                dropdownIconColor={theme.text}
-              >
-                {travelByOptions.map((option) => (
-                  <Picker.Item
-                    key={option.value}
-                    label={option.text}
-                    value={option.value}
-                    color={isDark ? "#fff" : "#000"}
-                  />
-                ))}
-              </Picker>
-            </View>
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              Boarding Point/Description *
+}) => {
+  const [showTravelTypeModal, setShowTravelTypeModal] = React.useState(false);
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onCancel}
+    >
+      <View style={styles.overlay}>
+        <View style={[styles.modal, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.header, { borderBottomColor: theme.inputBorder }]}>
+            <Text style={[styles.title, { color: theme.text }]}>
+              {editIndex !== null ? "Edit Travel" : "Add Travel/Expense"}
             </Text>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
-              ]}
-              value={boardingPoint}
-              onChangeText={setBoardingPoint}
-              placeholder="Enter boarding point or description"
-              placeholderTextColor={theme.placeholder}
-            />
+            <TouchableOpacity onPress={onCancel}>
+              <Ionicons name="close" size={24} color={theme.text} />
+            </TouchableOpacity>
           </View>
-          {travelType !== 0 && (
+          <ScrollView
+            style={styles.body}
+            contentContainerStyle={styles.bodyContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: theme.text }]}>Type</Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.selectorContainer,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                  },
+                ]}
+                onPress={() => setShowTravelTypeModal(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="airplane-outline"
+                  size={20}
+                  color={theme.primary}
+                />
+
+                <Text
+                  style={[
+                    styles.selectorText,
+                    { color: theme.text },
+                  ]}
+                >
+                  {
+                    travelByOptions.find(
+                      (item) => item.value === travelType
+                    )?.text || "Select Type"
+                  }
+                </Text>
+
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={theme.text + "80"}
+                />
+              </TouchableOpacity>
+
+              <CenterModalSelection
+                visible={showTravelTypeModal}
+                onClose={() => setShowTravelTypeModal(false)}
+                title="Select Travel Type"
+                options={travelByOptions.map((item) => ({
+                  label: item.text,
+                  value: item.value,
+                }))}
+                selectedValue={travelType}
+                onSelect={(val: number) => setTravelType(val)}
+              />
+            </View>
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: theme.text }]}>
-                Destination *
+                Boarding Point/Description *
               </Text>
               <TextInput
                 style={[
@@ -126,80 +133,102 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
                     color: theme.text,
                   },
                 ]}
-                value={destination}
-                onChangeText={setDestination}
-                placeholder="Enter destination"
+                value={boardingPoint}
+                onChangeText={setBoardingPoint}
+                placeholder="Enter boarding point or description"
                 placeholderTextColor={theme.placeholder}
               />
             </View>
-          )}
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              PNR/Ticket Number
-            </Text>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
-              ]}
-              value={pnr}
-              onChangeText={setPnr}
-              placeholder="Enter PNR or ticket number"
-              placeholderTextColor={theme.placeholder}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: theme.text }]}>Amount *</Text>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: theme.inputBg,
-                  borderColor: theme.inputBorder,
-                  color: theme.text,
-                },
-              ]}
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="0.00"
-              placeholderTextColor={theme.placeholder}
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={[styles.footer, { borderTopColor: theme.inputBorder }]}>
+            {travelType !== 0 && (
+              <View style={styles.inputContainer}>
+                <Text style={[styles.label, { color: theme.text }]}>
+                  Destination *
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
+                  value={destination}
+                  onChangeText={setDestination}
+                  placeholder="Enter destination"
+                  placeholderTextColor={theme.placeholder}
+                />
+              </View>
+            )}
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: theme.text }]}>
+                PNR/Ticket Number
+              </Text>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
+                value={pnr}
+                onChangeText={setPnr}
+                placeholder="Enter PNR or ticket number"
+                placeholderTextColor={theme.placeholder}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: theme.text }]}>Amount *</Text>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0.00"
+                placeholderTextColor={theme.placeholder}
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={[styles.footer, { borderTopColor: theme.inputBorder }]}>
 
-            <CustomButton
-              title="Cancel"
-              icon="close"
-              onPress={onCancel}
-              textColor={theme.textLight}
-              iconColor={theme.textLight}
-              containerStyle={{ flex: 1 }}
-              style={[
-                { backgroundColor: theme.inputBg, borderWidth: 1, borderColor: theme.inputBorder }
-              ]}
-            />
+              <CustomButton
+                title="Cancel"
+                icon="close"
+                onPress={onCancel}
+                textColor={theme.textLight}
+                iconColor={theme.textLight}
+                containerStyle={{ flex: 1 }}
+                style={[
+                  { backgroundColor: theme.inputBg, borderWidth: 1, borderColor: theme.inputBorder }
+                ]}
+              />
 
-            <CustomButton
-              title={editIndex !== null ? "Update" : "Add"}
-              icon={editIndex !== null ? "save-outline" : "add-circle-outline"}
-              onPress={onSave}
-              containerStyle={{ flex: 1 }}
-              style={[
-                { backgroundColor: theme.primary }
-              ]}
-            />
+              <CustomButton
+                title={editIndex !== null ? "Update" : "Add"}
+                icon={editIndex !== null ? "save-outline" : "add-circle-outline"}
+                onPress={onSave}
+                containerStyle={{ flex: 1 }}
+                style={[
+                  { backgroundColor: theme.primary }
+                ]}
+              />
 
-          </View>
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
       </View>
-    </View>
-  </Modal>
-);
+    </Modal>
+  )
+};
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -267,5 +296,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   saveButton: {},
+  selectorContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  borderWidth: 1.5,
+  borderRadius: 4,
+  paddingHorizontal: 16,
+  paddingVertical: 14,
+  gap: 12,
+},
+
+selectorText: {
+  flex: 1,
+  fontSize: 15,
+  fontWeight: "500",
+},
 });
 export default TravelExpenseModal;

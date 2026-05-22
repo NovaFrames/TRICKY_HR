@@ -73,21 +73,23 @@ export default function SettingsScreen() {
         return false;
       }
 
-      const interval =
-        Number(user?.LiveDurN ?? 0);
+      const minutes = Math.max(
+        Number(user?.LiveDurN) || 1,
+        1
+      );
 
       await saveLiveLocationCredentials(
         token,
         empId,
-        interval > 0
-          ? interval
+        minutes > 0
+          ? minutes
           : undefined,
       );
 
       const started =
         await startLiveLocationTask(
-          interval > 0
-            ? interval
+          minutes > 0
+            ? minutes
             : undefined,
         );
 
@@ -108,7 +110,7 @@ export default function SettingsScreen() {
       console.error("Failed to start live location tracking:", error);
       return false;
     }
-  }, [user?.EmpIdN, user?.Token, user?.TokenC]);
+  }, [user?.EmpIdN, user?.Token, user?.TokenC, user?.LiveDurN]);
 
   const handleToggleLiveLocation = useCallback(
     async (enabled: boolean) => {
@@ -197,18 +199,18 @@ export default function SettingsScreen() {
         },
         ...(user?.IsLiveLocN === 1
           ? [
-              {
-                label: "Live Location",
-                description: isLiveLocationEnabled
-                  ? "Tracking is currently active"
-                  : "Turn on to share location in background",
-                icon: <Ionicons name="location" />,
-                color: "#0ea5e9",
-                type: "switch" as const,
-                switchValue: isLiveLocationEnabled,
-                onValueChange: handleToggleLiveLocation,
-              },
-            ]
+            {
+              label: "Live Location",
+              description: isLiveLocationEnabled
+                ? "Tracking is currently active"
+                : "Turn on to share location in background",
+              icon: <Ionicons name="location" />,
+              color: "#0ea5e9",
+              type: "switch" as const,
+              switchValue: isLiveLocationEnabled,
+              onValueChange: handleToggleLiveLocation,
+            },
+          ]
           : []),
         {
           label: "Choose Theme",

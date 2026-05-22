@@ -958,47 +958,66 @@ export default function OfficerLocationMapScreen() {
                   }
 
                   // MULTIPLE LOCATIONS
-                  return group.map(
-                    (marker, index) => {
-                      const isStart =
-                        index === 0;
+                  const start = group[0];
+                  const end = group[group.length - 1];
 
-                      const isEnd =
-                        index ===
-                        group.length - 1;
-
-                      return (
-                        <MarkerComponent
-                          key={`${marker.empId}-${index}`}
-                          coordinate={
-                            marker.coords
-                          }
-                          title={
-                            isStart
-                              ? `Start - ${marker.empName}`
-                              : isEnd
-                                ? `End - ${marker.empName}`
-                                : marker.empName
-                          }
-                          description={
-                            marker.empCode
-                              ? `Code: ${marker.empCode}`
-                              : undefined
-                          }
-                          pinColor={
-                            isStart
-                              ? "green"
-                              : isEnd
-                                ? "red"
-                                : "orange"
-                          }
-                          tracksViewChanges={
-                            false
-                          }
-                        />
-                      );
-                    },
+                  const startMarker = (
+                    <MarkerComponent
+                      key={`start-${start.empId}`}
+                      coordinate={start.coords}
+                      title={`Start - ${start.empName}`}
+                      description={
+                        new Date(
+                          parseDotNetDateMs(start.dateD)
+                        ).toLocaleString()
+                      }
+                      pinColor="green"
+                      tracksViewChanges={false}
+                    />
                   );
+
+                  const endMarker = (
+                    <MarkerComponent
+                      key={`end-${end.empId}`}
+                      coordinate={end.coords}
+                      title={`End - ${end.empName}`}
+                      description={
+                        new Date(
+                          parseDotNetDateMs(end.dateD)
+                        ).toLocaleString()
+                      }
+                      pinColor="red"
+                      tracksViewChanges={false}
+                    />
+                  );
+
+                  const hiddenMarkers = group.map((marker, index) => (
+                    <MarkerComponent
+                      key={`hidden-${marker.empId}-${index}`}
+                      coordinate={marker.coords}
+                      tracksViewChanges={false}
+                      title={marker.empName}
+                      description={
+                        new Date(
+                          parseDotNetDateMs(marker.dateD)
+                        ).toLocaleString()
+                      }
+                    >
+                      <View
+                        style={{
+                          width: 14,
+                          height: 14,
+                          backgroundColor: "transparent",
+                        }}
+                      />
+                    </MarkerComponent>
+                  ));
+
+                  return [
+                    startMarker,
+                    endMarker,
+                    ...hiddenMarkers
+                  ];
                 })}
               </MapViewComponent>
             ) : (

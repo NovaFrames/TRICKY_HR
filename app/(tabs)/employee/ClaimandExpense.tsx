@@ -664,10 +664,17 @@ const ClaimAndExpense: FC<ClaimAndExpenseProps> = () => {
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: HEADER_HEIGHT + 6, // 👈 KEY LINE
+          paddingTop: HEADER_HEIGHT + 6,
         }}
         showsVerticalScrollIndicator={false}
         style={styles.content}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={false}
+        scrollEnabled={
+          !showTravelModal &&
+          !showDocModal &&
+          !showConfirmModal
+        }
       >
         <ClaimDetailsSection
           theme={theme}

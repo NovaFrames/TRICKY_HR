@@ -1,4 +1,5 @@
 import AppModal from "@/components/common/AppModal";
+import ConfirmModal from "@/components/common/ConfirmModal";
 import Header, { HEADER_HEIGHT } from "@/components/Header";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { useTheme } from "../../../context/ThemeContext";
 import ApiService, {
   CalendarEvent,
@@ -29,6 +29,7 @@ export default function CalendarScreen() {
   // Date Selection
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const isIOS = Platform.OS === "ios";
 
   // Detail Modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -299,43 +300,106 @@ export default function CalendarScreen() {
           <>
             {/* Month Selector */}
             <View style={styles.monthSelectorContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.monthSelector,
-                  { backgroundColor: theme.cardBackground },
-                ]}
-                onPress={() => setShowDatePicker(true)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.monthSelectorContent}>
-                  <View
-                    style={[
-                      styles.calendarIconBox,
-                      { backgroundColor: theme.primary + "15" },
-                    ]}
-                  >
-                    <Ionicons name="calendar" size={24} color={theme.primary} />
-                  </View>
-                  <View style={styles.monthTextContainer}>
-                    <Text
-                      style={[styles.monthLabel, { color: theme.placeholder }]}
+              {isIOS ? (
+                <View
+                  style={[
+                    styles.monthSelector,
+                    styles.compactPickerWrapper,
+                    {
+                      backgroundColor: theme.cardBackground,
+                      borderColor: theme.inputBorder,
+                    },
+                  ]}
+                >
+                  <View style={styles.monthSelectorContent}>
+                    <View
+                      style={[
+                        styles.calendarIconBox,
+                        { backgroundColor: theme.primary + "15" },
+                      ]}
                     >
-                      Selected Month
-                    </Text>
-                    <Text style={[styles.monthText, { color: theme.text }]}>
-                      {getMonthYearString()}
-                    </Text>
+                      <Ionicons
+                        name="calendar"
+                        size={24}
+                        color={theme.primary}
+                      />
+                    </View>
+
+                    <View style={styles.monthTextContainer}>
+                      <Text
+                        style={[
+                          styles.monthLabel,
+                          { color: theme.placeholder },
+                        ]}
+                      >
+                        Selected Month
+                      </Text>
+
+                      <View style={styles.pickerCenter}>
+                        <DateTimePicker
+                          value={selectedDate}
+                          mode="date"
+                          display="compact"
+                          onChange={handleDateChange}
+                        />
+                      </View>
+                    </View>
                   </View>
                 </View>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color={theme.placeholder}
-                />
-              </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.monthSelector,
+                    { backgroundColor: theme.cardBackground },
+                  ]}
+                  onPress={() => setShowDatePicker(true)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.monthSelectorContent}>
+                    <View
+                      style={[
+                        styles.calendarIconBox,
+                        { backgroundColor: theme.primary + "15" },
+                      ]}
+                    >
+                      <Ionicons
+                        name="calendar"
+                        size={24}
+                        color={theme.primary}
+                      />
+                    </View>
+
+                    <View style={styles.monthTextContainer}>
+                      <Text
+                        style={[
+                          styles.monthLabel,
+                          { color: theme.placeholder },
+                        ]}
+                      >
+                        Selected Month
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.monthText,
+                          { color: theme.text },
+                        ]}
+                      >
+                        {getMonthYearString()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Ionicons
+                    name="chevron-down"
+                    size={20}
+                    color={theme.placeholder}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
 
-            {showDatePicker && (
+            {!isIOS && showDatePicker && (
               <DateTimePicker
                 value={selectedDate}
                 mode="date"
@@ -654,5 +718,14 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  compactPickerWrapper: {
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  pickerCenter: {
+    width: "100%",
   },
 });

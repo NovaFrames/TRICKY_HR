@@ -2,7 +2,7 @@ import { ThemeType } from '@/theme/theme';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CenterModalSelection from '../common/CenterModalSelection';
 
 interface ClaimDetailsSectionProps {
@@ -50,11 +50,12 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
     onDescriptionChange,
     formatDate
 }) => {
+    const isIOS = Platform.OS === 'ios';
     const [showClaimModal, setShowClaimModal] = useState(false);
     const [showCurrencyModal, setShowCurrencyModal] = useState(false);
 
     return (
-        <>
+        <View style={styles.container}>
             <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
                 <Text style={[styles.title, { color: theme.primary }]}>Claim Details</Text>
 
@@ -93,28 +94,56 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                 <View style={styles.row}>
                     <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
                         <Text style={[styles.label, { color: theme.text }]}>From Date *</Text>
-                        <TouchableOpacity
-                            style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                            onPress={onFromDatePress}
-                        >
-                            <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(fromDate)}</Text>
-                            <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
-                        </TouchableOpacity>
+                        {isIOS ? (
+                            <View style={[styles.dateButton, styles.compactPickerWrapper, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
+                                <DateTimePicker
+                                    value={fromDate}
+                                    mode="date"
+                                    display="compact"
+                                    onChange={(_, date) => {
+                                        if (date) onFromDateChange(_, date);
+                                    }}
+                                    maximumDate={new Date()}
+                                />
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                                onPress={onFromDatePress}
+                            >
+                                <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(fromDate)}</Text>
+                                <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     <View style={[styles.inputContainer, { flex: 1, marginLeft: 10 }]}>
                         <Text style={[styles.label, { color: theme.text }]}>To Date *</Text>
-                        <TouchableOpacity
-                            style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
-                            onPress={onToDatePress}
-                        >
-                            <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(toDate)}</Text>
-                            <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
-                        </TouchableOpacity>
+                        {isIOS ? (
+                            <View style={[styles.dateButton, styles.compactPickerWrapper, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}>
+                                <DateTimePicker
+                                    value={toDate}
+                                    mode="date"
+                                    display="compact"
+                                    onChange={(_, date) => {
+                                        if (date) onToDateChange(_, date);
+                                    }}
+                                    maximumDate={new Date()}
+                                />
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={[styles.dateButton, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+                                onPress={onToDatePress}
+                            >
+                                <Text style={[styles.dateText, { color: theme.text }]}>{formatDate(toDate)}</Text>
+                                <FontAwesome5 name="calendar-alt" size={18} color={theme.primary} />
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
 
-                {showFromDatePicker && (
+                {!isIOS && showFromDatePicker && (
                     <DateTimePicker
                         value={fromDate}
                         mode="date"
@@ -124,7 +153,7 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                     />
                 )}
 
-                {showToDatePicker && (
+                {!isIOS && showToDatePicker && (
                     <DateTimePicker
                         value={toDate}
                         mode="date"
@@ -149,7 +178,6 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                 </View>
             </View>
 
-            {/* Claim Name Modal */}
             <CenterModalSelection
                 visible={showClaimModal}
                 onClose={() => setShowClaimModal(false)}
@@ -159,7 +187,6 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                 onSelect={(val: number) => onClaimChange(val)}
             />
 
-            {/* Currency Modal */}
             {currencyStatus && (
                 <CenterModalSelection
                     visible={showCurrencyModal}
@@ -170,11 +197,14 @@ const ClaimDetailsSection: React.FC<ClaimDetailsSectionProps> = ({
                     onSelect={(val: number) => onCurrencyChange(val)}
                 />
             )}
-        </>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        position: 'relative',
+    },
     section: {
         borderRadius: 4,
         padding: 15,
@@ -229,6 +259,9 @@ const styles = StyleSheet.create({
     },
     dateText: {
         fontSize: 15,
+    },
+    compactPickerWrapper: {
+        paddingVertical: 6,
     },
     textInput: {
         borderWidth: 1,

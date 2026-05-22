@@ -21,7 +21,8 @@ import {
   useRouter,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -84,12 +85,22 @@ function RootNavigator() {
   }, [isLoading]);
 
   useEffect(() => {
-    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-  }, [isDark, theme.background]);
+    if (Platform.OS === "android") {
+      NavigationBar.setButtonStyleAsync(
+        isDark ? "light" : "dark"
+      );
+    }
+  }, [isDark]);
 
-  useFocusEffect(() => {
-    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
-  });
+  useFocusEffect(
+    React.useCallback(() => {
+      if (Platform.OS === "android") {
+        NavigationBar.setButtonStyleAsync(
+          isDark ? "light" : "dark"
+        );
+      }
+    }, [isDark])
+  );
 
   useEffect(() => {
     if (isLoading) return;
@@ -109,10 +120,8 @@ function RootNavigator() {
     let cancelled = false;
 
     const syncLiveLocationTracking = async () => {
-      const storedEnabled = (await AsyncStorage.getItem("live_location_enabled")) === "true";
-      // Check if location tracking is required by company policy (IsLiveLocN === 1)
-      const policyEnabled = user?.IsLiveLocN === 1;
-      const enabled = storedEnabled || policyEnabled;
+      const enabled =
+        (await AsyncStorage.getItem("live_location_enabled")) === "true";
 
       if (!enabled || !isAuthenticated) {
         await stopLiveLocationTask();
@@ -164,7 +173,6 @@ function RootNavigator() {
     user?.Token,
     user?.TokenC,
     user?.LiveDurN,
-    user?.IsLiveLocN,
   ]);
 
   if (isLoading) return null;

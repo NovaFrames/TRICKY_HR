@@ -1,11 +1,11 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
-import Modal from "@/components/common/SingleModal";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import AppModal from "../../components/common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
@@ -30,6 +30,7 @@ const DocModal: React.FC<DocModalProps> = ({
     url: string;
     name: string;
   } | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
   // Status Logic for Color
   let statusInfo = { color: "#D97706", bg: "#FEF3C7", label: "WAITING" };
@@ -116,15 +117,6 @@ const DocModal: React.FC<DocModalProps> = ({
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-    ConfirmModal.alert(
-      "Cancel Request",
-      "Are you sure you want to cancel this document request?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
             setLoading(true);
             try {
               const requestId = item.IdN || item.Id || item.id;
@@ -145,12 +137,13 @@ const DocModal: React.FC<DocModalProps> = ({
               );
 
               if (result.success) {
+                setShowCancelConfirm(false);
+                onClose();
+                onRefresh?.();
                 ConfirmModal.alert(
                   "Success",
                   "Document request cancelled successfully",
                 );
-                onClose();
-                onRefresh?.();
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -165,10 +158,6 @@ const DocModal: React.FC<DocModalProps> = ({
             } finally {
               setLoading(false);
             }
-          },
-        },
-      ],
-    );
   };
   const handleViewDocument = async (fileName: string, folderName: string) => {
     try {
@@ -326,79 +315,87 @@ const DocModal: React.FC<DocModalProps> = ({
             icon="close"
             isLoading={loading}
             disabled={loading}
-            onPress={handleCancelRequest}
+            onPress={() => setShowCancelConfirm(true)}
             style={styles.cancelButton}
           />
         ) : null
       }
     >
-      <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-        <View style={styles.badgeRow}>
-          <View
-            style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
-          >
-            <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
-            <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
-              {statusInfo.label}
-            </Text>
-          </View>
-        </View>
-        {renderContent()}
-      </ScrollView>
-      <Modal
-        visible={!!viewingDoc}
-        transparent={true}
-        onRequestClose={() => setViewingDoc(null)}
-        animationType="slide"
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
-          <View style={styles.viewerHeader}>
-            <TouchableOpacity
-              onPress={() => setViewingDoc(null)}
-              style={styles.closeButton}
+      <View style={styles.contentFrame}>
+        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+          <View style={styles.badgeRow}>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
             >
-              <Ionicons name="close" size={24} color="white" />
-            </TouchableOpacity>
-            <Text
-              style={{ color: "white", fontWeight: "bold" }}
-              numberOfLines={1}
-            >
-              {viewingDoc?.name}
-            </Text>
-            <View style={{ width: 40 }} />
+              <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+              <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
+                {statusInfo.label}
+              </Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            {viewingDoc?.url && (
-              <WebView
-                source={{
-                  uri:
-                    Platform.OS === "android" &&
-                    !/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(viewingDoc.url)
-                      ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingDoc.url)}`
-                      : viewingDoc.url,
-                }}
-                style={{ flex: 1 }}
-                startInLoadingState={true}
-                renderLoading={() => (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <ActivityIndicator size="large" color={theme.primary} />
-                  </View>
-                )}
-              />
-            )}
+          {renderContent()}
+        </ScrollView>
+        {viewingDoc && (
+          <View style={styles.viewerOverlay}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
+              <View style={styles.viewerHeader}>
+                <TouchableOpacity
+                  onPress={() => setViewingDoc(null)}
+                  style={styles.closeButton}
+                >
+                  <Ionicons name="close" size={24} color="white" />
+                </TouchableOpacity>
+                <Text
+                  style={{ color: "white", fontWeight: "bold" }}
+                  numberOfLines={1}
+                >
+                  {viewingDoc.name}
+                </Text>
+                <View style={{ width: 40 }} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <WebView
+                  source={{
+                    uri:
+                      Platform.OS === "android" &&
+                      !/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(viewingDoc.url)
+                        ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(viewingDoc.url)}`
+                        : viewingDoc.url,
+                  }}
+                  style={{ flex: 1 }}
+                  startInLoadingState={true}
+                  renderLoading={() => (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <ActivityIndicator size="large" color={theme.primary} />
+                    </View>
+                  )}
+                />
+              </View>
+            </SafeAreaView>
           </View>
-        </SafeAreaView>
-      </Modal>
+        )}
+        <InModalConfirmDialog
+          visible={showCancelConfirm}
+          title="Cancel Request"
+          message="Are you sure you want to cancel this document request?"
+          confirmLabel="Yes, Cancel"
+          cancelLabel="No"
+          destructive
+          loading={loading}
+          onCancel={() => setShowCancelConfirm(false)}
+          onConfirm={handleCancelRequest}
+        />
+      </View>
     </AppModal>
   );
 };
@@ -418,9 +415,18 @@ const InfoRow = ({
   </View>
 );
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+    flexShrink: 1,
+  },
   modalBody: {
     padding: 18,
     flexShrink: 1,
+  },
+  viewerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "black",
+    zIndex: 30,
   },
   badgeRow: {
     flexDirection: "row",

@@ -155,12 +155,13 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
   return (
     <>
       <AppModal visible={visible} onClose={handleClose} title="Upload Document">
-        <ScrollView
-          style={styles.scrollContent}
-          contentContainerStyle={styles.scrollBody}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        <View style={styles.contentFrame}>
+          <ScrollView
+            style={styles.scrollContent}
+            contentContainerStyle={styles.scrollBody}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           <View style={styles.formGroup}>
             <Text style={labelStyle}>Document Name</Text>
             <TextInput
@@ -255,53 +256,58 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
             />
           </View>
 
-        </ScrollView>
+          </ScrollView>
 
-        <View style={styles.footerRow}>
-          <CustomButton
-            title="Upload"
-            icon="cloud-upload-outline"
-            onPress={handleSubmit}
-            isLoading={uploading}
-            disabled={uploading}
-            containerStyle={{ flex: 1 }}
-            style={{ backgroundColor: theme.primary }}
-          />
+          <View style={styles.footerRow}>
+            <CustomButton
+              title="Upload"
+              icon="cloud-upload-outline"
+              onPress={handleSubmit}
+              isLoading={uploading}
+              disabled={uploading}
+              containerStyle={{ flex: 1 }}
+              style={{ backgroundColor: theme.primary }}
+            />
 
-          <CustomButton
-            title="Cancel"
-            icon="close"
-            onPress={handleClose}
-            disabled={uploading}
-            textColor={theme.text}
-            iconColor={theme.text}
-            containerStyle={{ flex: 1 }}
-            style={{
-              backgroundColor: theme.background,
-              borderWidth: 1,
-              borderColor: theme.inputBorder,
+            <CustomButton
+              title="Cancel"
+              icon="close"
+              onPress={handleClose}
+              disabled={uploading}
+              textColor={theme.text}
+              iconColor={theme.text}
+              containerStyle={{ flex: 1 }}
+              style={{
+                backgroundColor: theme.background,
+                borderWidth: 1,
+                borderColor: theme.inputBorder,
+              }}
+            />
+          </View>
+
+          <CenterModalSelection
+            inline
+            visible={showTypeSelector}
+            onClose={() => setShowTypeSelector(false)}
+            title="Select Document Type"
+            options={documentTypes}
+            selectedValue={documentType}
+            onSelect={(val) => {
+              setDocumentType(val as string);
+              setShowTypeSelector(false);
             }}
           />
         </View>
       </AppModal>
-
-
-      <CenterModalSelection
-        visible={showTypeSelector}
-        onClose={() => setShowTypeSelector(false)}
-        title="Select Document Type"
-        options={documentTypes}
-        selectedValue={documentType}
-        onSelect={(val) => {
-          setDocumentType(val as string);
-          setShowTypeSelector(false);
-        }}
-      />
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+    flexShrink: 1,
+  },
   scrollContent: {
     padding: 18,
     flexShrink: 1,

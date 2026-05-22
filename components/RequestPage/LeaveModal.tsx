@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
@@ -114,6 +115,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
   const [leaveData, setLeaveData] = useState<any>(null);
   const [cancelRemarks, setCancelRemarks] = useState("");
   const [showCancelPrompt, setShowCancelPrompt] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
@@ -159,15 +161,6 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-    ConfirmModal.alert(
-      "Cancel Request",
-      "Are you sure you want to cancel this leave request?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
             setLoading(true);
             try {
               const requestId = item.IdN || item.Id || item.id;
@@ -210,9 +203,10 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
               );
 
               if (result.success) {
-                ConfirmModal.alert("Success", "Leave request cancelled successfully");
+                setShowCancelConfirm(false);
                 onClose();
                 onRefresh?.();
+                ConfirmModal.alert("Success", "Leave request cancelled successfully");
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -227,10 +221,6 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
             } finally {
               setLoading(false);
             }
-          },
-        },
-      ],
-    );
   };
 
   const handleCancelApproved = async () => {
@@ -601,7 +591,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
                 icon="close"
                 isLoading={loading}
                 disabled={loading}
-                onPress={handleCancelRequest}
+                onPress={() => setShowCancelConfirm(true)}
                 style={styles.cancelButton}
               />
             );
@@ -694,6 +684,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
         })()
       }
     >
+      <View style={styles.contentFrame}>
       <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
         <View style={styles.badgeRow}>
           <View
@@ -708,11 +699,26 @@ const LeaveModal: React.FC<LeaveModalProps> = ({
 
         {renderContent()}
       </ScrollView>
+      <InModalConfirmDialog
+        visible={showCancelConfirm}
+        title="Cancel Request"
+        message="Are you sure you want to cancel this leave request?"
+        confirmLabel="Yes, Cancel"
+        cancelLabel="No"
+        destructive
+        loading={loading}
+        onCancel={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelRequest}
+      />
+      </View>
     </AppModal>
   );
 };
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+  },
   modalBody: {
     padding: 18,
     flexShrink: 1,

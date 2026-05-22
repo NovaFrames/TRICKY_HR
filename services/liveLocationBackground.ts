@@ -8,6 +8,21 @@ const LIVE_LOCATION_TOKEN_KEY = "live_location_token";
 const LIVE_LOCATION_EMP_ID_KEY = "live_location_emp_id";
 const LIVE_LOCATION_INTERVAL_KEY = "live_location_interval";
 
+const normalizeIntervalMinutes = (rawValue?: number | string | null) => {
+  const numericValue = Number(rawValue ?? 0);
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return 30;
+  }
+
+  // Backward compatibility: older callers stored milliseconds instead of minutes.
+  if (numericValue >= 1000) {
+    return Math.max(Math.round(numericValue / 60000), 1);
+  }
+
+  return Math.max(Math.round(numericValue), 1);
+};
+
 type TaskData = {
   locations?: Array<{
     coords?: { latitude?: number; longitude?: number };
@@ -40,7 +55,45 @@ if (!TaskManager.isTaskDefined(LIVE_LOCATION_TASK_NAME)) {
 
       if (!token || !empId) return;
 
-      await ApiService.updateLiveLocation(token, empId, latitude!, longitude!);
+      const lastSentAtValue = await AsyncStorage.getItem(
+        "live_location_last_sent_at",
+      );
+
+      const intervalValue = await AsyncStorage.getItem(
+        LIVE_LOCATION_INTERVAL_KEY,
+      );
+
+      const intervalMinutes = normalizeIntervalMinutes(intervalValue);
+
+      const intervalMs = intervalMinutes * 60 * 1000;
+
+      const lastSentAt = Number(lastSentAtValue ?? 0);
+
+      const now = Date.now();
+
+      if (
+        Number.isFinite(lastSentAt) &&
+        lastSentAt > 0 &&
+        now - lastSentAt < intervalMs
+      ) {
+        console.log(`[Background Service] Skipped. Waiting for interval.`);
+
+        return;
+      }
+
+      const result = await ApiService.updateLiveLocation(
+        token,
+        empId,
+        latitude!,
+        longitude!,
+      );
+
+      if (result.success) {
+        await AsyncStorage.setItem(
+          "live_location_last_sent_at",
+          String(Date.now()),
+        );
+      }
     } catch (taskError) {
       console.error("Live location background task failed:", taskError);
     }
@@ -50,14 +103,14 @@ if (!TaskManager.isTaskDefined(LIVE_LOCATION_TASK_NAME)) {
 export const saveLiveLocationCredentials = async (
   token: string,
   empId: number,
-  intervalSeconds?: number,
+  intervalMinutes?: number,
 ) => {
   await AsyncStorage.setItem(LIVE_LOCATION_TOKEN_KEY, token);
   await AsyncStorage.setItem(LIVE_LOCATION_EMP_ID_KEY, String(empId));
-  if (intervalSeconds !== undefined) {
+  if (intervalMinutes !== undefined) {
     await AsyncStorage.setItem(
       LIVE_LOCATION_INTERVAL_KEY,
-      String(intervalSeconds),
+      String(normalizeIntervalMinutes(intervalMinutes)),
     );
   }
 };
@@ -85,7 +138,7 @@ export const startLiveLocationTask = async (
   const foreground = await Location.getForegroundPermissionsAsync();
   let foregroundStatus = foreground.status;
 
-  const DEFAULT_INTERVAL_MS = (liveDuration ?? 30) * 1000;
+  const normalizedDurationMinutes = normalizeIntervalMinutes(liveDuration);
 
   if (foregroundStatus !== "granted") {
     const requestedForeground =
@@ -111,16 +164,16 @@ export const startLiveLocationTask = async (
   );
 
   const intervalValue = await AsyncStorage.getItem(LIVE_LOCATION_INTERVAL_KEY);
-  const intervalMs = intervalValue
-    ? Number(intervalValue) * 1000
-    : DEFAULT_INTERVAL_MS;
+  const intervalMinutes = intervalValue
+    ? normalizeIntervalMinutes(intervalValue)
+    : normalizedDurationMinutes;
+  const intervalMs = intervalMinutes * 60 * 1000;
 
-  // Prevent redundant restarts which reset the update timer
   if (started) {
     console.log(
-      `[LiveLocation] Task already running at ${intervalMs}ms interval.`,
+      `[LiveLocation] Restarting background task with updated interval: ${intervalMs}ms`,
     );
-    return true;
+    await Location.stopLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME);
   }
 
   console.log(
@@ -128,12 +181,18 @@ export const startLiveLocationTask = async (
   );
 
   await Location.startLocationUpdatesAsync(LIVE_LOCATION_TASK_NAME, {
-    accuracy: Location.Accuracy.High,
+    accuracy: Location.Accuracy.Balanced,
+
     activityType: Location.ActivityType.Other,
-    deferredUpdatesDistance: 0,
+
+    // Trigger only after interval time
     timeInterval: intervalMs,
-    deferredUpdatesInterval: 0,
+    deferredUpdatesInterval: intervalMs,
+
+    // Prevent tiny GPS drift updates
     distanceInterval: 0,
+    deferredUpdatesDistance: 0,
+
     pausesUpdatesAutomatically: false,
     mayShowUserSettingsDialog: true,
     foregroundService: {

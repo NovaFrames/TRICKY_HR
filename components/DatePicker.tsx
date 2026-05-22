@@ -15,6 +15,7 @@ interface Props {
 export default function DatePicker({ fromDate, toDate, onFromChange, labelFrom = 'From Date', labelTo = 'To Date' }: Props) {
     const { theme } = useTheme();
     const [showPicker, setShowPicker] = useState(false);
+    const isIOS = Platform.OS === 'ios';
 
     const onChange = (_: any, selected?: Date) => {
         setShowPicker(false);
@@ -23,20 +24,77 @@ export default function DatePicker({ fromDate, toDate, onFromChange, labelFrom =
 
     const formatDisplay = (d?: Date) => {
         if (!d) return '';
-        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2,'0')} ${d.getFullYear()}`;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')} ${d.getFullYear()}`;
     };
 
     return (
         <View style={styles.container}>
             <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.inputBorder }]}>
-                <TouchableOpacity style={styles.input} onPress={() => setShowPicker(true)}>
-                    <Text style={[styles.label, { color: theme.placeholder }]}>{labelFrom}</Text>
-                    <View style={styles.row}>
-                        <Ionicons name="calendar-outline" size={18} color={theme.primary} />
-                        <Text style={[styles.value, { color: theme.text }]}>{formatDisplay(fromDate)}</Text>
+                {isIOS ? (
+                    <View
+                        style={[
+                            styles.dateButton,
+                            styles.compactPickerWrapper,
+                            {
+                                backgroundColor: theme.inputBg,
+                                borderColor: theme.inputBorder,
+                            },
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.label,
+                                { color: theme.placeholder },
+                            ]}
+                        >
+                            {labelFrom}
+                        </Text>
+
+                        <View style={styles.pickerCenter}>
+                            <DateTimePicker
+                                value={fromDate || new Date()}
+                                mode="date"
+                                display="compact"
+                                onChange={(_, date) => {
+                                    if (date) onFromChange(date);
+                                }}
+                                maximumDate={new Date()}
+                            />
+                        </View>
                     </View>
-                </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        style={styles.input}
+                        onPress={() => setShowPicker(true)}
+                    >
+                        <Text
+                            style={[
+                                styles.label,
+                                { color: theme.placeholder },
+                            ]}
+                        >
+                            {labelFrom}
+                        </Text>
+
+                        <View style={styles.row}>
+                            <Ionicons
+                                name="calendar-outline"
+                                size={18}
+                                color={theme.primary}
+                            />
+
+                            <Text
+                                style={[
+                                    styles.value,
+                                    { color: theme.text },
+                                ]}
+                            >
+                                {formatDisplay(fromDate)}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                )}
 
                 <View style={styles.arrowWrapper}>
                     <Ionicons name="arrow-forward" size={16} color={theme.textLight} />
@@ -51,7 +109,7 @@ export default function DatePicker({ fromDate, toDate, onFromChange, labelFrom =
                 </View>
             </View>
 
-            {showPicker && (
+            {!isIOS && showPicker && (
                 <DateTimePicker
                     value={fromDate || new Date()}
                     mode="date"
@@ -97,5 +155,23 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    dateButton: {
+        flex: 1,
+        borderWidth: 1,
+        borderRadius: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+
+    compactPickerWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    pickerCenter: {
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

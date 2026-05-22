@@ -66,9 +66,9 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
 
     /* ---------------- RENDER GRID ---------------- */
     const renderGrid = (data: any[]) => (
-        <View style={[styles.gridContainer, { gap }]}>
+        <View style={[styles.gridContainer]}>
             {data.map((item, index) => {
-                const iconConfig = 
+                const iconConfig =
                     MENU_ICON_MAP[item.ActionC] ?? {
                         lib: Ionicons,
                         name: 'apps',
@@ -170,9 +170,12 @@ const styles = StyleSheet.create({
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        justifyContent: 'space-between',
     },
 
     gridItem: {
+        width: '31.5%',
+        marginBottom: 8,
         alignItems: 'center',
         borderRadius: 4,
         paddingVertical: 16,

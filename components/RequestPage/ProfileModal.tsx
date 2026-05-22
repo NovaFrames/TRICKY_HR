@@ -9,6 +9,7 @@ import {
     View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import { CustomButton } from "../CustomButton";
@@ -30,6 +31,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -131,15 +133,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-    ConfirmModal.alert(
-      "Cancel Request",
-      "Are you sure you want to cancel this profile update request?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
             setLoading(true);
             try {
               const requestId = item.IdN || item.Id || item.id;
@@ -173,12 +166,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
               );
 
               if (result.success) {
+                setShowCancelConfirm(false);
+                onClose();
+                onRefresh?.();
                 ConfirmModal.alert(
                   "Success",
                   "Profile update request cancelled successfully",
                 );
-                onClose();
-                onRefresh?.();
               } else {
                 ConfirmModal.alert(
                   "Error",
@@ -193,10 +187,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             } finally {
               setLoading(false);
             }
-          },
-        },
-      ],
-    );
   };
 
   const renderContent = () => {
@@ -617,12 +607,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             icon="close"
             isLoading={loading}
             disabled={loading}
-            onPress={handleCancelRequest}
+            onPress={() => setShowCancelConfirm(true)}
             style={styles.cancelButton}
           />
         ) : null
       }
     >
+      <View style={styles.contentFrame}>
       <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
         <View style={styles.badgeRow}>
           <View
@@ -637,6 +628,18 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
         {renderContent()}
       </ScrollView>
+      <InModalConfirmDialog
+        visible={showCancelConfirm}
+        title="Cancel Request"
+        message="Are you sure you want to cancel this profile update request?"
+        confirmLabel="Yes, Cancel"
+        cancelLabel="No"
+        destructive
+        loading={loading}
+        onCancel={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelRequest}
+      />
+      </View>
     </AppModal>
   );
 };
@@ -660,6 +663,9 @@ const InfoRow = ({
 );
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+  },
   modalBody: {
     padding: 18,
     flexShrink: 1,
