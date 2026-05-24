@@ -3,7 +3,15 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { ModalManagerProvider } from "@/components/common/ModalManager";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UserProvider, useUser } from "@/context/UserContext";
+import {
+  clearForegroundLocationSharing,
+  isForegroundLocationSharingEnabled,
+  pauseForegroundLocationSharing,
+  saveForegroundLocationCredentials,
+  startForegroundLocationSharing,
+} from "@/services/liveLocationForeground";
 import * as Sentry from '@sentry/react-native';
+import * as Location from "expo-location";
 import * as NavigationBar from "expo-navigation-bar";
 import {
   SplashScreen,
@@ -14,7 +22,7 @@ import {
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -105,6 +113,72 @@ function RootNavigator() {
       router.replace("/(tabs)/dashboard");
     }
   }, [isAuthenticated, isLoading, pathname]);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const syncForegroundLocationSharing = async () => {
+      if (!isAuthenticated) {
+        await clearForegroundLocationSharing();
+        return;
+      }
+
+      if (AppState.currentState !== "active") {
+        pauseForegroundLocationSharing();
+        return;
+      }
+
+      const enabled = await isForegroundLocationSharingEnabled();
+      if (!enabled) {
+        pauseForegroundLocationSharing();
+        return;
+      }
+
+      const foreground = await Location.getForegroundPermissionsAsync();
+      if (foreground.status !== "granted") {
+        return;
+      }
+
+      const token = (user?.TokenC || user?.Token || "").trim();
+      const empId = Number(user?.EmpIdN ?? 0);
+      const interval = Number(user?.LiveDurN ?? 0);
+
+      if (!token || !empId) return;
+
+      await saveForegroundLocationCredentials(
+        token,
+        empId,
+        interval > 0 ? interval : undefined,
+      );
+
+      await startForegroundLocationSharing(
+        interval > 0 ? interval : undefined,
+      );
+    };
+
+    void syncForegroundLocationSharing();
+
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void syncForegroundLocationSharing();
+        return;
+      }
+
+      pauseForegroundLocationSharing();
+    });
+
+    return () => {
+      subscription.remove();
+      pauseForegroundLocationSharing();
+    };
+  }, [
+    isAuthenticated,
+    isLoading,
+    user?.EmpIdN,
+    user?.LiveDurN,
+    user?.Token,
+    user?.TokenC,
+  ]);
 
   if (isLoading) return null;
 

@@ -3,14 +3,23 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import {
+  clearForegroundLocationSharing,
+  isForegroundLocationSharingEnabled,
+  saveForegroundLocationCredentials,
+  setForegroundLocationSharingEnabled,
+  startForegroundLocationSharing,
+} from "@/services/liveLocationForeground";
+import {
   Feather,
   FontAwesome5,
   Ionicons,
   MaterialIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  Alert,
+  Linking,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -48,8 +57,97 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, setPrimaryColor } = useTheme();
   const { logout, user } = useUser();
   const router = useRouter();
+  const [isLiveLocationEnabled, setIsLiveLocationEnabled] = useState(false);
+
+  const startLiveLocationSharing = useCallback(async () => {
+    try {
+      const token = user?.TokenC || user?.Token || "";
+      const empId = Number(user?.EmpIdN ?? 0);
+
+      if (!token || !empId) {
+        Alert.alert("Live Location", "User session is not ready. Please login again.");
+        return false;
+      }
+
+      const intervalMinutes = Math.max(Number(user?.LiveDurN) || 1, 1);
+
+      await saveForegroundLocationCredentials(token, empId, intervalMinutes);
+
+      const started = await startForegroundLocationSharing(intervalMinutes);
+
+      if (!started) {
+        Alert.alert(
+          "Location Permission Required",
+          "Allow location access while using the app to share your work location.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ],
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Failed to start live location sharing:", error);
+      return false;
+    }
+  }, [user?.EmpIdN, user?.LiveDurN, user?.Token, user?.TokenC]);
+
+  const handleToggleLiveLocation = useCallback(
+    async (enabled: boolean) => {
+      if (enabled) {
+        Alert.alert(
+          "Enable Live Location",
+          "TrickyHR will share your location only while the app is open and you are using it for workplace attendance verification. You can turn this off anytime.",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: async () => {
+                setIsLiveLocationEnabled(false);
+                await setForegroundLocationSharingEnabled(false);
+              },
+            },
+            {
+              text: "Continue",
+              onPress: async () => {
+                const started = await startLiveLocationSharing();
+
+                if (!started) {
+                  setIsLiveLocationEnabled(false);
+                  await setForegroundLocationSharingEnabled(false);
+                  await clearForegroundLocationSharing();
+                  return;
+                }
+
+                setIsLiveLocationEnabled(true);
+                await setForegroundLocationSharingEnabled(true);
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      setIsLiveLocationEnabled(false);
+      await setForegroundLocationSharingEnabled(false);
+      await clearForegroundLocationSharing();
+    },
+    [startLiveLocationSharing],
+  );
+
+  useEffect(() => {
+    const loadLiveLocationState = async () => {
+      setIsLiveLocationEnabled(await isForegroundLocationSharingEnabled());
+    };
+
+    void loadLiveLocationState();
+  }, []);
 
   const handleLogout = async () => {
+    await setForegroundLocationSharingEnabled(false);
+    await clearForegroundLocationSharing();
     await logout();
     router.replace("../auth/login");
   };
@@ -96,6 +194,21 @@ export default function SettingsScreen() {
           switchValue: isDark,
           onValueChange: toggleTheme,
         },
+        ...(user?.IsLiveLocN === 1
+          ? [
+            {
+              label: "Live Location",
+              description: isLiveLocationEnabled
+                ? "Sharing while app is in use"
+                : "Share work location while using the app",
+              icon: <Ionicons name="location" />,
+              color: "#0ea5e9",
+              type: "switch" as const,
+              switchValue: isLiveLocationEnabled,
+              onValueChange: handleToggleLiveLocation,
+            },
+          ]
+          : []),
         {
           label: "Choose Theme",
           description: "",
