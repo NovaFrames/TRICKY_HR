@@ -394,11 +394,11 @@ export default function SettingsScreen() {
           </View>
         ))}
 
-        {/* <View style={styles.footer}>
+        <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: theme.textLight }]}>
-                        Version 1.0.0 • © 2026 Novaframes
+                        Version 3.5.4 • © 2026
                     </Text>
-                </View> */}
+                </View>
       </ScrollView>
     </View>
   );
