@@ -3,23 +3,14 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
 import {
-  clearLiveLocationCredentials,
-  saveLiveLocationCredentials,
-  startLiveLocationTask,
-  stopLiveLocationTask,
-} from "@/services/liveLocationBackground";
-import {
   Feather,
   FontAwesome5,
   Ionicons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React from "react";
 import {
-  Alert,
-  Linking,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -57,146 +48,8 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, setPrimaryColor } = useTheme();
   const { logout, user } = useUser();
   const router = useRouter();
-  const [isLiveLocationEnabled, setIsLiveLocationEnabled] = useState(false);
-  const mountedRef = useRef(true);
-
-  const stopLiveLocationTracking = useCallback(() => {
-    void stopLiveLocationTask();
-  }, []);
-
-  const startLiveLocationTracking = useCallback(async () => {
-    try {
-      const token = user?.TokenC || user?.Token || "";
-      const empId = Number(user?.EmpIdN ?? 0);
-      if (!token || !empId) {
-        Alert.alert("Live Location", "User session is not ready. Please login again.");
-        return false;
-      }
-
-      const minutes = Math.max(
-        Number(user?.LiveDurN) || 1,
-        1
-      );
-
-      await saveLiveLocationCredentials(
-        token,
-        empId,
-        minutes > 0
-          ? minutes
-          : undefined,
-      );
-
-      const started =
-        await startLiveLocationTask(
-          minutes > 0
-            ? minutes
-            : undefined,
-        );
-
-      if (!started) {
-        Alert.alert(
-          "Background Permission Required",
-          "Allow 'All the time' location access to keep live location running in background.",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => Linking.openSettings() },
-          ],
-        );
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Failed to start live location tracking:", error);
-      return false;
-    }
-  }, [user?.EmpIdN, user?.Token, user?.TokenC, user?.LiveDurN]);
-
-  const handleToggleLiveLocation = useCallback(
-    async (enabled: boolean) => {
-
-      if (enabled) {
-
-        Alert.alert(
-          "Enable Live Location",
-          "When enabled, TrickyHR will share your live location during active work shifts for attendance verification and field staff monitoring. You can turn this off anytime from Settings.",
-          [
-            {
-              text: "Cancel",
-              style: "cancel",
-              onPress: async () => {
-                setIsLiveLocationEnabled(false);
-                await AsyncStorage.setItem(
-                  "live_location_enabled",
-                  "false"
-                );
-              },
-            },
-
-            {
-              text: "Continue",
-
-              onPress: async () => {
-
-                const started = await startLiveLocationTracking();
-
-                if (!started) {
-                  setIsLiveLocationEnabled(false);
-
-                  await AsyncStorage.setItem(
-                    "live_location_enabled",
-                    "false"
-                  );
-
-                  await stopLiveLocationTask();
-                  await clearLiveLocationCredentials();
-
-                  return;
-                }
-
-                setIsLiveLocationEnabled(true);
-
-                await AsyncStorage.setItem(
-                  "live_location_enabled",
-                  "true"
-                );
-              },
-            },
-          ]
-        );
-
-        return;
-      }
-
-      await stopLiveLocationTask();
-
-      await clearLiveLocationCredentials();
-
-      setIsLiveLocationEnabled(false);
-
-      await AsyncStorage.setItem(
-        "live_location_enabled",
-        "false"
-      );
-
-    },
-    [startLiveLocationTracking, stopLiveLocationTracking]
-  );
-
-  useEffect(() => {
-    const loadTrackingState = async () => {
-      const stored = await AsyncStorage.getItem("live_location_enabled");
-      if (stored !== null) {
-        setIsLiveLocationEnabled(stored === "true");
-      }
-    };
-    loadTrackingState();
-  }, []);
 
   const handleLogout = async () => {
-    await stopLiveLocationTask();
-    await clearLiveLocationCredentials();
-    await AsyncStorage.setItem("live_location_enabled", "false");
     await logout();
     router.replace("../auth/login");
   };
@@ -243,21 +96,6 @@ export default function SettingsScreen() {
           switchValue: isDark,
           onValueChange: toggleTheme,
         },
-        ...(user?.IsLiveLocN === 1
-          ? [
-            {
-              label: "Live Location",
-              description: isLiveLocationEnabled
-                ? "Tracking is currently active"
-                : "Turn on to share location in background",
-              icon: <Ionicons name="location" />,
-              color: "#0ea5e9",
-              type: "switch" as const,
-              switchValue: isLiveLocationEnabled,
-              onValueChange: handleToggleLiveLocation,
-            },
-          ]
-          : []),
         {
           label: "Choose Theme",
           description: "",

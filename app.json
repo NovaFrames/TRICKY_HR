@@ -12,7 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mykevit.kevit",
-      "buildNumber": "3",
+      "buildNumber": "4",
 
       "infoPlist": {
         "NSCameraUsageDescription": "TrickyHR uses the camera to scan attendance QR codes and upload employee profile or attendance photos.",
@@ -21,13 +21,9 @@
 
         "NSMicrophoneUsageDescription": "TrickyHR uses the microphone for voice or video communication features.",
 
-        "NSLocationWhenInUseUsageDescription": "TrickyHR uses your location during attendance check-ins and workplace verification while using the app.",
+        "NSLocationWhenInUseUsageDescription": "TrickyHR uses your location while you use the app to verify workplace attendance and QR check-ins.",
 
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "TrickyHR allows employees assigned to field duties to optionally enable live location sharing during active work shifts for attendance verification and field staff monitoring. Live tracking can be turned off anytime from Settings.",
-
-        "NSLocationAlwaysUsageDescription": "TrickyHR allows employees assigned to field duties to optionally enable background live location tracking during active work shifts. Users can disable live tracking anytime from Settings.",
-
-        "UIBackgroundModes": ["location", "fetch"],
+        "UIBackgroundModes": ["fetch"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -35,10 +31,7 @@
       "package": "com.mykevit.www.trickyhr",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION"
+        "ACCESS_COARSE_LOCATION"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#121212",
@@ -58,12 +51,10 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "TrickyHR allows optional live location sharing for employees assigned to field duties during active work shifts.",
+          "locationWhenInUsePermission": "TrickyHR uses your location while you use the app to verify workplace attendance and QR check-ins.",
 
-          "locationWhenInUsePermission": "TrickyHR uses your location during attendance check-ins and workplace verification while using the app.",
-
-          "isIosBackgroundLocationEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
         }
       ],
       [
