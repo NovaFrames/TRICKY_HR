@@ -1,4 +1,3 @@
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { useUser } from "@/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,6 +16,7 @@ import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
 import AppModal from "../common/AppModal";
 import CenterModalSelection from "../common/CenterModalSelection";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { CustomButton } from "../CustomButton";
 
 interface TimeRequestModalProps {
@@ -52,6 +52,12 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
   );
   const [showInTimePicker, setShowInTimePicker] = useState(false);
   const [showOutTimePicker, setShowOutTimePicker] = useState(false);
+  const [dialog, setDialog] = useState<{
+    type: "error" | "confirm" | "success";
+    title: string;
+    message: string;
+    closeAfter?: boolean;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     date: new Date(),
@@ -75,6 +81,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
         outTime: "00:00",
         remarks: "",
       });
+      setDialog(null);
     }
   }, [visible]);
 
@@ -123,19 +130,30 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
     setShowRequestTypeSelector(true);
   };
 
+  const showError = (title: string, message: string) => {
+    setDialog({ type: "error", title, message });
+  };
+
   const handleSubmit = async () => {
     if (!formData.projectId) {
-      ConfirmModal.alert("Validation", "Please select a project");
+      showError("Validation", "Please select a project");
       return;
     }
+    setDialog({
+      type: "confirm",
+      title: "Submit Request",
+      message: "Are you sure you want to submit this time request?",
+    });
+  };
 
+  const submitTimeRequest = async () => {
     setLoading(true);
     try {
       const currentUser = ApiService.getCurrentUser();
       const empId =
         currentUser?.empId || (await AsyncStorage.getItem("emp_id"));
       if (!empId) {
-        ConfirmModal.alert("Error", "User ID not found");
+        showError("Error", "User ID not found");
         return;
       }
 
@@ -172,21 +190,22 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       }
 
       if (successCount === requests.length) {
-        ConfirmModal.alert("Success", "Time request submitted successfully");
-        onSuccess?.();
-        onClose();
+        setDialog({
+          type: "success",
+          title: "Success",
+          message: "Time request submitted successfully",
+          closeAfter: true,
+        });
       } else {
-        ConfirmModal.alert(
-          successCount > 0 ? "Partial Success" : "Error",
-          errorMsg || "Failed to submit request",
-        );
-        if (successCount > 0) {
-          onSuccess?.();
-          onClose();
-        }
+        setDialog({
+          type: successCount > 0 ? "success" : "error",
+          title: successCount > 0 ? "Partial Success" : "Error",
+          message: errorMsg || "Failed to submit request",
+          closeAfter: successCount > 0,
+        });
       }
-    } catch (error) {
-      ConfirmModal.alert("Error", "An unexpected error occurred");
+    } catch {
+      showError("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -210,7 +229,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
               title="Cancel"
               icon="close"
               onPress={onClose}
-              disabled={loading}
+              disabled={loading || dialog !== null}
               textColor={theme.text}
               iconColor={theme.text}
               style={[
@@ -228,7 +247,7 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
               icon="send"
               onPress={handleSubmit}
               isLoading={loading}
-              disabled={loading}
+              disabled={loading || dialog !== null}
               style={[
                 styles.footerButton,
                 styles.submitButton,
@@ -315,7 +334,6 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
                       <DateTimePicker
                         value={getTimePickerDate(formData.inTime)}
                         mode="time"
-                        is24Hour={true}
                         display="compact"
                         onChange={(_, date) => {
                           if (date) {
@@ -349,7 +367,6 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
                       <DateTimePicker
                         value={getTimePickerDate(formData.outTime)}
                         mode="time"
-                        is24Hour={true}
                         display="compact"
                         onChange={(_, date) => {
                           if (date) {
@@ -420,6 +437,31 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
             onSelect={(val) =>
               setFormData((prev) => ({ ...prev, requestType: val }))
             }
+          />
+          <InModalConfirmDialog
+            visible={dialog !== null}
+            title={dialog?.title || ""}
+            message={dialog?.message || ""}
+            confirmLabel={dialog?.type === "confirm" ? "Submit" : "OK"}
+            cancelLabel={dialog?.type === "confirm" ? "Cancel" : ""}
+            loading={loading && dialog?.type === "confirm"}
+            onCancel={() => {
+              if (dialog?.type === "confirm" && loading) return;
+              setDialog(null);
+            }}
+            onConfirm={() => {
+              if (dialog?.type === "confirm") {
+                submitTimeRequest();
+                return;
+              }
+
+              const shouldClose = dialog?.closeAfter;
+              setDialog(null);
+              if (shouldClose) {
+                onSuccess?.();
+                onClose();
+              }
+            }}
           />
         </View>
       </AppModal>

@@ -1,5 +1,3 @@
-// ApplyLeaveModal.tsx
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
@@ -19,6 +17,7 @@ import ApiService, {
   LeaveBalanceResponse,
 } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { CustomButton } from "../CustomButton";
 
 interface ApplyLeaveModalProps {
@@ -59,6 +58,11 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
   const [availableDays, setAvailableDays] = useState<number>(0);
   const [showTimeSection, setShowTimeSection] = useState(false);
   const [showMedicalSection, setShowMedicalSection] = useState(false);
+  const [dialog, setDialog] = useState<{
+    type: "error" | "confirm" | "success";
+    title: string;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (availableLeaves.length > 0 && !selectedLeaveType) {
@@ -152,37 +156,41 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     return `${month}/${day}/${year}`;
   };
 
+  const showError = (message: string) => {
+    setDialog({ type: "error", title: "Error", message });
+  };
+
   const validateForm = (): boolean => {
     if (!selectedLeaveType) {
-      ConfirmModal.alert("Error", "Please select leave type");
+      showError("Please select leave type");
       return false;
     }
     if (fromDate > toDate) {
-      ConfirmModal.alert("Error", "To date must be after from date");
+      showError("To date must be after from date");
       return false;
     }
     if (!pastLeaveYes && !pastLeaveNo) {
-      ConfirmModal.alert("Error", "Please select past leave option");
+      showError("Please select past leave option");
       return false;
     }
     if (pastLeaveYes && fromDate > new Date()) {
-      ConfirmModal.alert("Error", "Past leave must be before current date");
+      showError("Past leave must be before current date");
       return false;
     }
     if (showTimeSection && parseFloat(totalTime) <= 0) {
-      ConfirmModal.alert("Error", "Please enter valid time");
+      showError("Please enter valid time");
       return false;
     }
     if (showMedicalSection) {
       const claim = parseFloat(claimAmount) || 0;
       const maxPerVisit = leaveData?.MLPerVisitMaxN || 0;
       if (claim > maxPerVisit) {
-        ConfirmModal.alert("Error", `Claim amount cannot exceed ${maxPerVisit}`);
+        showError(`Claim amount cannot exceed ${maxPerVisit}`);
         return false;
       }
     }
     if (remarks.trim().length === 0) {
-      ConfirmModal.alert("Error", "Please enter remarks");
+      showError("Please enter remarks");
       return false;
     }
     return true;
@@ -190,6 +198,15 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
   const handleSubmit = async () => {
     if (!validateForm() || !selectedLeaveType) return;
+    setDialog({
+      type: "confirm",
+      title: "Apply Leave",
+      message: "Are you sure you want to submit this leave request?",
+    });
+  };
+
+  const submitLeaveRequest = async () => {
+    if (!selectedLeaveType) return;
     try {
       setLoading(true);
       const isHourly =
@@ -218,14 +235,16 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
       const result = await ApiService.applyLeave(applicationData);
       if (result.success) {
-        ConfirmModal.alert("Success", "Leave applied successfully!", [
-          { text: "OK", onPress: onSuccess },
-        ]);
+        setDialog({
+          type: "success",
+          title: "Success",
+          message: "Leave applied successfully!",
+        });
       } else {
-        ConfirmModal.alert("Error", result.error || "Failed to apply leave");
+        showError(result.error || "Failed to apply leave");
       }
-    } catch (error) {
-      ConfirmModal.alert("Error", "Failed to apply leave");
+    } catch {
+      showError("Failed to apply leave");
     } finally {
       setLoading(false);
     }
@@ -260,7 +279,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               title="Cancel"
               icon="close"
               onPress={onClose}
-              disabled={loading}
+              disabled={loading || dialog !== null}
               textColor={theme.text}
               iconColor={theme.text}
               style={[
@@ -276,7 +295,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               title="Submit"
               icon="checkmark-circle-outline"
               isLoading={loading}
-              disabled={loading}
+              disabled={loading || dialog !== null}
               onPress={handleSubmit}
               style={styles.submitButton}
             />
@@ -317,7 +336,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
             <View style={styles.dateRow}>
               <View style={styles.dateGroup}>
-                <Text style={labelStyle}>From D te</Text>
+                <Text style={labelStyle}>From Date</Text>
                 {isIOS ? (
                   <View
                     style={[
@@ -641,6 +660,41 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               </View>
             </View>
           )}
+          <InModalConfirmDialog
+            visible={dialog !== null}
+            title={dialog?.title || ""}
+            message={dialog?.message || ""}
+            confirmLabel={
+              dialog?.type === "confirm"
+                ? "Submit"
+                : "OK"
+            }
+            cancelLabel={dialog?.type === "confirm" ? "Cancel" : ""}
+            loading={loading && dialog?.type === "confirm"}
+            onCancel={() => {
+              if (dialog?.type === "confirm" && loading) {
+                return;
+              }
+
+              const wasSuccess = dialog?.type === "success";
+              setDialog(null);
+              if (wasSuccess) {
+                onSuccess();
+              }
+            }}
+            onConfirm={() => {
+              if (dialog?.type === "confirm") {
+                submitLeaveRequest();
+                return;
+              }
+
+              const wasSuccess = dialog?.type === "success";
+              setDialog(null);
+              if (wasSuccess) {
+                onSuccess();
+              }
+            }}
+          />
         </View>
       </AppModal>
 

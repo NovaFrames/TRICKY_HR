@@ -1,5 +1,3 @@
-// SurrenderLeaveModal.tsx
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
@@ -16,6 +14,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, { SurrenderData } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { CustomButton } from "../CustomButton";
 
 interface SurrenderLeaveModalProps {
@@ -38,6 +37,11 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
   const [payoutDate, setPayoutDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [remarks, setRemarks] = useState("");
+  const [dialog, setDialog] = useState<{
+    type: "error" | "confirm" | "success";
+    title: string;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -52,13 +56,18 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
       if (result.success && result.eligLeave !== undefined) {
         setEligibleDays(result.eligLeave || 10);
       } else {
-        ConfirmModal.alert(
-          "Error",
-          result.error || "Failed to check surrender eligibility",
-        );
+        setDialog({
+          type: "error",
+          title: "Error",
+          message: result.error || "Failed to check surrender eligibility",
+        });
       }
-    } catch (error) {
-      ConfirmModal.alert("Error", "Failed to check surrender eligibility");
+    } catch {
+      setDialog({
+        type: "error",
+        title: "Error",
+        message: "Failed to check surrender eligibility",
+      });
     } finally {
       setCheckingEligibility(false);
     }
@@ -71,18 +80,22 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
     return `${month}/${day}/${year}`;
   };
 
+  const showError = (message: string) => {
+    setDialog({ type: "error", title: "Error", message });
+  };
+
   const validateForm = (): boolean => {
     const days = parseFloat(surrenderDays);
     if (isNaN(days) || days <= 0) {
-      ConfirmModal.alert("Error", "Please enter valid surrender days");
+      showError("Please enter valid surrender days");
       return false;
     }
     if (days > eligibleDays) {
-      ConfirmModal.alert("Error", `Cannot surrender more than ${eligibleDays} days`);
+      showError(`Cannot surrender more than ${eligibleDays} days`);
       return false;
     }
     if (remarks.trim().length < 10) {
-      ConfirmModal.alert("Error", "Remarks must be at least 10 characters");
+      showError("Remarks must be at least 10 characters");
       return false;
     }
     return true;
@@ -90,6 +103,14 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    setDialog({
+      type: "confirm",
+      title: "Leave Surrender",
+      message: "Are you sure you want to submit this surrender request?",
+    });
+  };
+
+  const submitSurrenderRequest = async () => {
     try {
       setLoading(true);
       const surrenderData: SurrenderData = {
@@ -100,14 +121,16 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
       };
       const result = await ApiService.submitSurrender(surrenderData);
       if (result.success) {
-        ConfirmModal.alert("Success", "Request submitted successfully!", [
-          { text: "OK", onPress: onSuccess },
-        ]);
+        setDialog({
+          type: "success",
+          title: "Success",
+          message: "Request submitted successfully!",
+        });
       } else {
-        ConfirmModal.alert("Error", result.error || "Failed to submit request");
+        showError(result.error || "Failed to submit request");
       }
-    } catch (error) {
-      ConfirmModal.alert("Error", "Failed to submit request");
+    } catch {
+      showError("Failed to submit request");
     } finally {
       setLoading(false);
     }
@@ -137,7 +160,7 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
               title="Cancel"
               icon="close"
               onPress={onClose}
-              disabled={loading}
+              disabled={loading || dialog !== null}
               textColor={theme.text}
               iconColor={theme.text}
               style={[
@@ -153,101 +176,134 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
               title="Submit"
               icon="checkmark-circle-outline"
               isLoading={loading}
-              disabled={loading}
+              disabled={loading || dialog !== null}
               onPress={handleSubmit}
               style={styles.submitButton}
             />
           </View>
         }
       >
-        <ScrollView
-          style={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View
-            style={[styles.eligibilityCard, { backgroundColor: theme.inputBg }]}
+        <View style={styles.contentFrame}>
+          <ScrollView
+            style={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.eligibilityHeader}>
-              <Icon name="info" size={20} color={theme.primary} />
-              <Text style={[styles.eligibilityTitle, { color: theme.primary }]}>
-                Eligibility Information
-              </Text>
-            </View>
-            {checkingEligibility ? (
-              <ActivityIndicator
-                size="small"
-                color={theme.primary}
-                style={styles.loader}
-              />
-            ) : (
-              <View style={styles.eligibilityRow}>
-                <Text
-                  style={[styles.eligibilityLabel, { color: theme.secondary }]}
-                >
-                  Available for Surrender:
-                </Text>
-                <Text
-                  style={[styles.eligibilityValue, { color: theme.primary }]}
-                >
-                  {eligibleDays} Days
+            <View
+              style={[styles.eligibilityCard, { backgroundColor: theme.inputBg }]}
+            >
+              <View style={styles.eligibilityHeader}>
+                <Icon name="info" size={20} color={theme.primary} />
+                <Text style={[styles.eligibilityTitle, { color: theme.primary }]}>
+                  Eligibility Information
                 </Text>
               </View>
-            )}
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={labelStyle}>Surrender Days</Text>
-            <TextInput
-              style={inputStyle}
-              placeholder={`Max: ${eligibleDays} days`}
-              placeholderTextColor={theme.placeholder}
-              keyboardType="decimal-pad"
-              value={surrenderDays}
-              onChangeText={setSurrenderDays}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={labelStyle}>Payout Date</Text>
-            {isIOS ? (
-              <View style={dateInputStyle}>
-                <DateTimePicker
-                  value={payoutDate}
-                  mode="date"
-                  display="compact"
-                  minimumDate={new Date()}
-                  onChange={(_, date) => {
-                    if (date) setPayoutDate(date);
-                  }}
+              {checkingEligibility ? (
+                <ActivityIndicator
+                  size="small"
+                  color={theme.primary}
+                  style={styles.loader}
                 />
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={dateInputStyle}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={{ color: theme.text }}>
-                  {payoutDate.toLocaleDateString()}
-                </Text>
-                <Icon name="calendar-today" size={20} color={theme.icon} />
-              </TouchableOpacity>
-            )}
-          </View>
+              ) : (
+                <View style={styles.eligibilityRow}>
+                  <Text
+                    style={[styles.eligibilityLabel, { color: theme.secondary }]}
+                  >
+                    Available for Surrender:
+                  </Text>
+                  <Text
+                    style={[styles.eligibilityValue, { color: theme.primary }]}
+                  >
+                    {eligibleDays} Days
+                  </Text>
+                </View>
+              )}
+            </View>
 
-          <View style={styles.formGroup}>
-            <Text style={labelStyle}>Remarks</Text>
-            <TextInput
-              style={[inputStyle, styles.textArea]}
-              placeholder="Enter reason for surrender"
-              placeholderTextColor={theme.placeholder}
-              multiline
-              numberOfLines={4}
-              value={remarks}
-              onChangeText={setRemarks}
-            />
-          </View>
-        </ScrollView>
+            <View style={styles.formGroup}>
+              <Text style={labelStyle}>Surrender Days</Text>
+              <TextInput
+                style={inputStyle}
+                placeholder={`Max: ${eligibleDays} days`}
+                placeholderTextColor={theme.placeholder}
+                keyboardType="decimal-pad"
+                value={surrenderDays}
+                onChangeText={setSurrenderDays}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={labelStyle}>Payout Date</Text>
+              {isIOS ? (
+                <View style={dateInputStyle}>
+                  <DateTimePicker
+                    value={payoutDate}
+                    mode="date"
+                    display="compact"
+                    minimumDate={new Date()}
+                    onChange={(_, date) => {
+                      if (date) setPayoutDate(date);
+                    }}
+                  />
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={dateInputStyle}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={{ color: theme.text }}>
+                    {payoutDate.toLocaleDateString()}
+                  </Text>
+                  <Icon name="calendar-today" size={20} color={theme.icon} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={labelStyle}>Remarks</Text>
+              <TextInput
+                style={[inputStyle, styles.textArea]}
+                placeholder="Enter reason for surrender"
+                placeholderTextColor={theme.placeholder}
+                multiline
+                numberOfLines={4}
+                value={remarks}
+                onChangeText={setRemarks}
+              />
+            </View>
+          </ScrollView>
+          <InModalConfirmDialog
+            visible={dialog !== null}
+            title={dialog?.title || ""}
+            message={dialog?.message || ""}
+            confirmLabel={dialog?.type === "confirm" ? "Submit" : "OK"}
+            cancelLabel={dialog?.type === "confirm" ? "Cancel" : ""}
+            loading={loading && dialog?.type === "confirm"}
+            onCancel={() => {
+              if (dialog?.type === "confirm" && loading) {
+                return;
+              }
+
+              const wasSuccess = dialog?.type === "success";
+              setDialog(null);
+              if (wasSuccess) {
+                onSuccess();
+              }
+            }}
+            onConfirm={() => {
+              if (dialog?.type === "confirm") {
+                submitSurrenderRequest();
+                return;
+              }
+
+              const wasSuccess = dialog?.type === "success";
+              setDialog(null);
+              if (wasSuccess) {
+                onSuccess();
+              }
+            }}
+          />
+        </View>
 
       </AppModal>
 
@@ -268,6 +324,10 @@ const SurrenderLeaveModal: React.FC<SurrenderLeaveModalProps> = ({
 };
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    position: "relative",
+    flexShrink: 1,
+  },
   scrollContent: {
     padding: 18,
     flexShrink: 1,

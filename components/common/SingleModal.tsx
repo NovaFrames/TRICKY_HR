@@ -15,7 +15,6 @@ const SingleModal: React.FC<ModalProps> = ({
   const manager = useModalManager();
   const requestOpen = manager?.requestOpen;
   const requestClose = manager?.requestClose;
-
   const idRef = useRef<string>("");
   const wasVisibleRef = useRef<boolean>(false);
 

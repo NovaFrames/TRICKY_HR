@@ -1,5 +1,3 @@
-// UploadDocumentModal.tsx
-import ConfirmModal from "@/components/common/ConfirmModal";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import React, { useState } from "react";
@@ -14,6 +12,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import AppModal from "../common/AppModal";
 import CenterModalSelection from "../common/CenterModalSelection";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { CustomButton } from "../CustomButton";
 
 interface UploadDocumentModalProps {
@@ -53,22 +52,31 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [remarks, setRemarks] = useState("");
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
+  const [dialog, setDialog] = useState<{
+    type: "error" | "confirm-close";
+    title: string;
+    message: string;
+  } | null>(null);
+
+  const showError = (message: string) => {
+    setDialog({ type: "error", title: "Error", message });
+  };
 
   const validateForm = (): boolean => {
     if (!documentName.trim()) {
-      ConfirmModal.alert("Error", "Document name is required");
+      showError("Document name is required");
       return false;
     }
     if (!documentType) {
-      ConfirmModal.alert("Error", "Please select a document type");
+      showError("Please select a document type");
       return false;
     }
     if (remarks.trim().length < 11) {
-      ConfirmModal.alert("Error", "Remarks should be more than 10 characters");
+      showError("Remarks should be more than 10 characters");
       return false;
     }
     if (!selectedFile) {
-      ConfirmModal.alert("Error", "Please select a file to upload");
+      showError("Please select a file to upload");
       return false;
     }
     return true;
@@ -83,7 +91,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
       if (result.canceled) return;
       const file = result.assets ? result.assets[0] : (result as any);
       if (file.size && file.size > 10 * 1024 * 1024) {
-        ConfirmModal.alert("Error", "File size should be less than 10MB");
+        showError("File size should be less than 10MB");
         return;
       }
       setSelectedFile({
@@ -92,8 +100,8 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
         type: file.mimeType || "application/octet-stream",
         size: file.size,
       });
-    } catch (err) {
-      ConfirmModal.alert("Error", "Failed to pick document");
+    } catch {
+      showError("Failed to pick document");
     }
   };
 
@@ -126,16 +134,11 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
 
   const handleClose = () => {
     if (uploading) {
-      ConfirmModal.alert("Upload in Progress", "Are you sure you want to cancel?", [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          onPress: () => {
-            resetForm();
-            onClose();
-          },
-        },
-      ]);
+      setDialog({
+        type: "confirm-close",
+        title: "Upload in Progress",
+        message: "Are you sure you want to cancel?",
+      });
     } else {
       resetForm();
       onClose();
@@ -264,7 +267,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
               icon="cloud-upload-outline"
               onPress={handleSubmit}
               isLoading={uploading}
-              disabled={uploading}
+              disabled={uploading || dialog !== null}
               containerStyle={{ flex: 1 }}
               style={{ backgroundColor: theme.primary }}
             />
@@ -273,7 +276,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
               title="Cancel"
               icon="close"
               onPress={handleClose}
-              disabled={uploading}
+              disabled={dialog !== null}
               textColor={theme.text}
               iconColor={theme.text}
               containerStyle={{ flex: 1 }}
@@ -295,6 +298,24 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
             onSelect={(val) => {
               setDocumentType(val as string);
               setShowTypeSelector(false);
+            }}
+          />
+          <InModalConfirmDialog
+            visible={dialog !== null}
+            title={dialog?.title || ""}
+            message={dialog?.message || ""}
+            confirmLabel={dialog?.type === "confirm-close" ? "Yes" : "OK"}
+            cancelLabel={dialog?.type === "confirm-close" ? "No" : ""}
+            destructive={dialog?.type === "confirm-close"}
+            onCancel={() => setDialog(null)}
+            onConfirm={() => {
+              if (dialog?.type === "confirm-close") {
+                setDialog(null);
+                resetForm();
+                onClose();
+                return;
+              }
+              setDialog(null);
             }}
           />
         </View>

@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
     Animated,
-    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -11,8 +12,6 @@ import {
 } from 'react-native';
 import Modal from "@/components/common/SingleModal";
 import { useTheme } from '../../context/ThemeContext';
-
-const { width, height } = Dimensions.get('window');
 
 interface AppModalProps {
     visible: boolean;
@@ -64,7 +63,7 @@ const AppModal: React.FC<AppModalProps> = ({
                 })
             ]).start();
         }
-    }, [visible]);
+    }, [visible, scaleValue, opacityValue]);
 
     if (!visible) return null;
 
@@ -75,7 +74,10 @@ const AppModal: React.FC<AppModalProps> = ({
             animationType="none"
             onRequestClose={onClose}
         >
-            <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+                style={styles.modalOverlay}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
                 <TouchableWithoutFeedback onPress={onClose}>
                     <Animated.View style={[styles.overlayBg, { opacity: opacityValue }]} />
                 </TouchableWithoutFeedback>
@@ -118,7 +120,7 @@ const AppModal: React.FC<AppModalProps> = ({
                         </View>
                     ) : null}
                 </Animated.View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };

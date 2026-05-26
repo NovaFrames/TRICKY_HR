@@ -3,7 +3,7 @@ import { CustomButton } from "@/components/CustomButton";
 import { ThemeType } from "@/theme/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CenterModalSelection from "../common/CenterModalSelection";
 interface TravelExpenseModalProps {
   visible: boolean;
@@ -52,7 +52,10 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
       transparent={true}
       onRequestClose={onCancel}
     >
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <View style={[styles.modal, { backgroundColor: theme.cardBackground }]}>
           <View style={[styles.header, { borderBottomColor: theme.inputBorder }]}>
             <Text style={[styles.title, { color: theme.text }]}>
@@ -108,17 +111,6 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
                 />
               </TouchableOpacity>
 
-              <CenterModalSelection
-                visible={showTravelTypeModal}
-                onClose={() => setShowTravelTypeModal(false)}
-                title="Select Travel Type"
-                options={travelByOptions.map((item) => ({
-                  label: item.text,
-                  value: item.value,
-                }))}
-                selectedValue={travelType}
-                onSelect={(val: number) => setTravelType(val)}
-              />
             </View>
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: theme.text }]}>
@@ -223,8 +215,23 @@ const TravelExpenseModal: React.FC<TravelExpenseModalProps> = ({
 
             </View>
           </ScrollView>
+          <CenterModalSelection
+            inline
+            visible={showTravelTypeModal}
+            onClose={() => setShowTravelTypeModal(false)}
+            title="Select Travel Type"
+            options={travelByOptions.map((item) => ({
+              label: item.text,
+              value: item.value,
+            }))}
+            selectedValue={travelType}
+            onSelect={(val: number) => {
+              setTravelType(val);
+              setShowTravelTypeModal(false);
+            }}
+          />
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 };
@@ -242,6 +249,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxHeight: "85%",
     overflow: "hidden",
+    position: "relative",
   },
   header: {
     flexDirection: "row",
@@ -297,20 +305,19 @@ const styles = StyleSheet.create({
   },
   saveButton: {},
   selectorContainer: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  borderWidth: 1.5,
-  borderRadius: 4,
-  paddingHorizontal: 16,
-  paddingVertical: 14,
-  gap: 12,
-},
-
-selectorText: {
-  flex: 1,
-  fontSize: 15,
-  fontWeight: "500",
-},
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1.5,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  selectorText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "500",
+  },
 });
 export default TravelExpenseModal;

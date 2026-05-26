@@ -8,7 +8,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, PanResponder, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { useTheme } from "../../../context/ThemeContext";
 import { useUser } from "../../../context/UserContext";
@@ -28,6 +28,7 @@ interface DocumentRoute {
 const OfficeDocument: React.FC<any> = ({ navigation }) => {
   const { theme } = useTheme();
   const { user } = useUser();
+  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const routes: DocumentRoute[] = [
     { key: "office", title: "Office Docs", folderName: null },
@@ -317,8 +318,16 @@ const OfficeDocument: React.FC<any> = ({ navigation }) => {
         onRequestClose={() => setViewingUrl(null)}
         animationType="slide"
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "black" }}>
-          <View style={styles.viewerHeader}>
+        <SafeAreaView
+          edges={["right", "bottom", "left"]}
+          style={{ flex: 1, backgroundColor: "black" }}
+        >
+          <View
+            style={[
+              styles.viewerHeader,
+              { paddingTop: Math.max(insets.top, 8) + 8 },
+            ]}
+          >
             <TouchableOpacity
               onPress={() => setViewingUrl(null)}
               style={styles.closeButton}

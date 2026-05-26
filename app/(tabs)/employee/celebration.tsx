@@ -414,7 +414,12 @@ export default function Celebration() {
           </View>
         }
       >
-        <View style={styles.modalBody}>
+        <ScrollView
+          style={styles.modalBody}
+          contentContainerStyle={styles.modalBodyContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.modalRow}>
             <Text style={[styles.modalLabel, { color: theme.textLight }]}>
               From
@@ -469,7 +474,7 @@ export default function Celebration() {
               },
             ]}
           />
-        </View>
+        </ScrollView>
       </AppModal>
 
       <Snackbar
@@ -588,8 +593,11 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     paddingHorizontal: 18,
-    paddingBottom: 18,
     paddingTop: 8,
+    maxHeight: 420,
+  },
+  modalBodyContent: {
+    paddingBottom: 18,
     gap: 12,
   },
   modalRow: {

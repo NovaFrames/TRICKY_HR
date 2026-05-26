@@ -50,21 +50,23 @@ const InModalConfirmDialog: React.FC<InModalConfirmDialogProps> = ({
           {message}
         </Text>
         <View style={styles.actions}>
-          <TouchableOpacity
-            onPress={onCancel}
-            disabled={loading}
-            style={[
-              styles.button,
-              {
-                backgroundColor: theme.inputBg,
-                borderColor: theme.inputBorder,
-              },
-            ]}
-          >
-            <Text style={[styles.buttonText, { color: theme.text }]}>
-              {cancelLabel}
-            </Text>
-          </TouchableOpacity>
+          {cancelLabel ? (
+            <TouchableOpacity
+              onPress={onCancel}
+              disabled={loading}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                },
+              ]}
+            >
+              <Text style={[styles.buttonText, { color: theme.text }]}>
+                {cancelLabel}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity
             onPress={onConfirm}
             disabled={loading}
