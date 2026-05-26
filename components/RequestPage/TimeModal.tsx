@@ -1,4 +1,3 @@
-import ConfirmModal from "@/components/common/ConfirmModal";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -55,6 +54,11 @@ const TimeModal: React.FC<TimeModalProps> = ({
     "Approved" | "Rejected" | null
   >(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [resultDialog, setResultDialog] = useState<{
+    title: string;
+    message: string;
+    closeAfter?: boolean;
+  } | null>(null);
   const [remarks, setRemarks] = useState("");
   const [timeData, setTimeData] = useState<any>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -139,64 +143,71 @@ const TimeModal: React.FC<TimeModalProps> = ({
     setProcessingAction(null);
     setConfirmAction(null);
     setValidationMessage(null);
+    setResultDialog(null);
     setRemarks("");
   }, [visible, isApprovalMode]);
+
+  useEffect(() => {
+    if (!visible) return;
+    setShowCancelConfirm(false);
+    setResultDialog(null);
+  }, [visible]);
 
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-            setLoading(true);
-            try {
-              const defaultCancel = async () => {
-                const requestId = item.IdN || item.Id || item.id;
-                const currentUser = ApiService.getCurrentUser();
-                const empId = item.EmpIdN || item.EmpId || currentUser.empId;
+    setLoading(true);
+    try {
+      const defaultCancel = async () => {
+        const requestId = item.IdN || item.Id || item.id;
+        const currentUser = ApiService.getCurrentUser();
+        const empId = item.EmpIdN || item.EmpId || currentUser.empId;
 
-                if (!empId) {
-                  return { success: false, error: "Employee ID not found." };
-                }
+        if (!empId) {
+          return { success: false, error: "Employee ID not found." };
+        }
 
-                return ApiService.updatePendingApproval({
-                  IdN: requestId,
-                  StatusC: "Rejected",
-                  Remarks: "Cancelled by user",
-                  EmpIdN: empId,
-                  Flag: "Time",
-                  ApproveAmtN: 0,
-                  title: "",
-                  DocName: "",
-                  ReceiveYearN: 0,
-                  ReceiveMonthN: 0,
-                  PayTypeN: 0,
-                });
-              };
-              const result = onCancelRequest
-                ? await onCancelRequest(item)
-                : await defaultCancel();
+        return ApiService.updatePendingApproval({
+          IdN: requestId,
+          StatusC: "Rejected",
+          Remarks: "Cancelled by user",
+          EmpIdN: empId,
+          Flag: "Time",
+          ApproveAmtN: 0,
+          title: "",
+          DocName: "",
+          ReceiveYearN: 0,
+          ReceiveMonthN: 0,
+          PayTypeN: 0,
+        });
+      };
+      const result = onCancelRequest
+        ? await onCancelRequest(item)
+        : await defaultCancel();
 
-              if (result.success) {
-                setShowCancelConfirm(false);
-                onClose();
-                onRefresh?.();
-                onSuccess?.();
-                ConfirmModal.alert(
-                  "Success",
-                  "Time update request cancelled successfully",
-                );
-              } else {
-                ConfirmModal.alert(
-                  "Error",
-                  result.error || "Failed to cancel time request.",
-                );
-              }
-            } catch (error: any) {
-              ConfirmModal.alert(
-                "Error",
-                error.message || "An unexpected error occurred.",
-              );
-            } finally {
-              setLoading(false);
-            }
+      if (result.success) {
+        setShowCancelConfirm(false);
+        setResultDialog({
+          title: "Success",
+          message: "Time update request cancelled successfully",
+          closeAfter: true,
+        });
+      } else {
+        setShowCancelConfirm(false);
+        setResultDialog({
+          title: "Error",
+          message: result.error || "Failed to cancel time request.",
+        });
+      }
+    } catch (error: any) {
+      setShowCancelConfirm(false);
+      setResultDialog({
+        title: "Error",
+        message: error.message || "An unexpected error occurred.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApprovalSubmission = async (status: "Approved" | "Rejected") => {
@@ -241,25 +252,22 @@ const TimeModal: React.FC<TimeModalProps> = ({
             : await defaultAction();
 
       if (result.success) {
-        ConfirmModal.alert(
-          "Success",
-          `Request ${status.toLowerCase()} successfully`,
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                onSuccess?.();
-                onRefresh?.();
-                onClose();
-              },
-            },
-          ],
-        );
+        setResultDialog({
+          title: "Success",
+          message: `Request ${status.toLowerCase()} successfully`,
+          closeAfter: true,
+        });
       } else {
-        ConfirmModal.alert("Error", result.error || "Failed to update request.");
+        setResultDialog({
+          title: "Error",
+          message: result.error || "Failed to update request.",
+        });
       }
     } catch (error: any) {
-      ConfirmModal.alert("Error", error?.message || "Failed to update request.");
+      setResultDialog({
+        title: "Error",
+        message: error?.message || "Failed to update request.",
+      });
     } finally {
       setProcessingAction(null);
     }
@@ -358,7 +366,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
                 icon="close-circle-outline"
                 onPress={handleReject}
                 isLoading={processingAction === "Rejected"}
-                disabled={processingAction !== null}
+                disabled={processingAction !== null || resultDialog !== null}
                 textColor="#DC2626"
                 iconColor="#DC2626"
                 indicatorColor="#DC2626"
@@ -370,7 +378,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
                 icon="checkmark-circle-outline"
                 onPress={handleApprove}
                 isLoading={processingAction === "Approved"}
-                disabled={processingAction !== null}
+                disabled={processingAction !== null || resultDialog !== null}
                 style={[
                   styles.actionButton,
                   styles.approveButton,
@@ -390,7 +398,7 @@ const TimeModal: React.FC<TimeModalProps> = ({
               title="Cancel Request"
               icon="close"
               isLoading={loading}
-              disabled={loading}
+              disabled={loading || resultDialog !== null}
               onPress={() => setShowCancelConfirm(true)}
               style={styles.cancelButton}
             />
@@ -490,6 +498,30 @@ const TimeModal: React.FC<TimeModalProps> = ({
         loading={loading}
         onCancel={() => setShowCancelConfirm(false)}
         onConfirm={handleCancelRequest}
+      />
+      <InModalConfirmDialog
+        visible={resultDialog !== null}
+        title={resultDialog?.title || ""}
+        message={resultDialog?.message || ""}
+        confirmLabel="OK"
+        onCancel={() => {
+          const shouldClose = resultDialog?.closeAfter;
+          setResultDialog(null);
+          if (shouldClose) {
+            onSuccess?.();
+            onRefresh?.();
+            onClose();
+          }
+        }}
+        onConfirm={() => {
+          const shouldClose = resultDialog?.closeAfter;
+          setResultDialog(null);
+          if (shouldClose) {
+            onSuccess?.();
+            onRefresh?.();
+            onClose();
+          }
+        }}
       />
       </View>
     </AppModal>

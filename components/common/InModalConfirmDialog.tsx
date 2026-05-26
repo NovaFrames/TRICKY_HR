@@ -19,7 +19,7 @@ const InModalConfirmDialog: React.FC<InModalConfirmDialogProps> = ({
   title,
   message,
   confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  cancelLabel = "",
   destructive = false,
   loading = false,
   onConfirm,
