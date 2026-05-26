@@ -651,7 +651,7 @@ const Attendance = () => {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        quality: 0.6,
+        quality: 0.3,
         allowsEditing: false,
         aspect: [4, 3],
         base64: false,
@@ -843,7 +843,7 @@ const Attendance = () => {
           serverDate,
           createdUser
         ),
-        15000
+        45000
       );
 
       if (res.success) {
@@ -863,7 +863,17 @@ const Attendance = () => {
     } catch (error) {
       console.error("Attendance submit error:", error);
       Sentry.captureException(error);
-      ConfirmModal.alert("Error", "Unable to submit attendance right now");
+      if (error instanceof Error && error.message === "Request timeout") {
+        ConfirmModal.alert(
+          "Network Slow",
+          "Server is taking too long to respond. Please try again."
+        );
+      } else {
+        ConfirmModal.alert(
+          "Error",
+          "Unable to submit attendance right now"
+        );
+      }
     } finally {
       submitInFlightRef.current = false;
       if (isMounted.current) {

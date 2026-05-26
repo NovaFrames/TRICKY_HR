@@ -2,7 +2,7 @@
   "expo": {
     "name": "TrickyHr",
     "slug": "trickyhr",
-    "version": "3.5.4",
+    "version": "3.5.5",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "trickyhr",
@@ -29,10 +29,7 @@
     },
     "android": {
       "package": "com.mykevit.www.trickyhr",
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
-      ],
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "adaptiveIcon": {
         "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/adptive-icon.png",
