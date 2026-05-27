@@ -396,7 +396,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: theme.textLight }]}>
-                        Version 3.5.5 • © 2026
+                        Version 3.5.6 • © 2026
                     </Text>
                 </View>
       </ScrollView>
