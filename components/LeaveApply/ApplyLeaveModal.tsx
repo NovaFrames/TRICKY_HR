@@ -1,5 +1,6 @@
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as DocumentPicker from "expo-document-picker";
 import React, { useEffect, useState } from "react";
 import {
   Platform,
@@ -15,6 +16,7 @@ import ApiService, {
   AvailableLeaveType,
   LeaveApplicationData,
   LeaveBalanceResponse,
+  LeaveType,
 } from "../../services/ApiService";
 import AppModal from "../common/AppModal";
 import InModalConfirmDialog from "../common/InModalConfirmDialog";
@@ -55,11 +57,15 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
   const [pastLeaveNo, setPastLeaveNo] = useState(true);
   const [remarks, setRemarks] = useState("");
   const [claimAmount, setClaimAmount] = useState("");
-  const [availableDays, setAvailableDays] = useState<number>(0);
+  const [medicalDocument, setMedicalDocument] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
   const [showTimeSection, setShowTimeSection] = useState(false);
   const [showMedicalSection, setShowMedicalSection] = useState(false);
   const [dialog, setDialog] = useState<{
-    type: "error" | "confirm" | "success";
+    type: "error" | "confirm" | "success" | "unpaid";
     title: string;
     message: string;
   } | null>(null);
@@ -75,8 +81,12 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     const isTimeRequired =
       leaveType.ReaTypeN === 4 || leaveType.ReaGrpIdN === 8;
     setShowTimeSection(isTimeRequired);
-    const isMedical = leaveType.ReaGrpIdN === 16;
+    const isMedical = leaveType.ReaGrpIdN === 2;
     setShowMedicalSection(isMedical);
+    if (!isMedical) {
+      setClaimAmount("");
+      setMedicalDocument(null);
+    }
     if (leaveType.PastLeaveN === 0) {
       setPastLeaveNo(true);
       setPastLeaveYes(false);
@@ -156,6 +166,46 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     return `${month}/${day}/${year}`;
   };
 
+  const getSelectedLeaveBalance = (): LeaveType | null => {
+    const leaves = leaveData?.data?.[0]?.EmpLeaveApply;
+    if (!leaves || !selectedLeaveType) return null;
+    return (
+      leaves.find((leave) => leave.ReaGrpIdN === selectedLeaveType.ReaGrpIdN) ||
+      null
+    );
+  };
+
+  const getLeaveUnit = () => {
+    if (!selectedLeaveType) return 1;
+    if (selectedLeaveType.ReaTypeN === 1) return 1;
+    if (selectedLeaveType.ReaTypeN === 4) return 0;
+    if (selectedLeaveType.ReaTypeN === 2 || selectedLeaveType.ReaTypeN === 3) {
+      return 0.5;
+    }
+    return 1;
+  };
+
+  const pickMedicalDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+      const file = result.assets?.[0];
+      if (!file) return;
+
+      setMedicalDocument({
+        uri: file.uri,
+        name: file.name || "medical-document",
+        type: file.mimeType || "application/octet-stream",
+      });
+    } catch {
+      showError("Failed to select medical document");
+    }
+  };
+
   const showError = (message: string) => {
     setDialog({ type: "error", title: "Error", message });
   };
@@ -184,8 +234,18 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     if (showMedicalSection) {
       const claim = parseFloat(claimAmount) || 0;
       const maxPerVisit = leaveData?.MLPerVisitMaxN || 0;
+      const claimAvailable = leaveData?.MLClaimAvailN || 0;
+
       if (claim > maxPerVisit) {
         showError(`Claim amount cannot exceed ${maxPerVisit}`);
+        return false;
+      }
+      if (claim > claimAvailable) {
+        showError(`Claim amount cannot exceed available claim ${claimAvailable}`);
+        return false;
+      }
+      if (!medicalDocument) {
+        showError("Please attach medical document");
         return false;
       }
     }
@@ -198,11 +258,50 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
   const handleSubmit = async () => {
     if (!validateForm() || !selectedLeaveType) return;
-    setDialog({
-      type: "confirm",
-      title: "Apply Leave",
-      message: "Are you sure you want to submit this leave request?",
-    });
+
+    setCheckingAvailability(true);
+    try {
+      const isHourly =
+        selectedLeaveType.ReaTypeN === 4 || selectedLeaveType.ReaGrpIdN === 8;
+      const availability = await ApiService.checkLeaveAvailability(
+        formatDateForAPI(fromDate),
+        formatDateForAPI(toDate),
+        selectedLeaveType.ReaGrpIdN,
+        isHourly ? parseFloat(totalTime) || 0 : 0,
+        getLeaveUnit(),
+      );
+
+      if (!availability.success) {
+        showError(availability.error || "Failed to check leave availability");
+        return;
+      }
+
+      const requestedDays = Number(availability.leaveDays || 0);
+      const balance = Number(getSelectedLeaveBalance()?.BalanceN || 0);
+      const unpaidDate = availability.strApp || formatDateForAPI(fromDate);
+      const needsUnpaidConfirmation =
+        requestedDays > balance ||
+        (requestedDays === 1);
+
+      if (needsUnpaidConfirmation) {
+        setDialog({
+          type: "unpaid",
+          title: "Apply Unpaid Leave",
+          message: `Leave Balance is not enough to apply. Leave Balance not Enough to Apply. Do you want apply Unpaid Leave for [${unpaidDate}]?`,
+        });
+        return;
+      }
+
+      setDialog({
+        type: "confirm",
+        title: "Apply Leave",
+        message: "Are you sure you want to submit this leave request?",
+      });
+    } catch {
+      showError("Failed to check leave availability");
+    } finally {
+      setCheckingAvailability(false);
+    }
   };
 
   const submitLeaveRequest = async () => {
@@ -219,15 +318,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         FHN: isHourly ? parseFloat(fromTime) || 0 : 0,
         THN: isHourly ? parseFloat(toTime) || 0 : 0,
         THrsN: isHourly ? parseFloat(totalTime) || 0 : 0,
-        UnitN:
-          selectedLeaveType.ReaTypeN === 1
-            ? 1
-            : selectedLeaveType.ReaTypeN === 4
-              ? 0
-              : selectedLeaveType.ReaTypeN === 2 ||
-                selectedLeaveType.ReaTypeN === 3
-                ? 0.5
-                : 1,
+        UnitN: getLeaveUnit(),
         MLClaimAmtN: parseFloat(claimAmount) || 0,
         LVRemarksC: remarks.trim(),
         PastLeaveN: pastLeaveYes ? 1 : 0,
@@ -235,6 +326,23 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
       const result = await ApiService.applyLeave(applicationData);
       if (result.success) {
+        const leaveId = result.data?.IdN;
+        if (showMedicalSection && medicalDocument && leaveId) {
+          const uploadResult = await ApiService.uploadMedicalDocument(
+            leaveId,
+            medicalDocument,
+          );
+
+          console.log("uploadResult: ", uploadResult);
+          if (!uploadResult.success) {
+            showError(
+              uploadResult.error ||
+                "Leave applied, but medical document upload failed",
+            );
+            return;
+          }
+        }
+
         setDialog({
           type: "success",
           title: "Success",
@@ -294,8 +402,8 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
             <CustomButton
               title="Submit"
               icon="checkmark-circle-outline"
-              isLoading={loading}
-              disabled={loading || dialog !== null}
+              isLoading={loading || checkingAvailability}
+              disabled={loading || checkingAvailability || dialog !== null}
               onPress={handleSubmit}
               style={styles.submitButton}
             />
@@ -554,6 +662,84 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               </View>
             )}
 
+            {showMedicalSection && (
+              <View style={styles.medicalSection}>
+                <View style={styles.medicalGrid}>
+                  <View style={styles.medicalMetric}>
+                    <Text style={labelStyle}>Claim Limit</Text>
+                    <TextInput
+                      style={[inputStyle, styles.readOnlyInput]}
+                      value={(leaveData?.MLClaimLimitN || 0).toFixed(2)}
+                      editable={false}
+                    />
+                  </View>
+                  <View style={styles.medicalMetric}>
+                    <Text style={labelStyle}>Claim Avail</Text>
+                    <TextInput
+                      style={[inputStyle, styles.readOnlyInput]}
+                      value={(leaveData?.MLClaimAvailN || 0).toFixed(2)}
+                      editable={false}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.medicalGrid}>
+                  <View style={styles.medicalMetric}>
+                    <Text style={labelStyle}>Claim Amt</Text>
+                    <TextInput
+                      style={inputStyle}
+                      placeholder="0.00"
+                      placeholderTextColor={theme.placeholder}
+                      keyboardType="decimal-pad"
+                      value={claimAmount}
+                      onChangeText={setClaimAmount}
+                    />
+                  </View>
+                  <View style={styles.medicalMetric}>
+                    <Text style={labelStyle}>Claim Bal</Text>
+                    <TextInput
+                      style={[inputStyle, styles.readOnlyInput]}
+                      value={Math.max(
+                        (leaveData?.MLClaimAvailN || 0) -
+                          (parseFloat(claimAmount) || 0),
+                        0,
+                      ).toFixed(2)}
+                      editable={false}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={labelStyle}>Medical Document</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.filePicker,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                    onPress={pickMedicalDocument}
+                  >
+                    <Icon name="attach-file" size={20} color={theme.primary} />
+                    <Text
+                      style={[
+                        styles.fileName,
+                        {
+                          color: medicalDocument
+                            ? theme.text
+                            : theme.placeholder,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {medicalDocument?.name || "Choose file"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
             <View style={styles.formGroup}>
               <Text style={labelStyle}>Remarks</Text>
               <TextInput
@@ -665,14 +851,24 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
             title={dialog?.title || ""}
             message={dialog?.message || ""}
             confirmLabel={
-              dialog?.type === "confirm"
+              dialog?.type === "confirm" || dialog?.type === "unpaid"
                 ? "Submit"
                 : "OK"
             }
-            cancelLabel={dialog?.type === "confirm" ? "Cancel" : ""}
-            loading={loading && dialog?.type === "confirm"}
+            cancelLabel={
+              dialog?.type === "confirm" || dialog?.type === "unpaid"
+                ? "Cancel"
+                : ""
+            }
+            loading={
+              loading &&
+              (dialog?.type === "confirm" || dialog?.type === "unpaid")
+            }
             onCancel={() => {
-              if (dialog?.type === "confirm" && loading) {
+              if (
+                (dialog?.type === "confirm" || dialog?.type === "unpaid") &&
+                loading
+              ) {
                 return;
               }
 
@@ -683,7 +879,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               }
             }}
             onConfirm={() => {
-              if (dialog?.type === "confirm") {
+              if (dialog?.type === "confirm" || dialog?.type === "unpaid") {
                 submitLeaveRequest();
                 return;
               }
@@ -956,12 +1152,40 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 4,
   },
+  medicalSection: {
+    marginBottom: 20,
+  },
+  medicalGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  medicalMetric: {
+    flex: 1,
+  },
   input: {
     borderWidth: 1,
     borderRadius: 4,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
+    fontWeight: "600",
+  },
+  readOnlyInput: {
+    opacity: 0.75,
+  },
+  filePicker: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  fileName: {
+    flex: 1,
+    fontSize: 14,
     fontWeight: "600",
   },
   textArea: {

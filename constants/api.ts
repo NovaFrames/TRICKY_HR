@@ -51,7 +51,7 @@ export const API_ENDPOINTS = {
   SUBMIT_SURRENDER: "/WebApi2/UpdateEmpSurrender",
 
   // Medical Documents
-  UPLOAD_MEDICAL_DOC: "/WebApi2/UploadMedicalDoc",
+  UPLOAD_MEDICAL_DOC: "/Employee/UploadMedicalDoc",
 
   // Manager Approvals
   GET_PENDING_LEAVES: "/WebApi2/GetSup_LeaveManageById",

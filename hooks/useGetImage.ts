@@ -2,7 +2,7 @@ import { getDomainUrl } from "@/services/urldomain";
 
 export const getCompanyLogoUrl = async (
   customerIdC?: string | null,
-  compIdN?: string | number | null
+  compIdN?: string | number | null,
 ): Promise<string | undefined> => {
   if (!customerIdC || !compIdN) return undefined;
 
@@ -18,7 +18,7 @@ export const getCompanyLogoUrl = async (
 export const getProfileImageUrl = async (
   customerIdC?: string | null,
   compIdN?: string | number | null,
-  empIdN?: string | number | null
+  empIdN?: string | number | null,
 ): Promise<string | undefined> => {
   if (!customerIdC || !compIdN || !empIdN) return undefined;
 
@@ -29,5 +29,8 @@ export const getProfileImageUrl = async (
   const safeCompIdN = encodeURIComponent(String(compIdN));
   const safeEmpIdN = encodeURIComponent(String(empIdN));
 
+  console.log(
+    `${domainUrl}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`,
+  );
   return `${domainUrl}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`;
 };

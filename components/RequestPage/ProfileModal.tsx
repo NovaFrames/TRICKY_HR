@@ -1,17 +1,20 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import { useUser } from "@/context/UserContext";
+import { getDomainUrl } from "@/services/urldomain";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import AppModal from "../../components/common/AppModal";
-import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService from "../../services/ApiService";
+import InModalConfirmDialog from "../common/InModalConfirmDialog";
 import { CustomButton } from "../CustomButton";
 
 interface ProfileModalProps {
@@ -32,6 +35,20 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const { user } = useUser();
+  const [profileimage, setProfileImage] = useState('');
+
+  useEffect(() => {
+    getImage();
+  }, [profileData]);
+
+  const getImage = async () => {
+    const domainUrl = await getDomainUrl();
+
+    const url = `${domainUrl}/kevit-Customer/${user?.CustomerIdC}/${user?.CompIdN}/EmpPortal/EmpPhoto/${user?.EmpIdN}.jpg`;
+
+    setProfileImage(url);
+  };
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -133,60 +150,60 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   if (!item) return null;
 
   const handleCancelRequest = async () => {
-            setLoading(true);
-            try {
-              const requestId = item.IdN || item.Id || item.id;
-              const parseDate = (dateStr: string | undefined) => {
-                if (!dateStr) return undefined;
-                try {
-                  if (
-                    typeof dateStr === "string" &&
-                    dateStr.includes("/Date(")
-                  ) {
-                    const timestamp = parseInt(
-                      dateStr.replace(/\/Date\((-?\d+)\)\//, "$1"),
-                    );
-                    return new Date(timestamp);
-                  }
-                  return new Date(dateStr);
-                } catch (e) {
-                  return undefined;
-                }
-              };
+    setLoading(true);
+    try {
+      const requestId = item.IdN || item.Id || item.id;
+      const parseDate = (dateStr: string | undefined) => {
+        if (!dateStr) return undefined;
+        try {
+          if (
+            typeof dateStr === "string" &&
+            dateStr.includes("/Date(")
+          ) {
+            const timestamp = parseInt(
+              dateStr.replace(/\/Date\((-?\d+)\)\//, "$1"),
+            );
+            return new Date(timestamp);
+          }
+          return new Date(dateStr);
+        } catch (e) {
+          return undefined;
+        }
+      };
 
-              const fromDate = parseDate(item.LFromDateD || item.FromDate);
-              const toDate = parseDate(item.LToDateD || item.ToDate);
+      const fromDate = parseDate(item.LFromDateD || item.FromDate);
+      const toDate = parseDate(item.LToDateD || item.ToDate);
 
-              const result = await ApiService.deleteRequest(
-                requestId,
-                "Pro",
-                fromDate,
-                toDate,
-                "Cancelled by user",
-              );
+      const result = await ApiService.deleteRequest(
+        requestId,
+        "Pro",
+        fromDate,
+        toDate,
+        "Cancelled by user",
+      );
 
-              if (result.success) {
-                setShowCancelConfirm(false);
-                onClose();
-                onRefresh?.();
-                ConfirmModal.alert(
-                  "Success",
-                  "Profile update request cancelled successfully",
-                );
-              } else {
-                ConfirmModal.alert(
-                  "Error",
-                  result.error || "Failed to cancel profile request.",
-                );
-              }
-            } catch (error: any) {
-              ConfirmModal.alert(
-                "Error",
-                error.message || "An unexpected error occurred.",
-              );
-            } finally {
-              setLoading(false);
-            }
+      if (result.success) {
+        setShowCancelConfirm(false);
+        onClose();
+        onRefresh?.();
+        ConfirmModal.alert(
+          "Success",
+          "Profile update request cancelled successfully",
+        );
+      } else {
+        ConfirmModal.alert(
+          "Error",
+          result.error || "Failed to cancel profile request.",
+        );
+      }
+    } catch (error: any) {
+      ConfirmModal.alert(
+        "Error",
+        error.message || "An unexpected error occurred.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderContent = () => {
@@ -277,9 +294,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
             value={
               formatDate(
                 profile.BirthDateD ||
-                  profile.DateofBirthD ||
-                  profile.DOBD ||
-                  profile.BDateD,
+                profile.DateofBirthD ||
+                profile.DOBD ||
+                profile.BDateD,
               ) || "N/A"
             }
             theme={theme}
@@ -299,11 +316,26 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                 },
               ]}
             >
-              <Ionicons
-                name="person-outline"
-                size={40}
-                color={theme.placeholder}
-              />
+              {profileimage ? (
+                <Image
+                  source={{ uri: profileimage }}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 4,
+                  }}
+                  resizeMode="cover"
+                  onError={(e) => {
+                    console.log("Image Load Error:", e.nativeEvent.error);
+                  }}
+                />
+              ) : (
+                <Ionicons
+                  name="person-outline"
+                  size={40}
+                  color={theme.placeholder}
+                />
+              )}
             </View>
           </View>
         </View>
@@ -601,7 +633,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       subtitle={`Ref: #${item.IdN || "N/A"}`}
       footer={
         status.toLowerCase().includes("waiting") ||
-        status.toLowerCase().includes("pending") ? (
+          status.toLowerCase().includes("pending") ? (
           <CustomButton
             title="Cancel Request"
             icon="close"
@@ -614,31 +646,31 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       }
     >
       <View style={styles.contentFrame}>
-      <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-        <View style={styles.badgeRow}>
-          <View
-            style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
-          >
-            <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
-            <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
-              {statusInfo.label}
-            </Text>
+        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+          <View style={styles.badgeRow}>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}
+            >
+              <View style={[styles.dot, { backgroundColor: statusInfo.color }]} />
+              <Text style={[styles.statusLabelText, { color: statusInfo.color }]}>
+                {statusInfo.label}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        {renderContent()}
-      </ScrollView>
-      <InModalConfirmDialog
-        visible={showCancelConfirm}
-        title="Cancel Request"
-        message="Are you sure you want to cancel this profile update request?"
-        confirmLabel="Yes, Cancel"
-        cancelLabel="No"
-        destructive
-        loading={loading}
-        onCancel={() => setShowCancelConfirm(false)}
-        onConfirm={handleCancelRequest}
-      />
+          {renderContent()}
+        </ScrollView>
+        <InModalConfirmDialog
+          visible={showCancelConfirm}
+          title="Cancel Request"
+          message="Are you sure you want to cancel this profile update request?"
+          confirmLabel="Yes, Cancel"
+          cancelLabel="No"
+          destructive
+          loading={loading}
+          onCancel={() => setShowCancelConfirm(false)}
+          onConfirm={handleCancelRequest}
+        />
       </View>
     </AppModal>
   );

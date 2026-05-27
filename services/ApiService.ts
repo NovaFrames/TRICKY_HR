@@ -554,6 +554,14 @@ export interface DocumentFile {
   name: string;
 }
 
+export interface LeaveAvailabilityResponse {
+  success: boolean;
+  leaveDays?: number;
+  strApp?: string;
+  strErrMsg?: string;
+  error?: string;
+}
+
 class ApiService {
   private static instance: ApiService;
   private token: string | null = null;
@@ -751,7 +759,7 @@ class ApiService {
     reaGrpIdN: number,
     thrsN: number = 0,
     unit: number = 1,
-  ): Promise<{ success: boolean; leaveDays?: number; error?: string }> {
+  ): Promise<LeaveAvailabilityResponse> {
     try {
       if (!this.token) {
         await this.loadCredentials();
@@ -772,7 +780,12 @@ class ApiService {
       );
 
       if (response.data.Status === "success") {
-        return { success: true, leaveDays: response.data.LeaveDays };
+        return {
+          success: true,
+          leaveDays: Number(response.data.LeaveDays || 0),
+          strApp: response.data.strApp,
+          strErrMsg: response.data.strErrMsg,
+        };
       } else {
         return { success: false, error: response.data.Error };
       }
@@ -829,6 +842,54 @@ class ApiService {
       return {
         success: false,
         error: error.response?.data?.Error || error.message || "Network error",
+      };
+    }
+  }
+
+  async uploadMedicalDocument(
+    leaveId: number,
+    file: DocumentFile,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      if (!this.token) {
+        await this.loadCredentials();
+      }
+
+      const formData = new FormData();
+      formData.append("IdN", String(leaveId));
+      formData.append("Doc", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type || "application/octet-stream",
+      } as any);
+
+      const response = await api.post(API_ENDPOINTS.UPLOAD_MEDICAL_DOC, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Accept: "application/json",
+          Token: this.token || "",
+        },
+        transformRequest: (data) => data,
+      });
+
+      const status = String(response.data?.Status || "").toLowerCase();
+      const success = status === "success" || response.status === 200;
+
+      return {
+        success,
+        data: response.data,
+        error: success
+          ? undefined
+          : response.data?.Error || "Failed to upload medical document",
+      };
+    } catch (error: any) {
+      console.error("Medical document upload error:", error);
+      return {
+        success: false,
+        error:
+          error.response?.data?.Error ||
+          error.message ||
+          "Failed to upload medical document",
       };
     }
   }
