@@ -1,5 +1,6 @@
 import { getProfileImageUrl } from "@/hooks/useGetImage";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import { Image, ImageSourcePropType, ImageStyle, StyleProp } from "react-native";
 
 type ProfileImageProps = {
@@ -23,26 +24,38 @@ export default function ProfileImage({
 }: ProfileImageProps) {
     const [uri, setUri] = useState<string>();
     const [imageError, setImageError] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(Date.now());
 
-    useEffect(() => {
+    const loadImage = useCallback(() => {
         let mounted = true;
         setImageError(false);
 
-        const loadImage = async () => {
+        const resolveImage = async () => {
             const url = await getProfileImageUrl(customerIdC, compIdN, empIdN);
-            if (mounted) setUri(url);
+            if (mounted) {
+                setUri(url);
+                setRefreshKey(Date.now());
+            }
         };
 
-        loadImage();
+        void resolveImage();
 
         return () => {
             mounted = false;
         };
     }, [customerIdC, compIdN, empIdN]);
 
+    useFocusEffect(loadImage);
+
+    const imageUri = useMemo(() => {
+        if (!uri) return undefined;
+        const separator = uri.includes("?") ? "&" : "?";
+        return `${uri}${separator}v=${refreshKey}`;
+    }, [refreshKey, uri]);
+
     return (
         <Image
-            source={!uri || imageError ? fallbackSource : { uri }}
+            source={!imageUri || imageError ? fallbackSource : { uri: imageUri }}
             onError={() => setImageError(true)}
             style={[
                 {

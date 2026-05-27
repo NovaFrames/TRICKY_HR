@@ -15,6 +15,7 @@ import {
   Ionicons,
   MaterialIcons,
 } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -137,13 +138,19 @@ export default function SettingsScreen() {
     [startLiveLocationSharing],
   );
 
-  useEffect(() => {
-    const loadLiveLocationState = async () => {
-      setIsLiveLocationEnabled(await isForegroundLocationSharingEnabled());
-    };
-
-    void loadLiveLocationState();
+  const loadLiveLocationState = useCallback(async () => {
+    setIsLiveLocationEnabled(await isForegroundLocationSharingEnabled());
   }, []);
+
+  useEffect(() => {
+    void loadLiveLocationState();
+  }, [loadLiveLocationState]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadLiveLocationState();
+    }, [loadLiveLocationState]),
+  );
 
   const handleLogout = async () => {
     await setForegroundLocationSharingEnabled(false);

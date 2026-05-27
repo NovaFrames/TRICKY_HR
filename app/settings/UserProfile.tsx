@@ -692,15 +692,8 @@ export default function UserProfile() {
     handleCompanyChange(target.index, target.field, formatted);
   };
 
-  // Refresh whenever screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchUserData();
-    }, [])
-  );
-
   /* -------------------- API -------------------- */
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       if (!user?.TokenC) return;
       const result = await ApiService.getUserProfile(user.TokenC);
@@ -712,7 +705,14 @@ export default function UserProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.TokenC]);
+
+  // Refresh whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      void fetchUserData();
+    }, [fetchUserData]),
+  );
 
   const updateProfileData = async () => {
     try {
@@ -854,8 +854,8 @@ export default function UserProfile() {
   };
   useEffect(() => {
     if (!user?.TokenC) return;
-    fetchUserData();
-  }, [user?.TokenC]);
+    void fetchUserData();
+  }, [fetchUserData, user?.TokenC]);
   useProtectedBack({
     home: "/home",
     settings: "/settings",

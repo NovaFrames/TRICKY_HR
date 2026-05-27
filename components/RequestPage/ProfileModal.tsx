@@ -1,11 +1,10 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
+import ProfileImage from "@/components/common/ProfileImage";
 import { useUser } from "@/context/UserContext";
-import { getDomainUrl } from "@/services/urldomain";
-import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,19 +35,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [profileData, setProfileData] = useState<any>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const { user } = useUser();
-  const [profileimage, setProfileImage] = useState('');
-
-  useEffect(() => {
-    getImage();
-  }, [profileData]);
-
-  const getImage = async () => {
-    const domainUrl = await getDomainUrl();
-
-    const url = `${domainUrl}/kevit-Customer/${user?.CustomerIdC}/${user?.CompIdN}/EmpPortal/EmpPhoto/${user?.EmpIdN}.jpg`;
-
-    setProfileImage(url);
-  };
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -124,28 +110,34 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
     return types[type] || "N/A";
   };
 
-  // Fetch profile details
-  useEffect(() => {
-    const fetchProfileDetails = async () => {
-      if (!visible || !item) return;
+  const fetchProfileDetails = useCallback(async () => {
+    if (!visible || !item) return;
 
-      setDetailsLoading(true);
+    setDetailsLoading(true);
 
-      try {
-        const result = await ApiService.getProfileUpdate();
+    try {
+      const result = await ApiService.getProfileUpdate();
 
-        if (result?.success && result?.data?.data?.[0]) {
-          setProfileData(result.data.data[0]);
-        }
-      } catch (error) {
-        console.error("Error fetching profile details:", error);
-      } finally {
-        setDetailsLoading(false);
+      if (result?.success && result?.data?.data?.[0]) {
+        setProfileData(result.data.data[0]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching profile details:", error);
+    } finally {
+      setDetailsLoading(false);
+    }
+  }, [item, visible]);
 
-    fetchProfileDetails();
-  }, [visible, item]);
+  // Fetch profile details when the modal opens and whenever the parent screen refocuses.
+  useEffect(() => {
+    void fetchProfileDetails();
+  }, [fetchProfileDetails]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchProfileDetails();
+    }, [fetchProfileDetails]),
+  );
 
   if (!item) return null;
 
@@ -316,26 +308,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                 },
               ]}
             >
-              {profileimage ? (
-                <Image
-                  source={{ uri: profileimage }}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 4,
-                  }}
-                  resizeMode="cover"
-                  onError={(e) => {
-                    console.log("Image Load Error:", e.nativeEvent.error);
-                  }}
-                />
-              ) : (
-                <Ionicons
-                  name="person-outline"
-                  size={40}
-                  color={theme.placeholder}
-                />
-              )}
+              <ProfileImage
+                customerIdC={user?.CustomerIdC}
+                compIdN={user?.CompIdN}
+                empIdN={user?.EmpIdN}
+                size={60}
+              />
             </View>
           </View>
         </View>
