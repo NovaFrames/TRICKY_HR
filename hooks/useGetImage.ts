@@ -29,5 +29,8 @@ export const getProfileImageUrl = async (
   const safeCompIdN = encodeURIComponent(String(compIdN));
   const safeEmpIdN = encodeURIComponent(String(empIdN));
 
-  return `${domainUrl}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/EmpPortal/EmpPhoto/${safeEmpIdN}.jpg`;
+  console.log(
+    `${domainUrl}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/EmpPortal/EmpPhoto/${safeEmpIdN}.jpg`,
+  );
+  return `${domainUrl}/kevit-Customer/${safeCustomerIdC}/${safeCompIdN}/${safeEmpIdN}.jpg`;
 };

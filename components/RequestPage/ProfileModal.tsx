@@ -1,10 +1,12 @@
 import ConfirmModal from "@/components/common/ConfirmModal";
-import ProfileImage from "@/components/common/ProfileImage";
 import { useUser } from "@/context/UserContext";
+import { getDomainUrl } from "@/services/urldomain";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -35,6 +37,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
   const [profileData, setProfileData] = useState<any>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const { user } = useUser();
+  const [profileimage, setProfileImage] = useState<any>();
 
   const status = item?.StatusC || item?.StatusResult || item?.Status || "Waiting";
 
@@ -52,6 +55,20 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
       label: status.toUpperCase(),
     };
   }
+
+  useEffect(()=>{
+    getImage();
+  },[user]);
+
+  const getImage = async () => {
+    const domainUrl = await getDomainUrl();
+
+    const url = `${domainUrl}/kevit-Customer/${user?.CustomerIdC}/${user?.CompIdN}/EmpPortal/EmpPhoto/${user?.EmpIdN}.jpg`;
+
+    console.log("IMAGE URL:", url);
+
+    setProfileImage(url);
+  };
 
   // Helper to format ASP.NET JSON Date
   const formatDate = (dateString: string) => {
@@ -308,12 +325,23 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
                 },
               ]}
             >
-              <ProfileImage
-                customerIdC={user?.CustomerIdC}
-                compIdN={user?.CompIdN}
-                empIdN={user?.EmpIdN}
-                size={60}
-              />
+              {profileimage ? (
+                <Image
+                  source={{ uri: profileimage }}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 4,
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Ionicons
+                  name="person-outline"
+                  size={40}
+                  color={theme.placeholder}
+                />
+              )}
             </View>
           </View>
         </View>
