@@ -506,6 +506,7 @@ export interface LeaveBalanceResponse {
     Reason: AvailableLeaveType[];
   }>;
   GenderN: number;
+  ReaGrpIdN: number;
 }
 
 export interface LeaveApplicationResponse {
@@ -863,14 +864,18 @@ class ApiService {
         type: file.type || "application/octet-stream",
       } as any);
 
-      const response = await api.post(API_ENDPOINTS.UPLOAD_MEDICAL_DOC, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Accept: "application/json",
-          Token: this.token || "",
+      const response = await api.post(
+        API_ENDPOINTS.UPLOAD_MEDICAL_DOC,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Accept: "application/json",
+            Token: this.token || "",
+          },
+          transformRequest: (data) => data,
         },
-        transformRequest: (data) => data,
-      });
+      );
 
       const status = String(response.data?.Status || "").toLowerCase();
       const success = status === "success" || response.status === 200;

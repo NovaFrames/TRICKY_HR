@@ -54,6 +54,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
   const [showFromTimePicker, setShowFromTimePicker] = useState(false);
   const [showToTimePicker, setShowToTimePicker] = useState(false);
   const [pastLeaveYes, setPastLeaveYes] = useState(false);
+  const [showPastLeave, setShowPastLeave] = useState(true);
   const [pastLeaveNo, setPastLeaveNo] = useState(true);
   const [remarks, setRemarks] = useState("");
   const [claimAmount, setClaimAmount] = useState("");
@@ -79,10 +80,12 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
 
   const checkLeaveTypeChange = (leaveType: AvailableLeaveType) => {
     const isTimeRequired =
-      leaveType.ReaTypeN === 4 || leaveType.ReaGrpIdN === 8;
+      leaveType.ReaTypeN === 4;
     setShowTimeSection(isTimeRequired);
     const isMedical = leaveType.ReaGrpIdN === 2;
     setShowMedicalSection(isMedical);
+    setShowPastLeave(leaveType.ReaGrpIdN !== 16);
+    
     if (!isMedical) {
       setClaimAmount("");
       setMedicalDocument(null);
@@ -259,10 +262,20 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
   const handleSubmit = async () => {
     if (!validateForm() || !selectedLeaveType) return;
 
+    if (selectedLeaveType.ReaGrpIdN === 8) {
+      setDialog({
+        type: "confirm",
+        title: "Apply Leave",
+        message: "Are you sure you want to submit this leave request?",
+      });
+      return;
+    }
+
     setCheckingAvailability(true);
     try {
       const isHourly =
         selectedLeaveType.ReaTypeN === 4 || selectedLeaveType.ReaGrpIdN === 8;
+        
       const availability = await ApiService.checkLeaveAvailability(
         formatDateForAPI(fromDate),
         formatDateForAPI(toDate),
@@ -337,7 +350,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
           if (!uploadResult.success) {
             showError(
               uploadResult.error ||
-                "Leave applied, but medical document upload failed",
+              "Leave applied, but medical document upload failed",
             );
             return;
           }
@@ -514,57 +527,59 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={labelStyle}>Past Leave</Text>
-              <View style={styles.radioGroup}>
-                <TouchableOpacity
-                  style={styles.radioOption}
-                  onPress={() => {
-                    setPastLeaveYes(true);
-                    setPastLeaveNo(false);
-                  }}
-                >
-                  <View
-                    style={[styles.radioCircle, { borderColor: theme.primary }]}
+            {showPastLeave && (
+              <View style={styles.formGroup}>
+                <Text style={labelStyle}>Past Leave</Text>
+                <View style={styles.radioGroup}>
+                  <TouchableOpacity
+                    style={styles.radioOption}
+                    onPress={() => {
+                      setPastLeaveYes(true);
+                      setPastLeaveNo(false);
+                    }}
                   >
-                    {pastLeaveYes && (
-                      <View
-                        style={[
-                          styles.radioSelected,
-                          { backgroundColor: theme.primary },
-                        ]}
-                      />
-                    )}
-                  </View>
-                  <Text style={[styles.radioLabel, { color: theme.text }]}>
-                    Yes
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.radioOption}
-                  onPress={() => {
-                    setPastLeaveYes(false);
-                    setPastLeaveNo(true);
-                  }}
-                >
-                  <View
-                    style={[styles.radioCircle, { borderColor: theme.primary }]}
+                    <View
+                      style={[styles.radioCircle, { borderColor: theme.primary }]}
+                    >
+                      {pastLeaveYes && (
+                        <View
+                          style={[
+                            styles.radioSelected,
+                            { backgroundColor: theme.primary },
+                          ]}
+                        />
+                      )}
+                    </View>
+                    <Text style={[styles.radioLabel, { color: theme.text }]}>
+                      Yes
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.radioOption}
+                    onPress={() => {
+                      setPastLeaveYes(false);
+                      setPastLeaveNo(true);
+                    }}
                   >
-                    {pastLeaveNo && (
-                      <View
-                        style={[
-                          styles.radioSelected,
-                          { backgroundColor: theme.primary },
-                        ]}
-                      />
-                    )}
-                  </View>
-                  <Text style={[styles.radioLabel, { color: theme.text }]}>
-                    No
-                  </Text>
-                </TouchableOpacity>
+                    <View
+                      style={[styles.radioCircle, { borderColor: theme.primary }]}
+                    >
+                      {pastLeaveNo && (
+                        <View
+                          style={[
+                            styles.radioSelected,
+                            { backgroundColor: theme.primary },
+                          ]}
+                        />
+                      )}
+                    </View>
+                    <Text style={[styles.radioLabel, { color: theme.text }]}>
+                      No
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            )}
 
             {showTimeSection && (
               <View style={styles.formGroup}>
@@ -701,7 +716,7 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
                       style={[inputStyle, styles.readOnlyInput]}
                       value={Math.max(
                         (leaveData?.MLClaimAvailN || 0) -
-                          (parseFloat(claimAmount) || 0),
+                        (parseFloat(claimAmount) || 0),
                         0,
                       ).toFixed(2)}
                       editable={false}
@@ -989,7 +1004,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   dateRow: {
-    flexDirection:  "row",
+    flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
     marginBottom: 20,
