@@ -23,6 +23,10 @@
 
         "NSLocationWhenInUseUsageDescription": "TrickyHR uses your location while you use the app to verify workplace attendance and QR check-ins.",
 
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+
         "UIBackgroundModes": ["fetch"],
         "ITSAppUsesNonExemptEncryption": false
       }
