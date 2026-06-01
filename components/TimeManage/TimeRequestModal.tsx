@@ -90,15 +90,33 @@ const TimeRequestModal: React.FC<TimeRequestModalProps> = ({
       const projectsData = await ApiService.getProjectList();
 
       if (projectsData && projectsData.length > 0) {
-        const mapped = projectsData.map((p: any) => ({
-          label:
-            p.ProjectNameC || p.NameC || `Project ${p.ProjectIdN || p.IdN}`,
-          value: p.ProjectIdN || p.IdN,
-        }));
+        const mapped = projectsData
+          .map((p: any) => {
+            const value = Number(p.ProjectIdN ?? p.IdN ?? p.ProjectId ?? p.Id);
+            const label =
+              p.ProjectNameC ||
+              p.NameC ||
+              p.ProjectName ||
+              p.Name ||
+              (Number.isFinite(value) ? `Project ${value}` : "");
+
+            if (!Number.isFinite(value) || !label) {
+              return null;
+            }
+
+            return { label, value };
+          })
+          .filter(
+            (project): project is { label: string; value: number } =>
+              project !== null,
+          );
         setProjects(mapped);
+      } else {
+        setProjects([]);
       }
     } catch (error) {
       console.log("Error fetching projects", error);
+      setProjects([]);
     }
   };
 

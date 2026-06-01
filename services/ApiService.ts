@@ -521,6 +521,13 @@ export interface AttendanceProject {
   ProjectNameC: string;
 }
 
+interface ProjectListOptions {
+  token?: string;
+  blnEmpMaster?: boolean;
+  viewReject?: boolean;
+  throwOnError?: boolean;
+}
+
 export interface TravelExpense {
   TravelAmountN: number;
   PNRC: string;
@@ -561,6 +568,8 @@ export interface LeaveAvailabilityResponse {
   strApp?: string;
   strErrMsg?: string;
   error?: string;
+  Status?: string;
+  data?: string;
 }
 
 class ApiService {
@@ -627,6 +636,26 @@ class ApiService {
     };
   }
 
+  private normalizeProjectListResponse(responseData: any) {
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+
+    const projectList =
+      responseData?.data ??
+      responseData?.Data ??
+      responseData?.ProjectList ??
+      responseData?.Projects ??
+      responseData?.result ??
+      responseData?.Result;
+
+    return Array.isArray(projectList) ? projectList : [];
+  }
+
+  private getApiErrorMessage(responseData: any, fallback: string) {
+    return responseData?.Error || responseData?.Message || fallback;
+  }
+
   // Authentication
   async login(username: string, password: string, companyCode: string) {
     try {
@@ -653,29 +682,67 @@ class ApiService {
   }
 
   // Leave Management APIs
-  async getProjectList() {
+  async getProjectList(options: ProjectListOptions = {}) {
     try {
-      if (!this.token) {
+      await this.ensureApiReady();
+
+      if (!this.token || options.token) {
         await this.loadCredentials();
+      }
+
+      const token = options.token || this.token || (await getSafeToken());
+
+      if (!token) {
+        throw new Error("Token not available");
+      }
+
+      const payload: Record<string, unknown> = {
+        TokenC: token,
+      };
+
+      if (typeof options.blnEmpMaster === "boolean") {
+        payload.blnEmpMaster = options.blnEmpMaster;
+      }
+
+      if (typeof options.viewReject === "boolean") {
+        payload.ViewReject = options.viewReject;
       }
 
       const response = await api.post(
         API_ENDPOINTS.GET_PROJECT_LIST,
+        payload,
         {
-          TokenC: this.token,
+          headers: {
+            "Content-Type": "application/json",
+            Token: token,
+          },
+          timeout: 30000,
         },
-        { headers: this.getHeaders() },
       );
 
-      if (response.data.Status === "success") {
-        return response.data.data || [];
-      } else if (Array.isArray(response.data)) {
-        return response.data;
+      const projectList = this.normalizeProjectListResponse(response.data);
+
+      if (projectList.length > 0 || Array.isArray(response.data)) {
+        return projectList;
+      }
+
+      const status = String(response.data?.Status ?? "").toLowerCase();
+      if (status && status !== "success") {
+        throw new Error(
+          this.getApiErrorMessage(response.data, "Failed to load projects"),
+        );
       }
 
       return [];
     } catch (error: any) {
-      console.error("Error fetching project list:", error);
+      console.error("Error fetching project list:", {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
+      if (options.throwOnError) {
+        throw error;
+      }
       return [];
     }
   }
@@ -781,12 +848,7 @@ class ApiService {
       );
 
       if (response.data.Status === "success") {
-        return {
-          success: true,
-          leaveDays: Number(response.data.LeaveDays || 0),
-          strApp: response.data.strApp,
-          strErrMsg: response.data.strErrMsg,
-        };
+        return response.data;
       } else {
         return { success: false, error: response.data.Error };
       }
@@ -2406,35 +2468,12 @@ class ApiService {
   }
 
   async getAttendanceProjectList(data: { token: string }) {
-    try {
-      console.log("STEP 1 - Inside getAttendanceProjectList");
-      await this.ensureApiReady();
-
-      // console.log("STEP 4 - Token:", data.token);
-      // console.log("STEP 5 - Calling API:", API_ENDPOINTS.GET_PROJECT_LIST);
-
-      const res = await api.post(
-        API_ENDPOINTS.GET_PROJECT_LIST,
-        {
-          TokenC: data.token,
-          blnEmpMaster: false,
-          ViewReject: false,
-        },
-        { timeout: 30000 },
-      );
-
-      // console.log("STEP 6 - Response:", res.data);
-
-      if (res.data?.Status === "success") {
-        return res.data.data || [];
-      }
-
-      console.log("STEP 7 - Status not success");
-      return [];
-    } catch (error: any) {
-      console.log("STEP ERROR:", error?.message);
-      throw error;
-    }
+    return this.getProjectList({
+      token: data.token,
+      blnEmpMaster: false,
+      viewReject: false,
+      throwOnError: true,
+    });
   }
 
   async getMobileAttendanceReport(

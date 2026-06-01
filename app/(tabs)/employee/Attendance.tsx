@@ -8,6 +8,7 @@ import { useUser } from "@/context/UserContext";
 import { useProtectedBack } from "@/hooks/useProtectedBack";
 import ApiService, {
   ensureBaseUrl,
+  getSafeToken,
   markMobileAttendance,
 } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,6 +40,12 @@ type AttendanceParams = {
   propEmpCodeC?: string | string[];
 };
 
+type AttendanceProjectOption = {
+  IdN: number;
+  NameC: string;
+  [key: string]: any;
+};
+
 const Attendance = () => {
   const { theme } = useTheme();
   const { user, logout } = useUser();
@@ -66,7 +73,7 @@ const Attendance = () => {
   >("Check-in");
   const [selectedProject, setSelectedProject] = useState("");
   const [remarks, setRemarks] = useState("");
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<AttendanceProjectOption[]>([]);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [location, setLocation] = useState<{
@@ -473,6 +480,34 @@ const Attendance = () => {
     return coords ? String(coords).trim() : "";
   };
 
+  const normalizeProject = (project: any): AttendanceProjectOption | null => {
+    const id = Number(
+      project?.IdN ??
+        project?.ProjectIdN ??
+        project?.Id ??
+        project?.ProjectId ??
+        project?.PROJECTID,
+    );
+    const name = String(
+      project?.NameC ??
+        project?.ProjectNameC ??
+        project?.Name ??
+        project?.ProjectName ??
+        project?.PROJECTNAME ??
+        "",
+    ).trim();
+
+    if (!Number.isFinite(id) || !name) {
+      return null;
+    }
+
+    return {
+      ...project,
+      IdN: id,
+      NameC: name,
+    };
+  };
+
   // Clock sync (unchanged)
   const parseServerTime = (raw: string) => {
     const trimmed = String(raw || "").trim();
@@ -556,33 +591,45 @@ const Attendance = () => {
   // Project list fetch (unchanged)
   useEffect(() => {
     if (!isFocused) return;
-    if (!user?.TokenC && !user?.Token) return;
+    if (!user) return;
 
     fetchProjects();
-  }, [isFocused, user]);
+  }, [isFocused, user?.TokenC, user?.Token]);
 
   const fetchProjects = async (): Promise<boolean> => {
     try {
       setProjectLoading(true);
       setProjectError(null);
 
-      const token = user?.TokenC || user?.Token;
+      const token = user?.TokenC || user?.Token || (await getSafeToken());
       if (!token) {
         setProjectError("Session expired");
         await forceLogoutForMissingToken();
         return false;
       }
 
-      const projectList = await ApiService.getAttendanceProjectList({
+      const projectList = await ApiService.getProjectList({
         token,
+        blnEmpMaster: false,
+        viewReject: false,
+        throwOnError: true,
       });
 
-      if (!projectList || projectList.length === 0) {
+      const normalizedProjects = Array.isArray(projectList)
+        ? projectList
+          .map(normalizeProject)
+          .filter(
+            (project): project is AttendanceProjectOption =>
+              project !== null,
+          )
+        : [];
+
+      if (normalizedProjects.length === 0) {
         setProjectError("No projects available");
         setProjects([]);
         return false;
       } else {
-        const sortedProjects = [...projectList].sort((a, b) =>
+        const sortedProjects = [...normalizedProjects].sort((a, b) =>
           (a.NameC || "")
             .trim()
             .toLowerCase()

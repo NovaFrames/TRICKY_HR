@@ -284,23 +284,20 @@ const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
         getLeaveUnit(),
       );
 
-      if (!availability.success) {
+      console.log("availability: ", availability);
+
+      if (availability.Status !== "success") {
         showError(availability.error || "Failed to check leave availability");
         return;
       }
 
-      const requestedDays = Number(availability.leaveDays || 0);
-      const balance = Number(getSelectedLeaveBalance()?.BalanceN || 0);
-      const unpaidDate = availability.strApp || formatDateForAPI(fromDate);
-      const needsUnpaidConfirmation =
-        requestedDays > balance ||
-        (requestedDays === 1);
+      const unpaidDate = availability.data || formatDateForAPI(fromDate);
 
-      if (needsUnpaidConfirmation) {
+      if (availability.data !== "") {
         setDialog({
           type: "unpaid",
           title: "Apply Unpaid Leave",
-          message: `Leave Balance is not enough to apply. Leave Balance not Enough to Apply. Do you want apply Unpaid Leave for [${unpaidDate}]?`,
+          message: ` Leave Balance not Enough to Apply. Do you want apply Unpaid Leave for [${unpaidDate}]?`,
         });
         return;
       }

@@ -65,8 +65,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({
 
     const url = `${domainUrl}/kevit-Customer/${user?.CustomerIdC}/${user?.CompIdN}/EmpPortal/EmpPhoto/${user?.EmpIdN}.jpg`;
 
-    console.log("IMAGE URL:", url);
-
     setProfileImage(url);
   };
 
