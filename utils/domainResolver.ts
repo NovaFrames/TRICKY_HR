@@ -63,7 +63,17 @@ export const resolveWorkingDomain = async (
       );
 
       return baseUrl; // ✅ working domain
-    } catch (err) {
+    } catch (err: any) {
+      console.log("URL:", `${baseUrl}${API_ENDPOINTS.LOGIN}`);
+      console.log("MESSAGE:", err?.message);
+      console.log("CODE:", err?.code);
+      console.log("STATUS:", err?.response?.status);
+      console.log("DATA:", err?.response?.data);
+
+      if (err?.request?._response) {
+        console.log("RAW:", err.request._response);
+      }
+
       continue;
     }
   }
