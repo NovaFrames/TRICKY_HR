@@ -8,6 +8,8 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -46,7 +48,7 @@ interface ServiceDetail {
 }
 
 export default function ServiceReport() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -91,6 +93,9 @@ export default function ServiceReport() {
     type: "call" | "appointment" | "start" | "followup" | null;
     mode: "date" | "time";
   }>({ visible: false, type: null, mode: "date" });
+  // iOS edits a draft copy and commits only on "Done", so scrolling a wheel
+  // never rewrites the field mid-gesture.
+  const [draftDate, setDraftDate] = useState(new Date());
 
   // Signatures
   const [clientSignature, setClientSignature] = useState<string>("");
@@ -152,9 +157,35 @@ export default function ServiceReport() {
     return `${month}/${day}/${year}`;
   };
 
+  type PickerType = "call" | "appointment" | "start" | "followup";
+
+  const valueForType = (type: PickerType | null) => {
+    if (type === "call") return callTime;
+    if (type === "appointment") return appointmentTime;
+    if (type === "start") return startTime;
+    return followUpDate || new Date();
+  };
+
+  const commitValue = (type: PickerType | null, date: Date) => {
+    if (type === "call") setCallTime(date);
+    else if (type === "appointment") setAppointmentTime(date);
+    else if (type === "start") setStartTime(date);
+    else if (type === "followup") setFollowUpDate(date);
+  };
+
+  const closePicker = () =>
+    setShowDatePicker({ visible: false, type: null, mode: "date" });
+
+  const openPicker = (type: PickerType) => {
+    setDraftDate(valueForType(type));
+    setShowDatePicker({ visible: true, type, mode: "date" });
+  };
+
+  // Android only: the native dialog fires onChange once, on OK, so the
+  // date -> time hand-off is safe here.
   const handleDateTimeChange = (event: any, selectedDate?: Date) => {
-    if (!selectedDate) {
-      setShowDatePicker({ visible: false, type: null, mode: "date" });
+    if (event?.type === "dismissed" || !selectedDate) {
+      closePicker();
       return;
     }
 
@@ -167,7 +198,7 @@ export default function ServiceReport() {
       else if (type === "appointment") setAppointmentTime(selectedDate);
       else if (type === "start") setStartTime(selectedDate);
     } else {
-      setShowDatePicker({ visible: false, type: null, mode: "date" });
+      closePicker();
 
       if (type === "call") setCallTime(selectedDate);
       else if (type === "appointment") setAppointmentTime(selectedDate);
@@ -482,7 +513,7 @@ export default function ServiceReport() {
                 },
               ]}
               onPress={() =>
-                setShowDatePicker({ visible: true, type: "call", mode: "date" })
+                openPicker("call")
               }
             >
               <Text style={[styles.inputText, { color: theme.text }]}>
@@ -509,11 +540,7 @@ export default function ServiceReport() {
                 },
               ]}
               onPress={() =>
-                setShowDatePicker({
-                  visible: true,
-                  type: "appointment",
-                  mode: "date",
-                })
+                openPicker("appointment")
               }
             >
               <Text style={[styles.inputText, { color: theme.text }]}>
@@ -540,11 +567,7 @@ export default function ServiceReport() {
                 },
               ]}
               onPress={() =>
-                setShowDatePicker({
-                  visible: true,
-                  type: "start",
-                  mode: "date",
-                })
+                openPicker("start")
               }
             >
               <Text style={[styles.inputText, { color: theme.text }]}>
@@ -883,23 +906,87 @@ export default function ServiceReport() {
           }
         />
 
-        {/* Date/Time Picker */}
-        {showDatePicker.visible && showDatePicker.type && (
-          <DateTimePicker
-            value={
-              showDatePicker.type === "call"
-                ? callTime
-                : showDatePicker.type === "appointment"
-                  ? appointmentTime
-                  : showDatePicker.type === "start"
-                    ? startTime
-                    : followUpDate || new Date()
-            }
-            mode={showDatePicker.mode}
-            display="default"
-            onChange={handleDateTimeChange}
-          />
-        )}
+        {/* Date/Time Picker.
+            iOS renders the picker inline and fires onChange on every wheel
+            tick, so it gets one "datetime" spinner in a sheet with an explicit
+            Done. Android keeps its native two-step date -> time dialog. */}
+        {showDatePicker.visible &&
+          showDatePicker.type &&
+          (Platform.OS === "ios" ? (
+            <Modal
+              visible
+              transparent
+              // animationType="slide"
+              onRequestClose={closePicker}
+            >
+              <TouchableOpacity
+                style={styles.pickerBackdrop}
+                activeOpacity={1}
+                onPress={closePicker}
+              >
+                <TouchableOpacity
+                  activeOpacity={1}
+                  style={[
+                    styles.pickerSheet,
+                    { backgroundColor: theme.cardBackground },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.pickerToolbar,
+                      { borderBottomColor: theme.inputBorder },
+                    ]}
+                  >
+                    <TouchableOpacity onPress={closePicker} hitSlop={8}>
+                      <Text
+                        style={[
+                          styles.pickerAction,
+                          { color: theme.placeholder },
+                        ]}
+                      >
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      hitSlop={8}
+                      onPress={() => {
+                        commitValue(showDatePicker.type, draftDate);
+                        closePicker();
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.pickerAction,
+                          styles.pickerDone,
+                          { color: theme.primary },
+                        ]}
+                      >
+                        Done
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={draftDate}
+                    mode={
+                      showDatePicker.type === "followup" ? "date" : "datetime"
+                    }
+                    display="spinner"
+                    themeVariant={isDark ? "dark" : "light"}
+                    onChange={(_, selected) =>
+                      selected && setDraftDate(selected)
+                    }
+                  />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </Modal>
+          ) : (
+            <DateTimePicker
+              value={valueForType(showDatePicker.type)}
+              mode={showDatePicker.mode}
+              display="default"
+              onChange={handleDateTimeChange}
+            />
+          ))}
       </View>
     </View>
   );
@@ -1115,5 +1202,29 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 8,
     marginLeft: 8,
+  },
+  pickerBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  pickerSheet: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 24,
+  },
+  pickerToolbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  pickerAction: {
+    fontSize: 16,
+  },
+  pickerDone: {
+    fontWeight: "600",
   },
 });
