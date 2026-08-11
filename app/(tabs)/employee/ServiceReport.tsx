@@ -689,9 +689,11 @@ export default function ServiceReport() {
                 onChangeText={setFaultDescription}
                 multiline
                 numberOfLines={4}
+                maxLength={1000}
               />
             </View>
           </View>
+          
 
           {/* Action Taken */}
           <View style={styles.section}>
@@ -715,6 +717,7 @@ export default function ServiceReport() {
                 onChangeText={setActionTaken}
                 multiline
                 numberOfLines={4}
+                maxLength={1000}
               />
             </View>
           </View>
@@ -739,6 +742,7 @@ export default function ServiceReport() {
                 onChangeText={setRemarks}
                 multiline
                 numberOfLines={3}
+                maxLength={1000}
               />
             </View>
           </View>

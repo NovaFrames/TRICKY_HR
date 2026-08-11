@@ -15,6 +15,7 @@ const SingleModal: React.FC<ModalProps> = ({
   const manager = useModalManager();
   const requestOpen = manager?.requestOpen;
   const requestClose = manager?.requestClose;
+  const activeId = manager?.activeId;
   const idRef = useRef<string>("");
   const wasVisibleRef = useRef<boolean>(false);
 
@@ -55,10 +56,15 @@ const SingleModal: React.FC<ModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Only the topmost modal in the stack may actually present a native Modal.
+  // Two simultaneously-visible native Modals can get stuck mid-dismiss on iOS
+  // when both close in the same tick (e.g. a success alert on top of a form modal).
+  const isTopMost = !manager || activeId === null || activeId === idRef.current;
+
   return (
     <RNModal
       {...rest}
-      visible={visible}
+      visible={visible && isTopMost}
       transparent={transparent}
       presentationStyle={
         presentationStyle ?? (transparent ? "overFullScreen" : undefined)
