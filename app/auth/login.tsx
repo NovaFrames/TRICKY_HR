@@ -4,23 +4,23 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Dimensions,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableWithoutFeedback,
-    View,
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import Animated, {
-    Easing,
-    interpolate,
-    interpolateColor,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -30,10 +30,10 @@ import Modal from "../../components/common/SingleModal";
 import Snackbar from "../../components/common/Snackbar";
 import { useTheme } from "../../context/ThemeContext";
 import ApiService, {
-    compPoliciesUpdate,
-    loginUser,
-    refreshLoginUser,
-    setBaseUrl,
+  compPoliciesUpdate,
+  loginUser,
+  refreshLoginUser,
+  setBaseUrl,
 } from "../../services/ApiService";
 
 const { width, height } = Dimensions.get("window");
@@ -552,7 +552,7 @@ export default function Login() {
               {/* Logo Section (Absolute to animate) */}
               <Animated.View style={[styles.logoContainer, logoStyle]}>
                 <Animated.Text style={[styles.logoText, logoTextStyle]}>
-                  trickyhr
+                  tidyhr
                 </Animated.Text>
                 <Text style={[styles.tagline, { color: theme.text }]}>
                   Sign in to Continue

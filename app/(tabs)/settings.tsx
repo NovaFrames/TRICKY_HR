@@ -100,7 +100,7 @@ export default function SettingsScreen() {
       if (enabled) {
         Alert.alert(
           "Enable Live Location",
-          "TrickyHR will share your location only while the app is open and you are using it for workplace attendance verification. You can turn this off anytime.",
+          "TidyHR will share your location only while the app is open and you are using it for workplace attendance verification. You can turn this off anytime.",
           [
             {
               text: "Cancel",
