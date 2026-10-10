@@ -13,7 +13,6 @@ import ApiService, {
 } from "@/services/ApiService";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
-import * as Sentry from "@sentry/react-native";
 import * as ImagePicker from "expo-image-picker"; // ✅ replaced expo-camera
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -734,11 +733,6 @@ const Attendance = () => {
   const handleSubmit = async () => {
     if (submitInFlightRef.current || submitting) return;
 
-    Sentry.setUser({
-      id: String(empId),
-      username: empName,
-    });
-
     if (!selectedProject)
       return ConfirmModal.alert("Required", "Select project");
 
@@ -909,7 +903,7 @@ const Attendance = () => {
       }
     } catch (error) {
       console.error("Attendance submit error:", error);
-      Sentry.captureException(error);
+
       if (error instanceof Error && error.message === "Request timeout") {
         ConfirmModal.alert(
           "Network Slow",
